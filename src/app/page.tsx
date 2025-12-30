@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <div className="text-center">
       <h1 className="text-5xl font-bold mb-6 text-green-800">
-        Welcome to MTB Trail Finder
+        Welcome Back!
       </h1>
       <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
         Discover amazing mountain biking trails and join events that match your
