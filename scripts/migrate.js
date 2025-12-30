@@ -9,11 +9,23 @@ const pool = new Pool({
 
 async function migrate() {
   try {
-    const migrationPath = path.join(__dirname, '../database/migrations/001_initial_schema.sql');
-    const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+    const migrationsDir = path.join(__dirname, '../database/migrations');
+    const files = fs.readdirSync(migrationsDir)
+      .filter(file => file.endsWith('.sql'))
+      .sort(); // Sort to ensure migrations run in order
 
-    await pool.query(migrationSQL);
-    console.log('Migration completed successfully!');
+    console.log(`Found ${files.length} migration(s) to run...`);
+
+    for (const file of files) {
+      const migrationPath = path.join(migrationsDir, file);
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+
+      console.log(`Running migration: ${file}...`);
+      await pool.query(migrationSQL);
+      console.log(`✓ Completed: ${file}`);
+    }
+
+    console.log('\nAll migrations completed successfully!');
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);
