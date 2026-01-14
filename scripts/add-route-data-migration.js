@@ -9,7 +9,7 @@ const pool = new Pool({
 
 async function migrate() {
   try {
-    const migrationPath = path.join(__dirname, '../database/migrations/003_add_route_data.sql');
+    const migrationPath = path.join(__dirname, '../database/migrations/004_marketplace_core.sql');
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
 
     console.log('Running route_data migration...');
@@ -24,6 +24,9 @@ async function migrate() {
 }
 
 migrate();
+
+
+
 
 
 

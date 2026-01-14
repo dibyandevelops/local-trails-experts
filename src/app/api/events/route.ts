@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { Event, CreateEventInput } from '@/types';
+import { Event, CreateEventInput, SportType } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const expertise = searchParams.get('expertise');
+    const city = searchParams.get('city');
+    const sport = searchParams.get('sport') as SportType | null;
     const upcoming = searchParams.get('upcoming') === 'true';
 
     let query = `
@@ -22,6 +24,10 @@ export async function GET(request: NextRequest) {
         e.meeting_point,
         e.difficulty,
         e.required_expertise,
+        e.sport_type,
+        e.city,
+        e.price_npr,
+        e.host_user_id,
         e.created_at,
         e.updated_at,
         t.id as trail_table_id,
@@ -48,6 +54,18 @@ export async function GET(request: NextRequest) {
       paramIndex++;
     }
 
+    if (city) {
+      query += ` AND e.city = $${paramIndex}`;
+      params.push(city);
+      paramIndex++;
+    }
+
+    if (sport) {
+      query += ` AND e.sport_type = $${paramIndex}`;
+      params.push(sport);
+      paramIndex++;
+    }
+
     if (upcoming) {
       query += ` AND e.event_date >= NOW()`;
     }
@@ -61,21 +79,25 @@ export async function GET(request: NextRequest) {
       title: row.title,
       description: row.description,
       trail_id: row.trail_id,
-      trail: row.trail_id && row.trail_table_id ? {
-        id: row.trail_table_id,
-        name: row.trail_name,
-        description: row.trail_description,
-        difficulty: row.trail_difficulty,
-        location: row.trail_location,
-        latitude: row.trail_latitude,
-        longitude: row.trail_longitude,
-        distance_km: row.trail_distance_km,
-        elevation_gain_m: row.trail_elevation_gain_m,
-        estimated_time_hours: row.trail_estimated_time_hours,
-        image_url: row.trail_image_url,
-        created_at: '',
-        updated_at: '',
-      } : undefined,
+      trail:
+        row.trail_id && row.trail_table_id
+          ? {
+              id: row.trail_table_id,
+              name: row.trail_name,
+              description: row.trail_description,
+              difficulty: row.trail_difficulty,
+              location: row.trail_location,
+              latitude: row.trail_latitude,
+              longitude: row.trail_longitude,
+              distance_km: row.trail_distance_km,
+              elevation_gain_m: row.trail_elevation_gain_m,
+              estimated_time_hours: row.trail_estimated_time_hours,
+              image_url: row.trail_image_url,
+              created_at: '',
+              updated_at: '',
+              route_data: row.route_data,
+            }
+          : undefined,
       event_date: row.event_date,
       organizer_name: row.organizer_name,
       organizer_email: row.organizer_email,
@@ -84,6 +106,10 @@ export async function GET(request: NextRequest) {
       meeting_point: row.meeting_point,
       difficulty: row.difficulty,
       required_expertise: row.required_expertise,
+      sport_type: row.sport_type,
+      city: row.city,
+      price_npr: row.price_npr ?? 0,
+      host_user_id: row.host_user_id,
       created_at: row.created_at,
       updated_at: row.updated_at,
     }));
@@ -113,6 +139,9 @@ export async function POST(request: NextRequest) {
       meeting_point,
       difficulty,
       required_expertise,
+      sport_type,
+      city,
+      price_npr = 0,
     } = body;
 
     if (!title || !event_date || !required_expertise) {
@@ -124,10 +153,21 @@ export async function POST(request: NextRequest) {
 
     const query = `
       INSERT INTO events (
-        title, description, trail_id, event_date, organizer_name,
-        organizer_email, max_participants, meeting_point, difficulty, required_expertise
+        title,
+        description,
+        trail_id,
+        event_date,
+        organizer_name,
+        organizer_email,
+        max_participants,
+        meeting_point,
+        difficulty,
+        required_expertise,
+        sport_type,
+        city,
+        price_npr
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
@@ -142,6 +182,9 @@ export async function POST(request: NextRequest) {
       meeting_point || null,
       difficulty || null,
       required_expertise,
+      sport_type || null,
+      city || null,
+      price_npr,
     ]);
 
     const event: Event = result.rows[0];

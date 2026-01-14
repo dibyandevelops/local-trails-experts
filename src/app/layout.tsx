@@ -19,7 +19,7 @@ export default function RootLayout({
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="text-2xl font-bold">
-                🚵 MTB Trails
+                🚵 Local Guides
               </Link>
               <div className="flex gap-6">
                 <Link
@@ -39,6 +39,18 @@ export default function RootLayout({
                   className="hover:text-green-200 transition-colors"
                 >
                   Create Event
+                </Link>
+                <Link
+                  href="/experts"
+                  className="hover:text-green-200 transition-colors"
+                >
+                  Experts
+                </Link>
+                <Link
+                  href="/experts/join"
+                  className="hover:text-green-200 transition-colors"
+                >
+                  For Experts
                 </Link>
               </div>
             </div>

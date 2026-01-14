@@ -1,6 +1,15 @@
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type ExpertiseLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
+export type UserRole = 'participant' | 'expert' | 'admin';
+
+export type SportType =
+  | 'mtb'
+  | 'hiking'
+  | 'trail_running'
+  | 'training'
+  | 'local_tour';
+
 export interface RoutePoint {
   latitude: number;
   longitude: number;
@@ -49,6 +58,10 @@ export interface Event {
   meeting_point: string | null;
   difficulty: Difficulty | null;
   required_expertise: ExpertiseLevel;
+   sport_type: SportType | null;
+   city: string | null;
+   price_npr: number;
+   host_user_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +87,9 @@ export interface CreateEventInput {
   meeting_point?: string;
   difficulty?: Difficulty;
   required_expertise: ExpertiseLevel;
+  sport_type?: SportType;
+  city?: string;
+  price_npr?: number;
 }
 
 export interface JoinEventInput {
@@ -81,5 +97,46 @@ export interface JoinEventInput {
   participant_email: string;
   phone?: string;
   expertise_level: ExpertiseLevel;
+}
+
+export interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  role: UserRole;
+  bio: string | null;
+  city: string | null;
+  sports: string[] | null;
+  is_verified_expert: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Booking {
+  id: string;
+  event_id: string;
+  user_id: string;
+  spots: number;
+  total_price_npr: number;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  created_at: string;
+}
+
+export interface Payment {
+  id: string;
+  booking_id: string;
+  amount_npr: number;
+  status: 'pending' | 'paid' | 'failed';
+  qr_payload: string | null;
+  created_at: string;
+}
+
+export interface Review {
+  id: string;
+  event_id: string;
+  reviewer_user_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
 }
 

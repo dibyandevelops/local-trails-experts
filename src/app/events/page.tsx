@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Event, ExpertiseLevel } from '@/types';
+import { Event, ExpertiseLevel, SportType } from '@/types';
 import { format } from 'date-fns';
 
 export default function EventsPage() {
@@ -10,6 +10,8 @@ export default function EventsPage() {
   const [selectedExpertise, setSelectedExpertise] = useState<ExpertiseLevel | ''>('');
   const [userExpertise, setUserExpertise] = useState<ExpertiseLevel>('beginner');
   const [showOnlyUpcoming, setShowOnlyUpcoming] = useState(true);
+  const [selectedCity, setSelectedCity] = useState<string>('Kathmandu');
+  const [selectedSport, setSelectedSport] = useState<SportType | ''>('');
 
   useEffect(() => {
     fetchEvents();
@@ -21,6 +23,12 @@ export default function EventsPage() {
       const params = new URLSearchParams();
       if (selectedExpertise) {
         params.append('expertise', selectedExpertise);
+      }
+      if (selectedCity) {
+        params.append('city', selectedCity);
+      }
+      if (selectedSport) {
+        params.append('sport', selectedSport);
       }
       if (showOnlyUpcoming) {
         params.append('upcoming', 'true');
@@ -73,6 +81,13 @@ export default function EventsPage() {
   };
 
   const expertiseLevels: ExpertiseLevel[] = ['beginner', 'intermediate', 'advanced', 'expert'];
+  const sportTypes: { value: SportType; label: string }[] = [
+    { value: 'mtb', label: 'MTB Trail Ride' },
+    { value: 'hiking', label: 'Hiking' },
+    { value: 'trail_running', label: 'Trail Running' },
+    { value: 'training', label: 'Training' },
+    { value: 'local_tour', label: 'Local Tour' },
+  ];
 
   // Group events by expertise level
   const eventsByExpertise = expertiseLevels.reduce((acc, level) => {
@@ -85,7 +100,7 @@ export default function EventsPage() {
       <h1 className="text-4xl font-bold mb-8 text-green-800">Events</h1>
 
       <div className="bg-gray-50 p-6 rounded-lg mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium mb-2">Your Expertise Level</label>
             <select
@@ -115,6 +130,18 @@ export default function EventsPage() {
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">City</label>
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="Kathmandu">Kathmandu</option>
+              <option value="Pokhara">Pokhara</option>
+              <option value="">All Cities</option>
+            </select>
+          </div>
           <div className="flex items-end">
             <label className="flex items-center">
               <input
@@ -125,6 +152,23 @@ export default function EventsPage() {
               />
               <span className="text-sm font-medium">Show only upcoming events</span>
             </label>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Sport Type</label>
+            <select
+              value={selectedSport}
+              onChange={(e) => setSelectedSport(e.target.value as SportType | '')}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">All Sports</option>
+              {sportTypes.map((sport) => (
+                <option key={sport.value} value={sport.value}>
+                  {sport.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>

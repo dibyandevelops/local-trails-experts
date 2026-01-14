@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trail, Difficulty, ExpertiseLevel, CreateEventInput } from '@/types';
+import {
+  Trail,
+  Difficulty,
+  ExpertiseLevel,
+  CreateEventInput,
+  SportType,
+} from '@/types';
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -19,6 +25,9 @@ export default function CreateEventPage() {
     meeting_point: '',
     difficulty: undefined,
     required_expertise: 'beginner',
+    sport_type: 'mtb',
+    city: 'Kathmandu',
+    price_npr: 0,
   });
 
   useEffect(() => {
@@ -48,6 +57,9 @@ export default function CreateEventPage() {
         organizer_email: formData.organizer_email || undefined,
         meeting_point: formData.meeting_point || undefined,
         difficulty: formData.difficulty || undefined,
+        sport_type: formData.sport_type || 'mtb',
+        city: formData.city || 'Kathmandu',
+        price_npr: formData.price_npr ?? 0,
       };
 
       const response = await fetch('/api/events', {
