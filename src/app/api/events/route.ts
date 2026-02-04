@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { Event, CreateEventInput, SportType } from '@/types';
+import { getAuthFromRequest } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -126,6 +127,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body: CreateEventInput = await request.json();
 
     const {
@@ -142,7 +148,18 @@ export async function POST(request: NextRequest) {
       sport_type,
       city,
       price_npr = 0,
+      host_user_id,
     } = body;
+
+    if (auth.role === 'expert') {
+      // Experts can only create events for themselves
+      if (host_user_id && host_user_id !== auth.sub) {
+        return NextResponse.json(
+          { error: 'Experts can only create events for themselves.' },
+          { status: 403 }
+        );
+      }
+    }
 
     if (!title || !event_date || !required_expertise) {
       return NextResponse.json(
@@ -165,9 +182,10 @@ export async function POST(request: NextRequest) {
         required_expertise,
         sport_type,
         city,
-        price_npr
+        price_npr,
+        host_user_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `;
 
@@ -185,6 +203,7 @@ export async function POST(request: NextRequest) {
       sport_type || null,
       city || null,
       price_npr,
+      (auth.role === 'expert' ? auth.sub : host_user_id) || null,
     ]);
 
     const event: Event = result.rows[0];
@@ -198,4 +217,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const city = searchParams.get('city');
     const sport = searchParams.get('sport') as SportType | null;
     const id = searchParams.get('id');
+    const verified = searchParams.get('verified') === 'true';
 
     const params: any[] = [];
     let paramIndex = 1;
@@ -31,6 +32,10 @@ export async function GET(request: NextRequest) {
       where += ` AND u.sports @> $${paramIndex}::jsonb`;
       params.push(JSON.stringify([sport]));
       paramIndex++;
+    }
+
+    if (verified) {
+      where += ` AND u.is_verified_expert = TRUE`;
     }
 
     const query = `
@@ -96,5 +101,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
 

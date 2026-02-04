@@ -90,6 +90,7 @@ export interface CreateEventInput {
   sport_type?: SportType;
   city?: string;
   price_npr?: number;
+  host_user_id?: string | null;
 }
 
 export interface JoinEventInput {

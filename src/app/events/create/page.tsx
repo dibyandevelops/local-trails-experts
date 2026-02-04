@@ -8,11 +8,15 @@ import {
   ExpertiseLevel,
   CreateEventInput,
   SportType,
+  User,
 } from '@/types';
 
 export default function CreateEventPage() {
   const router = useRouter();
   const [trails, setTrails] = useState<Trail[]>([]);
+  const [experts, setExperts] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CreateEventInput>({
     title: '',
@@ -28,10 +32,13 @@ export default function CreateEventPage() {
     sport_type: 'mtb',
     city: 'Kathmandu',
     price_npr: 0,
+    host_user_id: undefined,
   });
 
   useEffect(() => {
     fetchTrails();
+    fetchExperts();
+    fetchCurrentUser();
   }, []);
 
   const fetchTrails = async () => {
@@ -43,6 +50,44 @@ export default function CreateEventPage() {
       console.error('Error fetching trails:', error);
     }
   };
+
+  const fetchExperts = async () => {
+    try {
+      const response = await fetch('/api/experts?verified=true');
+      const data = await response.json();
+      setExperts(data.experts || []);
+    } catch (error) {
+      console.error('Error fetching experts:', error);
+    }
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('/api/me');
+      const data = await response.json();
+      setCurrentUser(data.user || null);
+      if (data.user?.role === 'expert') {
+        setFormData((prev) => ({
+          ...prev,
+          host_user_id: data.user.id,
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    } finally {
+      setLoadingUser(false);
+    }
+  };
+
+  const selectedExpert =
+    formData.host_user_id &&
+    experts.find((expert) => expert.id === formData.host_user_id);
+  const effectiveUser = (
+    currentUser?.role === 'expert' ? currentUser : selectedExpert
+  ) as User;
+  const expertSports = Array.isArray(effectiveUser?.sports)
+    ? effectiveUser?.sports
+    : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +105,7 @@ export default function CreateEventPage() {
         sport_type: formData.sport_type || 'mtb',
         city: formData.city || 'Kathmandu',
         price_npr: formData.price_npr ?? 0,
+        host_user_id: formData.host_user_id || undefined,
       };
 
       const response = await fetch('/api/events', {
@@ -98,6 +144,13 @@ export default function CreateEventPage() {
     <div className="max-w-2xl mx-auto">
       <h1 className="text-4xl font-bold mb-8 text-green-800">Create Event</h1>
 
+      {loadingUser ? (
+        <div className="text-gray-600">Loading user...</div>
+      ) : !currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'expert') ? (
+        <div className="bg-red-50 border border-red-100 text-red-700 rounded-lg px-4 py-3">
+          You must be an admin or expert to create events.
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-lg shadow-md p-6 space-y-6">
         <div>
           <label className="block text-sm font-medium mb-2">
@@ -218,6 +271,65 @@ export default function CreateEventPage() {
             placeholder="e.g., Trailhead parking lot"
           />
         </div>
+        {currentUser?.role === 'admin' && (
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Approved Expert Host
+            </label>
+            <select
+              value={formData.host_user_id || ''}
+              onChange={(e) => {
+                const selectedId = e.target.value || undefined;
+                const expert = experts.find((item) => item.id === selectedId);
+                setFormData({
+                  ...formData,
+                  host_user_id: selectedId,
+                  organizer_name: expert?.name || '',
+                  organizer_email: expert?.email || '',
+                  sport_type:
+                    Array.isArray(expert?.sports) && expert?.sports?.length
+                      ? (expert.sports[0] as SportType)
+                      : formData.sport_type,
+                });
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">No expert host</option>
+              {experts.map((expert) => (
+                <option key={expert.id} value={expert.id}>
+                  {expert.name || 'Expert'} ({expert.email})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {expertSports.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Expert Sport
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {expertSports.map((sport) => (
+                <label
+                  key={sport}
+                  className="inline-flex items-center gap-2 text-sm text-gray-700"
+                >
+                  <input
+                    type="radio"
+                    name="expert_sport"
+                    value={sport}
+                    checked={formData.sport_type === sport}
+                    onChange={() =>
+                      setFormData({ ...formData, sport_type: sport as SportType })
+                    }
+                  />
+                  {sport}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -260,7 +372,7 @@ export default function CreateEventPage() {
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }
-
