@@ -11,6 +11,14 @@ import {
   User,
 } from '@/types';
 
+const sportLabels: Record<SportType, string> = {
+  mtb: 'MTB Trail Rides',
+  hiking: 'Hiking',
+  trail_running: 'Trail Running',
+  training: 'Training & Coaching',
+  local_tour: 'Local Tours',
+};
+
 export default function CreateEventPage() {
   const router = useRouter();
   const [trails, setTrails] = useState<Trail[]>([]);
@@ -70,6 +78,8 @@ export default function CreateEventPage() {
         setFormData((prev) => ({
           ...prev,
           host_user_id: data.user.id,
+          organizer_name: data.user.name || prev.organizer_name,
+          organizer_email: data.user.email || prev.organizer_email,
         }));
       }
     } catch (error) {
@@ -89,11 +99,27 @@ export default function CreateEventPage() {
     ? effectiveUser?.sports
     : [];
 
+  useEffect(() => {
+    if (expertSports.length === 0) return;
+    if (!formData.sport_type || !expertSports.includes(formData.sport_type)) {
+      setFormData((prev) => ({
+        ...prev,
+        sport_type: expertSports[0] as SportType,
+      }));
+    }
+  }, [expertSports, formData.sport_type]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      if (currentUser?.role === 'admin' && !formData.host_user_id) {
+        alert('Please select an approved expert host before creating an event.');
+        setLoading(false);
+        return;
+      }
+
       const payload: CreateEventInput = {
         ...formData,
         trail_id: formData.trail_id || undefined,
@@ -292,9 +318,10 @@ export default function CreateEventPage() {
                       : formData.sport_type,
                 });
               }}
+              required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="">No expert host</option>
+              <option value="">Select an approved expert</option>
               {experts.map((expert) => (
                 <option key={expert.id} value={expert.id}>
                   {expert.name || 'Expert'} ({expert.email})
@@ -324,7 +351,7 @@ export default function CreateEventPage() {
                       setFormData({ ...formData, sport_type: sport as SportType })
                     }
                   />
-                  {sport}
+                  {sportLabels[sport as SportType] ?? sport}
                 </label>
               ))}
             </div>
@@ -338,6 +365,7 @@ export default function CreateEventPage() {
               type="text"
               value={formData.organizer_name}
               onChange={(e) => setFormData({ ...formData, organizer_name: e.target.value })}
+              disabled={currentUser?.role === 'expert'}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Your name"
             />
@@ -349,6 +377,7 @@ export default function CreateEventPage() {
               type="email"
               value={formData.organizer_email}
               onChange={(e) => setFormData({ ...formData, organizer_email: e.target.value })}
+              disabled={currentUser?.role === 'expert'}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="your@email.com"
             />
