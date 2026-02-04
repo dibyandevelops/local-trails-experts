@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Link from 'next/link';
+import Navbar from '@/components/navigation/navbar';
 
 export const metadata: Metadata = {
   title: 'MTB Trail Finder',
@@ -15,50 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <nav className="bg-green-800 text-white shadow-lg">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="text-2xl font-bold">
-                🚵 Local Guides
-              </Link>
-              <div className="flex gap-6">
-                <Link
-                  href="/trails"
-                  className="hover:text-green-200 transition-colors"
-                >
-                  Search Trails
-                </Link>
-                <Link
-                  href="/events"
-                  className="hover:text-green-200 transition-colors"
-                >
-                  Events
-                </Link>
-                <Link
-                  href="/events/create"
-                  className="hover:text-green-200 transition-colors"
-                >
-                  Create Event
-                </Link>
-                <Link
-                  href="/experts"
-                  className="hover:text-green-200 transition-colors"
-                >
-                  Experts
-                </Link>
-                <Link
-                  href="/experts/join"
-                  className="hover:text-green-200 transition-colors"
-                >
-                  For Experts
-                </Link>
-              </div>
-            </div>
-          </div>
-        </nav>
+        <Navbar />
         <main className="container mx-auto px-4 py-8">{children}</main>
       </body>
     </html>
   );
 }
-
