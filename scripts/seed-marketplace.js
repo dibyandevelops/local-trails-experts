@@ -18,10 +18,21 @@ async function seedMarketplace() {
 
     await client.query('BEGIN');
 
-    // Seed users (experts and participants)
+    // Seed users (experts, participants, admin)
     const passwordHash = await bcrypt.hash('password123', 10);
+    const adminPasswordHash = await bcrypt.hash('1MicroPassword', 10);
 
     const users = [
+      {
+        name: 'Dibyan Admin',
+        email: 'dibyan.softwaredev@gmail.com',
+        role: 'admin',
+        city: null,
+        sports: [],
+        bio: 'Platform administrator.',
+        is_verified_expert: false,
+        password_hash: adminPasswordHash,
+      },
       {
         name: 'Suman Gurung',
         email: 'suman.expert@example.com',
@@ -30,6 +41,7 @@ async function seedMarketplace() {
         sports: ['mtb', 'trail_running'],
         bio: 'Local MTB guide and trail runner with 8+ years of experience around Kathmandu Valley.',
         is_verified_expert: true,
+        password_hash: passwordHash,
       },
       {
         name: 'Maya Thapa',
@@ -39,6 +51,7 @@ async function seedMarketplace() {
         sports: ['mtb', 'hiking', 'local_tour'],
         bio: 'Pokhara-based guide leading lakeside rides, Sarangkot sunrise hikes, and local cultural tours.',
         is_verified_expert: true,
+        password_hash: passwordHash,
       },
       {
         name: 'Rinzin Lama',
@@ -48,6 +61,7 @@ async function seedMarketplace() {
         sports: ['training', 'mtb'],
         bio: 'Cycling coach focused on endurance and climbing sessions around Kapan and Shivapuri.',
         is_verified_expert: false,
+        password_hash: passwordHash,
       },
       {
         name: 'Alex Rider',
@@ -57,6 +71,7 @@ async function seedMarketplace() {
         sports: ['mtb'],
         bio: 'Visiting rider looking to explore technical singletrack around the valley.',
         is_verified_expert: false,
+        password_hash: passwordHash,
       },
       {
         name: 'Sara Trail',
@@ -66,6 +81,7 @@ async function seedMarketplace() {
         sports: ['hiking', 'trail_running'],
         bio: 'Trail runner excited to discover Pokhara ridge lines.',
         is_verified_expert: false,
+        password_hash: passwordHash,
       },
     ];
 
@@ -85,13 +101,14 @@ async function seedMarketplace() {
           bio = EXCLUDED.bio,
           city = EXCLUDED.city,
           sports = EXCLUDED.sports,
-          is_verified_expert = EXCLUDED.is_verified_expert
+          is_verified_expert = EXCLUDED.is_verified_expert,
+          password_hash = EXCLUDED.password_hash
         RETURNING id
       `,
         [
           user.name,
           user.email,
-          passwordHash,
+          user.password_hash || passwordHash,
           user.role,
           user.bio,
           user.city,
@@ -373,5 +390,4 @@ async function seedMarketplace() {
 }
 
 seedMarketplace();
-
 
