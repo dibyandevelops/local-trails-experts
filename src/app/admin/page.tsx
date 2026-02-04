@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [loadingApps, setLoadingApps] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [appError, setAppError] = useState<string | null>(null);
+  const [appNotice, setAppNotice] = useState<string | null>(null);
 
   const [eventForm, setEventForm] = useState<CreateEventInput>({
     title: '',
@@ -70,6 +71,7 @@ export default function AdminPage() {
   const fetchApplications = async () => {
     setLoadingApps(true);
     setAppError(null);
+    setAppNotice(null);
     try {
       const res = await fetch(applicationsEndpoint);
       const data = await res.json();
@@ -85,7 +87,10 @@ export default function AdminPage() {
     }
   };
 
-  const updateApplicationStatus = async (id: string, status: ExpertApplication['status']) => {
+  const updateApplicationStatus = async (
+    id: string,
+    status: ExpertApplication['status']
+  ) => {
     try {
       const res = await fetch('/api/admin/expert-applications', {
         method: 'PATCH',
@@ -97,6 +102,11 @@ export default function AdminPage() {
         throw new Error(data?.error || 'Failed to update');
       }
       setApplications((prev) => prev.filter((app) => app.id !== id));
+      if (data?.tempPassword) {
+        setAppNotice(
+          `Temp password for ${data.application?.email}: ${data.tempPassword}`
+        );
+      }
     } catch (error) {
       console.error('Error updating application', error);
       setAppError('Unable to update application status.');
@@ -181,6 +191,11 @@ export default function AdminPage() {
         {appError && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4">
             {appError}
+          </p>
+        )}
+        {appNotice && (
+          <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-4">
+            {appNotice}
           </p>
         )}
 

@@ -21,13 +21,8 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
       e.preventDefault();
       setError(null);
 
-      if (role !== 'participant' && !email.trim()) {
-        setError('Please enter your email to continue.');
-        return;
-      }
-
-      if (role === 'participant') {
-        router.push('/trails');
+      if (!email.trim() || !password) {
+        setError('Please enter your email and password to continue.');
         return;
       }
 
@@ -51,6 +46,8 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
 
         if (role === 'expert') {
           router.push(`/experts/${data.user.id}`);
+        } else if (role === 'participant') {
+          router.push('/trails');
         } else {
           router.push('/admin');
         }
@@ -96,7 +93,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder={role === 'participant' ? 'Optional for participants' : 'you@example.com'}
+            placeholder="you@example.com"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
           />
         </div>

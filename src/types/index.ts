@@ -110,6 +110,8 @@ export interface User {
   is_verified_expert: boolean;
   created_at: string;
   updated_at: string;
+  last_login_at?: string | null;
+  password_updated_at?: string | null;
 }
 
 export interface Booking {
@@ -139,4 +141,3 @@ export interface Review {
   comment: string | null;
   created_at: string;
 }
-

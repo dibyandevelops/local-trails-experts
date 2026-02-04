@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
+import { createTempPassword, getAuthFromRequest } from '@/lib/auth';
+import type { UserRole } from '@/types';
 
 type ExpertApplicationStatus = 'pending' | 'approved' | 'rejected';
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') as ExpertApplicationStatus | null;
 
@@ -45,6 +53,11 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id, status } = body as {
       id?: string;
@@ -65,24 +78,102 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const query = `
-      UPDATE expert_applications
-      SET status = $1, reviewed_at = NOW()
-      WHERE id = $2
-      RETURNING id, name, email, status, reviewed_at
-    `;
+    const client = await pool.connect();
+    let tempPassword: string | null = null;
 
-    const result = await pool.query(query, [status, id]);
-    const updated = result.rows[0];
+    try {
+      await client.query('BEGIN');
 
-    if (!updated) {
-      return NextResponse.json(
-        { error: 'Application not found' },
-        { status: 404 }
+      const updatedApp = await client.query(
+        `
+        UPDATE expert_applications
+        SET status = $1,
+            reviewed_at = NOW(),
+            reviewed_by_admin_id = $3
+        WHERE id = $2
+        RETURNING id, name, email, city, sports, credentials, status, reviewed_at
+      `,
+        [status, id, auth.sub]
       );
-    }
 
-    return NextResponse.json({ application: updated }, { status: 200 });
+      const application = updatedApp.rows[0];
+      if (!application) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: 'Application not found' },
+          { status: 404 }
+        );
+      }
+
+      if (status === 'approved') {
+        const existingUser = await client.query(
+          'SELECT id, role FROM users WHERE email = $1 LIMIT 1',
+          [application.email]
+        );
+
+        if (existingUser.rows.length === 0) {
+          tempPassword = createTempPassword();
+          const passwordHash = await bcrypt.hash(tempPassword, 10);
+          const sportsJson = Array.isArray(application.sports)
+            ? JSON.stringify(application.sports)
+            : null;
+
+          await client.query(
+            `
+            INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert)
+            VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE)
+          `,
+            [
+              application.name,
+              application.email,
+              passwordHash,
+              'expert' as UserRole,
+              application.credentials,
+              application.city,
+              sportsJson,
+            ]
+          );
+        } else {
+          await client.query(
+            `
+            UPDATE users
+            SET role = 'expert',
+                is_verified_expert = TRUE,
+                city = COALESCE($2, city),
+                sports = COALESCE($3::jsonb, sports)
+            WHERE id = $1
+          `,
+            [
+              existingUser.rows[0].id,
+              application.city,
+              Array.isArray(application.sports)
+                ? JSON.stringify(application.sports)
+                : null,
+            ]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+      return NextResponse.json(
+        {
+          application: {
+            id: application.id,
+            name: application.name,
+            email: application.email,
+            status: application.status,
+            reviewed_at: application.reviewed_at,
+          },
+          tempPassword,
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('Error updating expert application:', error);
     return NextResponse.json(
