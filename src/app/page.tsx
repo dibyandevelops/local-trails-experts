@@ -23,6 +23,12 @@ export default function Home() {
             Browse Events in Kathmandu
           </Link>
           <Link
+            href="/register"
+            className="border border-green-700 text-green-800 px-8 py-3 rounded-full hover:bg-green-50 transition-colors text-sm md:text-base font-semibold"
+          >
+            Join Events
+          </Link>
+          <Link
             href="/experts/join"
             className="border border-green-700 text-green-800 px-8 py-3 rounded-full hover:bg-green-50 transition-colors text-sm md:text-base font-semibold"
           >
@@ -109,4 +115,3 @@ export default function Home() {
     </div>
   );
 }
-

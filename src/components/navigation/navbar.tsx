@@ -16,6 +16,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: 'Search Trails', href: '/trails' },
   { label: 'Events', href: '/events' },
+  { label: 'Join Events', href: '/register', showFor: ['anonymous'] },
   {
     label: 'Create Event',
     href: '/events/create',
