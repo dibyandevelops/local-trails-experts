@@ -14,6 +14,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const existingUser = await pool.query(
+      'SELECT id FROM users WHERE email = $1 LIMIT 1',
+      [email]
+    );
+    if (existingUser.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'Email is already registered. Please log in instead.' },
+        { status: 409 }
+      );
+    }
+
+    const existingApplication = await pool.query(
+      'SELECT id, status FROM expert_applications WHERE email = $1 LIMIT 1',
+      [email]
+    );
+    if (existingApplication.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'An application already exists for this email.' },
+        { status: 409 }
+      );
+    }
+
     // Fix: Ensure sports is passed as a proper JSON string for the JSON column in Postgres
     let sportsJson: string | null = null;
     if (Array.isArray(sports) && sports.length > 0) {
