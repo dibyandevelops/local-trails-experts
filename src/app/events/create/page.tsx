@@ -26,6 +26,7 @@ export default function CreateEventPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [isPaidEvent, setIsPaidEvent] = useState(false);
   const [formData, setFormData] = useState<CreateEventInput>({
     title: '',
     description: '',
@@ -120,6 +121,12 @@ export default function CreateEventPage() {
         return;
       }
 
+      if (isPaidEvent && (!formData.price_npr || formData.price_npr <= 0)) {
+        alert('Paid events must have a price greater than 0.');
+        setLoading(false);
+        return;
+      }
+
       const payload: CreateEventInput = {
         ...formData,
         trail_id: formData.trail_id || undefined,
@@ -130,7 +137,7 @@ export default function CreateEventPage() {
         difficulty: formData.difficulty || undefined,
         sport_type: formData.sport_type || 'mtb',
         city: formData.city || 'Kathmandu',
-        price_npr: formData.price_npr ?? 0,
+        price_npr: isPaidEvent ? formData.price_npr ?? 0 : 0,
         host_user_id: formData.host_user_id || undefined,
       };
 
@@ -159,10 +166,30 @@ export default function CreateEventPage() {
 
   const handleTrailChange = (trailId: string) => {
     const selectedTrail = trails.find((t) => t.id === trailId);
+    const detailParts: string[] = [];
+    if (selectedTrail?.distance_km) {
+      detailParts.push(`Distance: ${selectedTrail.distance_km} km`);
+    }
+    if (selectedTrail?.elevation_gain_m) {
+      detailParts.push(`Elevation gain: ${selectedTrail.elevation_gain_m} m`);
+    }
+    if (selectedTrail?.estimated_time_hours) {
+      detailParts.push(`Estimated time: ${selectedTrail.estimated_time_hours} hours`);
+    }
+    if (selectedTrail?.difficulty) {
+      detailParts.push(`Difficulty: ${selectedTrail.difficulty}`);
+    }
+    if (selectedTrail?.location) {
+      detailParts.push(`Location: ${selectedTrail.location}`);
+    }
+
+    const detailsText = detailParts.length > 0 ? `\n\n${detailParts.join(' • ')}` : '';
+    const baseDescription = selectedTrail?.description || formData.description || '';
     setFormData({
       ...formData,
       trail_id: trailId,
       difficulty: selectedTrail?.difficulty || undefined,
+      description: `${baseDescription}${detailsText}`.trim(),
     });
   };
 
@@ -278,10 +305,12 @@ export default function CreateEventPage() {
             <input
               type="number"
               min="1"
-              value={formData.max_participants}
-              onChange={(e) =>
-                setFormData({ ...formData, max_participants: parseInt(e.target.value) || 20 })
-              }
+              value={formData.max_participants ?? ''}
+              onChange={(e) => {
+                const parsed = Number(e.target.value);
+                if (Number.isNaN(parsed)) return;
+                setFormData({ ...formData, max_participants: parsed });
+              }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
@@ -296,6 +325,47 @@ export default function CreateEventPage() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             placeholder="e.g., Trailhead parking lot"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Pricing</label>
+          <div className="flex items-center gap-2">
+            <input
+              id="paid-event-toggle"
+              type="checkbox"
+              checked={isPaidEvent}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setIsPaidEvent(checked);
+                if (!checked) {
+                  setFormData({ ...formData, price_npr: 0 });
+                }
+              }}
+              className="h-4 w-4"
+            />
+            <label htmlFor="paid-event-toggle" className="text-sm text-gray-700">
+              Paid event
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Event Price (NPR)</label>
+          <input
+            type="number"
+            min="0"
+            value={formData.price_npr ?? 0}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                price_npr: Number(e.target.value) || 0,
+              })
+            }
+            disabled={!isPaidEvent}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            placeholder="0"
+          />
+          <p className="text-xs text-gray-500 mt-1">0 = free</p>
         </div>
         {currentUser?.role === 'admin' && (
           <div>

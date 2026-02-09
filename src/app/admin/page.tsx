@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { CreateEventInput, Difficulty, ExpertiseLevel, SportType } from '@/types';
+import type { CreateEventInput, Difficulty, ExpertiseLevel, SportType, User } from '@/types';
 
 type ExpertApplication = {
   id: string;
@@ -38,6 +38,7 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [appError, setAppError] = useState<string | null>(null);
   const [appNotice, setAppNotice] = useState<string | null>(null);
+  const [experts, setExperts] = useState<User[]>([]);
 
   const [eventForm, setEventForm] = useState<CreateEventInput>({
     title: '',
@@ -52,6 +53,7 @@ export default function AdminPage() {
     city: '',
     price_npr: 0,
     max_participants: 20,
+    host_user_id: undefined,
   });
   const [eventSubmitting, setEventSubmitting] = useState(false);
   const [eventMessage, setEventMessage] = useState<string | null>(null);
@@ -64,8 +66,8 @@ export default function AdminPage() {
   }, [statusFilter]);
 
   useEffect(() => {
-    void fetchApplications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchApplications();
+    fetchExperts();
   }, [applicationsEndpoint]);
 
   const fetchApplications = async () => {
@@ -84,6 +86,16 @@ export default function AdminPage() {
       setAppError('Unable to load expert applications.');
     } finally {
       setLoadingApps(false);
+    }
+  };
+
+  const fetchExperts = async () => {
+    try {
+      const res = await fetch('/api/experts?verified=true');
+      const data = await res.json();
+      setExperts(data.experts || []);
+    } catch (error) {
+      console.error('Error loading experts', error);
     }
   };
 
@@ -120,12 +132,34 @@ export default function AdminPage() {
     }));
   };
 
+  const selectedExpert = eventForm.host_user_id
+    ? experts.find((expert) => expert.id === eventForm.host_user_id)
+    : undefined;
+  const expertSports = Array.isArray(selectedExpert?.sports)
+    ? selectedExpert?.sports
+    : [];
+
+  useEffect(() => {
+    if (expertSports.length === 0) return;
+    if (!eventForm.sport_type || !expertSports.includes(eventForm.sport_type)) {
+      setEventForm((prev) => ({
+        ...prev,
+        sport_type: expertSports[0] as SportType,
+      }));
+    }
+  }, [expertSports, eventForm.sport_type]);
+
   const handleCreateEvent = async (event: React.FormEvent) => {
     event.preventDefault();
     setEventMessage(null);
 
     if (!eventForm.title || !eventForm.event_date || !eventForm.required_expertise) {
       setEventMessage('Please fill in the required fields.');
+      return;
+    }
+
+    if (!eventForm.host_user_id) {
+      setEventMessage('Please select an approved expert host.');
       return;
     }
 
@@ -152,6 +186,7 @@ export default function AdminPage() {
         city: '',
         price_npr: 0,
         max_participants: 20,
+        host_user_id: undefined,
       }));
     } catch (error) {
       console.error('Error creating event', error);
@@ -269,6 +304,58 @@ export default function AdminPage() {
         <form onSubmit={handleCreateEvent} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Approved expert host
+            </label>
+            <select
+              value={eventForm.host_user_id || ''}
+              onChange={(e) => {
+                const selectedId = e.target.value || undefined;
+                const expert = experts.find((item) => item.id === selectedId);
+                setEventForm((prev) => ({
+                  ...prev,
+                  host_user_id: selectedId,
+                  organizer_name: expert?.name || '',
+                  organizer_email: expert?.email || '',
+                  sport_type:
+                    Array.isArray(expert?.sports) && expert?.sports?.length
+                      ? (expert.sports[0] as SportType)
+                      : prev.sport_type,
+                }));
+              }}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="">Select an approved expert</option>
+              {experts.map((expert) => (
+                <option key={expert.id} value={expert.id}>
+                  {expert.name || 'Expert'} ({expert.email})
+                </option>
+              ))}
+            </select>
+            {selectedExpert && (
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                {selectedExpert.city && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">
+                    {selectedExpert.city}
+                  </span>
+                )}
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${
+                    selectedExpert.is_verified_expert
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}
+                >
+                  {selectedExpert.is_verified_expert
+                    ? 'Verified Expert'
+                    : 'Not verified'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Title
             </label>
             <input
@@ -319,7 +406,12 @@ export default function AdminPage() {
               onChange={(e) => handleEventChange('sport_type', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
-              {sportOptions.map((sport) => (
+              {(expertSports.length > 0
+                ? sportOptions.filter((sport) =>
+                    expertSports.includes(sport.value)
+                  )
+                : sportOptions
+              ).map((sport) => (
                 <option key={sport.value} value={sport.value}>
                   {sport.label}
                 </option>
@@ -390,6 +482,7 @@ export default function AdminPage() {
               type="text"
               value={eventForm.organizer_name || ''}
               onChange={(e) => handleEventChange('organizer_name', e.target.value)}
+              disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             />
           </div>
@@ -402,6 +495,7 @@ export default function AdminPage() {
               type="email"
               value={eventForm.organizer_email || ''}
               onChange={(e) => handleEventChange('organizer_email', e.target.value)}
+              disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             />
           </div>

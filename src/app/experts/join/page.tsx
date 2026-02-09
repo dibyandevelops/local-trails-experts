@@ -13,6 +13,7 @@ const sportOptions = [
 export default function ExpertJoinPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [city, setCity] = useState('Kathmandu');
   const [selectedSports, setSelectedSports] = useState<string[]>(['mtb']);
   const [credentials, setCredentials] = useState('');
@@ -43,6 +44,7 @@ export default function ExpertJoinPage() {
         body: JSON.stringify({
           name,
           email,
+          phone,
           city,
           sports: selectedSports,
           credentials,
@@ -61,6 +63,7 @@ export default function ExpertJoinPage() {
       );
       setName('');
       setEmail('');
+      setPhone('');
       setCity('Kathmandu');
       setSelectedSports(['mtb']);
       setCredentials('');
@@ -169,6 +172,23 @@ export default function ExpertJoinPage() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="+9779812345678"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Use international format (e.g., +977...).
+            </p>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -250,5 +270,3 @@ export default function ExpertJoinPage() {
     </div>
   );
 }
-
-

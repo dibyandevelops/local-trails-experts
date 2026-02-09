@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SportType, User } from '@/types';
 
 type ExpertWithEvents = User & {
@@ -24,6 +25,7 @@ const sportOptions: { value: SportType; label: string }[] = [
 ];
 
 export default function ExpertsBrowsePage() {
+  const router = useRouter();
   const [experts, setExperts] = useState<ExpertWithEvents[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState<string>('Kathmandu');
@@ -117,7 +119,11 @@ export default function ExpertsBrowsePage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {experts.map((expert) => (
-            <ExpertCard key={expert.id} expert={expert} />
+            <ExpertCard
+              key={expert.id}
+              expert={expert}
+              onClick={() => router.push(`/events?expert=${expert.id}`)}
+            />
           ))}
         </div>
       )}
@@ -125,7 +131,13 @@ export default function ExpertsBrowsePage() {
   );
 }
 
-function ExpertCard({ expert }: { expert: ExpertWithEvents }) {
+function ExpertCard({
+  expert,
+  onClick,
+}: {
+  expert: ExpertWithEvents;
+  onClick: () => void;
+}) {
   const primarySports = Array.isArray(expert.sports)
     ? expert.sports
     : expert.sports
@@ -135,7 +147,10 @@ function ExpertCard({ expert }: { expert: ExpertWithEvents }) {
   const upcomingEvents = (expert.events || []).slice(0, 3);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col h-full">
+    <div
+      className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col h-full cursor-pointer hover:shadow-md transition-shadow"
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between mb-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
@@ -202,25 +217,10 @@ function ExpertCard({ expert }: { expert: ExpertWithEvents }) {
           </p>
         )}
 
-        <div className="flex gap-2">
-          <Link
-            href={`/events?city=${encodeURIComponent(
-              expert.city || ''
-            )}&sport=`}
-            className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-          >
-            Browse all events
-          </Link>
-          <Link
-            href={`/experts/${expert.id}`}
-            className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800"
-          >
-            View profile & events
-          </Link>
+        <div className="text-xs text-gray-500">
+          Tap card to view their events.
         </div>
       </div>
     </div>
   );
 }
-
-
