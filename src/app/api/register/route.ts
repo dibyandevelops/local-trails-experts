@@ -6,16 +6,17 @@ import { setAuthCookie, signAuthToken } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, sports, password } = body as {
+    const { name, email, sports, password, phone } = body as {
       name?: string;
       email?: string;
       sports?: string[];
       password?: string;
+      phone?: string;
     };
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !phone) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, email, password' },
+        { error: 'Missing required fields: name, email, password, phone' },
         { status: 400 }
       );
     }
@@ -46,11 +47,11 @@ export async function POST(request: NextRequest) {
 
     const result = await pool.query(
       `
-      INSERT INTO users (name, email, password_hash, role, sports)
-      VALUES ($1, $2, $3, 'participant', $4::jsonb)
+      INSERT INTO users (name, email, password_hash, role, sports, phone)
+      VALUES ($1, $2, $3, 'participant', $4::jsonb, $5)
       RETURNING id, email, role
     `,
-      [name, email, passwordHash, sportsJson]
+      [name, email, passwordHash, sportsJson, phone]
     );
 
     const user = result.rows[0];

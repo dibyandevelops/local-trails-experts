@@ -91,7 +91,7 @@ export async function PATCH(request: NextRequest) {
             reviewed_at = NOW(),
             reviewed_by_admin_id = $3
         WHERE id = $2
-        RETURNING id, name, email, city, sports, credentials, status, reviewed_at
+        RETURNING id, name, email, city, sports, credentials, status, reviewed_at, phone, phone_verified_at
       `,
         [status, id, auth.sub]
       );
@@ -120,8 +120,8 @@ export async function PATCH(request: NextRequest) {
 
           await client.query(
             `
-            INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert)
-            VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE)
+            INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert, phone, phone_verified_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE, $8, $9)
           `,
             [
               application.name,
@@ -131,6 +131,8 @@ export async function PATCH(request: NextRequest) {
               application.credentials,
               application.city,
               sportsJson,
+              application.phone || null,
+              application.phone_verified_at || null,
             ]
           );
         } else {
@@ -140,7 +142,9 @@ export async function PATCH(request: NextRequest) {
             SET role = 'expert',
                 is_verified_expert = TRUE,
                 city = COALESCE($2, city),
-                sports = COALESCE($3::jsonb, sports)
+                sports = COALESCE($3::jsonb, sports),
+                phone = COALESCE($4, phone),
+                phone_verified_at = COALESCE($5, phone_verified_at)
             WHERE id = $1
           `,
             [
@@ -149,6 +153,8 @@ export async function PATCH(request: NextRequest) {
               Array.isArray(application.sports)
                 ? JSON.stringify(application.sports)
                 : null,
+              application.phone || null,
+              application.phone_verified_at || null,
             ]
           );
         }

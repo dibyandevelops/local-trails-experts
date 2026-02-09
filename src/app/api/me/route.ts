@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(
       `
-      SELECT id, name, email, role, bio, city, sports, is_verified_expert, created_at, updated_at
+      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, created_at, updated_at
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -39,11 +39,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, city, bio, sports } = body as {
+    const { name, city, bio, sports, phone } = body as {
       name?: string;
       city?: string;
       bio?: string;
       sports?: string[];
+      phone?: string;
     };
 
     const sportsJson =
@@ -58,11 +59,21 @@ export async function PATCH(request: NextRequest) {
           city = $2,
           bio = $3,
           sports = $4::jsonb,
+          phone = $5,
+          phone_verified_at = CASE WHEN $6 THEN NULL ELSE phone_verified_at END,
           updated_at = NOW()
-      WHERE id = $5
-      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, created_at, updated_at
+      WHERE id = $7
+      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, created_at, updated_at
     `,
-      [name || null, city || null, bio || null, sportsJson, auth.sub]
+      [
+        name || null,
+        city || null,
+        bio || null,
+        sportsJson,
+        phone || null,
+        phone !== undefined,
+        auth.sub,
+      ]
     );
 
     const user: User | null = result.rows[0] || null;

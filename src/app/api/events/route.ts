@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const expertise = searchParams.get('expertise');
     const city = searchParams.get('city');
     const sport = searchParams.get('sport') as SportType | null;
+    const expert = searchParams.get('expert');
     const upcoming = searchParams.get('upcoming') === 'true';
 
     let query = `
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
         e.city,
         e.price_npr,
         e.host_user_id,
+        u.phone as expert_phone,
         e.created_at,
         e.updated_at,
         t.id as trail_table_id,
@@ -44,6 +46,7 @@ export async function GET(request: NextRequest) {
         t.image_url as trail_image_url
       FROM events e
       LEFT JOIN trails t ON e.trail_id = t.id
+      LEFT JOIN users u ON e.host_user_id = u.id
       WHERE 1=1
     `;
     const params: any[] = [];
@@ -64,6 +67,12 @@ export async function GET(request: NextRequest) {
     if (sport) {
       query += ` AND e.sport_type = $${paramIndex}`;
       params.push(sport);
+      paramIndex++;
+    }
+
+    if (expert) {
+      query += ` AND e.host_user_id = $${paramIndex}`;
+      params.push(expert);
       paramIndex++;
     }
 
@@ -111,6 +120,7 @@ export async function GET(request: NextRequest) {
       city: row.city,
       price_npr: row.price_npr ?? 0,
       host_user_id: row.host_user_id,
+      organizer_phone: row.expert_phone ?? null,
       created_at: row.created_at,
       updated_at: row.updated_at,
     }));

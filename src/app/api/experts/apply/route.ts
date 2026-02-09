@@ -5,11 +5,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     console.log(body, 'body')
-    const { name, email, city, sports, credentials } = body;
+    const { name, email, city, sports, credentials, phone } = body;
 
-    if (!name || !email || !credentials) {
+    if (!name || !email || !credentials || !phone) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, email, credentials' },
+        { error: 'Missing required fields: name, email, credentials, phone' },
         { status: 400 }
       );
     }
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
     }
 
     const query = `
-      INSERT INTO expert_applications (name, email, city, sports, credentials)
-      VALUES ($1, $2, $3, $4::json, $5)
+      INSERT INTO expert_applications (name, email, city, sports, credentials, phone)
+      VALUES ($1, $2, $3, $4::json, $5, $6)
       RETURNING id, status, created_at
     `;
 
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       city || null,
       sportsJson,
       credentials,
+      phone,
     ]);
 
     const application = result.rows[0];
