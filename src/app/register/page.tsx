@@ -19,6 +19,7 @@ export default function RegisterPage() {
     email: '',
     sports: [] as SportType[],
     password: '',
+    phone: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +50,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!form.name.trim() || !form.email.trim()) {
-      setError('Full name and email are required.');
+    if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
+      setError('Full name, email, and phone number are required.');
       return;
     }
 
@@ -64,6 +65,7 @@ export default function RegisterPage() {
             email: form.email.trim(),
             sports: form.sports,
             password: form.password,
+            phone: form.phone.trim(),
           }),
         });
 
@@ -73,8 +75,8 @@ export default function RegisterPage() {
       }
 
       setSuccess('Account created! You are now signed in.');
-      setForm({ name: '', email: '', sports: [], password: '' });
-      router.push('/participants/me');
+      setForm({ name: '', email: '', sports: [], password: '', phone: '' });
+      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to register.');
     } finally {
@@ -120,6 +122,24 @@ export default function RegisterPage() {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             required
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Phone number
+          </label>
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={(event) =>
+              setForm({ ...form, phone: event.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            placeholder="+9779812345678"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Use international format (e.g., +977...).
+          </p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

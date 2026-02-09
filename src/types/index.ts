@@ -53,6 +53,7 @@ export interface Event {
   event_date: string;
   organizer_name: string | null;
   organizer_email: string | null;
+  organizer_phone?: string | null;
   max_participants: number;
   current_participants: number;
   meeting_point: string | null;
@@ -109,6 +110,8 @@ export interface User {
   city: string | null;
   sports: string[] | null;
   is_verified_expert: boolean;
+  phone?: string | null;
+  phone_verified_at?: string | null;
   created_at: string;
   updated_at: string;
   last_login_at?: string | null;
