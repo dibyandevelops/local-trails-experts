@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { JoinEventInput } from '@/types';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const limited = await rateLimit(request, 'event-join', 10, 60);
+    if (limited) return limited;
+
     const eventId = params.id;
     const body: JoinEventInput = await request.json();
 
@@ -87,4 +91,3 @@ export async function POST(
     );
   }
 }
-

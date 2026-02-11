@@ -3,9 +3,13 @@ import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 import type { User, UserRole } from '@/types';
 import { setAuthCookie, signAuthToken } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'login', 10, 60);
+    if (limited) return limited;
+
     const body = await request.json();
     const { email, role, password } = body as {
       email?: string;

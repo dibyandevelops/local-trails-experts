@@ -10,16 +10,21 @@
     "db:migrate": "node scripts/migrate.js",
     "db:seed:trails": "node scripts/seed-trails.js",
     "db:seed:marketplace": "node scripts/seed-marketplace.js",
-    "db:remove-duplicates": "node scripts/remove-duplicates.js"
+    "db:remove-duplicates": "node scripts/remove-duplicates.js",
+    "db:smoke": "node scripts/db-smoke.js",
+    "test": "jest"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-toast": "^1.1.5",
     "@sentry/nextjs": "^10.38.0",
+    "@upstash/ratelimit": "^1.2.1",
+    "@upstash/redis": "^1.31.5",
     "bcryptjs": "^2.4.3",
     "date-fns": "^2.30.0",
     "dotenv": "^16.6.1",
     "firebase": "^10.14.1",
-    "@radix-ui/react-dialog": "^1.1.4",
-    "@radix-ui/react-toast": "^1.1.5",
+    "firebase-admin": "^12.5.0",
     "gpx-parse": "^0.10.4",
     "gpx-parser-builder": "^1.2.0",
     "maplibre-gl": "^5.15.0",
@@ -31,10 +36,14 @@
     "react-hook-form": "^7.71.1",
     "react-map-gl": "^8.1.0",
     "recharts": "^3.6.0",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/react": "^16.0.1",
     "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^29.5.14",
     "@types/maplibre-gl": "^1.13.2",
     "@types/node": "20.19.27",
     "@types/pg": "^8.10.9",
@@ -44,8 +53,11 @@
     "autoprefixer": "^10.4.16",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.0.4",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
+    "ts-jest": "^29.2.5",
     "typescript": "5.9.3"
   }
 }

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const limited = await rateLimit(_request, 'event-cancel', 5, 60);
+    if (limited) return limited;
+
     const auth = getAuthFromRequest(_request);
     if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

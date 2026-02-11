@@ -1,9 +1,12 @@
 import { Pool } from 'pg';
+import { getServerEnv } from '@/lib/env.server';
 
 // Create a connection pool for PostgreSQL
-const env = (key: string) => {
-  const value = process.env[key];
-  return value && value.trim().length > 0 ? value : undefined;
+const env = (key: keyof ReturnType<typeof getServerEnv>) => {
+  const value = getServerEnv()[key];
+  return typeof value === 'string' && value.trim().length > 0
+    ? value
+    : undefined;
 };
 
 const pool = new Pool({

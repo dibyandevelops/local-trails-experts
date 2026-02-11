@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 import { setAuthCookie, signAuthToken } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'register', 5, 60);
+    if (limited) return limited;
+
     const body = await request.json();
     const { name, email, sports, password, phone } = body as {
       name?: string;

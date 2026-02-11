@@ -9,7 +9,7 @@ type PhoneVerificationDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   phone: string;
-  onVerified: () => Promise<void> | void;
+  onVerified: (idToken: string) => Promise<void> | void;
 };
 
 const RESEND_SECONDS = 30;
@@ -77,8 +77,9 @@ export default function PhoneVerificationDialog({
     }
     setVerifying(true);
     try {
-      await confirmationResult.confirm(otp);
-      await onVerified();
+      const credential = await confirmationResult.confirm(otp);
+      const idToken = await credential.user.getIdToken();
+      await onVerified(idToken);
       onOpenChange(false);
     } catch (err) {
       console.error('OTP verify failed', err);

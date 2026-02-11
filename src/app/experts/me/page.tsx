@@ -262,11 +262,11 @@ export default function ExpertProfilePage() {
         open={verifyOpen}
         onOpenChange={setVerifyOpen}
         phone={editForm.phone}
-        onVerified={async () => {
+        onVerified={async (idToken) => {
           const response = await fetch('/api/me/verify-phone', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: editForm.phone }),
+            body: JSON.stringify({ phone: editForm.phone, idToken }),
           });
           const data = await response.json();
           if (response.ok) {

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'expert-apply', 5, 60);
+    if (limited) return limited;
+
     const body = await request.json();
     console.log(body, 'body')
     const { name, email, city, sports, credentials, phone } = body;
