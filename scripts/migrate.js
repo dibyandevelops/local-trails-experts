@@ -1,12 +1,28 @@
 const { Pool } = require('pg');
+require('dotenv').config({ path: '.env.local' });
 const fs = require('fs');
 const path = require('path');
 
 const MIGRATIONS_TABLE = 'migrations';
 
+const env = (key) => {
+  const value = process.env[key];
+  return value && value.trim().length > 0 ? value : undefined;
+};
+
+const connectionString =
+  env('DIRECT_DATABASE_URL') ||
+  env('DATABASE_URL') ||
+  `postgresql://${env('DB_USER') || 'postgres'}:${env('DB_PASSWORD') || 'postgres'}@${env('DB_HOST') || 'localhost'}:${env('DB_PORT') || '5432'}/${env('DB_NAME') || 'mtb_trail_finder'}`;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL ||
-    `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || 'postgres'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'mtb_trail_finder'}`,
+  connectionString,
+  ssl:
+    env('DB_SSL') === 'true' || env('DB_SSL') === '1'
+      ? { rejectUnauthorized: false }
+      : env('DIRECT_DATABASE_URL') || env('DATABASE_URL')
+      ? { rejectUnauthorized: false }
+      : undefined,
 });
 
 async function ensureMigrationsTable() {

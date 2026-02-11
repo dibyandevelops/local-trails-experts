@@ -35,6 +35,9 @@ export default function EventsPage() {
   useEffect(() => {
     const query = searchParams.toString();
     if (query === lastSyncedQuery.current) {
+      if (!filtersReady) {
+        setFiltersReady(true);
+      }
       return;
     }
 
@@ -55,7 +58,7 @@ export default function EventsPage() {
 
     lastSyncedQuery.current = query;
     setFiltersReady(true);
-  }, [searchParams]);
+  }, [searchParams, filtersReady]);
 
   useEffect(() => {
     if (!filtersReady) return;

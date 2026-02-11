@@ -13,6 +13,7 @@
     "db:remove-duplicates": "node scripts/remove-duplicates.js"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.38.0",
     "bcryptjs": "^2.4.3",
     "date-fns": "^2.30.0",
     "dotenv": "^16.6.1",

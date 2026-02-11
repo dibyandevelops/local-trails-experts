@@ -1,0 +1,7 @@
+const DB_USER='neondb_owner'
+const DB_PASSWORD='npg_EuZ9HXFQAa2O'
+const DB_HOST='ep-still-cell-a1s697vq-pooler.ap-southeast-1.aws.neon.tech'
+const DB_PORT='5432'
+const DB_NAME='local-guides-db'
+const DB_OPTIONS='?sslmode=require&channel_binding=require'
+const DIRECT_DATABASE_URL='postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_OPTIONS}'
