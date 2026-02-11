@@ -341,7 +341,8 @@ const TrailPage: React.FunctionComponent = () => {
                   formatter={(value: number | undefined) =>
                     value !== undefined ? [`${value.toFixed(0)} m`, 'Elevation'] : ['', 'Elevation']
                   }
-                  labelFormatter={(value: number) => `Distance: ${value.toFixed(2)} km`}
+
+                  labelFormatter={(value) => `Distance: ${value.toFixed(2)} km`}
                 />
                 <Area
                   type="monotone"
