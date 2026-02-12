@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trail, Difficulty } from '@/types';
+import { Trail, Difficulty, User } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
-
 import { useRouter } from 'next/navigation';
 
 function TrailGallery({ trails }: { trails: Trail[] }) {
@@ -24,15 +23,30 @@ function TrailGallery({ trails }: { trails: Trail[] }) {
   );
 }
 export default function TrailsPage() {
+  const router = useRouter();
   const [trails, setTrails] = useState<Trail[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
   const [location, setLocation] = useState('');
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     fetchTrails();
   }, [search, difficulty, location]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/me');
+        const data = await response.json();
+        setUser(data.user || null);
+      } catch {
+        setUser(null);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const fetchTrails = async () => {
     setLoading(true);
@@ -59,7 +73,18 @@ export default function TrailsPage() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-8 text-green-800">Search Trails</h1>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-4xl font-bold text-green-800">Search Trails</h1>
+        {(user?.role === 'admin' || user?.role === 'expert') && (
+          <button
+            type="button"
+            onClick={() => router.push('/trails/create')}
+            className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+          >
+            Create Trail
+          </button>
+        )}
+      </div>
 
       <form onSubmit={handleSearch} className="mb-8 bg-gray-50 p-6 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

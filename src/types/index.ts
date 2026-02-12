@@ -32,6 +32,7 @@ export interface Trail {
   description: string | null;
   difficulty: Difficulty;
   location: string;
+  safety_labels?: string[] | null;
   latitude: number | null;
   longitude: number | null;
   distance_km: number | null;

@@ -1,6 +1,7 @@
 'use client'
 import * as React from 'react';
 import { Trail } from '@/types';
+import { getSafetyLabelText } from '@/lib/trail-safety';
 
 const Card = ({
   children,
@@ -23,7 +24,7 @@ const Card = ({
               role: 'button',
               tabIndex: 0,
               onKeyDown: (event) => event.key === 'Enter' && onClick(),
-              onMouseDown: onClick,
+              onClick,
               'aria-label': `Select ${trailName}`,
             }
           : {}),
@@ -59,6 +60,18 @@ export const TrailCard: React.FunctionComponent<Trail> = (trail) => {
         <p className="text-gray-600 mb-4">{trail.location}</p>
         {trail.description && (
           <p className="text-gray-700 mb-4 line-clamp-3">{trail.description}</p>
+        )}
+        {!!trail.safety_labels?.length && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {trail.safety_labels.slice(0, 3).map((label) => (
+              <span
+                key={`${trail.id}-${label}`}
+                className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800"
+              >
+                {getSafetyLabelText(label)}
+              </span>
+            ))}
+          </div>
         )}
         <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
           {trail.distance_km && (

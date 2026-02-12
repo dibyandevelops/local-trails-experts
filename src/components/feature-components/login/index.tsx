@@ -43,6 +43,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
           setError(data?.error || 'Login failed. Please try again.');
           return;
         }
+        window.dispatchEvent(new Event('auth-changed'));
 
         if (role === 'expert') {
           router.push(`/experts/${data.user.id}`);

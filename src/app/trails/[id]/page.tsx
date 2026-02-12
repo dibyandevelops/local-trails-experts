@@ -2,10 +2,15 @@
 
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Map, { Marker, Source, Layer } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Trail, RouteData } from '@/types';
+import { Trail, RouteData, User } from '@/types';
+import {
+  getSafetyLabelText,
+  TRAIL_SAFETY_OPTIONS,
+  TrailSafetyLabel,
+} from '@/lib/trail-safety';
 import {
   LineChart,
   Line,
@@ -19,14 +24,20 @@ import {
 } from 'recharts';
 
 const TrailPage: React.FunctionComponent = () => {
+  const router = useRouter();
   const params = useParams();
   const trailId = params?.id as string;
   const [trail, setTrail] = useState<Trail | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [savingLabels, setSavingLabels] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [adminMessage, setAdminMessage] = useState<string | null>(null);
+  const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -34,6 +45,20 @@ const TrailPage: React.FunctionComponent = () => {
       fetchTrail();
     }
   }, [trailId]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/me');
+        const data = await response.json();
+        setCurrentUser(data.user || null);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const fetchTrail = async () => {
     try {
@@ -43,6 +68,7 @@ const TrailPage: React.FunctionComponent = () => {
 
       if (response.ok) {
         setTrail(data.trail);
+        setSafetyDraft((data.trail.safety_labels || []) as TrailSafetyLabel[]);
       } else {
         setError(data.error || 'Failed to fetch trail');
       }
@@ -88,6 +114,67 @@ const TrailPage: React.FunctionComponent = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const isAdmin = currentUser?.role === 'admin';
+  const canUploadRoute = currentUser?.role === 'admin' || currentUser?.role === 'expert';
+
+  const toggleSafetyLabel = (value: TrailSafetyLabel) => {
+    setSafetyDraft((prev) =>
+      prev.includes(value)
+        ? prev.filter((label) => label !== value)
+        : [...prev, value]
+    );
+  };
+
+  const handleSaveSafetyLabels = async () => {
+    if (!isAdmin || !trail) return;
+    setSavingLabels(true);
+    setAdminMessage(null);
+    try {
+      const response = await fetch(`/api/trails/${trail.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ safety_labels: safetyDraft }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setAdminMessage(data.error || 'Failed to save safety labels');
+        return;
+      }
+      setTrail(data.trail);
+      setAdminMessage('Safety labels updated.');
+    } catch {
+      setAdminMessage('Failed to save safety labels');
+    } finally {
+      setSavingLabels(false);
+    }
+  };
+
+  const handleDeleteTrail = async () => {
+    if (!isAdmin || !trail) return;
+    const confirmed = window.confirm(
+      `Delete trail \"${trail.name}\"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setAdminMessage(null);
+    try {
+      const response = await fetch(`/api/trails/${trail.id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        setAdminMessage(data.error || 'Failed to delete trail');
+        return;
+      }
+      router.push('/trails');
+    } catch {
+      setAdminMessage('Failed to delete trail');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -195,26 +282,28 @@ const TrailPage: React.FunctionComponent = () => {
             <h1 className="text-4xl font-bold mb-2 text-green-800">{trail.name}</h1>
             <p className="text-gray-600 mb-4">{trail.location}</p>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <label className="cursor-pointer">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".gpx"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <span className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block">
-                {uploading ? 'Uploading...' : '📤 Upload GPX Route'}
-              </span>
-            </label>
-            {uploadSuccess && (
-              <span className="text-green-600 text-sm">✓ Route uploaded successfully!</span>
-            )}
-            {uploadError && (
-              <span className="text-red-600 text-sm">{uploadError}</span>
-            )}
-          </div>
+          {canUploadRoute && (
+            <div className="flex flex-col items-end gap-2">
+              <label className="cursor-pointer">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".gpx"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <span className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block">
+                  {uploading ? 'Uploading...' : '📤 Upload GPX Route'}
+                </span>
+              </label>
+              {uploadSuccess && (
+                <span className="text-green-600 text-sm">✓ Route uploaded successfully!</span>
+              )}
+              {uploadError && (
+                <span className="text-red-600 text-sm">{uploadError}</span>
+              )}
+            </div>
+          )}
         </div>
 
         {trail.description && (
@@ -254,6 +343,66 @@ const TrailPage: React.FunctionComponent = () => {
             </span>
           )}
         </div>
+
+        {!!trail.safety_labels?.length && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {trail.safety_labels.map((label) => (
+              <span
+                key={`${trail.id}-safe-${label}`}
+                className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
+              >
+                {getSafetyLabelText(label)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {isAdmin && (
+          <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <h2 className="mb-2 text-base font-semibold text-gray-900">Admin Trail Controls</h2>
+            <p className="mb-3 text-sm text-gray-600">
+              Add safety labels or remove this trail.
+            </p>
+            <div className="mb-3 flex flex-wrap gap-2">
+              {TRAIL_SAFETY_OPTIONS.map((option) => {
+                const selected = safetyDraft.includes(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => toggleSafetyLabel(option.value)}
+                    className={`rounded-full border px-3 py-1 text-sm ${selected
+                      ? 'border-amber-600 bg-amber-500 text-white'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-amber-400'}`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleSaveSafetyLabels}
+                disabled={savingLabels}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {savingLabels ? 'Saving...' : 'Save Labels'}
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteTrail}
+                disabled={deleting}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {deleting ? 'Deleting...' : 'Delete Trail'}
+              </button>
+            </div>
+            {adminMessage && (
+              <p className="mt-2 text-sm text-gray-700">{adminMessage}</p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="mb-6 rounded-lg overflow-hidden shadow-lg" style={{ height: '600px', width: '100%' }}>
