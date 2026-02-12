@@ -1,0 +1,2 @@
+ALTER TABLE trails
+  ADD COLUMN IF NOT EXISTS safety_labels TEXT[] DEFAULT '{}';
