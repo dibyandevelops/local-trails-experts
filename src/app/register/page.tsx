@@ -75,6 +75,7 @@ export default function RegisterPage() {
       }
 
       setSuccess('Account created! You are now signed in.');
+      window.dispatchEvent(new Event('auth-changed'));
       setForm({ name: '', email: '', sports: [], password: '', phone: '' });
       router.push('/');
     } catch (err) {
