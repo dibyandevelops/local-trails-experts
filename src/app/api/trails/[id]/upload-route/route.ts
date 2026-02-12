@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { RouteData } from '@/types';
 import { parseGPX } from '@/lib/gpx-parser';
+import { getAuthFromRequest } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = params;
     const formData = await request.formData();
     const file = formData.get('file') as File;

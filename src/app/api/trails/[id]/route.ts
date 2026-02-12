@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { Trail } from '@/types';
+import { getAuthFromRequest } from '@/lib/auth';
+import { normalizeSafetyLabels } from '@/lib/trail-safety';
 
 export async function GET(
   request: NextRequest,
@@ -41,3 +43,111 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = params;
+    const body = (await request.json()) as Partial<Trail>;
+    const hasSafetyLabelsField = Object.prototype.hasOwnProperty.call(
+      body,
+      'safety_labels'
+    );
+
+    if (hasSafetyLabelsField && auth.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only admins can update safety labels' },
+        { status: 403 }
+      );
+    }
+
+    const existing = await pool.query('SELECT * FROM trails WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+    }
+
+    const trail = existing.rows[0];
+    const result = await pool.query(
+      `
+      UPDATE trails
+      SET
+        name = $1,
+        description = $2,
+        difficulty = $3,
+        location = $4,
+        latitude = $5,
+        longitude = $6,
+        distance_km = $7,
+        elevation_gain_m = $8,
+        estimated_time_hours = $9,
+        image_url = $10,
+        safety_labels = $11,
+        updated_at = NOW()
+      WHERE id = $12
+      RETURNING *
+      `,
+      [
+        body.name ?? trail.name,
+        body.description ?? trail.description,
+        body.difficulty ?? trail.difficulty,
+        body.location ?? trail.location,
+        body.latitude ?? trail.latitude,
+        body.longitude ?? trail.longitude,
+        body.distance_km ?? trail.distance_km,
+        body.elevation_gain_m ?? trail.elevation_gain_m,
+        body.estimated_time_hours ?? trail.estimated_time_hours,
+        body.image_url ?? trail.image_url,
+        auth.role === 'admin'
+          ? hasSafetyLabelsField
+            ? normalizeSafetyLabels(body.safety_labels)
+            : trail.safety_labels ?? []
+          : trail.safety_labels ?? [],
+        id,
+      ]
+    );
+
+    return NextResponse.json({ trail: result.rows[0] }, { status: 200 });
+  } catch (error) {
+    console.error('Error updating trail:', error);
+    return NextResponse.json(
+      { error: 'Failed to update trail' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = params;
+    const result = await pool.query(
+      'DELETE FROM trails WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting trail:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete trail' },
+      { status: 500 }
+    );
+  }
+}
