@@ -12,7 +12,6 @@ const env = (key) => {
 
 const connectionString =
   env('DIRECT_DATABASE_URL') ||
-  env('DATABASE_URL') ||
   `postgresql://${env('DB_USER') || 'postgres'}:${env('DB_PASSWORD') || 'postgres'}@${env('DB_HOST') || 'localhost'}:${env('DB_PORT') || '5432'}/${env('DB_NAME') || 'mtb_trail_finder'}`;
 
 const pool = new Pool({
@@ -20,7 +19,7 @@ const pool = new Pool({
   ssl:
     env('DB_SSL') === 'true' || env('DB_SSL') === '1'
       ? { rejectUnauthorized: false }
-      : env('DIRECT_DATABASE_URL') || env('DATABASE_URL')
+      : env('DIRECT_DATABASE_URL')
       ? { rejectUnauthorized: false }
       : undefined,
 });

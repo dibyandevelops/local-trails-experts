@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  DATABASE_URL: z.string().optional(),
   DIRECT_DATABASE_URL: z.string().optional(),
   DB_HOST: z.string().optional(),
   DB_PORT: z.string().optional(),
