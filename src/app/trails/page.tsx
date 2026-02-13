@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Trail, Difficulty, User } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter } from 'next/navigation';
+import { fetchTrails } from '@/services/trails/trails.service';
+import { fetchCurrentUser } from '@/services/auth/auth.service';
 
 function TrailGallery({ trails }: { trails: Trail[] }) {
   const router = useRouter();
@@ -11,6 +14,7 @@ function TrailGallery({ trails }: { trails: Trail[] }) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {trails.map((trail) => (
         <TrailCard
+          key={trail.id}
           {...{
             ...trail,
             onClick() {
@@ -22,53 +26,36 @@ function TrailGallery({ trails }: { trails: Trail[] }) {
     </div>
   );
 }
-export default function TrailsPage() {
+
+function TrailsPageContent() {
   const router = useRouter();
-  const [trails, setTrails] = useState<Trail[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
+  const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
-  const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    fetchTrails();
-  }, [search, difficulty, location]);
+  const { data: user = null } = useQuery<User | null>({
+    queryKey: ['me'],
+    queryFn: ({ signal }) => fetchCurrentUser(signal),
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/me');
-        const data = await response.json();
-        setUser(data.user || null);
-      } catch {
-        setUser(null);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  const fetchTrails = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (difficulty) params.append('difficulty', difficulty);
-      if (location) params.append('location', location);
-
-      const response = await fetch(`/api/trails?${params.toString()}`);
-      const data = await response.json();
-      setTrails(data.trails || []);
-    } catch (error) {
-      console.error('Error fetching trails:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: trails = [],
+    isLoading,
+    isFetching,
+    error,
+  } = useQuery({
+    queryKey: ['trails', search, difficulty, location],
+    queryFn: ({ signal }) =>
+      fetchTrails({ search, difficulty, location }, signal)
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchTrails();
+    setSearch(searchInput);
+    setLocation(locationInput);
   };
 
   return (
@@ -92,8 +79,8 @@ export default function TrailsPage() {
             <label className="block text-sm font-medium mb-2">Search</label>
             <input
               type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Trail name, description, or location..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
@@ -115,8 +102,8 @@ export default function TrailsPage() {
             <label className="block text-sm font-medium mb-2">Location</label>
             <input
               type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              value={locationInput}
+              onChange={(e) => setLocationInput(e.target.value)}
               placeholder="City or region..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
@@ -130,9 +117,13 @@ export default function TrailsPage() {
         </button>
       </form>
 
-      {loading ? (
+      {isLoading || isFetching ? (
         <div className="text-center py-12">
           <p className="text-gray-600">Loading trails...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <p className="text-red-600">{(error as Error).message}</p>
         </div>
       ) : trails.length === 0 ? (
         <div className="text-center py-12">
@@ -145,4 +136,9 @@ export default function TrailsPage() {
       )}
     </div>
   );
+}
+
+
+export default function TrailsPage() {
+  return <TrailsPageContent />;
 }
