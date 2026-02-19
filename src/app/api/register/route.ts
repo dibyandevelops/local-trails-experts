@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 import { setAuthCookie, signAuthToken } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
+import { sendEmailSafe } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,6 +68,14 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ success: true, user }, { status: 201 });
     setAuthCookie(response, token);
+
+    await sendEmailSafe({
+      to: email,
+      subject: 'Welcome to Local Guides',
+      text: `Hi ${name}, your participant account is ready. You can now join events and manage your profile.`,
+      html: `<p>Hi ${name},</p><p>Your participant account is ready. You can now join events and manage your profile.</p>`,
+    });
+
     return response;
   } catch (error) {
     console.error('Error registering participant:', error);

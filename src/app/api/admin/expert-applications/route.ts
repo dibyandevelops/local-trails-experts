@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 import { createTempPassword, getAuthFromRequest } from '@/lib/auth';
 import type { UserRole } from '@/types';
+import { sendEmailSafe } from '@/lib/email';
 
 type ExpertApplicationStatus = 'pending' | 'approved' | 'rejected';
 
@@ -161,6 +162,28 @@ export async function PATCH(request: NextRequest) {
       }
 
       await client.query('COMMIT');
+
+      if (status === 'approved') {
+        const passwordNote = tempPassword
+          ? `Your temporary password is: ${tempPassword}`
+          : 'Your existing account has been upgraded to expert access.';
+        await sendEmailSafe({
+          to: application.email,
+          subject: 'Your expert application is approved',
+          text: `Hi ${application.name}, your expert application has been approved. ${passwordNote}`,
+          html: `<p>Hi ${application.name},</p><p>Your expert application has been approved.</p><p>${passwordNote}</p>`,
+        });
+      }
+
+      if (status === 'rejected') {
+        await sendEmailSafe({
+          to: application.email,
+          subject: 'Your expert application was reviewed',
+          text: `Hi ${application.name}, your expert application is currently not approved. You can submit updated credentials and apply again.`,
+          html: `<p>Hi ${application.name},</p><p>Your expert application is currently not approved. You can submit updated credentials and apply again.</p>`,
+        });
+      }
+
       return NextResponse.json(
         {
           application: {

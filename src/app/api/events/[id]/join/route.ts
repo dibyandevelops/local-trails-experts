@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { JoinEventInput } from '@/types';
 import { rateLimit } from '@/lib/rate-limit';
+import { sendEmailSafe } from '@/lib/email';
 
 export async function POST(
   request: NextRequest,
@@ -25,7 +26,15 @@ export async function POST(
 
     // Check if event exists and has space
     const eventCheck = await pool.query(
-      'SELECT max_participants, current_participants FROM events WHERE id = $1',
+      `SELECT
+        max_participants,
+        current_participants,
+        title,
+        event_date,
+        organizer_name,
+        organizer_email
+      FROM events
+      WHERE id = $1`,
       [eventId]
     );
 
@@ -36,7 +45,14 @@ export async function POST(
       );
     }
 
-    const { max_participants, current_participants } = eventCheck.rows[0];
+    const {
+      max_participants,
+      current_participants,
+      title,
+      event_date,
+      organizer_name,
+      organizer_email,
+    } = eventCheck.rows[0];
 
     if (current_participants >= max_participants) {
       return NextResponse.json(
@@ -78,6 +94,22 @@ export async function POST(
       'UPDATE events SET current_participants = current_participants + 1 WHERE id = $1',
       [eventId]
     );
+
+    await sendEmailSafe({
+      to: participant_email,
+      subject: `Joined: ${title}`,
+      text: `Hi ${participant_name}, you have successfully joined "${title}" scheduled for ${new Date(event_date).toLocaleString()}.`,
+      html: `<p>Hi ${participant_name},</p><p>You have successfully joined <strong>${title}</strong> scheduled for ${new Date(event_date).toLocaleString()}.</p>`,
+    });
+
+    if (organizer_email) {
+      await sendEmailSafe({
+        to: organizer_email,
+        subject: `New participant joined: ${title}`,
+        text: `${participant_name} (${participant_email}) joined your event "${title}".`,
+        html: `<p>${participant_name} (${participant_email}) joined your event <strong>${title}</strong>.</p>`,
+      });
+    }
 
     return NextResponse.json(
       { participant: participantResult.rows[0] },

@@ -39,6 +39,8 @@ export default function AdminPage() {
   const [appError, setAppError] = useState<string | null>(null);
   const [appNotice, setAppNotice] = useState<string | null>(null);
   const [experts, setExperts] = useState<User[]>([]);
+  const [verificationDrafts, setVerificationDrafts] = useState<Record<string, string>>({});
+  const [sendingVerificationFor, setSendingVerificationFor] = useState<string | null>(null);
 
   const [eventForm, setEventForm] = useState<CreateEventInput>({
     title: '',
@@ -122,6 +124,36 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error updating application', error);
       setAppError('Unable to update application status.');
+    }
+  };
+
+  const sendVerificationRequest = async (applicationId: string) => {
+    const message = (verificationDrafts[applicationId] || '').trim();
+    if (!message) {
+      setAppError('Please enter a message before sending verification request.');
+      return;
+    }
+
+    try {
+      setSendingVerificationFor(applicationId);
+      setAppError(null);
+      setAppNotice(null);
+      const res = await fetch('/api/admin/expert-applications/request-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applicationId, message }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to send email');
+      }
+      setAppNotice('Verification request email sent.');
+      setVerificationDrafts((prev) => ({ ...prev, [applicationId]: '' }));
+    } catch (error) {
+      console.error('Error sending verification request email', error);
+      setAppError('Unable to send verification request email.');
+    } finally {
+      setSendingVerificationFor(null);
     }
   };
 
@@ -268,6 +300,32 @@ export default function AdminPage() {
                   <p className="text-xs text-gray-600 mt-2 whitespace-pre-line">
                     {app.credentials}
                   </p>
+                  <div className="mt-3">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Ask for more verification
+                    </label>
+                    <textarea
+                      value={verificationDrafts[app.id] || ''}
+                      onChange={(e) =>
+                        setVerificationDrafts((prev) => ({
+                          ...prev,
+                          [app.id]: e.target.value,
+                        }))
+                      }
+                      className="w-full min-h-[72px] rounded-lg border border-gray-300 px-2 py-1.5 text-xs"
+                      placeholder="Request specific documents or clarifications..."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => sendVerificationRequest(app.id)}
+                      disabled={sendingVerificationFor === app.id}
+                      className="mt-2 px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {sendingVerificationFor === app.id
+                        ? 'Sending...'
+                        : 'Send verification email'}
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-col items-start gap-2">
                   <span className="text-[11px] uppercase tracking-wide text-gray-500">

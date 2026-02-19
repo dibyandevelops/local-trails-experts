@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { rateLimit } from '@/lib/rate-limit';
+import { sendEmailSafe } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,6 +63,13 @@ export async function POST(request: NextRequest) {
     ]);
 
     const application = result.rows[0];
+
+    await sendEmailSafe({
+      to: email,
+      subject: 'Expert Application Received',
+      text: `Hi ${name}, we received your expert application and will review it shortly.`,
+      html: `<p>Hi ${name},</p><p>We received your expert application and will review it shortly.</p>`,
+    });
 
     return NextResponse.json(
       {
