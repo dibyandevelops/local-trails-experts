@@ -2,7 +2,9 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
 import type { UserRole } from '@/types';
+import { loginUser } from '@/services/auth/auth.service';
 
 interface ILoginComponentProps {}
 
@@ -14,10 +16,33 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  const errorRef = React.useRef<HTMLParagraphElement | null>(null);
+
+  React.useEffect(() => {
+    if (error) {
+      errorRef.current?.focus();
+    }
+  }, [error]);
+
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (data) => {
+      window.dispatchEvent(new Event('auth-changed'));
+      if (role === 'expert') {
+        router.push(`/experts/${data.user.id}`);
+      } else if (role === 'participant') {
+        router.push('/trails');
+      } else {
+        router.push('/admin');
+      }
+    },
+    onError: (mutationError: Error) => {
+      setError(mutationError.message || 'Login failed. Please try again.');
+    },
+  });
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = React.useCallback(
-    async (e) => {
+    (e) => {
       e.preventDefault();
       setError(null);
 
@@ -26,41 +51,14 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         return;
       }
 
-      try {
-        setLoading(true);
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email.trim(),
-            role,
-            password: password || undefined,
-          }),
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          setError(data?.error || 'Login failed. Please try again.');
-          return;
-        }
-        window.dispatchEvent(new Event('auth-changed'));
-
-        if (role === 'expert') {
-          router.push(`/experts/${data.user.id}`);
-        } else if (role === 'participant') {
-          router.push('/trails');
-        } else {
-          router.push('/admin');
-        }
-      } catch (err) {
-        console.error('Login error', err);
-        setError('Login failed. Please try again.');
-      } finally {
-        setLoading(false);
-      }
+      loginMutation.mutate({
+        email: email.trim(),
+        role,
+        password,
+      });
     },
-    [email, password, role, router],
-  )
+    [email, password, role, loginMutation],
+  );
 
   return (
     <div className="max-w-lg mx-auto bg-white border border-gray-200 rounded-xl shadow-sm p-6">
@@ -68,15 +66,20 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
       <p className="text-sm text-gray-600 mb-6">
         Choose your role to access your dashboard.
       </p>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="role"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Role
           </label>
           <select
+            id="role"
             value={role}
             onChange={(e) => setRole(e.target.value as UserRole)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+            aria-required="true"
           >
             <option value="participant">Participant</option>
             <option value="expert">Expert</option>
@@ -85,7 +88,10 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
+          <label
+            className="block text-sm font-medium text-gray-700 mb-1"
+            htmlFor="email"
+          >
             Email
           </label>
           <input
@@ -96,11 +102,18 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+            required
+            autoComplete="email"
+            aria-invalid={!!error}
+            aria-describedby={error ? 'login-error' : undefined}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
+          <label
+            className="block text-sm font-medium text-gray-700 mb-1"
+            htmlFor="password"
+          >
             Password
           </label>
           <input
@@ -109,23 +122,34 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Not enforced yet"
+            placeholder="Enter your password"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+            required
+            autoComplete="current-password"
+            aria-invalid={!!error}
+            aria-describedby={error ? 'login-error' : undefined}
           />
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+          <p
+            id="login-error"
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            aria-live="assertive"
+            className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-300"
+          >
             {error}
           </p>
         )}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loginMutation.isPending}
           className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? 'Signing in...' : 'Login'}
+          {loginMutation.isPending ? 'Signing in...' : 'Login'}
         </button>
       </form>
     </div>

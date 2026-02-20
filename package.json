@@ -12,7 +12,10 @@
     "db:seed:marketplace": "node scripts/seed-marketplace.js",
     "db:remove-duplicates": "node scripts/remove-duplicates.js",
     "db:smoke": "node scripts/db-smoke.js",
-    "test": "jest"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:jest": "jest"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.4",
@@ -52,14 +55,19 @@
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
     "@types/xml2js": "^0.4.14",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^2.1.8",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.0.4",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^25.0.1",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "ts-jest": "^29.2.5",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vite": "^5.4.12",
+    "vitest": "^2.1.8"
   }
 }
