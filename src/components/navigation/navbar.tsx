@@ -36,7 +36,29 @@ const navItems: NavItem[] = [
     showFor: ['anonymous', 'admin'],
   },
 ];
-
+const icon = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 512 512"
+    role="img"
+    aria-label="Local Guides"
+    className="h-8 w-8 inline-block mr-2"
+  >
+    <defs>
+      <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0%" stopColor="#166534" />
+        <stop offset="100%" stopColor="#16a34a" />
+      </linearGradient>
+    </defs>
+    <rect width="512" height="512" rx="96" fill="url(#g)" />
+    <path
+      d="M74 344L174 206l64 68 78-104 122 174H74z"
+      fill="#dcfce7"
+      opacity="0.92"
+    />
+    <circle cx="350" cy="150" r="38" fill="#bbf7d0" />
+  </svg>
+);
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -129,7 +151,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="text-2xl font-bold">
-            🚵 Local Guides
+            {icon} Local Guides
           </Link>
           <button
             type="button"
