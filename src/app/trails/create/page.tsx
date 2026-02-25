@@ -171,7 +171,7 @@ export default function CreateTrailPage() {
         <p className="text-gray-600">Loading user...</p>
       ) : !canCreate ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-          Only admin and expert users can create trails.
+          Only admin users can create trails.
         </div>
       ) : (
         <form

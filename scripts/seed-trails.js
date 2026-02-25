@@ -1,12 +1,23 @@
 const { Pool } = require('pg');
 require('dotenv').config({ path: '.env.local' });
 
+const env = (key) => {
+  const value = process.env[key];
+  return value && value.trim().length > 0 ? value : undefined;
+};
+
+const connectionString =
+  env('DIRECT_DATABASE_URL') ||
+  `postgresql://${env('DB_USER') || 'postgres'}:${env('DB_PASSWORD') || 'postgres'}@${env('DB_HOST') || 'localhost'}:${env('DB_PORT') || '5432'}/${env('DB_NAME') || 'mtb_trail_finder'}`;
+
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'mtb_trail_finder',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  connectionString,
+  ssl:
+    env('DB_SSL') === 'true' || env('DB_SSL') === '1'
+      ? { rejectUnauthorized: false }
+      : env('DIRECT_DATABASE_URL')
+      ? { rejectUnauthorized: false }
+      : undefined,
 });
 
 const trails = [
@@ -565,6 +576,16 @@ const trails = [
     elevation_gain_m: 1600,
     estimated_time_hours: 9.0,
   },
+];
+
+const trailSports = [
+  'mtb',
+  'hiking',
+  'trail_running',
+  'local_tour',
+  'road_cycling',
+  'xc_trails',
+  'gravel_rides',
 ];
 
 async function seedTrails() {

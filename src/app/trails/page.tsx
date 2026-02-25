@@ -59,7 +59,7 @@ function TrailsPageContent() {
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-4xl font-bold text-green-800">Search Trails</h1>
-        {(user?.role === 'admin' || user?.role === 'expert') && (
+        {user?.role === 'admin' && (
           <button
             type="button"
             onClick={() => router.push('/trails/create')}

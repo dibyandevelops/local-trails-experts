@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:migrate": "node scripts/migrate.js",
     "db:seed:trails": "node scripts/seed-trails.js",
+    "db:seed:popular-trails": "node scripts/seed-popular-trails.js",
     "db:seed:marketplace": "node scripts/seed-marketplace.js",
     "db:remove-duplicates": "node scripts/remove-duplicates.js",
     "db:smoke": "node scripts/db-smoke.js",
