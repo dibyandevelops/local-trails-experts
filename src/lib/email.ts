@@ -1,5 +1,3 @@
-const SENDGRID_API_URL = 'https://api.sendgrid.com/v3/mail/send';
-
 type SendEmailInput = {
   to: string;
   subject: string;
@@ -8,9 +6,19 @@ type SendEmailInput = {
 };
 
 function getEmailConfig() {
+  const defaultMailbox = 'dibyan.softwaredev@gmail.com';
+  const rawPass =
+    process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '';
   return {
-    apiKey: process.env.SENDGRID_API_KEY,
-    from: process.env.EMAIL_FROM || 'Guided Trails <no-reply@localguides.vercel.app>',
+    from: (process.env.EMAIL_FROM || defaultMailbox).trim(),
+    smtpHost: (process.env.SMTP_HOST || 'smtp.gmail.com').trim(),
+    smtpPort: Number(process.env.SMTP_PORT || '465'),
+    smtpSecure: (process.env.SMTP_SECURE || 'true') === 'true',
+    smtpUser: (process.env.SMTP_USER || defaultMailbox).trim(),
+    // Gmail app passwords are often copied with spaces; strip whitespace.
+    smtpPass: rawPass.replace(/\s+/g, ''),
+    // Temporary safety routing: all outgoing mail lands in one inbox.
+    overrideTo: (process.env.EMAIL_OVERRIDE_TO || defaultMailbox).trim(),
   };
 }
 
@@ -22,9 +30,17 @@ function parseFrom(from: string) {
 }
 
 export async function sendEmail(input: SendEmailInput) {
-  const { apiKey, from } = getEmailConfig();
-  if (!apiKey) {
-    console.warn('SENDGRID_API_KEY is not configured. Skipping email send.', {
+  const {
+    from,
+    smtpHost,
+    smtpPort,
+    smtpSecure,
+    smtpUser,
+    smtpPass,
+    overrideTo,
+  } = getEmailConfig();
+  if (!smtpPass) {
+    console.warn('SMTP_PASS is not configured. Skipping email send.', {
       to: input.to,
       subject: input.subject,
     });
@@ -32,28 +48,28 @@ export async function sendEmail(input: SendEmailInput) {
   }
 
   const fromSender = parseFrom(from);
+  const targetTo = overrideTo || input.to;
 
-  const response = await fetch(SENDGRID_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
+  // Lazy-load to avoid hard compile-time dependency coupling.
+  const nodeRequire = eval('require');
+  const nodemailer = nodeRequire('nodemailer');
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
     },
-    body: JSON.stringify({
-      personalizations: [{ to: [{ email: input.to }] }],
-      from: fromSender,
-      subject: input.subject,
-      content: [
-        { type: 'text/plain', value: input.text },
-        { type: 'text/html', value: input.html },
-      ],
-    }),
   });
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Email send failed (${response.status}): ${body}`);
-  }
+  await transporter.sendMail({
+    from: `${fromSender.name} <${fromSender.email}>`,
+    to: targetTo,
+    subject: input.subject,
+    text: input.text,
+    html: input.html,
+  });
 
   return { sent: true as const };
 }
@@ -62,7 +78,23 @@ export async function sendEmailSafe(input: SendEmailInput) {
   try {
     return await sendEmail(input);
   } catch (error) {
-    console.error('Email send error:', error);
+    const err = error as {
+      code?: string;
+      responseCode?: number;
+      response?: string;
+      message?: string;
+    };
+    const isAuthError =
+      err?.code === 'EAUTH' ||
+      err?.responseCode === 535 ||
+      (err?.response || '').includes('5.7.8');
+    if (isAuthError) {
+      console.error(
+        'Email auth failed (SMTP). Use Gmail app password (16 chars), not your account password. Ensure 2FA is enabled and SMTP_USER matches the Gmail account.'
+      );
+    } else {
+      console.error('Email send error:', error);
+    }
     return { sent: false as const, skipped: false as const, error: true as const };
   }
 }
