@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import type { User } from '@/types';
 import ThemeToggle from '@/components/theme-toggle';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { useQueryClient } from '@tanstack/react-query';
 
 type NavItem = {
   label: string;
@@ -63,35 +64,16 @@ const icon = (
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: user = null, isLoading: loadingUser } = useCurrentUser();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchUser = useCallback(async () => {
-    try {
-      const res = await fetch('/api/me', { cache: 'no-store' });
-      const data = await res.json();
-      setUser(data.user || null);
-    } catch (error) {
-      console.error('Error fetching user', error);
-    } finally {
-      setLoadingUser(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchUser();
-  }, [pathname, fetchUser]);
-
-  useEffect(() => {
-    const onAuthChanged = () => {
-      fetchUser();
-    };
-    window.addEventListener('auth-changed', onAuthChanged);
-    return () => window.removeEventListener('auth-changed', onAuthChanged);
-  }, [fetchUser]);
+    setMobileOpen(false);
+    setMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
@@ -110,9 +92,9 @@ export default function Navbar() {
     } catch (error) {
       console.error('Logout failed', error);
     } finally {
-      setUser(null);
       setMenuOpen(false);
       setMobileOpen(false);
+      queryClient.setQueryData(['me'], null);
       window.dispatchEvent(new Event('auth-changed'));
       router.push('/login');
     }

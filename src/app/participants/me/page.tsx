@@ -6,6 +6,7 @@ import Link from 'next/link';
 import PhoneVerificationDialog from '@/components/phone-verification-dialog';
 import type { User, SportType } from '@/types';
 import { format } from 'date-fns';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 type ParticipantEvent = {
   id: string;
@@ -18,9 +19,10 @@ type ParticipantEvent = {
 
 export default function ParticipantProfilePage() {
   const router = useRouter();
+  const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<ParticipantEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [verifyOpen, setVerifyOpen] = useState(false);
@@ -41,42 +43,41 @@ export default function ParticipantProfilePage() {
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const meRes = await fetch('/api/me');
-        const meData = await meRes.json();
-        setUser(meData.user || null);
-        if (meData.user) {
-          setEditForm({
-            name: meData.user.name || '',
-            city: meData.user.city || '',
-            bio: meData.user.bio || '',
-            sports: Array.isArray(meData.user.sports)
-              ? meData.user.sports.join(', ')
-              : '',
-            phone: meData.user.phone || '',
-          });
-        }
+    setUser(currentUser || null);
+    if (currentUser) {
+      setEditForm({
+        name: currentUser.name || '',
+        city: currentUser.city || '',
+        bio: currentUser.bio || '',
+        sports: Array.isArray(currentUser.sports)
+          ? currentUser.sports.join(', ')
+          : '',
+        phone: currentUser.phone || '',
+      });
+    }
+  }, [currentUser]);
 
-        if (!meData.user || meData.user.role !== 'participant') {
-          setLoading(false);
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        if (!currentUser || currentUser.role !== 'participant') {
+          setLoadingEvents(false);
           return;
         }
-
         const eventsRes = await fetch('/api/participants/me/events');
         const eventsData = await eventsRes.json();
         setEvents(eventsData.events || []);
       } catch (error) {
         console.error('Error loading participant profile', error);
       } finally {
-        setLoading(false);
+        setLoadingEvents(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchEvents();
+  }, [currentUser]);
 
-  if (loading) {
+  if (loadingUser || loadingEvents) {
     return <div className="text-gray-600">Loading profile...</div>;
   }
 

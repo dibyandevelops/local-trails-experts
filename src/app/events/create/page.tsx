@@ -10,6 +10,7 @@ import {
   SportType,
   User,
 } from '@/types';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 const sportLabels: Record<SportType, string> = {
   mtb: 'MTB Trail Rides',
@@ -23,8 +24,7 @@ export default function CreateEventPage() {
   const router = useRouter();
   const [trails, setTrails] = useState<Trail[]>([]);
   const [experts, setExperts] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [loading, setLoading] = useState(false);
   const [isPaidEvent, setIsPaidEvent] = useState(false);
   const [formData, setFormData] = useState<CreateEventInput>({
@@ -70,25 +70,15 @@ export default function CreateEventPage() {
     }
   };
 
-  const fetchCurrentUser = async () => {
-    try {
-      const response = await fetch('/api/me');
-      const data = await response.json();
-      setCurrentUser(data.user || null);
-      if (data.user?.role === 'expert') {
-        setFormData((prev) => ({
-          ...prev,
-          host_user_id: data.user.id,
-          organizer_name: data.user.name || prev.organizer_name,
-          organizer_email: data.user.email || prev.organizer_email,
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching current user:', error);
-    } finally {
-      setLoadingUser(false);
-    }
-  };
+  useEffect(() => {
+    if (currentUser?.role !== 'expert') return;
+    setFormData((prev) => ({
+      ...prev,
+      host_user_id: currentUser.id,
+      organizer_name: currentUser.name || prev.organizer_name,
+      organizer_email: currentUser.email || prev.organizer_email,
+    }));
+  }, [currentUser]);
 
   const selectedExpert =
     formData.host_user_id &&

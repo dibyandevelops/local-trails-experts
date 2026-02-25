@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trail, Difficulty, User } from '@/types';
+import { Trail, Difficulty } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter } from 'next/navigation';
 import { fetchTrails } from '@/services/trails/trails.service';
-import { fetchCurrentUser } from '@/services/auth/auth.service';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 function TrailGallery({ trails }: { trails: Trail[] }) {
   const router = useRouter();
@@ -35,11 +35,7 @@ function TrailsPageContent() {
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
 
-  const { data: user = null } = useQuery<User | null>({
-    queryKey: ['me'],
-    queryFn: ({ signal }) => fetchCurrentUser(signal),
-    staleTime: 60_000,
-  });
+  const { data: user = null } = useCurrentUser();
 
   const {
     data: trails = [],

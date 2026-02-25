@@ -5,15 +5,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Map, { Marker, Source, Layer } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Trail, RouteData, User } from '@/types';
+import { Trail, RouteData } from '@/types';
 import {
   getSafetyLabelText,
   TRAIL_SAFETY_OPTIONS,
   TrailSafetyLabel,
 } from '@/lib/trail-safety';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -28,7 +27,7 @@ const TrailPage: React.FunctionComponent = () => {
   const params = useParams();
   const trailId = params?.id as string;
   const [trail, setTrail] = useState<Trail | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { data: currentUser = null } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -45,20 +44,6 @@ const TrailPage: React.FunctionComponent = () => {
       fetchTrail();
     }
   }, [trailId]);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/me');
-        const data = await response.json();
-        setCurrentUser(data.user || null);
-      } catch {
-        setCurrentUser(null);
-      }
-    };
-
-    fetchUser();
-  }, []);
 
   const fetchTrail = async () => {
     try {

@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Toast from '@radix-ui/react-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import Link from 'next/link';
 
 export default function EventsPageClient() {
   const router = useRouter();
@@ -19,13 +21,13 @@ export default function EventsPageClient() {
   const [selectedSport, setSelectedSport] = useState<SportType | ''>('');
   const [selectedExpert, setSelectedExpert] = useState<string>('');
   const [experts, setExperts] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [joinedEventIds, setJoinedEventIds] = useState<Set<string>>(new Set());
   const [joinTarget, setJoinTarget] = useState<Event | null>(null);
   const [joining, setJoining] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const lastSyncedQuery = useRef<string>('');
   const [filtersReady, setFiltersReady] = useState(false);
+  const { data: currentUser = null } = useCurrentUser();
 
   useEffect(() => {
     if (!filtersReady) return;
@@ -90,25 +92,24 @@ export default function EventsPageClient() {
   ]);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchJoinedEvents = async () => {
+      if (!currentUser || currentUser.role !== 'participant') {
+        setJoinedEventIds(new Set());
+        return;
+      }
       try {
-        const res = await fetch('/api/me');
-        const data = await res.json();
-        setCurrentUser(data.user || null);
-        if (data.user?.role === 'participant') {
-          const joinedRes = await fetch('/api/participants/me/events');
-          const joinedData = await joinedRes.json();
-          const ids = new Set<string>(
-            (joinedData.events || []).map((evt: Event) => evt.id)
-          );
-          setJoinedEventIds(ids);
-        }
+        const joinedRes = await fetch('/api/participants/me/events');
+        const joinedData = await joinedRes.json();
+        const ids = new Set<string>(
+          (joinedData.events || []).map((evt: Event) => evt.id)
+        );
+        setJoinedEventIds(ids);
       } catch (error) {
-        console.error('Error fetching user', error);
+        console.error('Error fetching joined events', error);
       }
     };
-    fetchUser();
-  }, []);
+    fetchJoinedEvents();
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchExperts = async () => {
@@ -551,15 +552,10 @@ function EventCard({
   hasJoined: boolean;
   isAdminOrExpert: boolean;
 }) {
-  const handleCardClick = () => {
-    if (event.trail?.id) {
-      window.location.href = `/trails/${event.trail.id}`;
-    }
-  };
   return (
-    <div
-      className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={handleCardClick}
+    <Link
+      href={`/events/${event.id}`}
+      className="block bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
     >
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
@@ -634,7 +630,13 @@ function EventCard({
           </p>
         </div>
 
-        <div onClick={(event) => event.stopPropagation()} className="space-y-2">
+        <div
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          className="space-y-2"
+        >
           <button
             onClick={onJoin}
             disabled={!canJoin}
@@ -664,6 +666,6 @@ function EventCard({
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

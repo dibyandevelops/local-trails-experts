@@ -1,9 +1,10 @@
 'use client';
 
-import { ChangeEventHandler, FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEventHandler, FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Difficulty, User } from '@/types';
+import type { Difficulty } from '@/types';
 import { TRAIL_SAFETY_OPTIONS, TrailSafetyLabel } from '@/lib/trail-safety';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 type TrailCreateForm = {
   name: string;
@@ -31,29 +32,12 @@ const INITIAL_FORM: TrailCreateForm = {
 
 export default function CreateTrailPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const { data: user = null, isLoading: loadingUser } = useCurrentUser();
   const [submitting, setSubmitting] = useState(false);
   const [parsingGpx, setParsingGpx] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<TrailCreateForm>(INITIAL_FORM);
   const [gpxFile, setGpxFile] = useState<File | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/me');
-        const data = await response.json();
-        setUser(data.user || null);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
 
   const canCreate = user?.role === 'admin' || user?.role === 'expert';
   const isAdmin = user?.role === 'admin';

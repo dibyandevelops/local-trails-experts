@@ -6,12 +6,14 @@ import type { Event, User, SportType } from '@/types';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import PhoneVerificationDialog from '@/components/phone-verification-dialog';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export default function ExpertProfilePage() {
   const router = useRouter();
+  const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [verifyOpen, setVerifyOpen] = useState(false);
@@ -32,43 +34,42 @@ export default function ExpertProfilePage() {
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
+    setUser(currentUser || null);
+    if (currentUser) {
+      setEditForm({
+        name: currentUser.name || '',
+        city: currentUser.city || '',
+        bio: currentUser.bio || '',
+        sports: Array.isArray(currentUser.sports)
+          ? currentUser.sports.join(', ')
+          : '',
+        phone: currentUser.phone || '',
+      });
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
       try {
-        const meRes = await fetch('/api/me');
-        const meData = await meRes.json();
-        setUser(meData.user || null);
-
-        if (meData.user) {
-          setEditForm({
-            name: meData.user.name || '',
-            city: meData.user.city || '',
-            bio: meData.user.bio || '',
-            sports: Array.isArray(meData.user.sports)
-              ? meData.user.sports.join(', ')
-              : '',
-            phone: meData.user.phone || '',
-          });
-        }
-
-        if (!meData.user || meData.user.role !== 'expert') {
-          setLoading(false);
+        if (!currentUser || currentUser.role !== 'expert') {
+          setLoadingEvents(false);
           return;
         }
 
-        const eventsRes = await fetch(`/api/experts/${meData.user.id}/events`);
+        const eventsRes = await fetch(`/api/experts/${currentUser.id}/events`);
         const eventsData = await eventsRes.json();
         setEvents(eventsData.events || []);
       } catch (error) {
         console.error('Error loading expert profile', error);
       } finally {
-        setLoading(false);
+        setLoadingEvents(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchEvents();
+  }, [currentUser]);
 
-  if (loading) {
+  if (loadingUser || loadingEvents) {
     return <div className="text-gray-600">Loading profile...</div>;
   }
 

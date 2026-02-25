@@ -52,10 +52,10 @@ export default function RootLayout({
       </head>
       <body>
         <PWARegister />
-        <Navbar />
-        <main className="container mx-auto px-4 py-8">
-          <MainContent>{children}</MainContent>
-        </main>
+        <MainContent>
+          <Navbar />
+          <main className="container mx-auto px-4 py-8">{children}</main>
+        </MainContent>
       </body>
     </html>
   );

@@ -3,32 +3,22 @@
 import * as Toast from '@radix-ui/react-toast';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export default function PhoneVerifyToast() {
   const router = useRouter();
+  const { data: user = null } = useCurrentUser();
   const [open, setOpen] = useState(false);
-  const [hasUser, setHasUser] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/me');
-        const data = await res.json();
-        if (data.user && !data.user.phone_verified_at) {
-          setHasUser(true);
-          setRole(data.user.role);
-          setOpen(true);
-        }
-      } catch (error) {
-        console.error('Error loading user for toast', error);
-      }
-    };
+    if (user && !user.phone_verified_at) {
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+  }, [user]);
 
-    fetchUser();
-  }, []);
-
-  if (!hasUser) {
+  if (!user || user.phone_verified_at) {
     return null;
   }
 
@@ -49,7 +39,7 @@ export default function PhoneVerifyToast() {
           <button
             type="button"
             onClick={() =>
-              router.push(role === 'expert' ? '/experts/me' : '/participants/me')
+              router.push(user.role === 'expert' ? '/experts/me' : '/participants/me')
             }
             className="px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800"
           >

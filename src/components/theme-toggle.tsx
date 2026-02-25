@@ -32,15 +32,15 @@ export default function ThemeToggle({
 }: {
   className?: string;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('light');
 
   useEffect(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    const nextTheme: ThemeMode = stored === 'dark' || stored === 'light'
-      ? stored
-      : getSystemTheme();
+    const nextTheme: ThemeMode = document.documentElement.classList.contains('dark')
+      ? 'dark'
+      : 'light';
     setTheme(nextTheme);
-    applyTheme(nextTheme);
+    setMounted(true);
   }, []);
 
   const toggleTheme = () => {
@@ -55,10 +55,18 @@ export default function ThemeToggle({
       type="button"
       onClick={toggleTheme}
       className={className || 'rounded-lg border border-green-600 px-3 py-1.5 text-sm hover:bg-green-700'}
-      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={
+        (mounted ? theme : 'light') === 'dark'
+          ? 'Switch to light mode'
+          : 'Switch to dark mode'
+      }
+      title={
+        (mounted ? theme : 'light') === 'dark'
+          ? 'Switch to light mode'
+          : 'Switch to dark mode'
+      }
     >
-      {theme === 'dark' ? 'Light' : 'Dark'}
+      {!mounted ? 'Theme' : theme === 'dark' ? 'Light' : 'Dark'}
     </button>
   );
 }
