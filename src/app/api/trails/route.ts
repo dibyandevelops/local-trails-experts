@@ -4,6 +4,7 @@ import { Trail } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { normalizeSafetyLabels } from '@/lib/trail-safety';
 import { parseGPX } from '@/lib/gpx-parser';
+import { DEFAULT_TRAIL_SPORT } from '@/services/constants/sports';
 
 function parseOptionalNumber(raw: string | null) {
   if (!raw || !raw.trim()) return null;
@@ -13,10 +14,13 @@ function parseOptionalNumber(raw: string | null) {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthFromRequest(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const difficulty = searchParams.get('difficulty');
     const location = searchParams.get('location');
+    const sport = searchParams.get('sport');
+    const status = searchParams.get('status');
 
     let query = 'SELECT * FROM trails WHERE 1=1';
     const params: any[] = [];
@@ -38,6 +42,20 @@ export async function GET(request: NextRequest) {
       query += ` AND location ILIKE $${paramIndex}`;
       params.push(`%${location}%`);
       paramIndex++;
+    }
+
+    if (sport) {
+      query += ` AND sport_type = $${paramIndex}`;
+      params.push(sport);
+      paramIndex++;
+    }
+
+    if (auth?.role === 'admin' && status) {
+      query += ` AND status = $${paramIndex}`;
+      params.push(status);
+      paramIndex++;
+    } else {
+      query += ` AND status = 'approved'`;
     }
 
     query += ' ORDER BY name ASC';
@@ -76,6 +94,8 @@ export async function POST(request: NextRequest) {
     const description = String(formData.get('description') || '').trim();
     const difficulty = String(formData.get('difficulty') || '').trim();
     const location = String(formData.get('location') || '').trim();
+    const sport_type =
+      String(formData.get('sport_type') || '').trim() || DEFAULT_TRAIL_SPORT;
     const image_url = String(formData.get('image_url') || '').trim();
     const estimated_time_hours = parseOptionalNumber(
       String(formData.get('estimated_time_hours') || '')
@@ -111,9 +131,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!name || !difficulty || !location) {
+    if (!name || !difficulty || !location || !sport_type) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, difficulty, location' },
+        { error: 'Missing required fields: name, difficulty, location, sport_type' },
         { status: 400 }
       );
     }
@@ -134,13 +154,21 @@ export async function POST(request: NextRequest) {
     const elevation_gain_m =
       elevationOverride ?? routeData.elevationGain ?? null;
 
+    const submitterResult = await pool.query(
+      'SELECT name, email FROM users WHERE id = $1 LIMIT 1',
+      [auth.sub]
+    );
+    const submitter = submitterResult.rows[0];
+    const isAdmin = auth.role === 'admin';
+
     const result = await pool.query(
       `
       INSERT INTO trails (
         name, description, difficulty, location, latitude, longitude,
-        distance_km, elevation_gain_m, estimated_time_hours, image_url, safety_labels, route_data
+        distance_km, elevation_gain_m, estimated_time_hours, image_url, safety_labels, route_data, sport_type,
+        status, submitted_by_user_id, approved_by_admin_id, approved_at
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16,$17)
       RETURNING *
       `,
       [
@@ -154,12 +182,43 @@ export async function POST(request: NextRequest) {
         elevation_gain_m,
         estimated_time_hours ?? null,
         image_url ?? null,
-        auth.role === 'admin' ? normalizeSafetyLabels(safetyLabelsInput) : [],
+        isAdmin ? normalizeSafetyLabels(safetyLabelsInput) : [],
         JSON.stringify(routeData),
+        sport_type,
+        isAdmin ? 'approved' : 'pending',
+        auth.sub,
+        isAdmin ? auth.sub : null,
+        isAdmin ? new Date() : null,
       ]
     );
 
-    return NextResponse.json({ trail: result.rows[0] }, { status: 201 });
+    if (!isAdmin) {
+      const adminsResult = await pool.query(
+        `SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL`
+      );
+      const adminEmails = adminsResult.rows
+        .map((row) => row.email)
+        .filter(Boolean);
+      const { sendEmailSafe } = await import('@/lib/email');
+      await Promise.all(
+        adminEmails.map((to: string) =>
+          sendEmailSafe({
+            to,
+            subject: `Urgent trail approval needed (${sport_type})`,
+            text: `An expert submitted a new trail for approval.\n\nTrail: ${name}\nSport: ${sport_type}\nSubmitted by: ${submitter?.name || auth.email} (${submitter?.email || auth.email})\nLocation: ${location}\nPlease review in admin console.`,
+            html: `<p>An expert submitted a new trail for approval.</p><p><strong>Trail:</strong> ${name}</p><p><strong>Sport:</strong> ${sport_type}</p><p><strong>Submitted by:</strong> ${submitter?.name || auth.email} (${submitter?.email || auth.email})</p><p><strong>Location:</strong> ${location}</p><p>Please review in admin console.</p>`,
+          })
+        )
+      );
+    }
+
+    return NextResponse.json(
+      {
+        trail: result.rows[0],
+        requiresApproval: !isAdmin,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating trail:', error);
     return NextResponse.json(
