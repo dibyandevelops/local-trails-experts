@@ -566,6 +566,11 @@ function EventCard({
   isAdminOrExpert: boolean;
   canEdit: boolean;
 }) {
+  const descriptionSections = (event.description || '')
+    .split('\n\n')
+    .map((section) => section.trim())
+    .filter(Boolean);
+
   return (
     <Link
       href={`/events/${event.id}`}
@@ -601,8 +606,17 @@ function EventCard({
           </div>
         </div>
 
-        {event.description && (
-          <p className="text-gray-700 mb-4">{event.description}</p>
+        {descriptionSections.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {descriptionSections.slice(0, 3).map((section, index) => (
+              <p
+                key={`${event.id}-desc-${index}`}
+                className="text-gray-700 whitespace-pre-line text-sm leading-6"
+              >
+                {section}
+              </p>
+            ))}
+          </div>
         )}
 
         <div className="mb-4 text-sm font-semibold text-gray-900">
