@@ -373,6 +373,7 @@ export default function EventsPageClient() {
                       key={event.id}
                       event={event}
                       onJoin={() => handleJoinEvent(event)}
+                      onEdit={() => router.push(`/events/create?mode=edit&id=${event.id}`)}
                       onLeave={() => handleLeaveEvent(event.id)}
                       onCancel={() => handleCancelEvent(event.id)}
                       canJoin={
@@ -383,6 +384,10 @@ export default function EventsPageClient() {
                       isAdminOrExpert={
                         currentUser?.role === 'admin' ||
                         currentUser?.role === 'expert'
+                      }
+                      canEdit={
+                        currentUser?.role === 'expert' &&
+                        currentUser?.id === event.host_user_id
                       }
                     />
                   ))}
@@ -406,6 +411,7 @@ export default function EventsPageClient() {
                           key={event.id}
                           event={event}
                           onJoin={() => handleJoinEvent(event)}
+                          onEdit={() => router.push(`/events/create?mode=edit&id=${event.id}`)}
                           onLeave={() => handleLeaveEvent(event.id)}
                           onCancel={() => handleCancelEvent(event.id)}
                           canJoin={
@@ -416,6 +422,10 @@ export default function EventsPageClient() {
                           isAdminOrExpert={
                             currentUser?.role === 'admin' ||
                             currentUser?.role === 'expert'
+                          }
+                          canEdit={
+                            currentUser?.role === 'expert' &&
+                            currentUser?.id === event.host_user_id
                           }
                         />
                       ))}
@@ -538,19 +548,23 @@ export default function EventsPageClient() {
 function EventCard({
   event,
   onJoin,
+  onEdit,
   onLeave,
   onCancel,
   canJoin,
   hasJoined,
   isAdminOrExpert,
+  canEdit,
 }: {
   event: Event;
   onJoin: () => void;
+  onEdit: () => void;
   onLeave: () => void;
   onCancel: () => void;
   canJoin: boolean;
   hasJoined: boolean;
   isAdminOrExpert: boolean;
+  canEdit: boolean;
 }) {
   return (
     <Link
@@ -637,17 +651,26 @@ function EventCard({
           }}
           className="space-y-2"
         >
-          <button
-            onClick={onJoin}
-            disabled={!canJoin}
-            className={`w-full py-2 px-4 rounded-lg font-semibold transition-colors ${
-              canJoin
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            {hasJoined ? 'Joined' : canJoin ? 'Join Event' : 'Event Full'}
-          </button>
+          {canEdit ? (
+            <button
+              onClick={onEdit}
+              className="w-full py-2 px-4 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Edit Event
+            </button>
+          ) : (
+            <button
+              onClick={onJoin}
+              disabled={!canJoin}
+              className={`w-full py-2 px-4 rounded-lg font-semibold transition-colors ${
+                canJoin
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {hasJoined ? 'Joined' : canJoin ? 'Join Event' : 'Event Full'}
+            </button>
+          )}
           {hasJoined && (
             <button
               onClick={onLeave}

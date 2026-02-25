@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   Trail,
+  Event,
   Difficulty,
   ExpertiseLevel,
   CreateEventInput,
@@ -11,6 +13,14 @@ import {
   User,
 } from '@/types';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { fetchTrails } from '@/services/trails/trails.service';
+import {
+  createEvent,
+  fetchEventById,
+  fetchVerifiedExperts,
+  updateEvent,
+} from '@/services/events/events.service';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 const sportLabels: Record<SportType, string> = {
   mtb: 'MTB Trail Rides',
@@ -22,10 +32,10 @@ const sportLabels: Record<SportType, string> = {
 
 export default function CreateEventPage() {
   const router = useRouter();
-  const [trails, setTrails] = useState<Trail[]>([]);
-  const [experts, setExperts] = useState<User[]>([]);
+  const searchParams = useSearchParams();
+  const isEditMode = searchParams.get('mode') === 'edit';
+  const editEventId = searchParams.get('id');
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
-  const [loading, setLoading] = useState(false);
   const [isPaidEvent, setIsPaidEvent] = useState(false);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateEventInput>({
@@ -46,30 +56,54 @@ export default function CreateEventPage() {
     host_user_id: undefined,
   });
 
+  const { data: trails = [], isLoading: loadingTrails } = useQuery<Trail[]>({
+    queryKey: QUERY_KEYS.trails.forEvents,
+    queryFn: ({ signal }) => fetchTrails({}, signal),
+  });
+
+  const { data: experts = [] } = useQuery<User[]>({
+    queryKey: QUERY_KEYS.experts.verified,
+    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+    enabled: currentUser?.role === 'admin',
+  });
+
+  const { data: editEvent, isLoading: loadingEditData, error: editEventError } = useQuery<Event>({
+    queryKey: QUERY_KEYS.events.byId(editEventId),
+    queryFn: ({ signal }) => fetchEventById(editEventId as string, signal),
+    enabled: isEditMode && !!editEventId,
+  });
+
   useEffect(() => {
-    fetchTrails();
-    fetchExperts();
-  }, []);
+    if (!editEvent) return;
+    setFormData((prev) => ({
+      ...prev,
+      title: editEvent.title || '',
+      description: editEvent.description || '',
+      trail_id: editEvent.trail_id || '',
+      event_date: editEvent.event_date
+        ? new Date(editEvent.event_date).toISOString().slice(0, 16)
+        : '',
+      organizer_name: editEvent.organizer_name || '',
+      organizer_email: editEvent.organizer_email || '',
+      max_participants: editEvent.max_participants || 20,
+      meeting_point: editEvent.meeting_point || '',
+      difficulty: editEvent.difficulty || undefined,
+      required_expertise: editEvent.required_expertise || 'beginner',
+      sport_type: editEvent.sport_type || prev.sport_type,
+      city: editEvent.city || prev.city,
+      price_npr: editEvent.price_npr || 0,
+      qr_image_url: editEvent.qr_image_url || '',
+      host_user_id: editEvent.host_user_id || undefined,
+    }));
+    setIsPaidEvent((editEvent.price_npr || 0) > 0);
+    setQrPreview(editEvent.qr_image_url || null);
+  }, [editEvent]);
 
-  const fetchTrails = async () => {
-    try {
-      const response = await fetch('/api/trails');
-      const data = await response.json();
-      setTrails(data.trails || []);
-    } catch (error) {
-      console.error('Error fetching trails:', error);
-    }
-  };
-
-  const fetchExperts = async () => {
-    try {
-      const response = await fetch('/api/experts?verified=true');
-      const data = await response.json();
-      setExperts(data.experts || []);
-    } catch (error) {
-      console.error('Error fetching experts:', error);
-    }
-  };
+  useEffect(() => {
+    if (!editEventError || !isEditMode) return;
+    alert('Failed to load event for editing');
+    router.push('/events');
+  }, [editEventError, isEditMode, router]);
 
   useEffect(() => {
     if (currentUser?.role !== 'expert') return;
@@ -101,20 +135,28 @@ export default function CreateEventPage() {
     }
   }, [expertSports, formData.sport_type]);
 
+  const createMutation = useMutation({
+    mutationFn: (payload: CreateEventInput) => createEvent(payload),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: CreateEventInput) =>
+      updateEvent(editEventId as string, payload),
+  });
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
       if (currentUser?.role === 'admin' && !formData.host_user_id) {
         alert('Please select an approved expert host before creating an event.');
-        setLoading(false);
         return;
       }
 
       if (isPaidEvent && (!formData.price_npr || formData.price_npr <= 0)) {
         alert('Paid events must have a price greater than 0.');
-        setLoading(false);
         return;
       }
 
@@ -133,26 +175,24 @@ export default function CreateEventPage() {
         host_user_id: formData.host_user_id || undefined,
       };
 
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
+      if (isEditMode && editEventId) {
+        await updateMutation.mutateAsync(payload);
+        alert(isEditMode ? 'Event updated successfully!' : 'Event created successfully!');
+        router.push(`/events/${editEventId}`);
+      } else {
+        await createMutation.mutateAsync(payload);
         alert('Event created successfully!');
         router.push('/events');
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to create event');
       }
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Failed to create event');
-    } finally {
-      setLoading(false);
+      alert(
+        error instanceof Error
+          ? error.message
+          : isEditMode
+          ? 'Failed to update event'
+          : 'Failed to create event'
+      );
     }
   };
 
@@ -187,9 +227,11 @@ export default function CreateEventPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-4xl font-bold mb-8 text-green-800">Create Event</h1>
+      <h1 className="text-4xl font-bold mb-8 text-green-800">
+        {isEditMode ? 'Edit Event' : 'Create Event'}
+      </h1>
 
-      {loadingUser ? (
+      {loadingUser || loadingEditData || loadingTrails ? (
         <div className="text-gray-600">Loading user...</div>
       ) : !currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'expert') ? (
         <div className="bg-red-50 border border-red-100 text-red-700 rounded-lg px-4 py-3">
@@ -485,10 +527,16 @@ export default function CreateEventPage() {
         <div className="flex gap-4 pt-4">
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {loading ? 'Creating...' : 'Create Event'}
+            {isSubmitting
+              ? isEditMode
+                ? 'Saving...'
+                : 'Creating...'
+              : isEditMode
+              ? 'Save Event'
+              : 'Create Event'}
           </button>
           <button
             type="button"

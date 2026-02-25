@@ -7,6 +7,7 @@ import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter } from 'next/navigation';
 import { fetchTrails } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 function TrailGallery({ trails }: { trails: Trail[] }) {
   const router = useRouter();
@@ -43,7 +44,7 @@ function TrailsPageContent() {
     isFetching,
     error,
   } = useQuery({
-    queryKey: ['trails', search, difficulty, location],
+    queryKey: QUERY_KEYS.trails.list({ search, difficulty, location }),
     queryFn: ({ signal }) =>
       fetchTrails({ search, difficulty, location }, signal)
   });

@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 interface IMainContentProps { children: ReactNode }
 
@@ -19,7 +20,7 @@ function AuthQuerySync() {
 
   React.useEffect(() => {
     const onAuthChanged = () => {
-      queryClient.invalidateQueries({ queryKey: ['me'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.auth.me });
     };
     window.addEventListener('auth-changed', onAuthChanged);
     return () => window.removeEventListener('auth-changed', onAuthChanged);
