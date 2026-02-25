@@ -8,7 +8,10 @@ export type SportType =
   | 'hiking'
   | 'trail_running'
   | 'training'
-  | 'local_tour';
+  | 'local_tour'
+  | 'road_cycling'
+  | 'xc_trails'
+  | 'gravel_rides';
 
 export interface RoutePoint {
   latitude: number;
@@ -31,6 +34,7 @@ export interface Trail {
   name: string;
   description: string | null;
   difficulty: Difficulty;
+  sport_type?: SportType | null;
   location: string;
   safety_labels?: string[] | null;
   latitude: number | null;

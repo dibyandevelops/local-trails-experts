@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { Trail } from '@/types';
 import { getSafetyLabelText } from '@/lib/trail-safety';
+import { getSportLabel } from '@/services/constants/sports';
 
 const Card = ({
   children,
@@ -58,6 +59,11 @@ export const TrailCard: React.FunctionComponent<Trail> = (trail) => {
           </span>
         </div>
         <p className="text-gray-600 mb-4">{trail.location}</p>
+        {trail.sport_type && (
+          <p className="text-xs font-medium text-gray-500 mb-3">
+            {getSportLabel(trail.sport_type)}
+          </p>
+        )}
         {trail.description && (
           <p className="text-gray-700 mb-4 line-clamp-3">{trail.description}</p>
         )}

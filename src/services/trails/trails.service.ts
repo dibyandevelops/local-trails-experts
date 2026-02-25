@@ -7,6 +7,7 @@ export type TrailFilters = {
   search?: string;
   difficulty?: Difficulty | '';
   location?: string;
+  sport?: string;
 };
 
 export async function fetchTrails(
@@ -18,6 +19,7 @@ export async function fetchTrails(
     if (filters.search?.trim()) params.search = filters.search.trim();
     if (filters.difficulty) params.difficulty = filters.difficulty;
     if (filters.location?.trim()) params.location = filters.location.trim();
+    if (filters.sport?.trim()) params.sport = filters.sport.trim();
 
     const { data } = await apiClient.get<{ trails: Trail[] }>(ApiPath.Trails, {
       params,

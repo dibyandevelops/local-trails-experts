@@ -7,12 +7,14 @@ export const QUERY_KEYS = {
       search?: string;
       difficulty?: string;
       location?: string;
+      sport?: string;
     }) =>
       [
         'trails',
         filters?.search || '',
         filters?.difficulty || '',
         filters?.location || '',
+        filters?.sport || '',
       ] as const,
     forEvents: ['trails-for-events'] as const,
   },

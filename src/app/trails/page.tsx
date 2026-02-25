@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { fetchTrails } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
 
 function TrailGallery({ trails }: { trails: Trail[] }) {
   const router = useRouter();
@@ -35,6 +36,7 @@ function TrailsPageContent() {
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
+  const [sport, setSport] = useState(DEFAULT_TRAIL_SPORT);
 
   const { data: user = null } = useCurrentUser();
 
@@ -44,9 +46,9 @@ function TrailsPageContent() {
     isFetching,
     error,
   } = useQuery({
-    queryKey: QUERY_KEYS.trails.list({ search, difficulty, location }),
+    queryKey: QUERY_KEYS.trails.list({ search, difficulty, location, sport }),
     queryFn: ({ signal }) =>
-      fetchTrails({ search, difficulty, location }, signal)
+      fetchTrails({ search, difficulty, location, sport }, signal)
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -59,7 +61,7 @@ function TrailsPageContent() {
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-4xl font-bold text-green-800">Search Trails</h1>
-        {user?.role === 'admin' && (
+        {(user?.role === 'admin' || user?.role === 'expert') && (
           <button
             type="button"
             onClick={() => router.push('/trails/create')}
@@ -71,7 +73,7 @@ function TrailsPageContent() {
       </div>
 
       <form onSubmit={handleSearch} className="mb-8 bg-gray-50 p-6 rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Search</label>
             <input
@@ -104,6 +106,20 @@ function TrailsPageContent() {
               placeholder="City or region..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Trail Category</label>
+            <select
+              value={sport}
+              onChange={(e) => setSport(e.target.value as typeof sport)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              {TRAIL_SPORTS.map((sportOption) => (
+                <option key={sportOption.value} value={sportOption.value}>
+                  {sportOption.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <button
