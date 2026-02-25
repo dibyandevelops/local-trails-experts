@@ -29,7 +29,7 @@ const navItems: NavItem[] = [
     label: 'Create Trail',
     href: '/trails/create',
     requiresAuth: true,
-    requiresRole: ['admin'],
+    requiresRole: ['admin', 'expert'],
   },
   { label: 'Experts', href: '/experts' },
   {

@@ -49,7 +49,7 @@ export async function PATCH(
 ) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
+    if (!auth || auth.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -80,22 +80,24 @@ export async function PATCH(
         name = $1,
         description = $2,
         difficulty = $3,
-        location = $4,
-        latitude = $5,
-        longitude = $6,
-        distance_km = $7,
-        elevation_gain_m = $8,
-        estimated_time_hours = $9,
-        image_url = $10,
-        safety_labels = $11,
+        sport_type = $4,
+        location = $5,
+        latitude = $6,
+        longitude = $7,
+        distance_km = $8,
+        elevation_gain_m = $9,
+        estimated_time_hours = $10,
+        image_url = $11,
+        safety_labels = $12,
         updated_at = NOW()
-      WHERE id = $12
+      WHERE id = $13
       RETURNING *
       `,
       [
         body.name ?? trail.name,
         body.description ?? trail.description,
         body.difficulty ?? trail.difficulty,
+        body.sport_type ?? trail.sport_type ?? 'mtb',
         body.location ?? trail.location,
         body.latitude ?? trail.latitude,
         body.longitude ?? trail.longitude,
