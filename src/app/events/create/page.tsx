@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -107,9 +107,8 @@ const defaultValues: EventFormValues = {
 
 export default function CreateEventPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isEditMode = searchParams.get('mode') === 'edit';
-  const editEventId = searchParams.get('id');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editEventId, setEditEventId] = useState<string | null>(null);
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [lastAutoTitle, setLastAutoTitle] = useState('');
@@ -154,7 +153,7 @@ export default function CreateEventPage() {
 
   const { data: editEvent, isLoading: loadingEditData, error: editEventError } = useQuery<Event>({
     queryKey: QUERY_KEYS.events.byId(editEventId),
-    queryFn: ({ signal }) => fetchEventById(editEventId as string, signal),
+    queryFn: ({ signal }) => fetchEventById(editEventId || '', signal),
     enabled: isEditMode && !!editEventId,
   });
 
@@ -252,7 +251,7 @@ export default function CreateEventPage() {
 
   const updateMutation = useMutation({
     mutationFn: (payload: CreateEventInput) =>
-      updateEvent(editEventId as string, payload),
+      updateEvent(editEventId || '', payload),
   });
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
@@ -784,3 +783,8 @@ export default function CreateEventPage() {
     </div>
   );
 }
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsEditMode(params.get('mode') === 'edit');
+    setEditEventId(params.get('id'));
+  }, []);
