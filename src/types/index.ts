@@ -126,6 +126,9 @@ export interface Booking {
   spots: number;
   total_price_npr: number;
   status: 'pending' | 'confirmed' | 'cancelled';
+  refund_npr?: number;
+  cancelled_at?: string | null;
+  cancellation_policy_snapshot?: string | null;
   created_at: string;
 }
 

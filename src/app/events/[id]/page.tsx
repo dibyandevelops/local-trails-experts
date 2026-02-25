@@ -35,6 +35,69 @@ export default function EventDetailPage() {
     fetchEvent();
   }, [eventId]);
 
+  useEffect(() => {
+    if (!eventId || !user || user.role !== 'participant') return;
+    const fetchBooking = async () => {
+      try {
+        const res = await fetch(`/api/events/${eventId}/bookings`);
+        const data = await res.json();
+        setBooking(data.booking || null);
+      } catch {
+        setBooking(null);
+      }
+    };
+    fetchBooking();
+  }, [eventId, user]);
+
+  const handleCreateBooking = async () => {
+    if (!eventId) return;
+    setBookingMessage(null);
+    setBookingLoading(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spots }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setBookingMessage(data.error || 'Failed to create booking');
+        return;
+      }
+      setBooking(data.booking);
+      setBookingMessage(
+        data.booking?.status === 'confirmed'
+          ? 'Booking confirmed.'
+          : 'Booking created. Payment is pending.'
+      );
+    } catch {
+      setBookingMessage('Failed to create booking');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  const handleCancelBooking = async () => {
+    if (!booking?.id) return;
+    if (!window.confirm('Cancel this booking? Refund depends on cancellation policy.')) return;
+    setBookingMessage(null);
+    setBookingLoading(true);
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}/cancel`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setBookingMessage(data.error || 'Failed to cancel booking');
+        return;
+      }
+      setBooking(data.booking);
+      setBookingMessage(`Booking cancelled. Refund NPR: ${data.refund_npr ?? 0}`);
+    } catch {
+      setBookingMessage('Failed to cancel booking');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-gray-600">Loading event...</div>;
   }
@@ -97,6 +160,73 @@ export default function EventDetailPage() {
           </p>
         )}
       </div>
+
+      {user?.role === 'participant' && (
+        <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900">Booking</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Price per spot: NPR {event.price_npr || 0}
+          </p>
+
+          {!booking || booking.status === 'cancelled' ? (
+            <div className="mt-4 flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Spots
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={spots}
+                  onChange={(e) => setSpots(Math.max(1, Number(e.target.value) || 1))}
+                  className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={bookingLoading}
+                onClick={handleCreateBooking}
+                className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+              >
+                {bookingLoading ? 'Processing...' : 'Book Event'}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2 text-sm text-gray-700">
+              <p>
+                Status: <span className="font-semibold capitalize">{booking.status}</span>
+              </p>
+              <p>Total: NPR {booking.total_price_npr}</p>
+              <button
+                type="button"
+                onClick={handleCancelBooking}
+                disabled={bookingLoading}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {bookingLoading ? 'Cancelling...' : 'Cancel Booking'}
+              </button>
+            </div>
+          )}
+
+          {booking?.id && (
+            <div className="mt-3">
+              <Link
+                href={`/api/bookings/${booking.id}/receipt`}
+                target="_blank"
+                className="text-sm text-green-700 hover:underline"
+              >
+                View receipt
+              </Link>
+            </div>
+          )}
+
+          {bookingMessage && (
+            <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+              {bookingMessage}
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }
