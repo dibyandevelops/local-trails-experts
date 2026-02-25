@@ -352,7 +352,7 @@ export default function AdminPage() {
         )}
       </section>
 
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+      {/* <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           Create New Event
         </h2>
@@ -597,7 +597,7 @@ export default function AdminPage() {
             </button>
           </div>
         </form>
-      </section>
+      </section> */}
     </div>
   );
 }
