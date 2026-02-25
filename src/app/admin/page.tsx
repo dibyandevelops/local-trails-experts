@@ -15,22 +15,17 @@ type ExpertApplication = {
   reviewed_at: string | null;
 };
 
-const expertiseOptions: ExpertiseLevel[] = [
-  'beginner',
-  'intermediate',
-  'advanced',
-  'expert',
-];
-
-const difficultyOptions: Difficulty[] = ['easy', 'medium', 'hard'];
-
-const sportOptions: { value: SportType; label: string }[] = [
-  { value: 'mtb', label: 'MTB Trail Rides' },
-  { value: 'hiking', label: 'Hiking' },
-  { value: 'trail_running', label: 'Trail Running' },
-  { value: 'training', label: 'Training & Coaching' },
-  { value: 'local_tour', label: 'Local Tours' },
-];
+type PendingTrail = {
+  id: string;
+  name: string;
+  sport_type: SportType;
+  difficulty: Difficulty;
+  location: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submitted_by_name: string | null;
+  submitted_by_email: string | null;
+  created_at: string;
+};
 
 export default function AdminPage() {
   const [applications, setApplications] = useState<ExpertApplication[]>([]);
@@ -41,6 +36,9 @@ export default function AdminPage() {
   const [experts, setExperts] = useState<User[]>([]);
   const [verificationDrafts, setVerificationDrafts] = useState<Record<string, string>>({});
   const [sendingVerificationFor, setSendingVerificationFor] = useState<string | null>(null);
+  const [pendingTrails, setPendingTrails] = useState<PendingTrail[]>([]);
+  const [loadingPendingTrails, setLoadingPendingTrails] = useState(true);
+  const [trailModerationMessage, setTrailModerationMessage] = useState<string | null>(null);
 
   const [eventForm, setEventForm] = useState<CreateEventInput>({
     title: '',
@@ -70,6 +68,7 @@ export default function AdminPage() {
   useEffect(() => {
     fetchApplications();
     fetchExperts();
+    fetchPendingTrails();
   }, [applicationsEndpoint]);
 
   const fetchApplications = async () => {
@@ -98,6 +97,23 @@ export default function AdminPage() {
       setExperts(data.experts || []);
     } catch (error) {
       console.error('Error loading experts', error);
+    }
+  };
+
+  const fetchPendingTrails = async () => {
+    try {
+      setLoadingPendingTrails(true);
+      const res = await fetch('/api/admin/trails?status=pending');
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to fetch pending trails');
+      }
+      setPendingTrails(data.trails || []);
+    } catch (error) {
+      console.error('Error loading pending trails', error);
+      setTrailModerationMessage('Unable to load pending trails.');
+    } finally {
+      setLoadingPendingTrails(false);
     }
   };
 
@@ -154,6 +170,30 @@ export default function AdminPage() {
       setAppError('Unable to send verification request email.');
     } finally {
       setSendingVerificationFor(null);
+    }
+  };
+
+  const moderateTrail = async (id: string, status: 'approved' | 'rejected') => {
+    try {
+      setTrailModerationMessage(null);
+      const res = await fetch('/api/admin/trails', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to update trail');
+      }
+      setPendingTrails((prev) => prev.filter((trail) => trail.id !== id));
+      setTrailModerationMessage(
+        status === 'approved'
+          ? 'Trail approved and now visible for event creation.'
+          : 'Trail rejected.'
+      );
+    } catch (error) {
+      console.error('Error moderating trail', error);
+      setTrailModerationMessage('Unable to update trail status.');
     }
   };
 
@@ -345,6 +385,60 @@ export default function AdminPage() {
                       Reject
                     </button>
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Pending Trail Approvals
+        </h2>
+        <p className="text-sm text-gray-600 mb-5">
+          Review trails submitted by experts and approve or reject.
+        </p>
+        {trailModerationMessage && (
+          <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">
+            {trailModerationMessage}
+          </p>
+        )}
+        {loadingPendingTrails ? (
+          <p className="text-sm text-gray-600">Loading pending trails...</p>
+        ) : pendingTrails.length === 0 ? (
+          <p className="text-sm text-gray-600">No pending trails.</p>
+        ) : (
+          <div className="space-y-3">
+            {pendingTrails.map((trail) => (
+              <div
+                key={trail.id}
+                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{trail.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {trail.sport_type} • {trail.difficulty} • {trail.location}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Submitted by {trail.submitted_by_name || 'Expert'} ({trail.submitted_by_email || 'N/A'})
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => moderateTrail(trail.id, 'approved')}
+                    className="px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moderateTrail(trail.id, 'rejected')}
+                    className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700"
+                  >
+                    Reject
+                  </button>
                 </div>
               </div>
             ))}
