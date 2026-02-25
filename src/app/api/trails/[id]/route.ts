@@ -88,9 +88,10 @@ export async function PATCH(
         elevation_gain_m = $9,
         estimated_time_hours = $10,
         image_url = $11,
-        safety_labels = $12,
+        trail_images = $12,
+        safety_labels = $13,
         updated_at = NOW()
-      WHERE id = $13
+      WHERE id = $14
       RETURNING *
       `,
       [
@@ -105,6 +106,7 @@ export async function PATCH(
         body.elevation_gain_m ?? trail.elevation_gain_m,
         body.estimated_time_hours ?? trail.estimated_time_hours,
         body.image_url ?? trail.image_url,
+        body.trail_images ?? trail.trail_images ?? [],
         auth.role === 'admin'
           ? hasSafetyLabelsField
             ? normalizeSafetyLabels(body.safety_labels)

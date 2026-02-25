@@ -1,0 +1,2 @@
+ALTER TABLE trails
+  ADD COLUMN IF NOT EXISTS trail_images TEXT[] DEFAULT '{}';
