@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Database setup script for MTB Trail Finder
+# Database setup script for Guided Trails
 # This script helps set up the PostgreSQL database
 
 DB_NAME=${DB_NAME:-mtb_trail_finder}

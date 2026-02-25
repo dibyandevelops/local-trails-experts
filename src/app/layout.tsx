@@ -8,13 +8,13 @@ import './globals.css';
 import MainContent from '@/components/main-content';
 
 export const metadata: Metadata = {
-  title: 'MTB Trail Finder',
-  description: 'Find mountain biking trails and join events',
+  title: 'Guided Trails - Find trails and Join Events',
+  description: 'Find trails and join events',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Local Guides',
+    title: 'Guided Trails',
   },
   icons: {
     icon: '/icons/icon.svg',

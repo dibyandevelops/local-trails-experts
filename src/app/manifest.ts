@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'MTB Trail Finder',
-    short_name: 'Local Guides',
+    name: 'Guided Trails',
+    short_name: 'Guided Trails',
     description: 'Find mountain trails, join events, and connect with verified local experts.',
     start_url: '/',
     display: 'standalone',

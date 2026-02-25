@@ -79,7 +79,7 @@ export default function ExpertJoinPage() {
     <div className="max-w-4xl mx-auto">
       <section className="mb-10 text-center">
         <p className="text-sm font-semibold tracking-wide text-green-700 uppercase mb-2">
-          For Local Guides & Coaches
+          For Guided Trails & Coaches
         </p>
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
           Become a Verified Sports Expert in Nepal

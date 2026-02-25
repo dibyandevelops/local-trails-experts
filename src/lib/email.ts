@@ -10,13 +10,13 @@ type SendEmailInput = {
 function getEmailConfig() {
   return {
     apiKey: process.env.SENDGRID_API_KEY,
-    from: process.env.EMAIL_FROM || 'Local Guides <no-reply@localguides.vercel.app>',
+    from: process.env.EMAIL_FROM || 'Guided Trails <no-reply@localguides.vercel.app>',
   };
 }
 
 function parseFrom(from: string) {
   const match = from.match(/^(.*)<(.+)>$/);
-  const name = match?.[1]?.trim().replace(/^"|"$/g, '') || 'Local Guides';
+  const name = match?.[1]?.trim().replace(/^"|"$/g, '') || 'Guided Trails';
   const email = match?.[2]?.trim() || from.trim();
   return { name, email };
 }
