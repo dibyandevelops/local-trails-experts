@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         e.sport_type,
         e.city,
         e.price_npr,
+        e.qr_image_url,
         e.host_user_id,
         u.phone as expert_phone,
         e.created_at,
@@ -119,6 +120,7 @@ export async function GET(request: NextRequest) {
       sport_type: row.sport_type,
       city: row.city,
       price_npr: row.price_npr ?? 0,
+      qr_image_url: row.qr_image_url ?? null,
       host_user_id: row.host_user_id,
       organizer_phone: row.expert_phone ?? null,
       created_at: row.created_at,
@@ -158,6 +160,7 @@ export async function POST(request: NextRequest) {
       sport_type,
       city,
       price_npr = 0,
+      qr_image_url,
       host_user_id,
     } = body;
 
@@ -193,9 +196,10 @@ export async function POST(request: NextRequest) {
         sport_type,
         city,
         price_npr,
+        qr_image_url,
         host_user_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
 
@@ -213,6 +217,7 @@ export async function POST(request: NextRequest) {
       sport_type || null,
       city || null,
       price_npr,
+      qr_image_url || null,
       (auth.role === 'expert' ? auth.sub : host_user_id) || null,
     ]);
 

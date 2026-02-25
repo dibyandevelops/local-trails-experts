@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import type { Event } from '@/types';
+import type { Booking, Event } from '@/types';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export default function EventDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const eventId = params?.id;
   const [event, setEvent] = useState<Event | null>(null);
+  const { data: user = null } = useCurrentUser();
+  const [booking, setBooking] = useState<(Booking & { payment_status?: string | null }) | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,55 +52,6 @@ export default function EventDetailPage() {
     fetchBooking();
   }, [eventId, user]);
 
-  const handleCreateBooking = async () => {
-    if (!eventId) return;
-    setBookingMessage(null);
-    setBookingLoading(true);
-    try {
-      const res = await fetch(`/api/events/${eventId}/bookings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spots }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setBookingMessage(data.error || 'Failed to create booking');
-        return;
-      }
-      setBooking(data.booking);
-      setBookingMessage(
-        data.booking?.status === 'confirmed'
-          ? 'Booking confirmed.'
-          : 'Booking created. Payment is pending.'
-      );
-    } catch {
-      setBookingMessage('Failed to create booking');
-    } finally {
-      setBookingLoading(false);
-    }
-  };
-
-  const handleCancelBooking = async () => {
-    if (!booking?.id) return;
-    if (!window.confirm('Cancel this booking? Refund depends on cancellation policy.')) return;
-    setBookingMessage(null);
-    setBookingLoading(true);
-    try {
-      const res = await fetch(`/api/bookings/${booking.id}/cancel`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) {
-        setBookingMessage(data.error || 'Failed to cancel booking');
-        return;
-      }
-      setBooking(data.booking);
-      setBookingMessage(`Booking cancelled. Refund NPR: ${data.refund_npr ?? 0}`);
-    } catch {
-      setBookingMessage('Failed to cancel booking');
-    } finally {
-      setBookingLoading(false);
-    }
-  };
-
   if (loading) {
     return <div className="text-gray-600">Loading event...</div>;
   }
@@ -127,6 +81,27 @@ export default function EventDetailPage() {
         {format(new Date(event.event_date), 'PPP p')}
         {event.city ? ` • ${event.city}` : ''}
       </p>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {event.host_user_id && (
+          <button
+            type="button"
+            onClick={() => router.push(`/experts/${event.host_user_id}`)}
+            className="inline-flex items-center rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+          >
+            View Expert Profile
+          </button>
+        )}
+        {event.trail?.id && (
+          <button
+            type="button"
+            onClick={() => router.push(`/trails/${event.trail?.id}`)}
+            className="inline-flex items-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+          >
+            Open Trail Map
+          </button>
+        )}
+      </div>
 
       <div className="mt-6 space-y-3 text-sm text-gray-700">
         {event.description && <p>{event.description}</p>}
@@ -161,72 +136,42 @@ export default function EventDetailPage() {
         )}
       </div>
 
-      {user?.role === 'participant' && (
-        <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Booking</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Price per spot: NPR {event.price_npr || 0}
+      <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900">Payment</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          Price per spot: NPR {event.price_npr || 0}
+        </p>
+        {user?.role === 'participant' && (
+          <div className="mt-3">
+            <span
+              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                booking?.payment_status === 'paid'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}
+            >
+              {booking?.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+            </span>
+          </div>
+        )}
+        <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+          <p className="text-sm font-medium text-gray-700">QR Payment Placeholder</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Scan QR to pay. Payment confirmation integration will be enabled next.
           </p>
-
-          {!booking || booking.status === 'cancelled' ? (
-            <div className="mt-4 flex flex-wrap items-end gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Spots
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={spots}
-                  onChange={(e) => setSpots(Math.max(1, Number(e.target.value) || 1))}
-                  className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <button
-                type="button"
-                disabled={bookingLoading}
-                onClick={handleCreateBooking}
-                className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
-              >
-                {bookingLoading ? 'Processing...' : 'Book Event'}
-              </button>
-            </div>
+          {event.qr_image_url ? (
+            <img
+              src={event.qr_image_url}
+              alt="Event QR payment"
+              className="mt-3 h-40 w-40 rounded border border-gray-200 bg-white object-contain"
+            />
           ) : (
-            <div className="mt-4 space-y-2 text-sm text-gray-700">
-              <p>
-                Status: <span className="font-semibold capitalize">{booking.status}</span>
-              </p>
-              <p>Total: NPR {booking.total_price_npr}</p>
-              <button
-                type="button"
-                onClick={handleCancelBooking}
-                disabled={bookingLoading}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                {bookingLoading ? 'Cancelling...' : 'Cancel Booking'}
-              </button>
+            <div className="mt-3 h-40 w-40 rounded border border-gray-200 bg-white grid place-items-center text-xs text-gray-400">
+              No QR uploaded
             </div>
           )}
-
-          {booking?.id && (
-            <div className="mt-3">
-              <Link
-                href={`/api/bookings/${booking.id}/receipt`}
-                target="_blank"
-                className="text-sm text-green-700 hover:underline"
-              >
-                View receipt
-              </Link>
-            </div>
-          )}
-
-          {bookingMessage && (
-            <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
-              {bookingMessage}
-            </p>
-          )}
-        </section>
-      )}
+        </div>
+      </section>
     </div>
   );
 }

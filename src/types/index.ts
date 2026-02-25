@@ -62,8 +62,9 @@ export interface Event {
   required_expertise: ExpertiseLevel;
    sport_type: SportType | null;
    city: string | null;
-   price_npr: number;
-   host_user_id?: string | null;
+  price_npr: number;
+  qr_image_url?: string | null;
+  host_user_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -92,6 +93,7 @@ export interface CreateEventInput {
   sport_type?: SportType;
   city?: string;
   price_npr?: number;
+  qr_image_url?: string;
   host_user_id?: string | null;
 }
 

@@ -27,6 +27,7 @@ export default function CreateEventPage() {
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [loading, setLoading] = useState(false);
   const [isPaidEvent, setIsPaidEvent] = useState(false);
+  const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateEventInput>({
     title: '',
     description: '',
@@ -41,13 +42,13 @@ export default function CreateEventPage() {
     sport_type: 'mtb',
     city: 'Kathmandu',
     price_npr: 0,
+    qr_image_url: '',
     host_user_id: undefined,
   });
 
   useEffect(() => {
     fetchTrails();
     fetchExperts();
-    fetchCurrentUser();
   }, []);
 
   const fetchTrails = async () => {
@@ -128,6 +129,7 @@ export default function CreateEventPage() {
         sport_type: formData.sport_type || 'mtb',
         city: formData.city || 'Kathmandu',
         price_npr: isPaidEvent ? formData.price_npr ?? 0 : 0,
+        qr_image_url: formData.qr_image_url || undefined,
         host_user_id: formData.host_user_id || undefined,
       };
 
@@ -356,6 +358,42 @@ export default function CreateEventPage() {
             placeholder="0"
           />
           <p className="text-xs text-gray-500 mt-1">0 = free</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            QR Payment Image
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) {
+                setQrPreview(null);
+                setFormData((prev) => ({ ...prev, qr_image_url: '' }));
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = typeof reader.result === 'string' ? reader.result : '';
+                setQrPreview(result || null);
+                setFormData((prev) => ({ ...prev, qr_image_url: result || '' }));
+              };
+              reader.readAsDataURL(file);
+            }}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Upload QR image used for participant payment reference.
+          </p>
+          {qrPreview && (
+            <img
+              src={qrPreview}
+              alt="QR preview"
+              className="mt-3 h-36 w-36 rounded border border-gray-200 object-contain bg-white"
+            />
+          )}
         </div>
         {currentUser?.role === 'admin' && (
           <div>
