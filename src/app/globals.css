@@ -5,13 +5,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --border: #e5e7eb;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0b1220;
+  --foreground: #e5e7eb;
+  --surface: #111827;
+  --surface-2: #1f2937;
+  --border: #374151;
 }
 
 body {
@@ -20,9 +24,21 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: #111827;
+    color: #e5e7eb;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 }
-

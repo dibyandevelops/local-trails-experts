@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { User } from '@/types';
+import ThemeToggle from '@/components/theme-toggle';
 
 type NavItem = {
   label: string;
@@ -174,6 +175,7 @@ export default function Navbar() {
                 </Link>
               ) : null
             )}
+            <ThemeToggle className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-green-600 text-sm font-semibold hover:bg-green-700" />
 
             {!loadingUser && !user && (
               <Link
@@ -232,6 +234,7 @@ export default function Navbar() {
                 </Link>
               ) : null
             )}
+            <ThemeToggle className="text-left px-2 py-2 rounded border border-green-600 hover:bg-green-700" />
             {!loadingUser && !user && (
               <Link
                 href="/login"

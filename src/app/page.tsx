@@ -9,10 +9,10 @@ export default function Home() {
         <p className="text-xs font-semibold tracking-[0.2em] text-green-700 uppercase mb-4">
           Kathmandu • Pokhara • Himalaya
         </p>
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 text-gray-900">
+        <h1 className="mx-auto max-w-4xl text-balance text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 text-gray-900 dark:text-gray-100">
           Guided Trails & Training with Local Experts
         </h1>
-        <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
           Discover MTB trails, hiking routes, trail runs, and performance
           training sessions across Nepal. Join curated group rides or book
           private coaching with verified local experts.
