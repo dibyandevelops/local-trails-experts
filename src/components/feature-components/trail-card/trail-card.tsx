@@ -14,9 +14,8 @@ const Card = ({
   trailName?: string;
 }) => {
   const isClickable = !!onClick;
-  const Component = isClickable ? 'button' : 'div';
   return (
-    <Component
+    <div
       className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow text-left"
       {...{
         ...(isClickable
@@ -32,17 +31,84 @@ const Card = ({
       }}
     >
       {children}
-    </Component>
+    </div>
   );
 };
 export const TrailCard: React.FunctionComponent<Trail> = (trail) => {
+  const images = React.useMemo(() => {
+    const list = [
+      ...(Array.isArray(trail.trail_images) ? trail.trail_images : []),
+      trail.image_url,
+    ].filter((value): value is string => Boolean(value));
+
+    if (list.length === 0) {
+      return ['/tmp_pictures/Kapan-Monastery.jpg'];
+    }
+
+    return Array.from(new Set(list));
+  }, [trail.trail_images, trail.image_url]);
+  const [activeImageIndex, setActiveImageIndex] = React.useState(0);
+  const hasMultipleImages = images.length > 1;
+
+  React.useEffect(() => {
+    setActiveImageIndex(0);
+  }, [trail.id, images.length]);
+
   return (
     <Card key={trail.id} trailName={trail.name} onClick={trail.onClick}>
-      <img
-        src={trail.image_url ?? '/tmp_pictures/Kapan-Monastery.jpg'}
-        alt={trail.name}
-        className="w-full h-48 object-cover"
-      />
+      <div className="relative">
+        <img
+          src={images[activeImageIndex]}
+          alt={trail.name}
+          className="w-full h-48 object-cover"
+        />
+        {hasMultipleImages && (
+          <>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setActiveImageIndex((prev) =>
+                  prev === 0 ? images.length - 1 : prev - 1
+                );
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
+              aria-label="Previous trail image"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setActiveImageIndex((prev) =>
+                  prev === images.length - 1 ? 0 : prev + 1
+                );
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
+              aria-label="Next trail image"
+            >
+              ›
+            </button>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1">
+              {images.map((_, index) => (
+                <button
+                  key={`${trail.id}-image-dot-${index}`}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setActiveImageIndex(index);
+                  }}
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    index === activeImageIndex ? 'bg-white' : 'bg-white/50'
+                  }`}
+                  aria-label={`Show trail image ${index + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
       <div className="p-6">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xl font-bold text-gray-900">{trail.name}</h3>

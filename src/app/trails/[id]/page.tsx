@@ -12,6 +12,7 @@ import {
   TrailSafetyLabel,
 } from '@/lib/trail-safety';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
 import {
   XAxis,
   YAxis,
@@ -299,6 +300,11 @@ const TrailPage: React.FunctionComponent = () => {
           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
             {trail.difficulty}
           </span>
+          {trail.sport_type && (
+            <span className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-sm">
+              {getSportLabel(trail.sport_type)}
+            </span>
+          )}
           {routeData?.totalDistance ? (
             <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
               {routeData.totalDistance.toFixed(2)} km
@@ -366,6 +372,30 @@ const TrailPage: React.FunctionComponent = () => {
               })}
             </div>
             <div className="flex flex-wrap gap-2">
+              <select
+                value={trail.sport_type || 'mtb'}
+                onChange={async (e) => {
+                  const response = await fetch(`/api/trails/${trail.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sport_type: e.target.value }),
+                  });
+                  const data = await response.json();
+                  if (!response.ok) {
+                    setAdminMessage(data.error || 'Failed to update sport type');
+                    return;
+                  }
+                  setTrail(data.trail);
+                  setAdminMessage('Trail sport updated.');
+                }}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+              >
+                {TRAIL_SPORTS.map((sport) => (
+                  <option key={sport.value} value={sport.value}>
+                    {sport.label}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={handleSaveSafetyLabels}

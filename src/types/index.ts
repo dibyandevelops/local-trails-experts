@@ -43,6 +43,7 @@ export interface Trail {
   elevation_gain_m: number | null;
   estimated_time_hours: number | null;
   image_url: string | null;
+  trail_images?: string[] | null;
   route_data: RouteData | null;
   created_at: string;
   updated_at: string;
