@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SportType, User } from '@/types';
+import { SPORT_OPTIONS, getSportLabel } from '@/services/constants/sports';
 
 type ExpertWithEvents = User & {
   events: {
@@ -16,13 +16,7 @@ type ExpertWithEvents = User & {
   }[];
 };
 
-const sportOptions: { value: SportType; label: string }[] = [
-  { value: 'mtb', label: 'MTB Trail Rides' },
-  { value: 'hiking', label: 'Hiking' },
-  { value: 'trail_running', label: 'Trail Running' },
-  { value: 'training', label: 'Training & Coaching' },
-  { value: 'local_tour', label: 'Local Tours' },
-];
+const sportOptions = SPORT_OPTIONS;
 
 export default function ExpertsBrowsePage() {
   const router = useRouter();
@@ -122,7 +116,8 @@ export default function ExpertsBrowsePage() {
             <ExpertCard
               key={expert.id}
               expert={expert}
-              onClick={() => router.push(`/events?expert=${expert.id}`)}
+              onViewExpert={() => router.push(`/experts/${expert.id}`)}
+              onViewEvents={() => router.push(`/events?expert=${expert.id}`)}
             />
           ))}
         </div>
@@ -133,10 +128,12 @@ export default function ExpertsBrowsePage() {
 
 function ExpertCard({
   expert,
-  onClick,
+  onViewExpert,
+  onViewEvents,
 }: {
   expert: ExpertWithEvents;
-  onClick: () => void;
+  onViewExpert: () => void;
+  onViewEvents: () => void;
 }) {
   const primarySports = Array.isArray(expert.sports)
     ? expert.sports
@@ -147,10 +144,7 @@ function ExpertCard({
   const upcomingEvents = (expert.events || []).slice(0, 3);
 
   return (
-    <div
-      className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col h-full cursor-pointer hover:shadow-md transition-shadow"
-      onClick={onClick}
-    >
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col h-full hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
@@ -182,7 +176,7 @@ function ExpertCard({
                 key={sport}
                 className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-medium"
               >
-                {sport}
+                {getSportLabel(sport)}
               </span>
             ))}
           </div>
@@ -217,8 +211,23 @@ function ExpertCard({
           </p>
         )}
 
-        <div className="text-xs text-gray-500">
-          Tap card to view their events.
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onViewExpert}
+            className="rounded-lg border border-green-700 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50"
+          >
+            View Expert
+          </button>
+          {upcomingEvents.length > 0 && (
+            <button
+              type="button"
+              onClick={onViewEvents}
+              className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800"
+            >
+              View Events
+            </button>
+          )}
         </div>
       </div>
     </div>
