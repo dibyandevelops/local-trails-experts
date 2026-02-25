@@ -116,6 +116,12 @@ export default function CreateEventPage() {
   const [requestMessage, setRequestMessage] = useState('');
   const [showTrailRequestDialog, setShowTrailRequestDialog] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsEditMode(params.get('mode') === 'edit');
+    setEditEventId(params.get('id'));
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -783,8 +789,3 @@ export default function CreateEventPage() {
     </div>
   );
 }
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setIsEditMode(params.get('mode') === 'edit');
-    setEditEventId(params.get('id'));
-  }, []);
