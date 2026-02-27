@@ -8,31 +8,41 @@ import * as Toast from '@radix-ui/react-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import Link from 'next/link';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  cancelEvent,
+  fetchEvents,
+  fetchVerifiedExperts,
+  joinEvent,
+  leaveEvent,
+} from '@/services/events/events.service';
+import { fetchMyParticipantEvents } from '@/services/participants/participants.service';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { useUiStore } from '@/stores/ui.store';
+
+const EMPTY_EVENTS: Event[] = [];
 
 export default function EventsPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedExpertise, setSelectedExpertise] = useState<ExpertiseLevel | ''>('');
-  const [userExpertise, setUserExpertise] = useState<ExpertiseLevel>('beginner');
-  const [showOnlyUpcoming, setShowOnlyUpcoming] = useState(true);
-  const [selectedCity, setSelectedCity] = useState<string>('Kathmandu');
-  const [selectedSport, setSelectedSport] = useState<SportType | ''>('');
-  const [selectedExpert, setSelectedExpert] = useState<string>('');
-  const [experts, setExperts] = useState<User[]>([]);
+  const queryClient = useQueryClient();
+  const eventsFilterDraft = useUiStore((state) => state.eventsFilterDraft);
+  const setEventsFilterDraft = useUiStore((state) => state.setEventsFilterDraft);
+  const joinEventModalOpen = useUiStore((state) => state.joinEventModalOpen);
+  const setJoinEventModalOpen = useUiStore((state) => state.setJoinEventModalOpen);
   const [joinedEventIds, setJoinedEventIds] = useState<Set<string>>(new Set());
   const [joinTarget, setJoinTarget] = useState<Event | null>(null);
-  const [joining, setJoining] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const lastSyncedQuery = useRef<string>('');
   const [filtersReady, setFiltersReady] = useState(false);
   const { data: currentUser = null } = useCurrentUser();
 
-  useEffect(() => {
-    if (!filtersReady) return;
-    fetchEvents();
-  }, [filtersReady, selectedExpertise, showOnlyUpcoming, selectedCity, selectedSport, selectedExpert]);
+  const selectedExpertise = eventsFilterDraft.expertise;
+  const userExpertise = eventsFilterDraft.userExpertise;
+  const showOnlyUpcoming = eventsFilterDraft.showUpcoming;
+  const selectedCity = eventsFilterDraft.city;
+  const selectedSport = eventsFilterDraft.sport;
+  const selectedExpert = eventsFilterDraft.expert;
 
   useEffect(() => {
     const query = searchParams.toString();
@@ -49,21 +59,46 @@ export default function EventsPageClient() {
     const expertiseFromQuery = searchParams.get('expertise');
     const upcomingFromQuery = searchParams.get('upcoming');
 
-    if (expertFromQuery !== null) setSelectedExpert(expertFromQuery);
-    if (cityFromQuery !== null) setSelectedCity(cityFromQuery);
-    if (sportFromQuery !== null) {
-      setSelectedSport(sportFromQuery as SportType | '');
+    const patch: Partial<typeof eventsFilterDraft> = {};
+    if (expertFromQuery !== null && expertFromQuery !== selectedExpert) {
+      patch.expert = expertFromQuery;
     }
-    if (expertiseFromQuery !== null) {
-      setSelectedExpertise(expertiseFromQuery as ExpertiseLevel | '');
+    if (cityFromQuery !== null && cityFromQuery !== selectedCity) {
+      patch.city = cityFromQuery;
+    }
+    if (sportFromQuery !== null && sportFromQuery !== selectedSport) {
+      patch.sport = sportFromQuery as SportType | '';
+    }
+    if (
+      expertiseFromQuery !== null &&
+      expertiseFromQuery !== selectedExpertise
+    ) {
+      patch.expertise = expertiseFromQuery as ExpertiseLevel | '';
     }
     if (upcomingFromQuery !== null) {
-      setShowOnlyUpcoming(upcomingFromQuery === 'true');
+      const parsedUpcoming = upcomingFromQuery === 'true';
+      if (parsedUpcoming !== showOnlyUpcoming) {
+        patch.showUpcoming = parsedUpcoming;
+      }
+    }
+
+    if (Object.keys(patch).length > 0) {
+      setEventsFilterDraft(patch);
     }
 
     lastSyncedQuery.current = query;
     setFiltersReady(true);
-  }, [searchParams, filtersReady]);
+  }, [
+    searchParams,
+    filtersReady,
+    selectedExpert,
+    selectedCity,
+    selectedSport,
+    selectedExpertise,
+    showOnlyUpcoming,
+    eventsFilterDraft,
+    setEventsFilterDraft,
+  ]);
 
   useEffect(() => {
     if (!filtersReady) return;
@@ -72,7 +107,7 @@ export default function EventsPageClient() {
     if (selectedCity) params.set('city', selectedCity);
     if (selectedSport) params.set('sport', selectedSport);
     if (selectedExpertise) params.set('expertise', selectedExpertise);
-    if (showOnlyUpcoming) params.set('upcoming', 'true');
+      if (showOnlyUpcoming) params.set('upcoming', 'true');
 
     const query = params.toString();
     if (query === lastSyncedQuery.current) {
@@ -91,68 +126,82 @@ export default function EventsPageClient() {
     router,
   ]);
 
-  useEffect(() => {
-    const fetchJoinedEvents = async () => {
-      if (!currentUser || currentUser.role !== 'participant') {
-        setJoinedEventIds(new Set());
-        return;
-      }
-      try {
-        const joinedRes = await fetch('/api/participants/me/events');
-        const joinedData = await joinedRes.json();
-        const ids = new Set<string>(
-          (joinedData.events || []).map((evt: Event) => evt.id)
-        );
-        setJoinedEventIds(ids);
-      } catch (error) {
-        console.error('Error fetching joined events', error);
-      }
-    };
-    fetchJoinedEvents();
-  }, [currentUser]);
+  const { data: events = [], isLoading: loading } = useQuery<Event[]>({
+    queryKey: QUERY_KEYS.events.list({
+      expertise: selectedExpertise,
+      city: selectedCity,
+      sport: selectedSport,
+      expert: selectedExpert,
+      upcoming: showOnlyUpcoming,
+    }),
+    queryFn: ({ signal }) =>
+      fetchEvents(
+        {
+          expertise: selectedExpertise,
+          city: selectedCity,
+          sport: selectedSport,
+          expert: selectedExpert,
+          upcoming: showOnlyUpcoming,
+        },
+        signal
+      ),
+    enabled: filtersReady,
+  });
+
+  const { data: experts = [] } = useQuery<User[]>({
+    queryKey: QUERY_KEYS.experts.verified,
+    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+  });
+
+  const { data: joinedEventsData } = useQuery<Event[]>({
+    queryKey: QUERY_KEYS.events.joinedByParticipant,
+    queryFn: ({ signal }) => fetchMyParticipantEvents(signal),
+    enabled: currentUser?.role === 'participant',
+  });
+  const joinedEvents = joinedEventsData ?? EMPTY_EVENTS;
 
   useEffect(() => {
-    const fetchExperts = async () => {
-      try {
-        const res = await fetch('/api/experts?verified=true');
-        const data = await res.json();
-        setExperts(data.experts || []);
-      } catch (error) {
-        console.error('Error fetching experts', error);
-      }
-    };
-    fetchExperts();
-  }, []);
-
-  const fetchEvents = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (selectedExpertise) {
-        params.append('expertise', selectedExpertise);
-      }
-      if (selectedCity) {
-        params.append('city', selectedCity);
-      }
-      if (selectedSport) {
-        params.append('sport', selectedSport);
-      }
-      if (selectedExpert) {
-        params.append('expert', selectedExpert);
-      }
-      if (showOnlyUpcoming) {
-        params.append('upcoming', 'true');
-      }
-
-      const response = await fetch(`/api/events?${params.toString()}`);
-      const data = await response.json();
-      setEvents(data.events || []);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    } finally {
-      setLoading(false);
+    if (currentUser?.role !== 'participant') {
+      setJoinedEventIds((prev) => (prev.size === 0 ? prev : new Set<string>()));
+      return;
     }
-  };
+    const next = new Set(joinedEvents.map((evt) => evt.id));
+    setJoinedEventIds((prev) => {
+      if (prev.size === next.size) {
+        const same = Array.from(next).every((id) => prev.has(id));
+        if (same) return prev;
+      }
+      return next;
+    });
+  }, [currentUser, joinedEvents]);
+
+  const joinMutation = useMutation({
+    mutationFn: (payload: { eventId: string; data: { participant_name: string; participant_email: string; phone?: string; expertise_level: ExpertiseLevel } }) =>
+      joinEvent(payload.eventId, payload.data),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.joinedByParticipant }),
+      ]);
+    },
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: (eventId: string) => leaveEvent(eventId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.joinedByParticipant }),
+      ]);
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (eventId: string) => cancelEvent(eventId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() });
+    },
+  });
 
   const handleJoinEvent = (eventData: Event) => {
     if (!currentUser) {
@@ -160,39 +209,27 @@ export default function EventsPageClient() {
       return;
     }
     setJoinTarget(eventData);
+    setJoinEventModalOpen(true);
   };
 
   const confirmJoin = async () => {
     if (!joinTarget || !currentUser) return;
-    setJoining(true);
     try {
-      const response = await fetch(`/api/events/${joinTarget.id}/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await joinMutation.mutateAsync({
+        eventId: joinTarget.id,
+        data: {
           participant_name: currentUser.name || 'Participant',
           participant_email: currentUser.email,
           phone: currentUser.phone || undefined,
           expertise_level: userExpertise,
-        }),
+        },
       });
-
-      if (response.ok) {
-        setJoinTarget(null);
-        setToastOpen(true);
-        setJoinedEventIds((prev) => new Set(prev).add(joinTarget.id));
-        fetchEvents();
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to join event');
-      }
+      setJoinTarget(null);
+      setJoinEventModalOpen(false);
+      setToastOpen(true);
+      setJoinedEventIds((prev) => new Set(prev).add(joinTarget.id));
     } catch (error) {
-      console.error('Error joining event:', error);
-      alert('Failed to join event');
-    } finally {
-      setJoining(false);
+      alert(error instanceof Error ? error.message : 'Failed to join event');
     }
   };
 
@@ -203,23 +240,14 @@ export default function EventsPageClient() {
     );
     if (!confirmed) return;
     try {
-      const response = await fetch(`/api/events/${eventId}/leave`, {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        alert(data.error || 'Failed to leave event');
-        return;
-      }
+      await leaveMutation.mutateAsync(eventId);
       setJoinedEventIds((prev) => {
         const next = new Set(prev);
         next.delete(eventId);
         return next;
       });
-      fetchEvents();
     } catch (error) {
-      console.error('Error leaving event:', error);
-      alert('Failed to leave event');
+      alert(error instanceof Error ? error.message : 'Failed to leave event');
     }
   };
 
@@ -229,18 +257,9 @@ export default function EventsPageClient() {
     );
     if (!confirmed) return;
     try {
-      const response = await fetch(`/api/events/${eventId}/cancel`, {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        alert(data.error || 'Failed to cancel event');
-        return;
-      }
-      fetchEvents();
+      await cancelMutation.mutateAsync(eventId);
     } catch (error) {
-      console.error('Error cancelling event:', error);
-      alert('Failed to cancel event');
+      alert(error instanceof Error ? error.message : 'Failed to cancel event');
     }
   };
 
@@ -268,7 +287,11 @@ export default function EventsPageClient() {
             <label className="block text-sm font-medium mb-2">Your Expertise Level</label>
             <select
               value={userExpertise}
-              onChange={(e) => setUserExpertise(e.target.value as ExpertiseLevel)}
+              onChange={(e) =>
+                setEventsFilterDraft({
+                  userExpertise: e.target.value as ExpertiseLevel,
+                })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               {expertiseLevels.map((level) => (
@@ -282,7 +305,11 @@ export default function EventsPageClient() {
             <label className="block text-sm font-medium mb-2">Filter by Expertise</label>
             <select
               value={selectedExpertise}
-              onChange={(e) => setSelectedExpertise(e.target.value as ExpertiseLevel | '')}
+              onChange={(e) =>
+                setEventsFilterDraft({
+                  expertise: e.target.value as ExpertiseLevel | '',
+                })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="">All Levels</option>
@@ -297,7 +324,7 @@ export default function EventsPageClient() {
             <label className="block text-sm font-medium mb-2">City</label>
             <select
               value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
+              onChange={(e) => setEventsFilterDraft({ city: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="Kathmandu">Kathmandu</option>
@@ -310,7 +337,9 @@ export default function EventsPageClient() {
               <input
                 type="checkbox"
                 checked={showOnlyUpcoming}
-                onChange={(e) => setShowOnlyUpcoming(e.target.checked)}
+                onChange={(e) =>
+                  setEventsFilterDraft({ showUpcoming: e.target.checked })
+                }
                 className="mr-2"
               />
               <span className="text-sm font-medium">Show only upcoming events</span>
@@ -322,7 +351,9 @@ export default function EventsPageClient() {
             <label className="block text-sm font-medium mb-2">Sport Type</label>
             <select
               value={selectedSport}
-              onChange={(e) => setSelectedSport(e.target.value as SportType | '')}
+              onChange={(e) =>
+                setEventsFilterDraft({ sport: e.target.value as SportType | '' })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="">All Sports</option>
@@ -337,7 +368,7 @@ export default function EventsPageClient() {
             <label className="block text-sm font-medium mb-2">Expert</label>
             <select
               value={selectedExpert}
-              onChange={(e) => setSelectedExpert(e.target.value)}
+              onChange={(e) => setEventsFilterDraft({ expert: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="">All experts</option>
@@ -443,7 +474,13 @@ export default function EventsPageClient() {
         </>
       )}
 
-      <Dialog.Root open={Boolean(joinTarget)} onOpenChange={(open) => !open && setJoinTarget(null)}>
+      <Dialog.Root
+        open={joinEventModalOpen && Boolean(joinTarget)}
+        onOpenChange={(open) => {
+          setJoinEventModalOpen(open);
+          if (!open) setJoinTarget(null);
+        }}
+      >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40" />
           <Dialog.Content className="fixed left-1/2 top-1/2 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-lg">
@@ -513,14 +550,14 @@ export default function EventsPageClient() {
                   Cancel
                 </button>
               </Dialog.Close>
-              <button
-                type="button"
-                onClick={confirmJoin}
-                disabled={joining}
-                className="px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
-              >
-                {joining ? 'Joining...' : 'Confirm & Join'}
-              </button>
+                <button
+                  type="button"
+                  onClick={confirmJoin}
+                  disabled={joinMutation.isPending}
+                  className="px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
+                >
+                {joinMutation.isPending ? 'Joining...' : 'Confirm & Join'}
+                </button>
             </div>
           </Dialog.Content>
         </Dialog.Portal>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Event, User } from '@/types';
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { fetchExpertEvents, fetchExperts } from '@/services/experts/experts.service';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -14,45 +15,23 @@ export default function ExpertEventsPage() {
   const params = useParams<{ id: string }>();
   const expertId = params?.id;
 
-  const [expert, setExpert] = useState<ExpertDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!expertId) return;
-    void fetchExpert();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expertId]);
-
-  const fetchExpert = async () => {
-    try {
-      setLoading(true);
-      const [expertsRes, eventsRes] = await Promise.all([
-        fetch(`/api/experts?id=${expertId}`),
-        fetch(`/api/experts/${expertId}/events`),
+  const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
+    queryKey: ['expert-events-page', expertId || ''],
+    queryFn: async ({ signal }) => {
+      if (!expertId) return null;
+      const [experts, events] = await Promise.all([
+        fetchExperts({ id: expertId }, signal),
+        fetchExpertEvents(expertId, signal),
       ]);
-
-      const expertsData = await expertsRes.json();
-      const eventsData = await eventsRes.json();
-
-      const base = (expertsData.experts || []).find(
-        (e: User) => e.id === expertId
-      );
-
-      if (!base) {
-        setExpert(null);
-      } else {
-        setExpert({
-          ...(base as User),
-          events: eventsData.events || [],
-        });
-      }
-    } catch (err) {
-      console.error('Error loading expert events', err);
-      setExpert(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const base = (experts || []).find((e: User) => e.id === expertId);
+      if (!base) return null;
+      return {
+        ...(base as User),
+        events: events || [],
+      };
+    },
+    enabled: !!expertId,
+  });
 
   if (loading) {
     return <div className="text-center py-12 text-gray-600">Loading...</div>;

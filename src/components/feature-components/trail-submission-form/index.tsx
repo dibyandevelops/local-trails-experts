@@ -2,9 +2,12 @@
 
 import { ChangeEventHandler, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
 import type { Difficulty, SportType, UserRole } from '@/types';
 import { TRAIL_SAFETY_OPTIONS, TrailSafetyLabel } from '@/lib/trail-safety';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
+import { apiClient } from '@/services/api/client';
+import { ApiPath } from '@/services/api/paths';
 
 type TrailCreateForm = {
   name: string;
@@ -94,6 +97,30 @@ export default function TrailSubmissionForm({
     [values, isAdmin]
   );
 
+  const parseGpxMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('gpx_file', file);
+      const { data } = await apiClient.post('/api/trails/parse-gpx', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data as {
+        distance_km?: number;
+        elevation_gain_m?: number;
+        estimated_time_hours?: number;
+      };
+    },
+  });
+
+  const submitTrailMutation = useMutation({
+    mutationFn: async (payload: FormData) => {
+      const { data } = await apiClient.post(ApiPath.Trails, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data as { trail: { id: string }; requiresApproval?: boolean };
+    },
+  });
+
   const toggleSafetyLabel = (value: TrailSafetyLabel) => {
     const selected = values.safety_labels || [];
     setValue(
@@ -123,17 +150,7 @@ export default function TrailSubmissionForm({
 
     setParsingGpx(true);
     try {
-      const formData = new FormData();
-      formData.append('gpx_file', file);
-      const response = await fetch('/api/trails/parse-gpx', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Failed to parse GPX file');
-        return;
-      }
+      const data = await parseGpxMutation.mutateAsync(file);
 
       setValue('distance_km', String(data.distance_km ?? ''));
       setValue('elevation_gain_m', String(data.elevation_gain_m ?? ''));
@@ -200,15 +217,7 @@ export default function TrailSubmissionForm({
         );
       }
 
-      const response = await fetch('/api/trails', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Failed to submit trail');
-        return;
-      }
+      const data = await submitTrailMutation.mutateAsync(formData);
 
       setNotice(
         data.requiresApproval

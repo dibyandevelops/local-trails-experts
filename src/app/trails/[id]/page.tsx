@@ -13,6 +13,15 @@ import {
 } from '@/lib/trail-safety';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
+import {
+  deleteTrail,
+  fetchTrailById,
+  requestTrail,
+  updateTrail,
+  uploadTrailRoute,
+} from '@/services/trails/trails.service';
 // import {
 //   XAxis,
 //   YAxis,
@@ -27,44 +36,63 @@ const TrailPage: React.FunctionComponent = () => {
   const router = useRouter();
   const params = useParams();
   const trailId = params?.id as string;
-  const [trail, setTrail] = useState<Trail | null>(null);
+  const queryClient = useQueryClient();
   const { data: currentUser = null } = useCurrentUser();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [savingLabels, setSavingLabels] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [requestDescription, setRequestDescription] = useState('');
+  const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const {
+    data: trail,
+    isLoading: loading,
+    error,
+  } = useQuery<Trail>({
+    queryKey: QUERY_KEYS.trails.byId(trailId),
+    queryFn: ({ signal }) => fetchTrailById(trailId, signal),
+    enabled: Boolean(trailId),
+  });
+
   useEffect(() => {
-    if (trailId) {
-      fetchTrail();
-    }
-  }, [trailId]);
+    if (!trail) return;
+    setSafetyDraft((trail.safety_labels || []) as TrailSafetyLabel[]);
+  }, [trail]);
 
-  const fetchTrail = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/trails/${trailId}`);
-      const data = await response.json();
+  const uploadRouteMutation = useMutation({
+    mutationFn: (file: File) => uploadTrailRoute(trailId, file),
+    onSuccess: (updatedTrail) => {
+      queryClient.setQueryData(QUERY_KEYS.trails.byId(trailId), updatedTrail);
+    },
+  });
 
-      if (response.ok) {
-        setTrail(data.trail);
-        setSafetyDraft((data.trail.safety_labels || []) as TrailSafetyLabel[]);
-      } else {
-        setError(data.error || 'Failed to fetch trail');
-      }
-    } catch (err) {
-      setError('Failed to fetch trail');
-      console.error('Error fetching trail:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const updateTrailMutation = useMutation({
+    mutationFn: (payload: Partial<Trail>) => updateTrail(trailId, payload),
+    onSuccess: (updatedTrail) => {
+      queryClient.setQueryData(QUERY_KEYS.trails.byId(trailId), updatedTrail);
+    },
+  });
+
+  const deleteTrailMutation = useMutation({
+    mutationFn: () => deleteTrail(trailId),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
+      router.push('/trails');
+    },
+  });
+
+  const requestTrailMutation = useMutation({
+    mutationFn: () => requestTrail(trailId, requestDescription.trim()),
+    onSuccess: () => {
+      setRequestMessage('Request sent to experts/admin successfully.');
+      setRequestDescription('');
+      setRequestModalOpen(false);
+    },
+  });
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -75,25 +103,11 @@ const TrailPage: React.FunctionComponent = () => {
     setUploadSuccess(false);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch(`/api/trails/${trailId}/upload-route`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setTrail(data.trail);
-        setUploadSuccess(true);
-        setTimeout(() => setUploadSuccess(false), 3000);
-      } else {
-        setUploadError(data.error || 'Failed to upload route');
-      }
+      await uploadRouteMutation.mutateAsync(file);
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000);
     } catch (err) {
-      setUploadError('Failed to upload route');
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload route');
       console.error('Error uploading route:', err);
     } finally {
       setUploading(false);
@@ -105,6 +119,7 @@ const TrailPage: React.FunctionComponent = () => {
 
   const isAdmin = currentUser?.role === 'admin';
   const canUploadRoute = currentUser?.role === 'admin' || currentUser?.role === 'expert';
+  const canRequestTrail = currentUser?.role === 'participant';
 
   const toggleSafetyLabel = (value: TrailSafetyLabel) => {
     setSafetyDraft((prev) =>
@@ -116,25 +131,14 @@ const TrailPage: React.FunctionComponent = () => {
 
   const handleSaveSafetyLabels = async () => {
     if (!isAdmin || !trail) return;
-    setSavingLabels(true);
     setAdminMessage(null);
     try {
-      const response = await fetch(`/api/trails/${trail.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ safety_labels: safetyDraft }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setAdminMessage(data.error || 'Failed to save safety labels');
-        return;
-      }
-      setTrail(data.trail);
+      await updateTrailMutation.mutateAsync({ safety_labels: safetyDraft });
       setAdminMessage('Safety labels updated.');
-    } catch {
-      setAdminMessage('Failed to save safety labels');
-    } finally {
-      setSavingLabels(false);
+    } catch (err) {
+      setAdminMessage(
+        err instanceof Error ? err.message : 'Failed to save safety labels'
+      );
     }
   };
 
@@ -145,22 +149,11 @@ const TrailPage: React.FunctionComponent = () => {
     );
     if (!confirmed) return;
 
-    setDeleting(true);
     setAdminMessage(null);
     try {
-      const response = await fetch(`/api/trails/${trail.id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        setAdminMessage(data.error || 'Failed to delete trail');
-        return;
-      }
-      router.push('/trails');
-    } catch {
-      setAdminMessage('Failed to delete trail');
-    } finally {
-      setDeleting(false);
+      await deleteTrailMutation.mutateAsync();
+    } catch (err) {
+      setAdminMessage(err instanceof Error ? err.message : 'Failed to delete trail');
     }
   };
 
@@ -290,6 +283,29 @@ const TrailPage: React.FunctionComponent = () => {
               )}
             </div>
           )}
+          <div className="flex flex-col items-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (!currentUser) {
+                  router.push('/register');
+                  return;
+                }
+                if (!canRequestTrail) {
+                  setRequestMessage('Only participants can request this trail.');
+                  return;
+                }
+                setRequestMessage(null);
+                setRequestModalOpen(true);
+              }}
+              className="rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+            >
+              Request This Trail
+            </button>
+            {requestMessage && (
+              <span className="text-xs text-gray-600">{requestMessage}</span>
+            )}
+          </div>
         </div>
 
         {trail.description && (
@@ -375,18 +391,18 @@ const TrailPage: React.FunctionComponent = () => {
               <select
                 value={trail.sport_type || 'mtb'}
                 onChange={async (e) => {
-                  const response = await fetch(`/api/trails/${trail.id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sport_type: e.target.value }),
-                  });
-                  const data = await response.json();
-                  if (!response.ok) {
-                    setAdminMessage(data.error || 'Failed to update sport type');
-                    return;
+                  try {
+                    await updateTrailMutation.mutateAsync({
+                      sport_type: e.target.value as Trail['sport_type'],
+                    });
+                    setAdminMessage('Trail sport updated.');
+                  } catch (err) {
+                    setAdminMessage(
+                      err instanceof Error
+                        ? err.message
+                        : 'Failed to update sport type'
+                    );
                   }
-                  setTrail(data.trail);
-                  setAdminMessage('Trail sport updated.');
                 }}
                 className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
               >
@@ -399,18 +415,18 @@ const TrailPage: React.FunctionComponent = () => {
               <button
                 type="button"
                 onClick={handleSaveSafetyLabels}
-                disabled={savingLabels}
+                disabled={updateTrailMutation.isPending}
                 className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {savingLabels ? 'Saving...' : 'Save Labels'}
+                {updateTrailMutation.isPending ? 'Saving...' : 'Save Labels'}
               </button>
               <button
                 type="button"
                 onClick={handleDeleteTrail}
-                disabled={deleting}
+                disabled={deleteTrailMutation.isPending}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {deleting ? 'Deleting...' : 'Delete Trail'}
+                {deleteTrailMutation.isPending ? 'Deleting...' : 'Delete Trail'}
               </button>
             </div>
             {adminMessage && (

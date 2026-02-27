@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SportType, User } from '@/types';
 import { SPORT_OPTIONS, getSportLabel } from '@/services/constants/sports';
+import { useQuery } from '@tanstack/react-query';
+import { fetchExperts } from '@/services/experts/experts.service';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 type ExpertWithEvents = User & {
   events: {
@@ -20,36 +23,24 @@ const sportOptions = SPORT_OPTIONS;
 
 export default function ExpertsBrowsePage() {
   const router = useRouter();
-  const [experts, setExperts] = useState<ExpertWithEvents[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState<string>('Kathmandu');
   const [selectedSport, setSelectedSport] = useState<SportType | ''>('');
-
-  useEffect(() => {
-    fetchExperts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCity, selectedSport]);
-
-  const fetchExperts = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (selectedCity) {
-        params.append('city', selectedCity);
-      }
-      if (selectedSport) {
-        params.append('sport', selectedSport);
-      }
-
-      const res = await fetch(`/api/experts?${params.toString()}`);
-      const data = await res.json();
-      setExperts(data.experts || []);
-    } catch (err) {
-      console.error('Error fetching experts', err);
-    } finally {
-      setLoading(false);
+  const { data: experts = [], isLoading: loading } = useQuery<ExpertWithEvents[]>(
+    {
+      queryKey: QUERY_KEYS.experts.list({
+        city: selectedCity,
+        sport: selectedSport,
+      }),
+      queryFn: ({ signal }) =>
+        fetchExperts(
+          {
+            city: selectedCity || undefined,
+            sport: selectedSport || undefined,
+          },
+          signal
+        ) as Promise<ExpertWithEvents[]>,
     }
-  };
+  );
 
   return (
     <div>
