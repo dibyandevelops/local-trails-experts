@@ -47,6 +47,30 @@ const TrailPage: React.FunctionComponent = () => {
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mapStyle =
+    process.env.NEXT_PUBLIC_MAP_STYLE_URL ||
+    (process.env.NEXT_PUBLIC_MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/satellite/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+      : ({
+          version: 8,
+          sources: {
+            esri: {
+              type: 'raster',
+              tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+              ],
+              tileSize: 256,
+              attribution: 'Esri, Maxar, Earthstar Geographics',
+            },
+          },
+          layers: [
+            {
+              id: 'esri-satellite',
+              type: 'raster',
+              source: 'esri',
+            },
+          ],
+        } as any));
 
   const {
     data: trail,
@@ -194,6 +218,25 @@ const TrailPage: React.FunctionComponent = () => {
         coordinates: routeData.coordinates.map((c) => [c.longitude, c.latitude]),
       },
     };
+  };
+
+  const getArrowPoints = (routeData: RouteData) => {
+    if (!routeData?.coordinates?.length) return [];
+    const step = 25;
+    const points: Array<{ lon: number; lat: number; angle: number }> = [];
+    for (let i = step; i < routeData.coordinates.length; i += step) {
+      const prev = routeData.coordinates[i - 1];
+      const curr = routeData.coordinates[i];
+      const dx = curr.longitude - prev.longitude;
+      const dy = curr.latitude - prev.latitude;
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      points.push({
+        lon: curr.longitude,
+        lat: curr.latitude,
+        angle,
+      });
+    }
+    return points;
   };
 
   // Prepare elevation chart data
@@ -437,12 +480,11 @@ const TrailPage: React.FunctionComponent = () => {
       </div>
 
       <div className="mb-6 rounded-lg overflow-hidden shadow-lg" style={{ height: '600px', width: '100%' }}>
-        {hasLocation || hasRoute ? (
+        {hasRoute ? (
           <Map
             initialViewState={mapCenter}
             style={{ width: '100%', height: '100%' }}
-            // Outdoor-oriented basemap, visually closer to Komoot than default streets.
-            mapStyle="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
+            mapStyle={mapStyle}
           >
             {routeGeoJSON && (
               <Source id="route" type="geojson" data={routeGeoJSON as any}>
@@ -457,6 +499,21 @@ const TrailPage: React.FunctionComponent = () => {
                 />
               </Source>
             )}
+            {arrowPoints.map((point, index) => (
+              <Marker
+                key={`route-arrow-${index}`}
+                longitude={point.lon}
+                latitude={point.lat}
+                anchor="center"
+              >
+                <div
+                  style={{ transform: `rotate(${point.angle}deg)` }}
+                  className="text-white text-xs font-bold drop-shadow"
+                >
+                  ►
+                </div>
+              </Marker>
+            ))}
             {/* {hasLocation && (
               <Marker
                 longitude={trail.longitude!}
