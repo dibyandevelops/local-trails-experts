@@ -279,10 +279,10 @@ export default function EventsPageClient() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-8 text-green-800">Events</h1>
+      <h1 className="mb-6 text-3xl font-bold text-green-800 sm:mb-8 sm:text-4xl">Events</h1>
 
-      <div className="bg-gray-50 p-6 rounded-lg mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6">
+        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
             <label className="block text-sm font-medium mb-2">Your Expertise Level</label>
             <select
@@ -346,7 +346,7 @@ export default function EventsPageClient() {
             </label>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <label className="block text-sm font-medium mb-2">Sport Type</label>
             <select
@@ -383,9 +383,7 @@ export default function EventsPageClient() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600">Loading events...</p>
-        </div>
+        <EventsGridSkeleton />
       ) : (
         <>
           {selectedExpertise ? (
@@ -398,7 +396,7 @@ export default function EventsPageClient() {
                   <p className="text-gray-600">No events found for this expertise level.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
                   {events.map((event) => (
                     <EventCard
                       key={event.id}
@@ -426,7 +424,7 @@ export default function EventsPageClient() {
               )}
             </div>
           ) : (
-            <div className="space-y-12">
+            <div className="space-y-8 sm:space-y-12">
               {expertiseLevels.map((level) => {
                 const levelEvents = eventsByExpertise[level];
                 if (levelEvents.length === 0) return null;
@@ -436,7 +434,7 @@ export default function EventsPageClient() {
                     <h2 className="text-2xl font-bold mb-6 capitalize border-b-2 border-green-600 pb-2">
                       {level} Events ({levelEvents.length})
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
                       {levelEvents.map((event) => (
                         <EventCard
                           key={event.id}
@@ -613,11 +611,11 @@ function EventCard({
       href={`/events/${event.id}`}
       className="block bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
     >
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
+      <div className="p-4 sm:p-6">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{event.title}</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="mb-2 text-lg font-bold text-gray-900 sm:text-xl">{event.title}</h3>
+            <p className="text-xs text-gray-500 sm:text-sm">
               {format(new Date(event.event_date), 'PPP p')}
             </p>
           </div>
@@ -741,5 +739,28 @@ function EventCard({
         </div>
       </div>
     </Link>
+  );
+}
+
+function EventsGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 animate-pulse">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={`event-skeleton-${index}`}
+          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
+        >
+          <div className="mb-3 h-6 w-2/3 rounded bg-gray-200" />
+          <div className="mb-4 h-4 w-1/3 rounded bg-gray-200" />
+          <div className="mb-3 space-y-2">
+            <div className="h-4 w-full rounded bg-gray-200" />
+            <div className="h-4 w-5/6 rounded bg-gray-200" />
+            <div className="h-4 w-4/6 rounded bg-gray-200" />
+          </div>
+          <div className="mb-4 h-20 rounded-lg bg-gray-200" />
+          <div className="h-10 w-full rounded bg-gray-200" />
+        </div>
+      ))}
+    </div>
   );
 }

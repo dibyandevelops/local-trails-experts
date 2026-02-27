@@ -44,7 +44,7 @@ const icon = (
     viewBox="0 0 512 512"
     role="img"
     aria-label="Local Guides"
-    className="h-8 w-8 inline-block mr-2"
+    className="h-8 w-8 shrink-0"
   >
     <defs>
       <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
@@ -131,14 +131,15 @@ export default function Navbar() {
 
   return (
     <nav className="bg-green-800 text-white shadow-lg">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="text-2xl font-bold">
-            {icon} Local Guides
+      <div className="container mx-auto px-4 py-5">
+        <div className="flex min-h-[56px] items-center justify-between gap-4">
+          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold leading-none">
+            {icon}
+            <span className="pt-0.5">Local Guides</span>
           </Link>
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded border border-green-600 hover:bg-green-700"
+            className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded border border-green-600 hover:bg-green-700"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle navigation"
           >
