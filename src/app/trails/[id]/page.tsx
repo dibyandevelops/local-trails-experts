@@ -13,15 +13,15 @@ import {
 } from '@/lib/trail-safety';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
-import {
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-} from 'recharts';
+// import {
+//   XAxis,
+//   YAxis,
+//   CartesianGrid,
+//   Tooltip,
+//   ResponsiveContainer,
+//   Area,
+//   AreaChart,
+// } from 'recharts';
 
 const TrailPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -204,18 +204,18 @@ const TrailPage: React.FunctionComponent = () => {
   };
 
   // Prepare elevation chart data
-  const getElevationData = (routeData: RouteData) => {
-    if (!routeData || !routeData.coordinates) {
-      return [];
-    }
+  // const getElevationData = (routeData: RouteData) => {
+  //   if (!routeData || !routeData.coordinates) {
+  //     return [];
+  //   }
 
-    return routeData.coordinates
-      .filter((c) => c.elevation !== undefined)
-      .map((c) => ({
-        distance: c.distance || 0,
-        elevation: c.elevation || 0,
-      }));
-  };
+  //   return routeData.coordinates
+  //     .filter((c) => c.elevation !== undefined)
+  //     .map((c) => ({
+  //       distance: c.distance || 0,
+  //       elevation: c.elevation || 0,
+  //     }));
+  // };
 
   if (loading) {
     return (
@@ -242,7 +242,7 @@ const TrailPage: React.FunctionComponent = () => {
   const routeData = trail.route_data as RouteData | null;
   const mapBounds = hasRoute && routeData ? getMapBounds(routeData) : null;
   const routeGeoJSON = hasRoute && routeData ? getRouteGeoJSON(routeData) : null;
-  const elevationData = hasRoute && routeData ? getElevationData(routeData) : [];
+  // const elevationData = hasRoute && routeData ? getElevationData(routeData) : [];
 
   // Determine map center and zoom
   let mapCenter = { longitude: 0, latitude: 0, zoom: 2 };
@@ -250,13 +250,13 @@ const TrailPage: React.FunctionComponent = () => {
     mapCenter = {
       longitude: mapBounds.centerLon,
       latitude: mapBounds.centerLat,
-      zoom: 12,
+      zoom: 14,
     };
   } else if (hasLocation) {
     mapCenter = {
       longitude: trail.longitude!,
       latitude: trail.latitude!,
-      zoom: 12,
+      zoom: 14,
     };
   }
 
@@ -425,7 +425,8 @@ const TrailPage: React.FunctionComponent = () => {
           <Map
             initialViewState={mapCenter}
             style={{ width: '100%', height: '100%' }}
-            mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+            // Outdoor-oriented basemap, visually closer to Komoot than default streets.
+            mapStyle="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
           >
             {routeGeoJSON && (
               <Source id="route" type="geojson" data={routeGeoJSON as any}>
@@ -440,7 +441,7 @@ const TrailPage: React.FunctionComponent = () => {
                 />
               </Source>
             )}
-            {hasLocation && (
+            {/* {hasLocation && (
               <Marker
                 longitude={trail.longitude!}
                 latitude={trail.latitude!}
@@ -450,7 +451,7 @@ const TrailPage: React.FunctionComponent = () => {
                   🚵 {trail.name}
                 </div>
               </Marker>
-            )}
+            )} */}
             {hasRoute && routeData && routeData.coordinates.length > 0 && (
               <>
                 <Marker
@@ -481,7 +482,7 @@ const TrailPage: React.FunctionComponent = () => {
         )}
       </div>
 
-      {hasRoute && elevationData.length > 0 && (
+      {/* {hasRoute && elevationData.length > 0 && (
         <div className="mb-6 bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-2xl font-bold mb-4 text-green-800">Elevation Profile</h2>
           <div style={{ width: '100%', height: '300px' }}>
@@ -543,7 +544,7 @@ const TrailPage: React.FunctionComponent = () => {
             </div>
           )}
         </div>
-      )}
+      )} */}
     </div>
   );
 };
