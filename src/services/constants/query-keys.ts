@@ -50,4 +50,10 @@ export const QUERY_KEYS = {
       ] as const,
     joinedByParticipant: ['participant-joined-events'] as const,
   },
+  admin: {
+    expertApplications: (status?: string) =>
+      ['admin', 'expert-applications', status || 'all'] as const,
+    pendingTrails: ['admin', 'pending-trails'] as const,
+    trailRequests: ['admin', 'trail-requests'] as const,
+  },
 } as const;

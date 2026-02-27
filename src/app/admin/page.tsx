@@ -1,44 +1,31 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateEventInput, Difficulty, ExpertiseLevel, SportType, User } from '@/types';
-
-type ExpertApplication = {
-  id: string;
-  name: string;
-  email: string;
-  city: string | null;
-  sports: SportType[] | null;
-  credentials: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  reviewed_at: string | null;
-};
-
-type PendingTrail = {
-  id: string;
-  name: string;
-  sport_type: SportType;
-  difficulty: Difficulty;
-  location: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submitted_by_name: string | null;
-  submitted_by_email: string | null;
-  created_at: string;
-};
+import { fetchVerifiedExperts } from '@/services/events/events.service';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
+import {
+  fetchAdminExpertApplications,
+  fetchAdminPendingTrails,
+  fetchAdminTrailRequests,
+  moderateAdminTrail,
+  sendAdminVerificationRequest,
+  updateAdminExpertApplicationStatus,
+  type ExpertApplication,
+  type PendingTrail,
+  type TrailInterestRequest,
+} from '@/services/admin/admin.service';
 
 export default function AdminPage() {
-  const [applications, setApplications] = useState<ExpertApplication[]>([]);
-  const [loadingApps, setLoadingApps] = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [appError, setAppError] = useState<string | null>(null);
   const [appNotice, setAppNotice] = useState<string | null>(null);
-  const [experts, setExperts] = useState<User[]>([]);
   const [verificationDrafts, setVerificationDrafts] = useState<Record<string, string>>({});
   const [sendingVerificationFor, setSendingVerificationFor] = useState<string | null>(null);
-  const [pendingTrails, setPendingTrails] = useState<PendingTrail[]>([]);
-  const [loadingPendingTrails, setLoadingPendingTrails] = useState(true);
   const [trailModerationMessage, setTrailModerationMessage] = useState<string | null>(null);
+  const [trailRequestMessage, setTrailRequestMessage] = useState<string | null>(null);
 
   const [eventForm, setEventForm] = useState<CreateEventInput>({
     title: '',
@@ -55,92 +42,103 @@ export default function AdminPage() {
     max_participants: 20,
     host_user_id: undefined,
   });
-  const [eventSubmitting, setEventSubmitting] = useState(false);
-  const [eventMessage, setEventMessage] = useState<string | null>(null);
+  // const [eventSubmitting, setEventSubmitting] = useState(false);
+  // const [eventMessage, setEventMessage] = useState<string | null>(null);
 
-  const applicationsEndpoint = useMemo(() => {
-    if (statusFilter === 'all') {
-      return '/api/admin/expert-applications';
-    }
-    return `/api/admin/expert-applications?status=${statusFilter}`;
-  }, [statusFilter]);
+  const {
+    data: applications = [],
+    isLoading: loadingApps,
+  } = useQuery<ExpertApplication[]>({
+    queryKey: QUERY_KEYS.admin.expertApplications(statusFilter),
+    queryFn: () => fetchAdminExpertApplications(statusFilter),
+  });
 
-  useEffect(() => {
-    fetchApplications();
-    fetchExperts();
-    fetchPendingTrails();
-  }, [applicationsEndpoint]);
+  const { data: experts = [] } = useQuery<User[]>({
+    queryKey: QUERY_KEYS.experts.verified,
+    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+  });
 
-  const fetchApplications = async () => {
-    setLoadingApps(true);
-    setAppError(null);
-    setAppNotice(null);
-    try {
-      const res = await fetch(applicationsEndpoint);
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to load applications');
+  const {
+    data: pendingTrails = [],
+    isLoading: loadingPendingTrails,
+  } = useQuery<PendingTrail[]>({
+    queryKey: QUERY_KEYS.admin.pendingTrails,
+    queryFn: () => fetchAdminPendingTrails(),
+  });
+
+  const {
+    data: trailRequests = [],
+    isLoading: loadingTrailRequests,
+  } = useQuery<TrailInterestRequest[]>({
+    queryKey: QUERY_KEYS.admin.trailRequests,
+    queryFn: () => fetchAdminTrailRequests(),
+  });
+
+  const updateApplicationMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: 'pending' | 'approved' | 'rejected';
+    }) => updateAdminExpertApplicationStatus(id, status),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.admin.expertApplications(statusFilter),
+      });
+      if (data?.tempPassword) {
+        setAppNotice(`Temp password for ${data.application?.email}: ${data.tempPassword}`);
       }
-      setApplications(data.applications || []);
-    } catch (error) {
-      console.error('Error loading applications', error);
-      setAppError('Unable to load expert applications.');
-    } finally {
-      setLoadingApps(false);
-    }
-  };
+    },
+    onError: () => {
+      setAppError('Unable to update application status.');
+    },
+  });
 
-  const fetchExperts = async () => {
-    try {
-      const res = await fetch('/api/experts?verified=true');
-      const data = await res.json();
-      setExperts(data.experts || []);
-    } catch (error) {
-      console.error('Error loading experts', error);
-    }
-  };
+  const verificationRequestMutation = useMutation({
+    mutationFn: ({
+      applicationId,
+      message,
+    }: {
+      applicationId: string;
+      message: string;
+    }) => sendAdminVerificationRequest(applicationId, message),
+    onSuccess: () => {
+      setAppNotice('Verification request email sent.');
+    },
+    onError: () => {
+      setAppError('Unable to send verification request email.');
+    },
+  });
 
-  const fetchPendingTrails = async () => {
-    try {
-      setLoadingPendingTrails(true);
-      const res = await fetch('/api/admin/trails?status=pending');
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to fetch pending trails');
-      }
-      setPendingTrails(data.trails || []);
-    } catch (error) {
-      console.error('Error loading pending trails', error);
-      setTrailModerationMessage('Unable to load pending trails.');
-    } finally {
-      setLoadingPendingTrails(false);
-    }
-  };
+  const moderateTrailMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: 'approved' | 'rejected';
+    }) => moderateAdminTrail(id, status),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.pendingTrails });
+      setTrailModerationMessage(
+        variables.status === 'approved'
+          ? 'Trail approved and now visible for event creation.'
+          : 'Trail rejected.'
+      );
+    },
+    onError: () => {
+      setTrailModerationMessage('Unable to update trail status.');
+    },
+  });
 
   const updateApplicationStatus = async (
     id: string,
     status: ExpertApplication['status']
   ) => {
-    try {
-      const res = await fetch('/api/admin/expert-applications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to update');
-      }
-      setApplications((prev) => prev.filter((app) => app.id !== id));
-      if (data?.tempPassword) {
-        setAppNotice(
-          `Temp password for ${data.application?.email}: ${data.tempPassword}`
-        );
-      }
-    } catch (error) {
-      console.error('Error updating application', error);
-      setAppError('Unable to update application status.');
-    }
+    setAppError(null);
+    setAppNotice(null);
+    await updateApplicationMutation.mutateAsync({ id, status });
   };
 
   const sendVerificationRequest = async (applicationId: string) => {
@@ -154,20 +152,11 @@ export default function AdminPage() {
       setSendingVerificationFor(applicationId);
       setAppError(null);
       setAppNotice(null);
-      const res = await fetch('/api/admin/expert-applications/request-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId, message }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to send email');
-      }
-      setAppNotice('Verification request email sent.');
+      await verificationRequestMutation.mutateAsync({ applicationId, message });
       setVerificationDrafts((prev) => ({ ...prev, [applicationId]: '' }));
     } catch (error) {
       console.error('Error sending verification request email', error);
-      setAppError('Unable to send verification request email.');
+      // message is handled via mutation onError
     } finally {
       setSendingVerificationFor(null);
     }
@@ -176,33 +165,19 @@ export default function AdminPage() {
   const moderateTrail = async (id: string, status: 'approved' | 'rejected') => {
     try {
       setTrailModerationMessage(null);
-      const res = await fetch('/api/admin/trails', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to update trail');
-      }
-      setPendingTrails((prev) => prev.filter((trail) => trail.id !== id));
-      setTrailModerationMessage(
-        status === 'approved'
-          ? 'Trail approved and now visible for event creation.'
-          : 'Trail rejected.'
-      );
+      await moderateTrailMutation.mutateAsync({ id, status });
     } catch (error) {
       console.error('Error moderating trail', error);
-      setTrailModerationMessage('Unable to update trail status.');
+      // message is handled via mutation onError
     }
   };
 
-  const handleEventChange = (field: keyof CreateEventInput, value: string | number) => {
-    setEventForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  // const handleEventChange = (field: keyof CreateEventInput, value: string | number) => {
+  //   setEventForm((prev) => ({
+  //     ...prev,
+  //     [field]: value,
+  //   }));
+  // };
 
   const selectedExpert = eventForm.host_user_id
     ? experts.find((expert) => expert.id === eventForm.host_user_id)
@@ -221,52 +196,52 @@ export default function AdminPage() {
     }
   }, [expertSports, eventForm.sport_type]);
 
-  const handleCreateEvent = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setEventMessage(null);
+  // const handleCreateEvent = async (event: React.FormEvent) => {
+  //   event.preventDefault();
+  //   setEventMessage(null);
 
-    if (!eventForm.title || !eventForm.event_date || !eventForm.required_expertise) {
-      setEventMessage('Please fill in the required fields.');
-      return;
-    }
+  //   if (!eventForm.title || !eventForm.event_date || !eventForm.required_expertise) {
+  //     setEventMessage('Please fill in the required fields.');
+  //     return;
+  //   }
 
-    if (!eventForm.host_user_id) {
-      setEventMessage('Please select an approved expert host.');
-      return;
-    }
+  //   if (!eventForm.host_user_id) {
+  //     setEventMessage('Please select an approved expert host.');
+  //     return;
+  //   }
 
-    try {
-      setEventSubmitting(true);
-      const res = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventForm),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to create event');
-      }
-      setEventMessage('Event created successfully.');
-      setEventForm((prev) => ({
-        ...prev,
-        title: '',
-        description: '',
-        event_date: '',
-        organizer_name: '',
-        organizer_email: '',
-        meeting_point: '',
-        city: '',
-        price_npr: 0,
-        max_participants: 20,
-        host_user_id: undefined,
-      }));
-    } catch (error) {
-      console.error('Error creating event', error);
-      setEventMessage('Unable to create event.');
-    } finally {
-      setEventSubmitting(false);
-    }
-  };
+  //   try {
+  //     setEventSubmitting(true);
+  //     const res = await fetch('/api/events', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify(eventForm),
+  //     });
+  //     const data = await res.json();
+  //     if (!res.ok) {
+  //       throw new Error(data?.error || 'Failed to create event');
+  //     }
+  //     setEventMessage('Event created successfully.');
+  //     setEventForm((prev) => ({
+  //       ...prev,
+  //       title: '',
+  //       description: '',
+  //       event_date: '',
+  //       organizer_name: '',
+  //       organizer_email: '',
+  //       meeting_point: '',
+  //       city: '',
+  //       price_npr: 0,
+  //       max_participants: 20,
+  //       host_user_id: undefined,
+  //     }));
+  //   } catch (error) {
+  //     console.error('Error creating event', error);
+  //     setEventMessage('Unable to create event.');
+  //   } finally {
+  //     setEventSubmitting(false);
+  //   }
+  // };
 
   return (
     <div className="space-y-10">
@@ -386,6 +361,50 @@ export default function AdminPage() {
                     </button>
                   </div>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Participant Trail Requests
+        </h2>
+        <p className="text-sm text-gray-600 mb-5">
+          Requests submitted by participants to notify experts/admin.
+        </p>
+        {trailRequestMessage && (
+          <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">
+            {trailRequestMessage}
+          </p>
+        )}
+        {loadingTrailRequests ? (
+          <p className="text-sm text-gray-600">Loading trail requests...</p>
+        ) : trailRequests.length === 0 ? (
+          <p className="text-sm text-gray-600">No trail requests yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {trailRequests.map((request) => (
+              <div
+                key={request.id}
+                className="border border-gray-200 rounded-lg p-4"
+              >
+                <p className="text-sm font-semibold text-gray-900">
+                  {request.trail_name}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {request.trail_sport_type || 'N/A'}
+                  {request.trail_location ? ` • ${request.trail_location}` : ''}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Requested by {request.requester_name || 'Participant'} ({request.requester_email})
+                </p>
+                {request.description && (
+                  <p className="text-sm text-gray-700 mt-2 whitespace-pre-line">
+                    {request.description}
+                  </p>
+                )}
               </div>
             ))}
           </div>

@@ -1,0 +1,132 @@
+import axios from 'axios';
+import { apiClient } from '@/services/api/client';
+
+export type ExpertApplicationStatus = 'pending' | 'approved' | 'rejected';
+
+export type ExpertApplication = {
+  id: string;
+  name: string;
+  email: string;
+  city: string | null;
+  sports: string[] | null;
+  credentials: string;
+  status: ExpertApplicationStatus;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export type PendingTrail = {
+  id: string;
+  name: string;
+  sport_type: string;
+  difficulty: string;
+  location: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submitted_by_name: string | null;
+  submitted_by_email: string | null;
+  created_at: string;
+};
+
+export type TrailInterestRequest = {
+  id: string;
+  trail_id: string;
+  trail_name: string;
+  trail_location: string | null;
+  trail_sport_type: string | null;
+  requester_name: string | null;
+  requester_email: string;
+  description: string | null;
+  created_at: string;
+};
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const apiError = error.response?.data as { error?: string } | undefined;
+    return apiError?.error || fallback;
+  }
+  return fallback;
+}
+
+export async function fetchAdminExpertApplications(status: string) {
+  try {
+    const { data } = await apiClient.get<{ applications: ExpertApplication[] }>(
+      '/api/admin/expert-applications',
+      {
+        params: status === 'all' ? undefined : { status },
+      }
+    );
+    return data.applications || [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to load applications'));
+  }
+}
+
+export async function updateAdminExpertApplicationStatus(
+  id: string,
+  status: ExpertApplicationStatus
+) {
+  try {
+    const { data } = await apiClient.patch<{
+      application?: { email?: string };
+      tempPassword?: string | null;
+    }>('/api/admin/expert-applications', { id, status });
+    return data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update application'));
+  }
+}
+
+export async function sendAdminVerificationRequest(
+  applicationId: string,
+  message: string
+) {
+  try {
+    const { data } = await apiClient.post<{ success?: boolean }>(
+      '/api/admin/expert-applications/request-verification',
+      { applicationId, message }
+    );
+    return data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to send email'));
+  }
+}
+
+export async function fetchAdminPendingTrails() {
+  try {
+    const { data } = await apiClient.get<{ trails: PendingTrail[] }>(
+      '/api/admin/trails',
+      {
+        params: { status: 'pending' },
+      }
+    );
+    return data.trails || [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to fetch pending trails'));
+  }
+}
+
+export async function moderateAdminTrail(
+  id: string,
+  status: 'approved' | 'rejected'
+) {
+  try {
+    const { data } = await apiClient.patch<{ trail?: PendingTrail }>(
+      '/api/admin/trails',
+      { id, status }
+    );
+    return data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update trail'));
+  }
+}
+
+export async function fetchAdminTrailRequests() {
+  try {
+    const { data } = await apiClient.get<{ requests: TrailInterestRequest[] }>(
+      '/api/admin/trail-requests'
+    );
+    return data.requests || [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to fetch trail requests'));
+  }
+}

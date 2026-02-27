@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Map, { Marker, Source, Layer } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import * as Dialog from '@radix-ui/react-dialog';
 import { Trail, RouteData } from '@/types';
 import {
   getSafetyLabelText,
@@ -267,7 +268,9 @@ const TrailPage: React.FunctionComponent = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
-          <p className="text-red-600">{error || 'Trail not found'}</p>
+          <p className="text-red-600">
+            {(error as Error)?.message || 'Trail not found'}
+          </p>
         </div>
       </div>
     );
@@ -278,6 +281,7 @@ const TrailPage: React.FunctionComponent = () => {
   const routeData = trail.route_data as RouteData | null;
   const mapBounds = hasRoute && routeData ? getMapBounds(routeData) : null;
   const routeGeoJSON = hasRoute && routeData ? getRouteGeoJSON(routeData) : null;
+  const arrowPoints = hasRoute && routeData ? getArrowPoints(routeData) : [];
   // const elevationData = hasRoute && routeData ? getElevationData(routeData) : [];
 
   // Determine map center and zoom
@@ -550,10 +554,56 @@ const TrailPage: React.FunctionComponent = () => {
           </Map>
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
-            <p className="text-gray-500">No location data available for this trail</p>
+            <p className="text-gray-500">No GPX route data available for this trail</p>
           </div>
         )}
       </div>
+
+      <Dialog.Root open={requestModalOpen} onOpenChange={setRequestModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl">
+            <Dialog.Title className="text-lg font-semibold text-gray-900">
+              Request Trail Activity
+            </Dialog.Title>
+            <p className="mt-1 text-sm text-gray-600">
+              This sends your request to experts/admin. Add details to help them.
+            </p>
+            <textarea
+              value={requestDescription}
+              onChange={(e) => setRequestDescription(e.target.value)}
+              rows={4}
+              className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              placeholder="Describe what you want (preferred date/time, group size, activity type...)"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRequestModalOpen(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await requestTrailMutation.mutateAsync();
+                  } catch (err) {
+                    setRequestMessage(
+                      err instanceof Error ? err.message : 'Failed to send request'
+                    );
+                  }
+                }}
+                disabled={requestTrailMutation.isPending}
+                className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+              >
+                {requestTrailMutation.isPending ? 'Sending...' : 'Send Request'}
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* {hasRoute && elevationData.length > 0 && (
         <div className="mb-6 bg-white rounded-lg shadow-lg p-6">
