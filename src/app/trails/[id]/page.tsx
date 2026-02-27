@@ -3,7 +3,15 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Map, { Marker, Source, Layer } from 'react-map-gl/maplibre';
+import Image from 'next/image';
+import Map, {
+  FullscreenControl,
+  Layer,
+  Marker,
+  NavigationControl,
+  ScaleControl,
+  Source,
+} from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Trail, RouteData } from '@/types';
@@ -42,10 +50,15 @@ const TrailPage: React.FunctionComponent = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false);
+  const [pendingGpxFile, setPendingGpxFile] = useState<File | null>(null);
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [requestDescription, setRequestDescription] = useState('');
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mapStyle =
@@ -119,13 +132,11 @@ const TrailPage: React.FunctionComponent = () => {
     },
   });
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const performRouteUpload = async (file: File) => {
     setUploading(true);
     setUploadError(null);
     setUploadSuccess(false);
+    setActionMessage(null);
 
     try {
       await uploadRouteMutation.mutateAsync(file);
@@ -140,6 +151,23 @@ const TrailPage: React.FunctionComponent = () => {
         fileInputRef.current.value = '';
       }
     }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const hasExistingRoute =
+      Boolean(trail?.route_data?.coordinates) &&
+      (trail?.route_data?.coordinates?.length || 0) > 0;
+
+    if (hasExistingRoute) {
+      setPendingGpxFile(file);
+      setReplaceConfirmOpen(true);
+      return;
+    }
+
+    await performRouteUpload(file);
   };
 
   const isAdmin = currentUser?.role === 'admin';
@@ -221,23 +249,83 @@ const TrailPage: React.FunctionComponent = () => {
     };
   };
 
-  const getArrowPoints = (routeData: RouteData) => {
-    if (!routeData?.coordinates?.length) return [];
-    const step = 25;
-    const points: Array<{ lon: number; lat: number; angle: number }> = [];
+  const getArrowGeoJSON = (routeData: RouteData) => {
+    if (!routeData?.coordinates?.length) return null;
+    const step = Math.max(12, Math.floor(routeData.coordinates.length / 40));
+    const features = [];
     for (let i = step; i < routeData.coordinates.length; i += step) {
       const prev = routeData.coordinates[i - 1];
       const curr = routeData.coordinates[i];
       const dx = curr.longitude - prev.longitude;
       const dy = curr.latitude - prev.latitude;
       const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-      points.push({
-        lon: curr.longitude,
-        lat: curr.latitude,
-        angle,
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [curr.longitude, curr.latitude],
+        },
+        properties: { angle },
       });
     }
-    return points;
+    return {
+      type: 'FeatureCollection',
+      features,
+    };
+  };
+
+  const getInitialZoom = (bounds: {
+    minLat: number;
+    maxLat: number;
+    minLon: number;
+    maxLon: number;
+  }) => {
+    const latSpan = Math.abs(bounds.maxLat - bounds.minLat);
+    const lonSpan = Math.abs(bounds.maxLon - bounds.minLon);
+    const maxSpan = Math.max(latSpan, lonSpan);
+    if (maxSpan < 0.004) return 16;
+    if (maxSpan < 0.008) return 15;
+    if (maxSpan < 0.02) return 14;
+    if (maxSpan < 0.05) return 13;
+    if (maxSpan < 0.1) return 12;
+    if (maxSpan < 0.25) return 11;
+    if (maxSpan < 0.6) return 10;
+    return 9;
+  };
+
+  const downloadGpx = (trailName: string, data: RouteData) => {
+    const esc = (value: string) =>
+      value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&apos;');
+    const trkpts = data.coordinates
+      .map((point) => {
+        const eleTag =
+          typeof point.elevation === 'number'
+            ? `<ele>${point.elevation.toFixed(1)}</ele>`
+            : '';
+        return `<trkpt lat="${point.latitude}" lon="${point.longitude}">${eleTag}</trkpt>`;
+      })
+      .join('');
+    const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="MTB Trail Finder" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>${esc(trailName)}</name>
+    <trkseg>${trkpts}</trkseg>
+  </trk>
+</gpx>`;
+    const blob = new Blob([gpx], { type: 'application/gpx+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${trailName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.gpx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Prepare elevation chart data
@@ -281,7 +369,10 @@ const TrailPage: React.FunctionComponent = () => {
   const routeData = trail.route_data as RouteData | null;
   const mapBounds = hasRoute && routeData ? getMapBounds(routeData) : null;
   const routeGeoJSON = hasRoute && routeData ? getRouteGeoJSON(routeData) : null;
-  const arrowPoints = hasRoute && routeData ? getArrowPoints(routeData) : [];
+  const arrowGeoJSON = hasRoute && routeData ? getArrowGeoJSON(routeData) : null;
+  const trailImages = [trail.image_url, ...(trail.trail_images || [])]
+    .filter((image): image is string => Boolean(image))
+    .filter((image, index, arr) => arr.indexOf(image) === index);
   // const elevationData = hasRoute && routeData ? getElevationData(routeData) : [];
 
   // Determine map center and zoom
@@ -290,7 +381,7 @@ const TrailPage: React.FunctionComponent = () => {
     mapCenter = {
       longitude: mapBounds.centerLon,
       latitude: mapBounds.centerLat,
-      zoom: 14,
+      zoom: getInitialZoom(mapBounds),
     };
   } else if (hasLocation) {
     mapCenter = {
@@ -308,51 +399,65 @@ const TrailPage: React.FunctionComponent = () => {
             <h1 className="text-4xl font-bold mb-2 text-green-800">{trail.name}</h1>
             <p className="text-gray-600 mb-4">{trail.location}</p>
           </div>
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           {canUploadRoute && (
-            <div className="flex flex-col items-end gap-2">
-              <label className="cursor-pointer">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".gpx"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <span className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block">
-                  {uploading ? 'Uploading...' : '📤 Upload GPX Route'}
-                </span>
-              </label>
-              {uploadSuccess && (
-                <span className="text-green-600 text-sm">✓ Route uploaded successfully!</span>
-              )}
-              {uploadError && (
-                <span className="text-red-600 text-sm">{uploadError}</span>
-              )}
-            </div>
+            <label className="cursor-pointer rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".gpx"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              {uploading ? 'Uploading...' : 'Upload GPX Route'}
+            </label>
           )}
-          <div className="flex flex-col items-end gap-2">
+          {trailImages.length > 0 && (
             <button
               type="button"
               onClick={() => {
-                if (!currentUser) {
-                  router.push('/register');
-                  return;
-                }
-                if (!canRequestTrail) {
-                  setRequestMessage('Only participants can request this trail.');
-                  return;
-                }
-                setRequestMessage(null);
-                setRequestModalOpen(true);
+                setActiveImageIndex(0);
+                setGalleryModalOpen(true);
               }}
-              className="rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
             >
-              Request This Trail
+              View Trail Photos
             </button>
-            {requestMessage && (
-              <span className="text-xs text-gray-600">{requestMessage}</span>
-            )}
-          </div>
+          )}
+          {hasRoute && routeData && (
+            <button
+              type="button"
+              onClick={() => downloadGpx(trail.name, routeData)}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Download GPX
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (!currentUser) {
+                router.push('/register');
+                return;
+              }
+              if (!canRequestTrail) {
+                setRequestMessage('Only participants can request this trail.');
+                return;
+              }
+              setRequestMessage(null);
+              setRequestModalOpen(true);
+            }}
+            className="rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+          >
+            Request This Trail
+          </button>
+          {uploadSuccess && (
+            <span className="text-sm text-green-600">Route uploaded successfully.</span>
+          )}
+          {uploadError && <span className="text-sm text-red-600">{uploadError}</span>}
+          {actionMessage && <span className="text-sm text-gray-600">{actionMessage}</span>}
+          {requestMessage && <span className="text-sm text-gray-600">{requestMessage}</span>}
         </div>
 
         {trail.description && (
@@ -483,52 +588,78 @@ const TrailPage: React.FunctionComponent = () => {
         )}
       </div>
 
-      <div className="mb-6 rounded-lg overflow-hidden shadow-lg" style={{ height: '600px', width: '100%' }}>
-        {hasRoute ? (
+      {hasRoute ? (
+        <div className="mb-6 overflow-hidden rounded-xl border border-white/20 bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)]" style={{ height: '600px', width: '100%' }}>
           <Map
             initialViewState={mapCenter}
             style={{ width: '100%', height: '100%' }}
             mapStyle={mapStyle}
           >
+            <NavigationControl position="top-right" showCompass showZoom />
+            <FullscreenControl position="top-right" />
+            <ScaleControl position="bottom-left" unit="metric" />
             {routeGeoJSON && (
               <Source id="route" type="geojson" data={routeGeoJSON as any}>
                 <Layer
-                  id="route-line"
+                  id="route-line-glow"
                   type="line"
                   paint={{
-                    'line-color': '#22c55e',
+                    'line-color': '#0ea5e9',
+                    'line-width': 9,
+                    'line-opacity': 0.28,
+                    'line-blur': 0.8,
+                  }}
+                />
+                <Layer
+                  id="route-line-casing"
+                  type="line"
+                  paint={{
+                    'line-color': '#082f49',
+                    'line-width': 6,
+                    'line-opacity': 0.9,
+                  }}
+                />
+                <Layer
+                  id="route-line-core"
+                  type="line"
+                  paint={{
+                    'line-color': '#22d3ee',
                     'line-width': 4,
-                    'line-opacity': 0.8,
+                    'line-opacity': 0.95,
+                  }}
+                />
+                <Layer
+                  id="route-line-highlight"
+                  type="line"
+                  paint={{
+                    'line-color': '#facc15',
+                    'line-width': 1.3,
+                    'line-opacity': 0.85,
                   }}
                 />
               </Source>
             )}
-            {arrowPoints.map((point, index) => (
-              <Marker
-                key={`route-arrow-${index}`}
-                longitude={point.lon}
-                latitude={point.lat}
-                anchor="center"
-              >
-                <div
-                  style={{ transform: `rotate(${point.angle}deg)` }}
-                  className="text-white text-xs font-bold drop-shadow"
-                >
-                  ►
-                </div>
-              </Marker>
-            ))}
-            {/* {hasLocation && (
-              <Marker
-                longitude={trail.longitude!}
-                latitude={trail.latitude!}
-                anchor="bottom"
-              >
-                <div className="bg-green-600 text-white px-3 py-1 rounded-lg shadow-lg font-semibold cursor-pointer hover:bg-green-700 transition-colors">
-                  🚵 {trail.name}
-                </div>
-              </Marker>
-            )} */}
+            {arrowGeoJSON && (
+              <Source id="route-arrows" type="geojson" data={arrowGeoJSON as any}>
+                <Layer
+                  id="route-arrows-layer"
+                  type="symbol"
+                  layout={{
+                    'text-field': '➤',
+                    'text-size': 17,
+                    'text-rotation-alignment': 'map',
+                    'text-rotate': ['get', 'angle'],
+                    'text-allow-overlap': true,
+                    'text-ignore-placement': true,
+                  }}
+                  paint={{
+                    'text-color': '#f59e0b',
+                    'text-halo-color': '#0f172a',
+                    'text-halo-width': 1.2,
+                  }}
+                />
+              </Source>
+            )}
             {hasRoute && routeData && routeData.coordinates.length > 0 && (
               <>
                 <Marker
@@ -536,7 +667,7 @@ const TrailPage: React.FunctionComponent = () => {
                   latitude={routeData.coordinates[0].latitude}
                   anchor="bottom"
                 >
-                  <div className="bg-blue-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                  <div className="rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
                     Start
                   </div>
                 </Marker>
@@ -545,19 +676,61 @@ const TrailPage: React.FunctionComponent = () => {
                   latitude={routeData.coordinates[routeData.coordinates.length - 1].latitude}
                   anchor="bottom"
                 >
-                  <div className="bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                  <div className="rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white">
                     End
                   </div>
                 </Marker>
               </>
             )}
           </Map>
-        ) : (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
-            <p className="text-gray-500">No GPX route data available for this trail</p>
+        </div>
+      ) : (
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-gray-600">
+            No GPX route has been uploaded for this trail yet.
+          </p>
+        </div>
+      )}
+
+      {trailImages.length > 0 && (
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Trail Photos</h2>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveImageIndex(0);
+                setGalleryModalOpen(true);
+              }}
+              className="text-sm font-medium text-green-700 hover:text-green-800"
+            >
+              Open Gallery
+            </button>
           </div>
-        )}
-      </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {trailImages.slice(0, 4).map((imageUrl, index) => (
+              <button
+                key={`${imageUrl}-${index}`}
+                type="button"
+                onClick={() => {
+                  setActiveImageIndex(index);
+                  setGalleryModalOpen(true);
+                }}
+                className="relative h-32 overflow-hidden rounded-lg"
+              >
+                <Image
+                  src={imageUrl}
+                  alt={`${trail.name} trail photo ${index + 1}`}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-300 hover:scale-105"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Dialog.Root open={requestModalOpen} onOpenChange={setRequestModalOpen}>
         <Dialog.Portal>
@@ -601,6 +774,131 @@ const TrailPage: React.FunctionComponent = () => {
                 {requestTrailMutation.isPending ? 'Sending...' : 'Send Request'}
               </button>
             </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root
+        open={replaceConfirmOpen}
+        onOpenChange={(open) => {
+          setReplaceConfirmOpen(open);
+          if (!open) {
+            setPendingGpxFile(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+          }
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl">
+            <Dialog.Title className="text-lg font-semibold text-gray-900">
+              Replace Existing GPX?
+            </Dialog.Title>
+            <p className="mt-2 text-sm text-gray-600">
+              A GPX route already exists. Uploading this file will replace the current route.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setReplaceConfirmOpen(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!pendingGpxFile) return;
+                  setReplaceConfirmOpen(false);
+                  await performRouteUpload(pendingGpxFile);
+                  setPendingGpxFile(null);
+                }}
+                className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+              >
+                Confirm Replace
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={galleryModalOpen} onOpenChange={setGalleryModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/75" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-5xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-slate-950 p-4 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <Dialog.Title className="text-base font-semibold text-white">
+                {trail.name} Gallery
+              </Dialog.Title>
+              <Dialog.Close className="rounded border border-white/20 px-3 py-1 text-sm text-white hover:bg-white/10">
+                Close
+              </Dialog.Close>
+            </div>
+            {trailImages.length > 0 && (
+              <>
+                <div className="relative h-[60vh] w-full">
+                  <Image
+                    src={trailImages[activeImageIndex]}
+                    alt={`${trail.name} photo ${activeImageIndex + 1}`}
+                    fill
+                    unoptimized
+                    sizes="95vw"
+                    className="rounded-lg object-contain"
+                  />
+                  {trailImages.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActiveImageIndex((prev) =>
+                            prev === 0 ? trailImages.length - 1 : prev - 1
+                          )
+                        }
+                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white"
+                        aria-label="Previous photo"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActiveImageIndex((prev) =>
+                            prev === trailImages.length - 1 ? 0 : prev + 1
+                          )
+                        }
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white"
+                        aria-label="Next photo"
+                      >
+                        ›
+                      </button>
+                    </>
+                  )}
+                </div>
+                {trailImages.length > 1 && (
+                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                    {trailImages.map((imageUrl, index) => (
+                      <button
+                        key={`thumb-${imageUrl}-${index}`}
+                        type="button"
+                        onClick={() => setActiveImageIndex(index)}
+                        className={`h-16 w-24 flex-shrink-0 overflow-hidden rounded border ${index === activeImageIndex ? 'border-green-500' : 'border-white/20'}`}
+                      >
+                        <Image
+                          src={imageUrl}
+                          alt={`${trail.name} thumbnail ${index + 1}`}
+                          width={96}
+                          height={64}
+                          unoptimized
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
