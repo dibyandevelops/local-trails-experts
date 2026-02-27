@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Trail, Difficulty } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
@@ -37,6 +37,7 @@ function TrailsPageContent() {
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
   const [sport, setSport] = useState(DEFAULT_TRAIL_SPORT);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const pageSize = 12;
 
   const { data: user = null } = useCurrentUser();
@@ -80,6 +81,30 @@ function TrailsPageContent() {
     data && data.pages.length > 0
       ? data.pages[data.pages.length - 1].pagination
       : undefined;
+  const isInitialLoading = isLoading && trails.length === 0;
+  const isRefreshingResults = isFetching && !isFetchingNextPage && trails.length > 0;
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (!firstEntry?.isIntersecting) return;
+        if (!hasNextPage || isFetchingNextPage || isLoading) return;
+        fetchNextPage();
+      },
+      {
+        root: null,
+        rootMargin: '300px 0px',
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, trails.length]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,7 +203,13 @@ function TrailsPageContent() {
         </div>
       </form>
 
-      {isLoading || isFetching ? (
+      {isRefreshingResults && (
+        <div className="mb-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600">
+          Updating trails...
+        </div>
+      )}
+
+      {isInitialLoading ? (
         <div className="text-center py-12">
           <p className="text-gray-600">Loading trails...</p>
         </div>
@@ -216,6 +247,7 @@ function TrailsPageContent() {
               </div>
             </div>
           )}
+          <div ref={loadMoreRef} className="h-2 w-full" aria-hidden="true" />
         </>
       )}
     </div>
