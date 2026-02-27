@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
         u.email AS submitted_by_email
       FROM trails t
       LEFT JOIN users u ON u.id = t.submitted_by_user_id
-      WHERE t.status = $1
+      WHERE t.status = $1::varchar
       ORDER BY t.created_at DESC
       `,
       [status]
@@ -55,9 +55,12 @@ export async function PATCH(request: NextRequest) {
       `
       UPDATE trails
       SET
-        status = $1,
+        status = $1::varchar,
         approved_by_admin_id = $2,
-        approved_at = CASE WHEN $1 = 'approved' THEN NOW() ELSE approved_at END,
+        approved_at = CASE
+          WHEN $1::varchar = 'approved'::varchar THEN NOW()
+          ELSE approved_at
+        END,
         updated_at = NOW()
       WHERE id = $3
       RETURNING *
