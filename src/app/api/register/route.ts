@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     await sendEmailSafe({
       to: email,
-      subject: 'Welcome to Guided Trails',
+      subject: 'Welcome to Local Guides',
       text: `Hi ${name}, your participant account is ready. You can now join events and manage your profile.`,
       html: `<p>Hi ${name},</p><p>Your participant account is ready. You can now join events and manage your profile.</p>`,
     });

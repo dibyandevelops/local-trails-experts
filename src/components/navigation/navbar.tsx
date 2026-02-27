@@ -43,7 +43,7 @@ const icon = (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
     role="img"
-    aria-label="Guided Trails"
+    aria-label="Local Guides"
     className="h-8 w-8 inline-block mr-2"
   >
     <defs>
@@ -134,7 +134,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="text-2xl font-bold">
-            {icon} Guided Trails
+            {icon} Local Guides
           </Link>
           <button
             type="button"

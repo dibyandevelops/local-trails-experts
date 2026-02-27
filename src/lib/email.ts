@@ -24,7 +24,7 @@ function getEmailConfig() {
 
 function parseFrom(from: string) {
   const match = from.match(/^(.*)<(.+)>$/);
-  const name = match?.[1]?.trim().replace(/^"|"$/g, '') || 'Guided Trails';
+  const name = match?.[1]?.trim().replace(/^"|"$/g, '') || 'Local Guides';
   const email = match?.[2]?.trim() || from.trim();
   return { name, email };
 }

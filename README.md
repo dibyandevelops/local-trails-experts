@@ -1,4 +1,4 @@
-# Guided Trails
+# Local guides
 
 A Next.js application for finding mountain biking trails and joining events based on your expertise level.
 
