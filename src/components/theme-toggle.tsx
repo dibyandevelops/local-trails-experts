@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { UiState, useUiStore } from '@/stores/ui.store';
 
 type ThemeMode = 'light' | 'dark';
 
@@ -33,7 +34,8 @@ export default function ThemeToggle({
   className?: string;
 }) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<ThemeMode>('light');
+  const theme = useUiStore((state: UiState) => state.theme);
+  const setTheme = useUiStore((state: UiState) => state.setTheme);
 
   useEffect(() => {
     const nextTheme: ThemeMode = document.documentElement.classList.contains('dark')

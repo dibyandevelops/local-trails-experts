@@ -38,3 +38,85 @@ export async function fetchTrails(
     throw new Error('Failed to fetch trails');
   }
 }
+
+export async function fetchTrailById(trailId: string, signal?: AbortSignal) {
+  try {
+    const { data } = await apiClient.get<{ trail: Trail }>(
+      `${ApiPath.Trails}/${trailId}`,
+      { signal }
+    );
+    return data.trail;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to fetch trail');
+    }
+    throw new Error('Failed to fetch trail');
+  }
+}
+
+export async function uploadTrailRoute(trailId: string, file: File) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post<{ trail: Trail }>(
+      `${ApiPath.Trails}/${trailId}/upload-route`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return data.trail;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to upload route');
+    }
+    throw new Error('Failed to upload route');
+  }
+}
+
+export async function updateTrail(trailId: string, payload: Partial<Trail>) {
+  try {
+    const { data } = await apiClient.patch<{ trail: Trail }>(
+      `${ApiPath.Trails}/${trailId}`,
+      payload
+    );
+    return data.trail;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to update trail');
+    }
+    throw new Error('Failed to update trail');
+  }
+}
+
+export async function deleteTrail(trailId: string) {
+  try {
+    const { data } = await apiClient.delete<{ success: boolean }>(
+      `${ApiPath.Trails}/${trailId}`
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to delete trail');
+    }
+    throw new Error('Failed to delete trail');
+  }
+}
+
+export async function requestTrail(trailId: string, description: string) {
+  try {
+    const { data } = await apiClient.post<{ success: boolean; error?: string }>(
+      `${ApiPath.Trails}/${trailId}/request`,
+      { description }
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to request trail');
+    }
+    throw new Error('Failed to request trail');
+  }
+}
