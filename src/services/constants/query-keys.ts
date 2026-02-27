@@ -17,6 +17,38 @@ export const QUERY_KEYS = {
         filters?.sport || '',
       ] as const,
     forEvents: ['trails-for-events'] as const,
+    paginatedList: (filters?: {
+      search?: string;
+      difficulty?: string;
+      location?: string;
+      sport?: string;
+      page?: number;
+      pageSize?: number;
+    }) =>
+      [
+        'trails-paginated',
+        filters?.search || '',
+        filters?.difficulty || '',
+        filters?.location || '',
+        filters?.sport || '',
+        String(filters?.page || 1),
+        String(filters?.pageSize || 12),
+      ] as const,
+    infiniteList: (filters?: {
+      search?: string;
+      difficulty?: string;
+      location?: string;
+      sport?: string;
+      pageSize?: number;
+    }) =>
+      [
+        'trails-infinite',
+        filters?.search || '',
+        filters?.difficulty || '',
+        filters?.location || '',
+        filters?.sport || '',
+        String(filters?.pageSize || 12),
+      ] as const,
     byId: (id?: string | null) => ['trail', id || ''] as const,
   },
   experts: {

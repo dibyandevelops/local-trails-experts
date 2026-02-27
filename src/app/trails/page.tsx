@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Trail, Difficulty } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter } from 'next/navigation';
-import { fetchTrails } from '@/services/trails/trails.service';
+import { fetchTrailsPaginated } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
@@ -37,19 +37,49 @@ function TrailsPageContent() {
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
   const [sport, setSport] = useState(DEFAULT_TRAIL_SPORT);
+  const pageSize = 12;
 
   const { data: user = null } = useCurrentUser();
 
   const {
-    data: trails = [],
+    data,
     isLoading,
     isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
     error,
-  } = useQuery({
-    queryKey: QUERY_KEYS.trails.list({ search, difficulty, location, sport }),
-    queryFn: ({ signal }) =>
-      fetchTrails({ search, difficulty, location, sport }, signal)
+  } = useInfiniteQuery({
+    queryKey: QUERY_KEYS.trails.infiniteList({
+      search,
+      difficulty,
+      location,
+      sport,
+      pageSize,
+    }),
+    queryFn: ({ signal, pageParam }) =>
+      fetchTrailsPaginated(
+        {
+          search,
+          difficulty,
+          location,
+          sport,
+          page: Number(pageParam),
+          pageSize,
+        },
+        signal
+      ),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.hasNextPage ? lastPage.pagination.page + 1 : undefined,
+    placeholderData: (previousData) => previousData,
   });
+
+  const trails = data?.pages.flatMap((pageData) => pageData.trails) || [];
+  const pagination =
+    data && data.pages.length > 0
+      ? data.pages[data.pages.length - 1].pagination
+      : undefined;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,20 +90,22 @@ function TrailsPageContent() {
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-4xl font-bold text-green-800">Search Trails</h1>
+        <h1 className="text-2xl font-bold text-green-800 sm:text-3xl md:text-4xl">
+          Search Trails
+        </h1>
         {(user?.role === 'admin' || user?.role === 'expert') && (
           <button
             type="button"
             onClick={() => router.push('/trails/create')}
-            className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+            className="w-full rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 sm:w-auto"
           >
             Create Trail
           </button>
         )}
       </div>
 
-      <form onSubmit={handleSearch} className="mb-8 bg-gray-50 p-6 rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <form onSubmit={handleSearch} className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
             <label className="block text-sm font-medium mb-2">Search</label>
             <input
@@ -122,12 +154,28 @@ function TrailsPageContent() {
             </select>
           </div>
         </div>
-        <button
-          type="submit"
-          className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-        >
-          Search
-        </button>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 sm:w-auto"
+          >
+            Search
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput('');
+              setSearch('');
+              setDifficulty('');
+              setLocationInput('');
+              setLocation('');
+              setSport(DEFAULT_TRAIL_SPORT);
+            }}
+            className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto"
+          >
+            Reset
+          </button>
+        </div>
       </form>
 
       {isLoading || isFetching ? (
@@ -145,7 +193,30 @@ function TrailsPageContent() {
           </p>
         </div>
       ) : (
-        <TrailGallery trails={trails} />
+        <>
+          <TrailGallery trails={trails} />
+          {pagination && (
+            <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3 sm:flex-row">
+              <p className="text-sm text-gray-600">
+                Showing {trails.length} of {pagination.total} trails
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!hasNextPage || isFetchingNextPage}
+                  onClick={() => fetchNextPage()}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isFetchingNextPage
+                    ? 'Loading...'
+                    : hasNextPage
+                      ? 'Load More'
+                      : 'No More Trails'}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

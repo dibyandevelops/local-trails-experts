@@ -21,49 +21,80 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get('location');
     const sport = searchParams.get('sport');
     const status = searchParams.get('status');
+    const page = Math.max(1, Number(searchParams.get('page') || '1') || 1);
+    const pageSizeRaw = Number(searchParams.get('pageSize') || '12') || 12;
+    const pageSize = Math.min(50, Math.max(1, pageSizeRaw));
+    const offset = (page - 1) * pageSize;
 
-    let query = 'SELECT * FROM trails WHERE 1=1';
+    let whereClause = ' WHERE 1=1';
     const params: any[] = [];
     let paramIndex = 1;
 
     if (search) {
-      query += ` AND (name ILIKE $${paramIndex} OR description ILIKE $${paramIndex} OR location ILIKE $${paramIndex})`;
+      whereClause += ` AND (name ILIKE $${paramIndex} OR description ILIKE $${paramIndex} OR location ILIKE $${paramIndex})`;
       params.push(`%${search}%`);
       paramIndex++;
     }
 
     if (difficulty) {
-      query += ` AND difficulty = $${paramIndex}`;
+      whereClause += ` AND difficulty = $${paramIndex}`;
       params.push(difficulty);
       paramIndex++;
     }
 
     if (location) {
-      query += ` AND location ILIKE $${paramIndex}`;
+      whereClause += ` AND location ILIKE $${paramIndex}`;
       params.push(`%${location}%`);
       paramIndex++;
     }
 
     if (sport) {
-      query += ` AND sport_type = $${paramIndex}`;
+      whereClause += ` AND sport_type = $${paramIndex}`;
       params.push(sport);
       paramIndex++;
     }
 
     if (auth?.role === 'admin' && status) {
-      query += ` AND status = $${paramIndex}`;
+      whereClause += ` AND status = $${paramIndex}`;
       params.push(status);
       paramIndex++;
     } else {
-      query += ` AND status = 'approved'`;
+      whereClause += ` AND status = 'approved'`;
     }
 
-    query += ' ORDER BY name ASC';
+    const listQuery = `
+      SELECT *
+      FROM trails
+      ${whereClause}
+      ORDER BY name ASC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+    const listParams = [...params, pageSize, offset];
 
-    const result = await pool.query(query, params);
+    const countQuery = `SELECT COUNT(*)::int AS total FROM trails ${whereClause}`;
+
+    const [result, countResult] = await Promise.all([
+      pool.query(listQuery, listParams),
+      pool.query(countQuery, params),
+    ]);
     const trails: Trail[] = result.rows;
+    const total = countResult.rows[0]?.total || 0;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-    return NextResponse.json({ trails }, { status: 200 });
+    return NextResponse.json(
+      {
+        trails,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error fetching trails:', error);
     return NextResponse.json(

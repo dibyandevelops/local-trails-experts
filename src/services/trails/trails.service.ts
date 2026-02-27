@@ -8,6 +8,22 @@ export type TrailFilters = {
   difficulty?: Difficulty | '';
   location?: string;
   sport?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type TrailsPagination = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+
+export type PaginatedTrailsResponse = {
+  trails: Trail[];
+  pagination: TrailsPagination;
 };
 
 export async function fetchTrails(
@@ -28,6 +44,47 @@ export async function fetchTrails(
     return data.trails || [];
   } catch (error) {
     console.log({ error });
+    if (axios.isCancel(error)) {
+      throw error;
+    }
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to fetch trails');
+    }
+    throw new Error('Failed to fetch trails');
+  }
+}
+
+export async function fetchTrailsPaginated(
+  filters: TrailFilters = {},
+  signal?: AbortSignal
+): Promise<PaginatedTrailsResponse> {
+  try {
+    const params: Record<string, string | number> = {};
+    if (filters.search?.trim()) params.search = filters.search.trim();
+    if (filters.difficulty) params.difficulty = filters.difficulty;
+    if (filters.location?.trim()) params.location = filters.location.trim();
+    if (filters.sport?.trim()) params.sport = filters.sport.trim();
+    params.page = filters.page || 1;
+    params.pageSize = filters.pageSize || 12;
+
+    const { data } = await apiClient.get<PaginatedTrailsResponse>(ApiPath.Trails, {
+      params,
+      signal,
+    });
+
+    return {
+      trails: data.trails || [],
+      pagination: data.pagination || {
+        page: Number(params.page),
+        pageSize: Number(params.pageSize),
+        total: data.trails?.length || 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
+    };
+  } catch (error) {
     if (axios.isCancel(error)) {
       throw error;
     }
