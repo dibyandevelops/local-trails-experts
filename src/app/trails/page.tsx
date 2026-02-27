@@ -29,6 +29,55 @@ function TrailGallery({ trails }: { trails: Trail[] }) {
   );
 }
 
+function TrailsPageSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 animate-pulse">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div
+          key={`trail-skeleton-${index}`}
+          className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+        >
+          <div className="h-48 w-full bg-gray-200" />
+          <div className="p-4">
+            <div className="mb-3 h-6 w-2/3 rounded bg-gray-200" />
+            <div className="mb-3 h-4 w-1/2 rounded bg-gray-200" />
+            <div className="mb-4 flex gap-2">
+              <div className="h-6 w-16 rounded-full bg-gray-200" />
+              <div className="h-6 w-20 rounded-full bg-gray-200" />
+              <div className="h-6 w-14 rounded-full bg-gray-200" />
+            </div>
+            <div className="h-9 w-full rounded bg-gray-200" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TrailsLoadMoreSkeleton() {
+  return (
+    <div className="mt-4 grid animate-pulse grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={`trail-loadmore-skeleton-${index}`}
+          className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+        >
+          <div className="h-48 w-full bg-gray-200" />
+          <div className="p-4">
+            <div className="mb-3 h-6 w-2/3 rounded bg-gray-200" />
+            <div className="mb-3 h-4 w-1/2 rounded bg-gray-200" />
+            <div className="mb-4 flex gap-2">
+              <div className="h-6 w-16 rounded-full bg-gray-200" />
+              <div className="h-6 w-20 rounded-full bg-gray-200" />
+            </div>
+            <div className="h-9 w-full rounded bg-gray-200" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function TrailsPageContent() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState('');
@@ -210,9 +259,7 @@ function TrailsPageContent() {
       )}
 
       {isInitialLoading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600">Loading trails...</p>
-        </div>
+        <TrailsPageSkeleton />
       ) : error ? (
         <div className="text-center py-12">
           <p className="text-red-600">{(error as Error).message}</p>
@@ -226,25 +273,23 @@ function TrailsPageContent() {
       ) : (
         <>
           <TrailGallery trails={trails} />
+
+          {isFetchingNextPage && <TrailsLoadMoreSkeleton />}
           {pagination && (
             <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3 sm:flex-row">
               <p className="text-sm text-gray-600">
                 Showing {trails.length} of {pagination.total} trails
               </p>
-              <div className="flex items-center gap-2">
+              {/* <div className="flex items-center gap-2">
                 <button
                   type="button"
                   disabled={!hasNextPage || isFetchingNextPage}
                   onClick={() => fetchNextPage()}
                   className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isFetchingNextPage
-                    ? 'Loading...'
-                    : hasNextPage
-                      ? 'Load More'
-                      : 'No More Trails'}
+                  {hasNextPage ? 'Load More' : 'No More Trails'}
                 </button>
-              </div>
+              </div> */}
             </div>
           )}
           <div ref={loadMoreRef} className="h-2 w-full" aria-hidden="true" />

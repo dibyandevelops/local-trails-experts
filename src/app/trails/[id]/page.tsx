@@ -345,8 +345,21 @@ const TrailPage: React.FunctionComponent = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <p className="text-gray-600">Loading trail...</p>
+        <div className="animate-pulse">
+          <div className="mb-6 h-9 w-2/3 rounded bg-gray-200 sm:h-10 sm:w-1/2" />
+          <div className="mb-5 h-5 w-1/3 rounded bg-gray-200" />
+          <div className="mb-6 flex flex-wrap gap-2">
+            <div className="h-7 w-24 rounded-full bg-gray-200" />
+            <div className="h-7 w-24 rounded-full bg-gray-200" />
+            <div className="h-7 w-24 rounded-full bg-gray-200" />
+          </div>
+          <div className="mb-6 h-[320px] w-full rounded-xl bg-gray-200 sm:h-[420px]" />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="h-28 rounded-lg bg-gray-200 sm:h-32" />
+            <div className="h-28 rounded-lg bg-gray-200 sm:h-32" />
+            <div className="h-28 rounded-lg bg-gray-200 sm:h-32" />
+            <div className="h-28 rounded-lg bg-gray-200 sm:h-32" />
+          </div>
         </div>
       </div>
     );
@@ -392,17 +405,17 @@ const TrailPage: React.FunctionComponent = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-6 sm:py-8">
       <div className="mb-6">
-        <div className="flex items-start justify-between mb-4">
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="text-4xl font-bold mb-2 text-green-800">{trail.name}</h1>
+            <h1 className="mb-2 text-3xl font-bold text-green-800 sm:text-4xl">{trail.name}</h1>
             <p className="text-gray-600 mb-4">{trail.location}</p>
           </div>
         </div>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-stretch gap-2">
           {canUploadRoute && (
-            <label className="cursor-pointer rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800">
+            <label className="w-full cursor-pointer rounded-lg bg-green-700 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-green-800 sm:w-auto">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -420,7 +433,7 @@ const TrailPage: React.FunctionComponent = () => {
                 setActiveImageIndex(0);
                 setGalleryModalOpen(true);
               }}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto"
             >
               View Trail Photos
             </button>
@@ -429,7 +442,7 @@ const TrailPage: React.FunctionComponent = () => {
             <button
               type="button"
               onClick={() => downloadGpx(trail.name, routeData)}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto"
             >
               Download GPX
             </button>
@@ -448,7 +461,7 @@ const TrailPage: React.FunctionComponent = () => {
               setRequestMessage(null);
               setRequestModalOpen(true);
             }}
-            className="rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+            className="w-full rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 sm:w-auto"
           >
             Request This Trail
           </button>
@@ -589,7 +602,7 @@ const TrailPage: React.FunctionComponent = () => {
       </div>
 
       {hasRoute ? (
-        <div className="mb-6 overflow-hidden rounded-xl border border-white/20 bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)]" style={{ height: '600px', width: '100%' }}>
+        <div className="mb-6 h-[360px] w-full overflow-hidden rounded-xl border border-white/20 bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)] sm:h-[460px] lg:h-[600px]">
           <Map
             initialViewState={mapCenter}
             style={{ width: '100%', height: '100%' }}
@@ -827,7 +840,7 @@ const TrailPage: React.FunctionComponent = () => {
       <Dialog.Root open={galleryModalOpen} onOpenChange={setGalleryModalOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/75" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-5xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-slate-950 p-4 shadow-2xl">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-5xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-slate-950 p-3 sm:p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
               <Dialog.Title className="text-base font-semibold text-white">
                 {trail.name} Gallery
