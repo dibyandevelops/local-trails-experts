@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 
 import Navbar from '@/components/navigation/navbar';
 import PWARegister from '@/components/pwa-register';
+import PushNotificationPrompt from '@/components/push-notification-prompt';
 
 import './globals.css';
 import MainContent from '@/components/main-content';
@@ -53,6 +54,7 @@ export default function RootLayout({
       <body>
         <PWARegister />
         <MainContent>
+          <PushNotificationPrompt />
           <Navbar />
           <main className="container mx-auto px-4 py-8">{children}</main>
         </MainContent>

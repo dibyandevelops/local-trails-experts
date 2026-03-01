@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { JoinEventInput } from '@/types';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmailSafe } from '@/lib/email';
+import { sendPushToUserIds } from '@/lib/push';
 
 export async function POST(
   request: NextRequest,
@@ -110,6 +111,37 @@ export async function POST(
         html: `<p>${participant_name} (${participant_email}) joined your event <strong>${title}</strong>.</p>`,
       });
     }
+
+    const usersResult = await pool.query(
+      `
+        SELECT id, email
+        FROM users
+        WHERE email = ANY($1::text[])
+      `,
+      [[participant_email, organizer_email].filter(Boolean)]
+    );
+
+    const participantUserIds = usersResult.rows
+      .filter((row) => row.email === participant_email)
+      .map((row) => row.id as string);
+    const organizerUserIds = organizer_email
+      ? usersResult.rows
+          .filter((row) => row.email === organizer_email)
+          .map((row) => row.id as string)
+      : [];
+
+    await Promise.allSettled([
+      sendPushToUserIds(participantUserIds, {
+        title: 'You joined an event',
+        body: `Your spot for "${title}" is confirmed.`,
+        url: `/events/${eventId}`,
+      }),
+      sendPushToUserIds(organizerUserIds, {
+        title: 'New participant joined',
+        body: `${participant_name} joined "${title}".`,
+        url: `/events/${eventId}`,
+      }),
+    ]);
 
     return NextResponse.json(
       { participant: participantResult.rows[0] },

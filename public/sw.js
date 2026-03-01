@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mtb-trail-finder-v1';
+const CACHE_NAME = 'mtb-trail-finder-v2';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -30,6 +30,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
+  if (url.pathname.startsWith('/_next/')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(
@@ -54,6 +55,55 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => cached);
+    })
+  );
+});
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let payload = {};
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { notification: { title: 'Local Guides', body: event.data.text() } };
+  }
+
+  const title =
+    payload?.notification?.title || payload?.data?.title || 'Local Guides';
+  const body =
+    payload?.notification?.body ||
+    payload?.data?.body ||
+    'You have a new notification.';
+  const icon = payload?.notification?.icon || '/icons/icon.svg';
+  const url = payload?.data?.url || payload?.fcmOptions?.link || '/';
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon,
+      badge: '/icons/icon.svg',
+      data: { url },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification?.data?.url || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ('focus' in client && client.url.includes(self.location.origin)) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+      return undefined;
     })
   );
 });

@@ -17,3 +17,4 @@ if (!admin.apps.length) {
 }
 
 export const firebaseAdminAuth = admin.auth();
+export const firebaseAdminMessaging = admin.messaging();
