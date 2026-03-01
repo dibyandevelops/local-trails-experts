@@ -9,6 +9,10 @@ export function useCurrentUser() {
   return useQuery<User | null>({
     queryKey: QUERY_KEYS.auth.me,
     queryFn: ({ signal }) => fetchCurrentUser(signal),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    retry: false,
+    placeholderData: (previousData) => previousData,
   });
 }

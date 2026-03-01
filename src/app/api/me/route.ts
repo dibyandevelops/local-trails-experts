@@ -21,7 +21,15 @@ export async function GET(request: NextRequest) {
     );
 
     const user: User | null = result.rows[0] || null;
-    return NextResponse.json({ user }, { status: 200 });
+    return NextResponse.json(
+      { user },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
+    );
   } catch (error) {
     console.error('Error fetching current user:', error);
     return NextResponse.json(

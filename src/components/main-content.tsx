@@ -20,7 +20,12 @@ function AuthQuerySync() {
 
   React.useEffect(() => {
     const onAuthChanged = () => {
+      queryClient.removeQueries({ queryKey: QUERY_KEYS.auth.me });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.auth.me });
+      queryClient.refetchQueries({
+        queryKey: QUERY_KEYS.auth.me,
+        type: 'active',
+      });
     };
     window.addEventListener('auth-changed', onAuthChanged);
     return () => window.removeEventListener('auth-changed', onAuthChanged);
