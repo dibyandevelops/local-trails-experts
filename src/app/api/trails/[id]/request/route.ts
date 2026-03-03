@@ -9,9 +9,9 @@ export async function POST(
 ) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'participant') {
+    if (!auth) {
       return NextResponse.json(
-        { error: 'Only participants can request this trail.' },
+        { error: 'Please login to request this trail.' },
         { status: 401 }
       );
     }
@@ -19,6 +19,29 @@ export async function POST(
     const trailId = params.id;
     const body = await request.json();
     const description = String(body?.description || '').trim();
+    const expertUserId = String(body?.expert_user_id || '').trim();
+    const preferredDateRaw = String(body?.preferred_date || '').trim();
+
+    if (!expertUserId) {
+      return NextResponse.json(
+        { error: 'Please select an expert for this request.' },
+        { status: 400 }
+      );
+    }
+    if (!preferredDateRaw) {
+      return NextResponse.json(
+        { error: 'Please select a preferred date.' },
+        { status: 400 }
+      );
+    }
+
+    const preferredDate = new Date(preferredDateRaw);
+    if (Number.isNaN(preferredDate.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid preferred date.' },
+        { status: 400 }
+      );
+    }
 
     const trailRes = await pool.query(
       'SELECT id, name, sport_type, location FROM trails WHERE id = $1 LIMIT 1',
@@ -41,13 +64,58 @@ export async function POST(
       );
     }
 
+    const expertRes = await pool.query(
+      `
+      SELECT id, name, email
+      FROM users
+      WHERE id = $1 AND role = 'expert' AND is_verified_expert = true
+      LIMIT 1
+      `,
+      [expertUserId]
+    );
+    const expert = expertRes.rows[0];
+    if (!expert?.email) {
+      return NextResponse.json(
+        { error: 'Selected expert is not available.' },
+        { status: 400 }
+      );
+    }
+
+    const busyRes = await pool.query(
+      `
+      SELECT id, title, event_date
+      FROM events
+      WHERE host_user_id = $1
+        AND DATE(event_date) = $2::date
+      LIMIT 1
+      `,
+      [expertUserId, preferredDateRaw]
+    );
+    if (busyRes.rows.length > 0) {
+      const conflict = busyRes.rows[0];
+      return NextResponse.json(
+        {
+          error: `Selected expert is busy on ${preferredDateRaw} (${conflict.title}). Please choose another date or expert.`,
+        },
+        { status: 409 }
+      );
+    }
+
     await pool.query(
       `
       INSERT INTO trail_interest_requests (
-        trail_id, requester_user_id, requester_name, requester_email, description
-      ) VALUES ($1, $2, $3, $4, $5)
+        trail_id, requester_user_id, requester_name, requester_email, description, assigned_expert_user_id, preferred_date
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
-      [trailId, auth.sub, user.name || null, user.email, description || null]
+      [
+        trailId,
+        auth.sub,
+        user.name || null,
+        user.email,
+        description || null,
+        expertUserId,
+        preferredDateRaw,
+      ]
     );
 
     const recipientsRes = await pool.query(
@@ -60,14 +128,15 @@ export async function POST(
     const recipients: string[] = recipientsRes.rows
       .map((row) => row.email)
       .filter(Boolean);
+    const uniqueRecipients = Array.from(new Set([...recipients, expert.email]));
 
     await Promise.all(
-      recipients.map((to) =>
+      uniqueRecipients.map((to) =>
         sendEmailSafe({
           to,
           subject: `Trail request: ${trail.name}`,
-          text: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
-          html: `<p>A participant requested activity on this trail.</p><p><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}</p><p><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})</p><p><strong>Description:</strong><br/>${description || 'No additional details.'}</p>`,
+          text: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateRaw}\nPreferred expert: ${expert.name || expert.email}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
+          html: `<p>A participant requested activity on this trail.</p><p><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateRaw}<br/><strong>Preferred expert:</strong> ${expert.name || expert.email}</p><p><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})</p><p><strong>Description:</strong><br/>${description || 'No additional details.'}</p>`,
         })
       )
     );

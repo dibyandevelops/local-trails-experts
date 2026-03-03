@@ -162,11 +162,14 @@ export async function deleteTrail(trailId: string) {
   }
 }
 
-export async function requestTrail(trailId: string, description: string) {
+export async function requestTrail(
+  trailId: string,
+  payload: { description: string; expert_user_id: string; preferred_date: string }
+) {
   try {
     const { data } = await apiClient.post<{ success: boolean; error?: string }>(
       `${ApiPath.Trails}/${trailId}/request`,
-      { description }
+      payload
     );
     return data;
   } catch (error) {

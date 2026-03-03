@@ -35,6 +35,10 @@ export type TrailInterestRequest = {
   trail_sport_type: string | null;
   requester_name: string | null;
   requester_email: string;
+  preferred_date: string | null;
+  assigned_expert_user_id: string | null;
+  assigned_expert_name: string | null;
+  assigned_expert_email: string | null;
   description: string | null;
   created_at: string;
 };

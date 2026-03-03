@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from 'next';
 import Navbar from '@/components/navigation/navbar';
 import PWARegister from '@/components/pwa-register';
 import PushNotificationPrompt from '@/components/push-notification-prompt';
+import { getServerCurrentUser } from '@/lib/auth-server';
 
 import './globals.css';
 import MainContent from '@/components/main-content';
@@ -27,11 +28,12 @@ export const viewport: Viewport = {
   themeColor: '#166534',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const initialUser = await getServerCurrentUser();
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -55,7 +57,7 @@ export default function RootLayout({
         <PWARegister />
         <MainContent>
           <PushNotificationPrompt />
-          <Navbar />
+          <Navbar initialUser={initialUser} />
           <main className="container mx-auto px-4 py-8">{children}</main>
         </MainContent>
       </body>

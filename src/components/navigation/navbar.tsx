@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/theme-toggle';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useQueryClient } from '@tanstack/react-query';
+import type { User } from '@/types';
 
 type NavItem = {
   label: string;
@@ -67,11 +68,15 @@ const icon = (
     <circle cx="350" cy="150" r="38" fill="#bbf7d0" />
   </svg>
 );
-export default function Navbar() {
+type NavbarProps = {
+  initialUser?: User | null;
+};
+
+export default function Navbar({ initialUser = null }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const { data: user = null, isLoading: loadingUser } = useCurrentUser();
+  const { data: user = null, isLoading: loadingUser } = useCurrentUser(initialUser);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);

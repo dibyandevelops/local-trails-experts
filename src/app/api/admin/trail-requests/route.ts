@@ -20,10 +20,15 @@ export async function GET(request: NextRequest) {
         tir.requester_user_id,
         tir.requester_name,
         tir.requester_email,
+        tir.preferred_date,
+        tir.assigned_expert_user_id,
+        ex.name AS assigned_expert_name,
+        ex.email AS assigned_expert_email,
         tir.description,
         tir.created_at
       FROM trail_interest_requests tir
       JOIN trails t ON t.id = tir.trail_id
+      LEFT JOIN users ex ON ex.id = tir.assigned_expert_user_id
       ORDER BY tir.created_at DESC
       `
     );
