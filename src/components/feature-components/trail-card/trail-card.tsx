@@ -16,14 +16,19 @@ const Card = ({
   const isClickable = !!onClick;
   return (
     <div
-      className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow text-left"
+      className="group bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 text-left hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-green-400"
       {...{
         ...(isClickable
           ? // added accessibility enhancements for clickable card
             {
               role: 'button',
               tabIndex: 0,
-              onKeyDown: (event) => event.key === 'Enter' && onClick(),
+              onKeyDown: (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onClick();
+                }
+              },
               onClick,
               'aria-label': `Select ${trailName}`,
             }
@@ -60,7 +65,7 @@ export const TrailCard: React.FunctionComponent<Trail> = (trail) => {
         <img
           src={images[activeImageIndex]}
           alt={trail.name}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
         />
         {hasMultipleImages && (
           <>

@@ -86,6 +86,26 @@ const TrailPage: React.FunctionComponent = () => {
           ],
         } as any));
 
+  useEffect(() => {
+    if (!galleryModalOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!trailImages.length) return;
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        setActiveImageIndex((prev) => (prev === trailImages.length - 1 ? 0 : prev + 1));
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        setActiveImageIndex((prev) => (prev === 0 ? trailImages.length - 1 : prev - 1));
+      }
+      if (event.key === 'Escape') {
+        setGalleryModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [galleryModalOpen]);
+
   const {
     data: trail,
     isLoading: loading,
@@ -404,9 +424,44 @@ const TrailPage: React.FunctionComponent = () => {
     };
   }
 
+  const copyTrailLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setActionMessage('Trail link copied.');
+      setTimeout(() => setActionMessage(null), 2000);
+    } catch {
+      setActionMessage('Unable to copy link.');
+      setTimeout(() => setActionMessage(null), 2000);
+    }
+  };
+
+  const handleBackToTrails = () => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/trails', { scroll: false });
+  };
+
   return (
-    <div className="container mx-auto px-4 py-6 sm:py-8">
+    <div className="container mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-8">
       <div className="mb-6">
+        <div className="mb-4 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleBackToTrails}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            ← Back to trails
+          </button>
+          <button
+            type="button"
+            onClick={copyTrailLink}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Share
+          </button>
+        </div>
         <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 className="mb-2 text-3xl font-bold text-green-800 sm:text-4xl">{trail.name}</h1>
@@ -466,7 +521,7 @@ const TrailPage: React.FunctionComponent = () => {
               setRequestMessage(null);
               setRequestModalOpen(true);
             }}
-            className="w-full rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            className="w-full rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             Request This Trail
           </button>
@@ -482,40 +537,40 @@ const TrailPage: React.FunctionComponent = () => {
           <p className="text-gray-700 mb-4">{trail.description}</p>
         )}
 
-        <div className="flex flex-wrap gap-4 mb-4">
-          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <span className="rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-800 text-center">
             {trail.difficulty}
           </span>
           {trail.sport_type && (
-            <span className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-sm">
+            <span className="rounded-lg bg-sky-100 px-3 py-2 text-center text-sm text-sky-800">
               {getSportLabel(trail.sport_type)}
             </span>
           )}
           {routeData?.totalDistance ? (
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+            <span className="rounded-lg bg-blue-100 px-3 py-2 text-center text-sm text-blue-800">
               {routeData.totalDistance.toFixed(2)} km
             </span>
           ) : trail.distance_km ? (
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+            <span className="rounded-lg bg-blue-100 px-3 py-2 text-center text-sm text-blue-800">
               {trail.distance_km} km
             </span>
           ) : null}
           {routeData?.elevationGain ? (
-            <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+            <span className="rounded-lg bg-purple-100 px-3 py-2 text-center text-sm text-purple-800">
               +{routeData.elevationGain.toFixed(0)} m ↑
             </span>
           ) : trail.elevation_gain_m ? (
-            <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+            <span className="rounded-lg bg-purple-100 px-3 py-2 text-center text-sm text-purple-800">
               {trail.elevation_gain_m} m elevation
             </span>
           ) : null}
           {routeData?.elevationLoss ? (
-            <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">
+            <span className="rounded-lg bg-red-100 px-3 py-2 text-center text-sm text-red-800">
               -{routeData.elevationLoss.toFixed(0)} m ↓
             </span>
           ) : null}
           {trail.estimated_time_hours && (
-            <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+            <span className="rounded-lg bg-orange-100 px-3 py-2 text-center text-sm text-orange-800">
               ~{trail.estimated_time_hours} hours
             </span>
           )}
@@ -725,17 +780,17 @@ const TrailPage: React.FunctionComponent = () => {
               Open Gallery
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {trailImages.slice(0, 4).map((imageUrl, index) => (
-              <button
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {trailImages.slice(0, 4).map((imageUrl, index) => (
+                <button
                 key={`${imageUrl}-${index}`}
                 type="button"
                 onClick={() => {
                   setActiveImageIndex(index);
                   setGalleryModalOpen(true);
                 }}
-                className="relative h-32 overflow-hidden rounded-lg"
-              >
+                  className="relative h-32 overflow-hidden rounded-lg ring-offset-2 transition hover:scale-[1.01] hover:ring-2 hover:ring-green-400"
+                >
                 <Image
                   src={imageUrl}
                   alt={`${trail.name} trail photo ${index + 1}`}
@@ -749,6 +804,49 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         </div>
       )}
+
+      <div className="fixed bottom-3 left-1/2 z-40 flex w-[94vw] -translate-x-1/2 gap-2 rounded-xl border border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur sm:hidden">
+        {trailImages.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setActiveImageIndex(0);
+              setGalleryModalOpen(true);
+            }}
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800"
+          >
+            Photos
+          </button>
+        )}
+        {hasRoute && routeData && (
+          <button
+            type="button"
+            onClick={() => downloadGpx(trail.name, routeData)}
+            className="flex-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
+          >
+            GPX
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            if (loadingCurrentUser) return;
+            if (!currentUser) {
+              router.push('/register');
+              return;
+            }
+            if (!canRequestTrail) {
+              setRequestMessage('Only participants can request this trail.');
+              return;
+            }
+            setRequestMessage(null);
+            setRequestModalOpen(true);
+          }}
+          className="flex-1 rounded-lg border border-green-700 px-3 py-2 text-xs font-semibold text-green-700"
+        >
+          Request
+        </button>
+      </div>
 
       <Dialog.Root open={requestModalOpen} onOpenChange={setRequestModalOpen}>
         <Dialog.Portal>

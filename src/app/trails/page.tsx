@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Trail, Difficulty } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchTrailsPaginated } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
+
+const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 
 function TrailGallery({ trails }: { trails: Trail[] }) {
   const router = useRouter();
@@ -20,6 +22,7 @@ function TrailGallery({ trails }: { trails: Trail[] }) {
           {...{
             ...trail,
             onClick() {
+              sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
               router.push(`/trails/${trail.id}`);
             },
           }}
@@ -80,6 +83,9 @@ function TrailsLoadMoreSkeleton() {
 
 function TrailsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const didInitFromUrl = useRef(false);
+  const didRestoreScroll = useRef(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
@@ -134,6 +140,60 @@ function TrailsPageContent() {
   const isRefreshingResults = isFetching && !isFetchingNextPage && trails.length > 0;
 
   useEffect(() => {
+    if (didRestoreScroll.current) return;
+    if (isInitialLoading) return;
+    const raw = sessionStorage.getItem(TRAILS_SCROLL_KEY);
+    if (!raw) {
+      didRestoreScroll.current = true;
+      return;
+    }
+    const y = Number(raw);
+    if (Number.isFinite(y)) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: y, behavior: 'auto' });
+      });
+    }
+    sessionStorage.removeItem(TRAILS_SCROLL_KEY);
+    didRestoreScroll.current = true;
+  }, [isInitialLoading, trails.length]);
+
+  useEffect(() => {
+    if (didInitFromUrl.current) return;
+    const urlSearch = (searchParams.get('search') || '').trim();
+    const urlDifficulty = (searchParams.get('difficulty') || '').trim() as Difficulty | '';
+    const urlLocation = (searchParams.get('location') || '').trim();
+    const urlSport = (searchParams.get('sport') || '').trim();
+
+    if (urlSearch) {
+      setSearchInput(urlSearch);
+      setSearch(urlSearch);
+    }
+    if (urlDifficulty) {
+      setDifficulty(urlDifficulty);
+    }
+    if (urlLocation) {
+      setLocationInput(urlLocation);
+      setLocation(urlLocation);
+    }
+    if (urlSport && TRAIL_SPORTS.some((option) => option.value === urlSport)) {
+      setSport(urlSport as typeof sport);
+    }
+    didInitFromUrl.current = true;
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!didInitFromUrl.current) return;
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (difficulty) params.set('difficulty', difficulty);
+    if (location) params.set('location', location);
+    if (sport && sport !== DEFAULT_TRAIL_SPORT) params.set('sport', sport);
+    const query = params.toString();
+    const nextUrl = query ? `/trails?${query}` : '/trails';
+    router.replace(nextUrl, { scroll: false });
+  }, [search, difficulty, location, sport, router]);
+
+  useEffect(() => {
     const node = loadMoreRef.current;
     if (!node) return;
 
@@ -160,6 +220,8 @@ function TrailsPageContent() {
     setSearch(searchInput);
     setLocation(locationInput);
   };
+
+  const hasActiveFilters = Boolean(search || difficulty || location || sport !== DEFAULT_TRAIL_SPORT);
 
   return (
     <div>
@@ -228,6 +290,52 @@ function TrailsPageContent() {
             </select>
           </div>
         </div>
+        {hasActiveFilters && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSearchInput('');
+                }}
+                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
+              >
+                Search: {search} ×
+              </button>
+            )}
+            {difficulty && (
+              <button
+                type="button"
+                onClick={() => setDifficulty('')}
+                className="rounded-full border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800"
+              >
+                Difficulty: {difficulty} ×
+              </button>
+            )}
+            {location && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocation('');
+                  setLocationInput('');
+                }}
+                className="rounded-full border border-purple-300 bg-purple-50 px-3 py-1 text-xs font-medium text-purple-800"
+              >
+                Location: {location} ×
+              </button>
+            )}
+            {sport !== DEFAULT_TRAIL_SPORT && (
+              <button
+                type="button"
+                onClick={() => setSport(DEFAULT_TRAIL_SPORT)}
+                className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800"
+              >
+                Sport: {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport} ×
+              </button>
+            )}
+          </div>
+        )}
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <button
             type="submit"
@@ -247,7 +355,7 @@ function TrailsPageContent() {
             }}
             className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto"
           >
-            Reset
+            Reset All
           </button>
         </div>
       </form>
@@ -269,6 +377,22 @@ function TrailsPageContent() {
           <p className="text-gray-600">
             No trails found. Try adjusting your search criteria.
           </p>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput('');
+                setSearch('');
+                setDifficulty('');
+                setLocationInput('');
+                setLocation('');
+                setSport(DEFAULT_TRAIL_SPORT);
+              }}
+              className="mt-4 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <>
