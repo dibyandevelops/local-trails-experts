@@ -453,8 +453,17 @@ export default function CreateEventPage() {
       <p className="mb-6 text-sm text-gray-600">
         Choose sport first, then pick a trail (auto-fills title/details), then publish.
       </p>
-
-      {loadingUser || loadingEditData || loadingTrails ? (
+      {!isEditMode && (
+        <div className="mb-5">
+          <button
+            type="button"
+            onClick={() => router.push('/events/trainings/create')}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            Use Separate Training Form
+          </button>
+        </div>
+      )}
       {sportChangeMessage && (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
           {sportChangeMessage}

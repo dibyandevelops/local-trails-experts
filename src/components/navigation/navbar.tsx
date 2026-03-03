@@ -31,6 +31,12 @@ const navItems: NavItem[] = [
     requiresAuth: true,
     requiresRole: ['admin', 'expert'],
   },
+  {
+    label: 'Organize Trainings',
+    href: '/events/trainings/create',
+    requiresAuth: true,
+    requiresRole: ['admin', 'expert'],
+  },
   { label: 'Experts', href: '/experts' },
   {
     label: 'For Experts',
