@@ -634,7 +634,7 @@ export default function CreateEventPage() {
             <p className="text-xs text-gray-500 mt-1">0 = free</p>
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium mb-2">QR Payment Image</label>
             <input
               type="file"
@@ -666,7 +666,7 @@ export default function CreateEventPage() {
                 className="mt-3 h-36 w-36 rounded border border-gray-200 object-contain bg-white"
               />
             )}
-          </div>
+          </div> */}
 
           {currentUser?.role === 'admin' && (
             <div>

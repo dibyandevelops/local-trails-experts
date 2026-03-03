@@ -154,7 +154,7 @@ export default function EventDetailPage() {
             </span>
           </div>
         )}
-        <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+        {/* <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
           <p className="text-sm font-medium text-gray-700">QR Payment Placeholder</p>
           <p className="text-xs text-gray-500 mt-1">
             Scan QR to pay. Payment confirmation integration will be enabled next.
@@ -170,7 +170,7 @@ export default function EventDetailPage() {
               No QR uploaded
             </div>
           )}
-        </div>
+        </div> */}
       </section>
     </div>
   );
