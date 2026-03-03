@@ -400,6 +400,12 @@ export default function AdminPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   Requested by {request.requester_name || 'Participant'} ({request.requester_email})
                 </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Preferred expert: {request.assigned_expert_name || 'N/A'} ({request.assigned_expert_email || 'N/A'})
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Preferred date: {request.preferred_date || 'N/A'}
+                </p>
                 {request.description && (
                   <p className="text-sm text-gray-700 mt-2 whitespace-pre-line">
                     {request.description}
