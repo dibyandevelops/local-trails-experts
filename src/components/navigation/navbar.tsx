@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/theme-toggle';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from '@/types';
 
 type NavItem = {
@@ -83,6 +83,19 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { data: user = null, isLoading: loadingUser } = useCurrentUser(initialUser);
+  const { data: alertsData } = useQuery<{ unreadCount: number }>({
+    queryKey: ['expert-alerts-count', user?.id],
+    queryFn: async () => {
+      const response = await fetch('/api/experts/me/alerts', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch expert alerts');
+      }
+      return response.json();
+    },
+    enabled: user?.role === 'expert',
+    refetchInterval: 30000,
+    retry: false,
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -176,6 +189,23 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               ) : null
             )}
             <ThemeToggle className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-green-600 text-sm font-semibold hover:bg-green-700" />
+            {!loadingUser && user?.role === 'expert' && (
+              <Link
+                href="/experts/me#trail-requests"
+                className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-green-600 bg-green-700 hover:bg-green-600"
+                aria-label="View expert alerts"
+                title="View trail request alerts"
+              >
+                <span className="text-sm" aria-hidden="true">
+                  🔔
+                </span>
+                {(alertsData?.unreadCount || 0) > 0 && (
+                  <span className="absolute -right-1 -top-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-green-900">
+                    {alertsData?.unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {!loadingUser && !user && (
               <Link
@@ -235,6 +265,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               ) : null
             )}
             <ThemeToggle className="text-left px-2 py-2 rounded border border-green-600 hover:bg-green-700" />
+            {!loadingUser && user?.role === 'expert' && (
+              <Link
+                href="/experts/me#trail-requests"
+                className="rounded px-2 py-2 hover:bg-green-700"
+                onClick={() => setMobileOpen(false)}
+              >
+                Alerts
+                {(alertsData?.unreadCount || 0) > 0
+                  ? ` (${alertsData?.unreadCount})`
+                  : ''}
+              </Link>
+            )}
             {!loadingUser && !user && (
               <Link
                 href="/login"

@@ -85,6 +85,19 @@ function getUpcomingWeekendDateTimeLocal() {
   return `${year}-${month}-${date}T${hours}:${minutes}`;
 }
 
+function normalizeDateOnly(value: string) {
+  const raw = value.trim();
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) return raw.slice(0, 10);
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return '';
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const defaultValues: EventFormValues = {
   title: '',
   description: '',
@@ -115,6 +128,10 @@ type EventFormProps = {
   lockTrailAndSport?: boolean;
   embedded?: boolean;
   initialUser?: User | null;
+  requestedByName?: string;
+  requestedByEmail?: string;
+  requestedDate?: string;
+  lockEventDate?: boolean;
   onCompleted?: (eventId: string) => void;
   onCancel?: () => void;
 };
@@ -128,6 +145,10 @@ export default function EventForm({
   lockTrailAndSport = false,
   embedded = false,
   initialUser,
+  requestedByName = '',
+  requestedByEmail = '',
+  requestedDate = '',
+  lockEventDate = false,
   onCompleted,
   onCancel,
 }: EventFormProps) {
@@ -149,6 +170,8 @@ export default function EventForm({
   const [showTrailRequestDialog, setShowTrailRequestDialog] = useState(false);
   const previousSportRef = useRef<SportType | null>(null);
   const prefillAppliedRef = useRef(false);
+  const requesterPrefillAppliedRef = useRef(false);
+  const requesterKeyRef = useRef('');
 
   const {
     register,
@@ -168,6 +191,7 @@ export default function EventForm({
   const selectedTrailId = watch('trail_id');
   const isPaidEvent = watch('is_paid_event');
   const currentTitle = watch('title');
+  const requestedDateOnly = normalizeDateOnly(requestedDate);
 
   const {
     data: trails = [],
@@ -343,6 +367,47 @@ export default function EventForm({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [isEditMode, loadingUser, loadingEditData, setFocus]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    const nextKey = `${requestedByName}|${requestedByEmail}|${requestedDateOnly}`;
+    if (requesterKeyRef.current !== nextKey) {
+      requesterPrefillAppliedRef.current = false;
+      requesterKeyRef.current = nextKey;
+    }
+    if (requesterPrefillAppliedRef.current) return;
+    if (!requestedByName && !requestedByEmail && !requestedDate) {
+      requesterPrefillAppliedRef.current = true;
+      return;
+    }
+
+    const currentDescription = (getValues('description') || '').trim();
+    const requesterLine = `Requested by: ${
+      requestedByName || 'Participant'
+    }${requestedByEmail ? ` (${requestedByEmail})` : ''}`;
+    const preferredDateLine = requestedDate ? `Preferred date: ${requestedDate}` : '';
+    const requestContext = [requesterLine, preferredDateLine].filter(Boolean).join('\n');
+    const nextDescription = currentDescription
+      ? `${currentDescription}\n\n${requestContext}`
+      : requestContext;
+    setValue('description', nextDescription.trim());
+
+    requesterPrefillAppliedRef.current = true;
+  }, [
+    isEditMode,
+    requestedByName,
+    requestedByEmail,
+    requestedDate,
+    getValues,
+    setValue,
+    requestedDateOnly,
+  ]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    if (!requestedDateOnly) return;
+    setValue('event_date', `${requestedDateOnly}T06:30`);
+  }, [isEditMode, requestedDateOnly, setValue]);
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateEventInput) => createEvent(payload),
@@ -751,8 +816,14 @@ export default function EventForm({
               <input
                 type="datetime-local"
                 {...register('event_date', { required: true })}
+                disabled={lockEventDate || Boolean(requestedDateOnly)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
+              {(lockEventDate || requestedDateOnly) && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Date/time locked from participant trail request.
+                </p>
+              )}
             </div>
 
             <div>

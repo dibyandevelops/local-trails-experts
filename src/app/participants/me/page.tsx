@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import PhoneVerificationDialog from '@/components/phone-verification-dialog';
-import type { User, SportType } from '@/types';
+import type { User } from '@/types';
 import { format } from 'date-fns';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
 
 type ParticipantEvent = {
   id: string;
@@ -17,15 +17,41 @@ type ParticipantEvent = {
   joined_at: string;
 };
 
+type ParticipantTrailRequest = {
+  id: string;
+  trail_id: string;
+  trail_name: string;
+  trail_location: string | null;
+  trail_sport_type: string | null;
+  requester_email: string;
+  description: string | null;
+  preferred_date: string | null;
+  assigned_expert_user_id: string | null;
+  assigned_expert_name: string | null;
+  assigned_expert_email: string | null;
+  created_at: string;
+};
+
+type ExpertOption = {
+  id: string;
+  name: string | null;
+  email: string;
+};
+
 export default function ParticipantProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<ParticipantEvent[]>([]);
+  const [trailRequests, setTrailRequests] = useState<ParticipantTrailRequest[]>([]);
+  const [experts, setExperts] = useState<ExpertOption[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingRequests, setLoadingRequests] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingRequestId, setSavingRequestId] = useState<string | null>(null);
+  const [cancellingRequestId, setCancellingRequestId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
     city: '',
@@ -34,13 +60,7 @@ export default function ParticipantProfilePage() {
     phone: '',
   });
 
-  const sportOptions: { value: SportType; label: string }[] = [
-    { value: 'mtb', label: 'MTB Trail Rides' },
-    { value: 'hiking', label: 'Hiking' },
-    { value: 'trail_running', label: 'Trail Running' },
-    { value: 'training', label: 'Training & Coaching' },
-    { value: 'local_tour', label: 'Local Tours' },
-  ];
+  const sportOptions = TRAIL_SPORTS;
 
   useEffect(() => {
     setUser(currentUser || null);
@@ -58,26 +78,36 @@ export default function ParticipantProfilePage() {
   }, [currentUser]);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchData = async () => {
       try {
         if (!currentUser || currentUser.role !== 'participant') {
           setLoadingEvents(false);
+          setLoadingRequests(false);
           return;
         }
-        const eventsRes = await fetch('/api/participants/me/events');
+        const [eventsRes, requestsRes, expertsRes] = await Promise.all([
+          fetch('/api/participants/me/events'),
+          fetch('/api/participants/me/trail-requests'),
+          fetch('/api/experts?verified=true'),
+        ]);
         const eventsData = await eventsRes.json();
+        const requestsData = await requestsRes.json();
+        const expertsData = await expertsRes.json();
         setEvents(eventsData.events || []);
+        setTrailRequests(requestsData.requests || []);
+        setExperts(expertsData.experts || []);
       } catch (error) {
         console.error('Error loading participant profile', error);
       } finally {
         setLoadingEvents(false);
+        setLoadingRequests(false);
       }
     };
 
-    fetchEvents();
+    fetchData();
   }, [currentUser]);
 
-  if (loadingUser || loadingEvents) {
+  if (loadingUser || loadingEvents || loadingRequests) {
     return <div className="text-gray-600">Loading profile...</div>;
   }
 
@@ -88,6 +118,12 @@ export default function ParticipantProfilePage() {
       </div>
     );
   }
+
+  const parseSelectedSports = () =>
+    editForm.sports
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -112,10 +148,7 @@ export default function ParticipantProfilePage() {
             setSaving(true);
             setMessage(null);
             try {
-              const selectedSports = editForm.sports
-                .split(',')
-                .map((value) => value.trim())
-                .filter(Boolean);
+              const selectedSports = parseSelectedSports();
               if (selectedSports.length === 0) {
                 setMessage('Please select at least one sport.');
                 setSaving(false);
@@ -226,29 +259,18 @@ export default function ParticipantProfilePage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone number
             </label>
-            <div className="flex flex-col md:flex-row gap-2">
-              <input
-                type="tel"
-                value={editForm.phone}
-                onChange={(event) =>
-                  setEditForm({ ...editForm, phone: event.target.value })
-                }
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="+9779812345678"
-              />
-              <button
-                type="button"
-                onClick={() => setVerifyOpen(true)}
-                className="px-4 py-2 rounded-lg text-sm font-semibold border border-green-700 text-green-700 hover:bg-green-50"
-              >
-                {user.phone_verified_at ? 'Verified' : 'Verify phone'}
-              </button>
-            </div>
-            {!user.phone_verified_at && (
-              <p className="text-xs text-gray-500 mt-1">
-                Please verify to unlock bookings.
-              </p>
-            )}
+            <input
+              type="tel"
+              value={editForm.phone}
+              onChange={(event) =>
+                setEditForm({ ...editForm, phone: event.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              placeholder="+9779812345678"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Phone number must be unique across all users.
+            </p>
           </div>
           <div className="md:col-span-2">
             <button
@@ -262,36 +284,175 @@ export default function ParticipantProfilePage() {
         </form>
       </section>
 
-      <PhoneVerificationDialog
-        open={verifyOpen}
-        onOpenChange={setVerifyOpen}
-        phone={editForm.phone}
-        onVerified={async (idToken) => {
-          const response = await fetch('/api/me/verify-phone', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: editForm.phone, idToken }),
-          });
-          const data = await response.json();
-          if (response.ok) {
-            setUser((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    phone: data.user?.phone || prev.phone,
-                    phone_verified_at:
-                      data.user?.phone_verified_at || new Date().toISOString(),
-                  }
-                : prev
-            );
-          }
-        }}
-      />
-
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Your Profile</h1>
-        <p className="text-sm text-gray-600 mt-1">{user.name || 'Participant'}</p>
-        <p className="text-sm text-gray-600">{user.email}</p>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          Your Trail Activity Requests
+        </h2>
+        {requestMessage && (
+          <p className="mb-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+            {requestMessage}
+          </p>
+        )}
+        {trailRequests.length === 0 ? (
+          <p className="text-sm text-gray-600">
+            You have not requested any trail activities yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {trailRequests.map((request) => (
+              <div key={request.id} className="rounded-lg border border-gray-200 p-4">
+                <div className="mb-2 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{request.trail_name}</p>
+                    <p className="text-xs text-gray-500">
+                      {request.trail_location || 'Unknown location'}
+                      {request.trail_sport_type
+                        ? ` • ${getSportLabel(request.trail_sport_type)}`
+                        : ''}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Requested on {format(new Date(request.created_at), 'PPP p')}
+                  </p>
+                </div>
+                {request.description && (
+                  <p className="mb-2 rounded bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                    {request.description}
+                  </p>
+                )}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">
+                      Assigned Expert
+                    </label>
+                    <select
+                      value={request.assigned_expert_user_id || ''}
+                      onChange={(event) => {
+                        const nextExpertId = event.target.value;
+                        setTrailRequests((prev) =>
+                          prev.map((item) =>
+                            item.id === request.id
+                              ? { ...item, assigned_expert_user_id: nextExpertId }
+                              : item
+                          )
+                        );
+                      }}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    >
+                      <option value="">Select expert</option>
+                      {experts.map((expert) => (
+                        <option key={expert.id} value={expert.id}>
+                          {expert.name || expert.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">
+                      Preferred Date
+                    </label>
+                    <input
+                      type="date"
+                      min={new Date().toISOString().slice(0, 10)}
+                      value={request.preferred_date?.slice(0, 10) || ''}
+                      onChange={(event) => {
+                        const nextDate = event.target.value;
+                        setTrailRequests((prev) =>
+                          prev.map((item) =>
+                            item.id === request.id
+                              ? { ...item, preferred_date: nextDate }
+                              : item
+                          )
+                        );
+                      }}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setRequestMessage(null);
+                      if (!request.assigned_expert_user_id || !request.preferred_date) {
+                        setRequestMessage('Please select expert and preferred date.');
+                        return;
+                      }
+                      try {
+                        setSavingRequestId(request.id);
+                        const response = await fetch(
+                          `/api/participants/me/trail-requests/${request.id}`,
+                          {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              expert_user_id: request.assigned_expert_user_id,
+                              preferred_date: request.preferred_date,
+                            }),
+                          }
+                        );
+                        const data = await response.json();
+                        if (!response.ok) {
+                          throw new Error(data?.error || 'Failed to update request');
+                        }
+                        setRequestMessage('Request updated successfully.');
+                      } catch (error) {
+                        setRequestMessage(
+                          error instanceof Error ? error.message : 'Failed to update request'
+                        );
+                      } finally {
+                        setSavingRequestId(null);
+                      }
+                    }}
+                    disabled={savingRequestId === request.id}
+                    className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-60"
+                  >
+                    {savingRequestId === request.id
+                      ? 'Updating...'
+                      : 'Change Date / Expert'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const confirmed = window.confirm(
+                        'Cancel this trail activity request?'
+                      );
+                      if (!confirmed) return;
+                      setRequestMessage(null);
+                      try {
+                        setCancellingRequestId(request.id);
+                        const response = await fetch(
+                          `/api/participants/me/trail-requests/${request.id}`,
+                          {
+                            method: 'DELETE',
+                          }
+                        );
+                        const data = await response.json();
+                        if (!response.ok) {
+                          throw new Error(data?.error || 'Failed to cancel request');
+                        }
+                        setTrailRequests((prev) =>
+                          prev.filter((item) => item.id !== request.id)
+                        );
+                        setRequestMessage('Request cancelled.');
+                      } catch (error) {
+                        setRequestMessage(
+                          error instanceof Error ? error.message : 'Failed to cancel request'
+                        );
+                      } finally {
+                        setCancellingRequestId(null);
+                      }
+                    }}
+                    disabled={cancellingRequestId === request.id}
+                    className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                  >
+                    {cancellingRequestId === request.id ? 'Cancelling...' : 'Cancel Request'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">

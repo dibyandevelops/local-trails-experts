@@ -5,18 +5,39 @@ import { useRouter } from 'next/navigation';
 import type { Event, User, SportType } from '@/types';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import PhoneVerificationDialog from '@/components/phone-verification-dialog';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
+import * as Dialog from '@radix-ui/react-dialog';
+import EventForm from '@/components/feature-components/event-form/event-form';
+
+type ExpertTrailRequest = {
+  id: string;
+  trail_id: string;
+  requester_user_id: string | null;
+  requester_name: string | null;
+  requester_email: string;
+  description: string | null;
+  preferred_date: string | null;
+  created_at: string;
+  trail_name: string;
+  trail_sport_type: string | null;
+  trail_location: string | null;
+};
 
 export default function ExpertProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [trailRequests, setTrailRequests] = useState<ExpertTrailRequest[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingTrailRequests, setLoadingTrailRequests] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [requestForEvent, setRequestForEvent] = useState<ExpertTrailRequest | null>(
+    null
+  );
   const [editForm, setEditForm] = useState({
     name: '',
     city: '',
@@ -25,13 +46,7 @@ export default function ExpertProfilePage() {
     phone: '',
   });
 
-  const sportOptions: { value: SportType; label: string }[] = [
-    { value: 'mtb', label: 'MTB Trail Rides' },
-    { value: 'hiking', label: 'Hiking' },
-    { value: 'trail_running', label: 'Trail Running' },
-    { value: 'training', label: 'Training & Coaching' },
-    { value: 'local_tour', label: 'Local Tours' },
-  ];
+  const sportOptions: { value: SportType; label: string }[] = TRAIL_SPORTS;
 
   useEffect(() => {
     setUser(currentUser || null);
@@ -49,27 +64,34 @@ export default function ExpertProfilePage() {
   }, [currentUser]);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchEventsAndRequests = async () => {
       try {
         if (!currentUser || currentUser.role !== 'expert') {
           setLoadingEvents(false);
+          setLoadingTrailRequests(false);
           return;
         }
 
-        const eventsRes = await fetch(`/api/experts/${currentUser.id}/events`);
+        const [eventsRes, requestsRes] = await Promise.all([
+          fetch(`/api/experts/${currentUser.id}/events`),
+          fetch('/api/experts/me/alerts'),
+        ]);
         const eventsData = await eventsRes.json();
+        const requestsData = await requestsRes.json();
         setEvents(eventsData.events || []);
+        setTrailRequests(requestsData.requests || []);
       } catch (error) {
         console.error('Error loading expert profile', error);
       } finally {
         setLoadingEvents(false);
+        setLoadingTrailRequests(false);
       }
     };
 
-    fetchEvents();
+    fetchEventsAndRequests();
   }, [currentUser]);
 
-  if (loadingUser || loadingEvents) {
+  if (loadingUser || loadingEvents || loadingTrailRequests) {
     return <div className="text-gray-600">Loading profile...</div>;
   }
 
@@ -223,29 +245,18 @@ export default function ExpertProfilePage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone number
             </label>
-            <div className="flex flex-col md:flex-row gap-2">
-              <input
-                type="tel"
-                value={editForm.phone}
-                onChange={(event) =>
-                  setEditForm({ ...editForm, phone: event.target.value })
-                }
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="+9779812345678"
-              />
-              <button
-                type="button"
-                onClick={() => setVerifyOpen(true)}
-                className="px-4 py-2 rounded-lg text-sm font-semibold border border-green-700 text-green-700 hover:bg-green-50"
-              >
-                {user.phone_verified_at ? 'Verified' : 'Verify phone'}
-              </button>
-            </div>
-            {!user.phone_verified_at && (
-              <p className="text-xs text-gray-500 mt-1">
-                Please verify to unlock bookings.
-              </p>
-            )}
+            <input
+              type="tel"
+              value={editForm.phone}
+              onChange={(event) =>
+                setEditForm({ ...editForm, phone: event.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              placeholder="+9779812345678"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Phone number must be unique across all users.
+            </p>
           </div>
           <div className="md:col-span-2">
             <button
@@ -259,36 +270,71 @@ export default function ExpertProfilePage() {
         </form>
       </section>
 
-      <PhoneVerificationDialog
-        open={verifyOpen}
-        onOpenChange={setVerifyOpen}
-        phone={editForm.phone}
-        onVerified={async (idToken) => {
-          const response = await fetch('/api/me/verify-phone', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: editForm.phone, idToken }),
-          });
-          const data = await response.json();
-          if (response.ok) {
-            setUser((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    phone: data.user?.phone || prev.phone,
-                    phone_verified_at:
-                      data.user?.phone_verified_at || new Date().toISOString(),
-                  }
-                : prev
-            );
-          }
-        }}
-      />
-
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Your Profile</h1>
-        <p className="text-sm text-gray-600 mt-1">{user.name || 'Expert'}</p>
-        <p className="text-sm text-gray-600">{user.email}</p>
+      <section id="trail-requests" className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Requested Trails For You
+          </h2>
+          {trailRequests.length > 0 && (
+            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+              {trailRequests.length} alert{trailRequests.length === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
+        {trailRequests.length === 0 ? (
+          <p className="text-sm text-gray-600">No trail requests assigned to you.</p>
+        ) : (
+          <div className="space-y-3">
+            {trailRequests.map((request) => (
+              <div
+                key={request.id}
+                className="rounded-lg border border-gray-200 p-4"
+              >
+                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {request.trail_name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {request.trail_location || 'Unknown location'}
+                      {request.trail_sport_type
+                        ? ` • ${getSportLabel(request.trail_sport_type)}`
+                        : ''}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Requested {format(new Date(request.created_at), 'PPP p')}
+                  </p>
+                </div>
+                <p className="mt-2 text-xs text-gray-600">
+                  Participant: {request.requester_name || 'Participant'} ({request.requester_email})
+                </p>
+                {request.preferred_date && (
+                  <p className="mt-1 text-xs text-gray-600">
+                    Preferred date: {request.preferred_date.slice(0, 10)}
+                  </p>
+                )}
+                {request.description && (
+                  <p className="mt-2 rounded bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                    {request.description}
+                  </p>
+                )}
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRequestForEvent(request);
+                      setCreateEventOpen(true);
+                    }}
+                    className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
+                  >
+                    Create Event For This Participant
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
@@ -317,6 +363,11 @@ export default function ExpertProfilePage() {
                     {format(new Date(event.event_date), 'PPP p')}
                     {event.city ? ` • ${event.city}` : ''}
                   </p>
+                  {event.sport_type && (
+                    <p className="text-xs text-gray-500">
+                      Sport: {getSportLabel(event.sport_type)}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -330,6 +381,57 @@ export default function ExpertProfilePage() {
           </div>
         )}
       </section>
+
+      <Dialog.Root
+        open={createEventOpen}
+        onOpenChange={(open) => {
+          setCreateEventOpen(open);
+          if (!open) {
+            setRequestForEvent(null);
+          }
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 h-[88vh] w-[96vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <Dialog.Title className="truncate pr-2 text-sm font-semibold text-gray-900">
+                Create Event For Requested Trail
+              </Dialog.Title>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+                Close
+              </Dialog.Close>
+            </div>
+            {requestForEvent ? (
+              <div className="h-[calc(88vh-52px)] overflow-y-auto p-4">
+                <EventForm
+                  mode="create"
+                  embedded
+                  lockTrailAndSport
+                  lockEventDate
+                  prefillTrailId={requestForEvent.trail_id}
+                  prefillSport={(requestForEvent.trail_sport_type || 'mtb') as SportType}
+                  requestedByName={requestForEvent.requester_name || 'Participant'}
+                  requestedByEmail={requestForEvent.requester_email}
+                  requestedDate={requestForEvent.preferred_date || ''}
+                  onCompleted={() => {
+                    setCreateEventOpen(false);
+                    setRequestForEvent(null);
+                  }}
+                  onCancel={() => {
+                    setCreateEventOpen(false);
+                    setRequestForEvent(null);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="grid h-[calc(88vh-52px)] place-items-center text-sm text-gray-600">
+                Select a request to create event.
+              </div>
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

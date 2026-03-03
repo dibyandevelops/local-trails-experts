@@ -5,7 +5,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
+    if (!auth || auth.role !== 'expert') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -14,30 +14,35 @@ export async function GET(request: NextRequest) {
       SELECT
         tir.id,
         tir.trail_id,
-        t.name AS trail_name,
-        t.location AS trail_location,
-        t.sport_type AS trail_sport_type,
         tir.requester_user_id,
         tir.requester_name,
         tir.requester_email,
-        to_char(tir.preferred_date::date, 'YYYY-MM-DD') AS preferred_date,
-        tir.assigned_expert_user_id,
-        ex.name AS assigned_expert_name,
-        ex.email AS assigned_expert_email,
         tir.description,
-        tir.created_at
+        to_char(tir.preferred_date::date, 'YYYY-MM-DD') AS preferred_date,
+        tir.created_at,
+        t.name AS trail_name,
+        t.sport_type AS trail_sport_type,
+        t.location AS trail_location
       FROM trail_interest_requests tir
       JOIN trails t ON t.id = tir.trail_id
-      LEFT JOIN users ex ON ex.id = tir.assigned_expert_user_id
+      WHERE tir.assigned_expert_user_id = $1
       ORDER BY tir.created_at DESC
-      `
+      LIMIT 50
+      `,
+      [auth.sub]
     );
 
-    return NextResponse.json({ requests: result.rows }, { status: 200 });
-  } catch (error) {
-    console.error('Error fetching trail requests:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch trail requests' },
+      {
+        requests: result.rows,
+        unreadCount: result.rows.length,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error fetching expert alerts:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch expert alerts' },
       { status: 500 }
     );
   }

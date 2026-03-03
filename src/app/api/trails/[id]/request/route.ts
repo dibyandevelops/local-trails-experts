@@ -105,7 +105,7 @@ export async function POST(
       `
       INSERT INTO trail_interest_requests (
         trail_id, requester_user_id, requester_name, requester_email, description, assigned_expert_user_id, preferred_date
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7::date)
       `,
       [
         trailId,

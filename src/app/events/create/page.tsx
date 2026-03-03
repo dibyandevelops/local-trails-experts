@@ -10,6 +10,9 @@ export default function CreateEventPage() {
   const editEventId = searchParams.get('id');
   const prefillTrailId = searchParams.get('trail_id') || '';
   const prefillSport = (searchParams.get('sport') || '') as SportType | '';
+  const requestedByName = searchParams.get('requested_by_name') || '';
+  const requestedByEmail = searchParams.get('requested_by_email') || '';
+  const requestedDate = searchParams.get('requested_date') || '';
 
   return (
     <EventForm
@@ -17,6 +20,9 @@ export default function CreateEventPage() {
       editEventId={editEventId}
       prefillTrailId={prefillTrailId}
       prefillSport={prefillSport}
+      requestedByName={requestedByName}
+      requestedByEmail={requestedByEmail}
+      requestedDate={requestedDate}
     />
   );
 }
