@@ -1,12 +1,31 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import type { UserRole } from '@/types';
 import { loginUser } from '@/services/auth/auth.service';
 
 interface ILoginComponentProps {}
+
+const roleMeta: Record<UserRole, { label: string; destination: string; hint: string }> = {
+  participant: {
+    label: 'Participant',
+    destination: '/trails',
+    hint: 'Join and manage your trail events.',
+  },
+  expert: {
+    label: 'Expert',
+    destination: '/experts/:id',
+    hint: 'Create events and manage hosted activities.',
+  },
+  admin: {
+    label: 'Admin',
+    destination: '/admin',
+    hint: 'Review applications and manage the platform.',
+  },
+};
 
 const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   props,
@@ -15,6 +34,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   const [role, setRole] = React.useState<UserRole>('participant');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const errorRef = React.useRef<HTMLParagraphElement | null>(null);
 
@@ -61,12 +81,18 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   );
 
   return (
-    <div className="max-w-lg mx-auto bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-2">Login</h1>
-      <p className="text-sm text-gray-600 mb-6">
-        Choose your role to access your dashboard.
-      </p>
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+    <div className="mx-auto max-w-lg">
+      <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3">
+        <h1 className="text-2xl font-semibold text-gray-900">Login</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          Select your role and continue to your workspace.
+        </p>
+      </div>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        noValidate
+      >
         <div>
           <label
             htmlFor="role"
@@ -85,6 +111,9 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             <option value="expert">Expert</option>
             <option value="admin">Admin</option>
           </select>
+          <p className="mt-1 text-xs text-gray-500" aria-live="polite">
+            {roleMeta[role].hint} Redirects to <span className="font-semibold">{roleMeta[role].destination}</span>.
+          </p>
         </div>
 
         <div>
@@ -117,7 +146,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             Password
           </label>
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             name="password"
             id="password"
             value={password}
@@ -129,6 +158,15 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             aria-invalid={!!error}
             aria-describedby={error ? 'login-error' : undefined}
           />
+          <div className="mt-2 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="text-xs font-medium text-green-700 hover:text-green-800"
+            >
+              {showPassword ? 'Hide password' : 'Show password'}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -147,10 +185,16 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         <button
           type="submit"
           disabled={loginMutation.isPending}
-          className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loginMutation.isPending ? 'Signing in...' : 'Login'}
         </button>
+        <p className="text-center text-xs text-gray-500">
+          Don&apos;t have a participant account?{' '}
+          <Link href="/register" className="font-semibold text-green-700 hover:text-green-800">
+            Register
+          </Link>
+        </p>
       </form>
     </div>
   );

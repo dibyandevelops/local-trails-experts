@@ -6,6 +6,7 @@ import { Event, User } from '@/types';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { fetchExpertEvents, fetchExperts } from '@/services/experts/experts.service';
+import { getSportLabel } from '@/services/constants/sports';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -54,46 +55,71 @@ export default function ExpertDetailPage() {
   const upcomingEvents = expert.events.filter(
     (e) => new Date(e.event_date) >= new Date()
   );
+  const sports = Array.isArray(expert.sports) ? expert.sports : [];
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <p className="text-xs text-gray-500 mb-1">
-            <Link href="/experts" className="underline hover:text-green-700">
-              All experts
-            </Link>{' '}
-            / Profile
-          </p>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {expert.name || 'Local Expert'}
-          </h1>
-          {expert.city && (
-            <p className="text-sm text-gray-600">{expert.city}</p>
-          )}
-        </div>
-        {expert.is_verified_expert && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
-            Verified Expert
-          </span>
-        )}
-      </div>
-
-      {expert.bio && (
-        <p className="text-sm text-gray-700 mb-4">{expert.bio}</p>
-      )}
-
-      <div className="flex flex-wrap gap-2 mb-6">
-        {Array.isArray(expert.sports) &&
-          expert.sports.map((sport) => (
-            <span
-              key={sport}
-              className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium"
+    <div className="mx-auto max-w-5xl space-y-6">
+      <section className="overflow-hidden rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-emerald-100 p-6 shadow-sm">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">
+          Expert Showcase
+        </p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="mb-1 text-xs text-gray-600">
+              <Link href="/experts" className="underline hover:text-green-700">
+                All experts
+              </Link>{' '}
+              / Profile
+            </p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {expert.name || 'Local Expert'}
+            </h1>
+            {expert.city && <p className="mt-1 text-sm text-gray-700">{expert.city}</p>}
+            {expert.bio && (
+              <p className="mt-3 max-w-2xl text-sm text-gray-700">{expert.bio}</p>
+            )}
+          </div>
+          <div className="flex flex-col items-start gap-2 md:items-end">
+            {expert.is_verified_expert && (
+              <span className="inline-flex items-center rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white">
+                Verified Expert
+              </span>
+            )}
+            <Link
+              href={`/events?expert=${expert.id}`}
+              className="rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800"
             >
-              {sport}
-            </span>
-          ))}
-      </div>
+              View All Events
+            </Link>
+          </div>
+        </div>
+        {sports.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {sports.map((sport) => (
+              <span
+                key={sport}
+                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm"
+              >
+                {getSportLabel(sport)}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500">Total Events</p>
+            <p className="text-lg font-semibold text-gray-900">{expert.events.length}</p>
+          </div>
+          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500">Upcoming</p>
+            <p className="text-lg font-semibold text-gray-900">{upcomingEvents.length}</p>
+          </div>
+          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500">Sports</p>
+            <p className="text-lg font-semibold text-gray-900">{sports.length}</p>
+          </div>
+        </div>
+      </section>
 
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-3 text-gray-900">
@@ -119,6 +145,11 @@ export default function ExpertDetailPage() {
                     {format(new Date(event.event_date), 'PPP p')}
                     {event.city ? ` • ${event.city}` : ''}
                   </p>
+                  {event.sport_type && (
+                    <p className="text-xs text-gray-500">
+                      {getSportLabel(event.sport_type)}
+                    </p>
+                  )}
                   {event.meeting_point && (
                     <p className="text-xs text-gray-600 mt-1">
                       Meeting point: {event.meeting_point}
@@ -160,6 +191,9 @@ export default function ExpertDetailPage() {
               <li key={event.id}>
                 <span className="font-medium">{event.title}</span>
                 {event.city && <span className="text-gray-500"> • {event.city}</span>}
+                {event.sport_type && (
+                  <span className="text-gray-500"> • {getSportLabel(event.sport_type)}</span>
+                )}
               </li>
             ))}
           </ul>

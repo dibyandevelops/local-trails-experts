@@ -69,7 +69,7 @@ function TrailGallery({
                   router.push(`/trails/${trail.id}`);
                 }
               }}
-              className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:bg-gray-50"
+              className="flex w-full flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:bg-gray-50 sm:flex-row sm:items-center"
             >
               <img src={image} alt={trail.name} className="h-20 w-24 rounded object-cover" />
               <div className="min-w-0 flex-1">
@@ -100,44 +100,46 @@ function TrailGallery({
                   ))}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onViewMap(trail);
-                }}
-                className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-                title="Open this trail in map modal"
-              >
-                Map
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onRequestTrail(trail);
-                }}
-                className="rounded-md border border-green-300 bg-green-50 px-2 py-1 text-xs font-semibold text-green-800 hover:bg-green-100"
-                title="Request this trail activity with preferred expert/date"
-              >
-                Request
-              </button>
-              {canCreateEvent && (
+              <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end sm:self-start">
                 <button
                   type="button"
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    onCreateEvent(trail);
+                    onViewMap(trail);
                   }}
-                  className="rounded-md border border-indigo-300 bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
-                  title="Create an event using this trail"
+                  className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                  title="Open this trail in map modal"
                 >
-                  Create
+                  Map
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onRequestTrail(trail);
+                  }}
+                  className="rounded-md border border-green-300 bg-green-50 px-2 py-1 text-xs font-semibold text-green-800 hover:bg-green-100"
+                  title="Request this trail activity with preferred expert/date"
+                >
+                  Request
+                </button>
+                {canCreateEvent && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onCreateEvent(trail);
+                    }}
+                    className="rounded-md border border-indigo-300 bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
+                    title="Create an event using this trail"
+                  >
+                    Create Event
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
@@ -162,9 +164,13 @@ function TrailGallery({
             onRequestTrail() {
               onRequestTrail(trail);
             },
-            onCreateEvent() {
-              onCreateEvent(trail);
-            },
+            ...(canCreateEvent
+              ? {
+                  onCreateEvent() {
+                    onCreateEvent(trail);
+                  },
+                }
+              : {}),
           }}
         />
       ))}

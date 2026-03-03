@@ -3,14 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SportType } from '@/types';
-
-const sportOptions: { value: SportType; label: string }[] = [
-  { value: 'mtb', label: 'MTB Trail Rides' },
-  { value: 'hiking', label: 'Hiking' },
-  { value: 'trail_running', label: 'Trail Running' },
-  { value: 'training', label: 'Training & Coaching' },
-  { value: 'local_tour', label: 'Local Tours' },
-];
+import { TRAIL_SPORTS } from '@/services/constants/sports';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -39,19 +32,24 @@ export default function RegisterPage() {
     return null;
   };
 
+  const validateForm = () => {
+    if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
+      return 'Full name, email, and phone number are required.';
+    }
+    if (form.sports.length === 0) {
+      return 'Please select at least one sport.';
+    }
+    return validatePassword();
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
     setSuccess(null);
 
-    const pwdError = validatePassword();
-    if (pwdError) {
-      setError(pwdError);
-      return;
-    }
-
-    if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
-      setError('Full name, email, and phone number are required.');
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -98,56 +96,72 @@ export default function RegisterPage() {
         onSubmit={handleSubmit}
         className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4"
       >
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Full name
-          </label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(event) => setForm({ ...form, name: event.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            value={form.email}
-            onChange={(event) =>
-              setForm({ ...form, email: event.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Phone number
-          </label>
-          <input
-            type="tel"
-            value={form.phone}
-            onChange={(event) =>
-              setForm({ ...form, phone: event.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            placeholder="+9779812345678"
-            required
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Use international format (e.g., +977...).
-          </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full name
+            </label>
+            <input
+              type="text"
+              autoComplete="name"
+              value={form.name}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="e.g., Dibyan Shrestha"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(event) =>
+                setForm({ ...form, email: event.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone number
+            </label>
+            <input
+              type="tel"
+              autoComplete="tel"
+              value={form.phone}
+              onChange={(event) =>
+                setForm({ ...form, phone: event.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="+9779812345678"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Use international format (e.g., +977...).
+            </p>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Sports
           </label>
-          <div className="flex flex-wrap gap-2">
-            {sportOptions.map((sport) => {
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-medium text-gray-600">
+                Same sport categories as event creation
+              </p>
+              <p className="text-xs font-semibold text-gray-700">
+                {form.sports.length} selected
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TRAIL_SPORTS.map((sport) => {
               const selected = form.sports.includes(sport.value);
               return (
                 <button
@@ -170,10 +184,11 @@ export default function RegisterPage() {
                   {sport.label}
                 </button>
               );
-            })}
+              })}
+            </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Pick all that apply.
+            Pick at least one sport.
           </p>
         </div>
         <div>
@@ -182,11 +197,12 @@ export default function RegisterPage() {
           </label>
           <input
             type="password"
+            autoComplete="new-password"
             value={form.password}
             onChange={(event) =>
               setForm({ ...form, password: event.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             placeholder="At least 8 characters with a number"
             required
           />
@@ -213,7 +229,7 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || Boolean(validateForm())}
           className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
         >
           {loading ? 'Creating account...' : 'Register'}
