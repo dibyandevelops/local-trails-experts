@@ -110,9 +110,11 @@ type EventFormProps = {
   mode?: 'create' | 'edit';
   editEventId?: string | null;
   prefillTrailId?: string;
+  prefillTrail?: Trail | null;
   prefillSport?: SportType | '';
   lockTrailAndSport?: boolean;
   embedded?: boolean;
+  initialUser?: User | null;
   onCompleted?: (eventId: string) => void;
   onCancel?: () => void;
 };
@@ -121,9 +123,11 @@ export default function EventForm({
   mode = 'create',
   editEventId: editEventIdProp = null,
   prefillTrailId = '',
+  prefillTrail = null,
   prefillSport = '',
   lockTrailAndSport = false,
   embedded = false,
+  initialUser,
   onCompleted,
   onCancel,
 }: EventFormProps) {
@@ -131,7 +135,12 @@ export default function EventForm({
   const queryClient = useQueryClient();
   const isEditMode = mode === 'edit';
   const editEventId = editEventIdProp;
-  const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
+  const { data: queriedUser = null, isLoading: loadingQueriedUser } = useCurrentUser(
+    undefined,
+    { enabled: initialUser === undefined }
+  );
+  const currentUser = initialUser !== undefined ? initialUser : queriedUser;
+  const loadingUser = initialUser === undefined ? loadingQueriedUser : false;
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [lastAutoTitle, setLastAutoTitle] = useState('');
   const [lastAutoItinerary, setLastAutoItinerary] = useState('');
@@ -203,7 +212,8 @@ export default function EventForm({
   const { data: lockedTrail, isLoading: loadingLockedTrail } = useQuery<Trail | null>({
     queryKey: QUERY_KEYS.trails.byId(prefillTrailId || null),
     queryFn: ({ signal }) => fetchTrailById(prefillTrailId, signal),
-    enabled: lockTrailAndSport && Boolean(prefillTrailId),
+    enabled: lockTrailAndSport && Boolean(prefillTrailId) && !prefillTrail,
+    initialData: prefillTrail ?? undefined,
   });
 
   useEffect(() => {

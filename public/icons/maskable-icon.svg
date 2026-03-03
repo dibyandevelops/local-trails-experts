@@ -1,6 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Local Guides">
-  <rect width="512" height="512" fill="#166534"/>
-  <rect x="32" y="32" width="448" height="448" rx="96" fill="#16a34a"/>
-  <path d="M94 352L182 228l58 62 76-100 104 162H94z" fill="#dcfce7" opacity="0.94"/>
-  <circle cx="338" cy="162" r="34" fill="#bbf7d0"/>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#14532d"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#14532d"/>
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#bg)"/>
+
+  <path d="M44 220L94 184L142 222L194 188L242 230L296 194L350 236L408 190L468 232" fill="none" stroke="#fff" stroke-opacity=".24" stroke-width="13" stroke-linecap="round"/>
+  <path d="M44 286L92 248L146 288L200 248L252 294L306 252L362 300L422 256L468 304" fill="none" stroke="#fff" stroke-opacity=".29" stroke-width="14" stroke-linecap="round"/>
+  <path d="M44 350L94 314L148 354L204 312L256 358L312 316L368 364L430 322L468 368" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="15" stroke-linecap="round"/>
+  <path d="M58 468L102 436L148 450L188 396L238 412L292 344L344 360L398 294L468 310" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="13" stroke-linecap="round"/>
+  <path d="M48 66L98 104L142 90L194 138L242 122L296 172L350 158L406 212L462 196" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="12" stroke-linecap="round"/>
+  <path d="M468 84L418 130L374 114L320 162L274 148L222 196L170 182L116 234L58 220" fill="none" stroke="#fff" stroke-opacity=".23" stroke-width="11" stroke-linecap="round"/>
+  <path d="M468 406L418 364L372 388L320 342L274 364L224 318L176 340L124 292L66 314" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="12" stroke-linecap="round"/>
+  <path d="M256 46L272 92L234 126L288 164L250 204L304 244L266 286L320 326L282 378L330 466" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="11" stroke-linecap="round"/>
+
+  <path d="M256 92c-62 0-112 50-112 112 0 82 86 167 102 183a14 14 0 0 0 20 0c16-16 102-101 102-183 0-62-50-112-112-112z" fill="#f0fdf4"/>
+  <circle cx="256" cy="214" r="50" fill="#22c55e"/>
+  <circle cx="256" cy="214" r="26" fill="#f0fdf4"/>
+  <path d="M243 214l12 12 24-24" fill="none" stroke="#166534" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

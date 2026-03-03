@@ -329,6 +329,8 @@ function TrailsPageContent() {
   });
 
   const trails = data?.pages.flatMap((pageData) => pageData.trails) || [];
+  const selectedCreateEventTrail =
+    trails.find((trail) => trail.id === createEventTrailId) ?? null;
   const pagination =
     data && data.pages.length > 0
       ? data.pages[data.pages.length - 1].pagination
@@ -944,7 +946,9 @@ function TrailsPageContent() {
                   mode="create"
                   lockTrailAndSport
                   embedded
+                  initialUser={user}
                   prefillTrailId={createEventTrailId}
+                  prefillTrail={selectedCreateEventTrail}
                   prefillSport={(createEventSport || 'mtb') as SportType}
                   onCompleted={() => {
                     setToastTitle('Event created');

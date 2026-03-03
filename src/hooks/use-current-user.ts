@@ -5,10 +5,18 @@ import { fetchCurrentUser } from '@/services/auth/auth.service';
 import type { User } from '@/types';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 
-export function useCurrentUser(initialData?: User | null) {
+type UseCurrentUserOptions = {
+  enabled?: boolean;
+};
+
+export function useCurrentUser(
+  initialData?: User | null,
+  options?: UseCurrentUserOptions
+) {
   return useQuery<User | null>({
     queryKey: QUERY_KEYS.auth.me,
     queryFn: ({ signal }) => fetchCurrentUser(signal),
+    enabled: options?.enabled ?? true,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,

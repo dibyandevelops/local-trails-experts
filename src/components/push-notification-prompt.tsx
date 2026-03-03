@@ -20,9 +20,14 @@ export default function PushNotificationPrompt() {
   const [message, setMessage] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    try {
+      const stored = window.localStorage.getItem('push_prompt_dismissed');
+      setDismissed(stored === '1');
+    } catch {}
     if (
       typeof window === 'undefined' ||
       !('Notification' in window) ||
@@ -135,12 +140,28 @@ export default function PushNotificationPrompt() {
   };
 
   if (!mounted || !user || permission === 'unsupported' || !isMobile) return null;
+  if (dismissed) return null;
 
   return (
     <div className="fixed bottom-4 left-1/2 z-50 w-[94vw] max-w-md -translate-x-1/2 rounded-xl border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur">
-      <p className="text-sm font-semibold text-gray-900">
-        Enable mobile push notifications
-      </p>
+      <div className="mb-1 flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold text-gray-900">
+          Enable mobile push notifications
+        </p>
+        <button
+          type="button"
+          aria-label="Close push notification prompt"
+          onClick={() => {
+            setDismissed(true);
+            try {
+              window.localStorage.setItem('push_prompt_dismissed', '1');
+            } catch {}
+          }}
+          className="rounded-md border border-gray-300 px-2 py-0.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+        >
+          Close
+        </button>
+      </div>
       <p className="mt-1 text-xs text-gray-600">
         Get instant updates for event joins, approvals, and changes.
       </p>
@@ -168,4 +189,3 @@ export default function PushNotificationPrompt() {
     </div>
   );
 }
-

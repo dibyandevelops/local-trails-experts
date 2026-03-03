@@ -1,14 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-
-const sportOptions = [
-  { value: 'mtb', label: 'MTB Trail Rides' },
-  { value: 'hiking', label: 'Hiking' },
-  { value: 'trail_running', label: 'Trail Running' },
-  { value: 'training', label: 'Cycling / Fitness Training' },
-  { value: 'local_tour', label: 'Local Cultural Tours' },
-];
+import { TRAIL_SPORTS } from '@/services/constants/sports';
 
 export default function ExpertJoinPage() {
   const [name, setName] = useState('');
@@ -210,7 +203,7 @@ export default function ExpertJoinPage() {
                 Sports you guide or coach
               </label>
               <div className="flex flex-wrap gap-2">
-                {sportOptions.map((sport) => (
+                {TRAIL_SPORTS.map((sport) => (
                   <button
                     key={sport.value}
                     type="button"

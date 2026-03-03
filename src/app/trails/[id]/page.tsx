@@ -975,7 +975,9 @@ const TrailPage: React.FunctionComponent = () => {
                 mode="create"
                 lockTrailAndSport
                 embedded
+                initialUser={currentUser ?? null}
                 prefillTrailId={trail.id}
+                prefillTrail={trail}
                 prefillSport={(trail.sport_type || 'mtb') as SportType}
                 onCompleted={() => {
                   setCreateEventOpen(false);

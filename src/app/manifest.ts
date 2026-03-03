@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/',
     display: 'standalone',
     background_color: '#f8fafc',
-    theme_color: '#166534',
+    theme_color: '#0f172a',
     orientation: 'portrait',
     icons: [
       {
@@ -21,11 +21,6 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: 'any',
         type: 'image/svg+xml',
         purpose: 'maskable',
-      },
-      {
-        src: '/tmp_pictures/Kapan-Monastery.jpg',
-        sizes: '512x512',
-        type: 'image/jpeg',
       },
     ],
   };
