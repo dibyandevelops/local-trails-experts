@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -15,7 +15,7 @@ import {
   User,
 } from '@/types';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { fetchTrails } from '@/services/trails/trails.service';
+import { fetchTrailsPaginated } from '@/services/trails/trails.service';
 import {
   createEvent,
   fetchEventById,
@@ -24,6 +24,7 @@ import {
 } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import TrailSubmissionForm from '@/components/feature-components/trail-submission-form';
+import { TRAIL_SPORTS } from '@/services/constants/sports';
 
 type EventFormValues = {
   title: string;
@@ -114,7 +115,9 @@ export default function CreateEventPage() {
   const [lastAutoTitle, setLastAutoTitle] = useState('');
   const [lastAutoItinerary, setLastAutoItinerary] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
+  const [sportChangeMessage, setSportChangeMessage] = useState('');
   const [showTrailRequestDialog, setShowTrailRequestDialog] = useState(false);
+  const previousSportRef = useRef<SportType | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -129,6 +132,7 @@ export default function CreateEventPage() {
     setValue,
     getValues,
     reset,
+    formState,
   } = useForm<EventFormValues>({
     defaultValues,
   });
@@ -145,8 +149,23 @@ export default function CreateEventPage() {
     refetch: refetchTrails,
     isFetching: refreshingTrails,
   } = useQuery<Trail[]>({
-    queryKey: QUERY_KEYS.trails.forEvents,
-    queryFn: ({ signal }) => fetchTrails({}, signal),
+    queryKey: QUERY_KEYS.trails.paginatedList({
+      sport: selectedSport,
+      page: 1,
+      pageSize: 120,
+    }),
+    queryFn: async ({ signal }) => {
+      const data = await fetchTrailsPaginated(
+        {
+          sport: selectedSport,
+          page: 1,
+          pageSize: 120,
+        },
+        signal
+      );
+      return data.trails;
+    },
+    placeholderData: (previousData) => previousData,
     refetchInterval: 30000,
     refetchIntervalInBackground: true,
   });
@@ -191,6 +210,16 @@ export default function CreateEventPage() {
   }, [editEvent, reset]);
 
   useEffect(() => {
+    if (!formState.isDirty) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [formState.isDirty]);
+
+  useEffect(() => {
     if (isEditMode) return;
     const currentDate = getValues('event_date');
     if (currentDate) return;
@@ -220,11 +249,12 @@ export default function CreateEventPage() {
   const expertSports = Array.isArray(effectiveUser?.sports)
     ? effectiveUser.sports
     : [];
+  const selectableSports =
+    expertSports.length > 0
+      ? TRAIL_SPORTS.filter((sport) => expertSports.includes(sport.value))
+      : TRAIL_SPORTS;
 
-  const trailsBySport = useMemo(
-    () => trails.filter((trail) => (trail.sport_type || 'mtb') === selectedSport),
-    [trails, selectedSport]
-  );
+  const trailsBySport = useMemo(() => trails, [trails]);
 
   useEffect(() => {
     if (!selectedTrailId) return;
@@ -243,13 +273,32 @@ export default function CreateEventPage() {
   }, [expertSports, getValues, setValue]);
 
   useEffect(() => {
-    if (selectedSport !== 'training') return;
+    const previousSport = previousSportRef.current;
+    if (!previousSport) {
+      previousSportRef.current = selectedSport;
+      return;
+    }
+    if (previousSport === selectedSport) return;
+
+    // Keep organizer + host + date context, clear event-detail fields that become stale.
     setValue('trail_id', '');
-    setValue('description', '');
     setValue('title', '');
+    setValue('description', '');
     setValue('itinerary', '');
+    setValue('custom_trail_text', '');
+    setValue('difficulty', undefined);
+    setValue('meeting_point', '');
     setLastAutoTitle('');
+    setLastAutoItinerary('');
+    setSportChangeMessage('Sport changed. Trail/event-specific fields were cleared.');
+    previousSportRef.current = selectedSport;
   }, [selectedSport, setValue]);
+
+  useEffect(() => {
+    if (!sportChangeMessage) return;
+    const timer = window.setTimeout(() => setSportChangeMessage(''), 2500);
+    return () => window.clearTimeout(timer);
+  }, [sportChangeMessage]);
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateEventInput) => createEvent(payload),
@@ -265,7 +314,7 @@ export default function CreateEventPage() {
   const handleTrailChange = (trailId: string) => {
     setValue('trail_id', trailId);
 
-    const selectedTrail = trails.find((t) => t.id === trailId);
+    const selectedTrail = trailsBySport.find((t) => t.id === trailId);
     if (!selectedTrail) return;
 
     const currentTitleValue = getValues('title')?.trim() || '';
@@ -322,7 +371,7 @@ export default function CreateEventPage() {
   useEffect(() => {
     if (selectedSport === 'training') return;
     if (!selectedTrailId) return;
-    const selectedTrail = trails.find((trail) => trail.id === selectedTrailId);
+    const selectedTrail = trailsBySport.find((trail) => trail.id === selectedTrailId);
     if (!selectedTrail) return;
     const prefix = sportTitlePrefixes[selectedSport || 'mtb'] || 'Event';
     const nextAutoTitle = `${prefix}: ${selectedTrail.name}`;
@@ -397,12 +446,22 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-4xl font-bold mb-8 text-green-800">
+    <div className="mx-auto max-w-3xl">
+      <h1 className="mb-2 text-3xl font-bold text-green-800 sm:text-4xl">
         {isEditMode ? 'Edit Event' : 'Create Event'}
       </h1>
+      <p className="mb-6 text-sm text-gray-600">
+        Choose sport first, then pick a trail (auto-fills title/details), then publish.
+      </p>
 
       {loadingUser || loadingEditData || loadingTrails ? (
+      {sportChangeMessage && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+          {sportChangeMessage}
+        </div>
+      )}
+
+      {loadingUser || loadingEditData ? (
         <div className="text-gray-600">Loading user...</div>
       ) : !currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'expert') ? (
         <div className="bg-red-50 border border-red-100 text-red-700 rounded-lg px-4 py-3">
@@ -413,26 +472,35 @@ export default function CreateEventPage() {
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white border border-gray-200 rounded-lg shadow-md p-6 space-y-6"
         >
-          {expertSports.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Expert Sport</label>
-              <div className="flex flex-wrap gap-3">
-                {expertSports.map((sport) => (
-                  <label
-                    key={sport}
-                    className="inline-flex items-center gap-2 text-sm text-gray-700"
-                  >
-                    <input
-                      type="radio"
-                      value={sport}
-                      {...register('sport_type')}
-                    />
-                    {sportLabels[sport as SportType] ?? sport}
-                  </label>
-                ))}
-              </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Sport Type <span className="text-red-500">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {selectableSports.map((sport) => (
+                <label
+                  key={sport.value}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${
+                    selectedSport === sport.value
+                      ? 'border-green-700 bg-green-50 text-green-800'
+                      : 'border-gray-300 bg-white text-gray-700'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value={sport.value}
+                    {...register('sport_type', { required: true })}
+                  />
+                  {sportLabels[sport.value as SportType] ?? sport.label}
+                </label>
+              ))}
             </div>
-          )}
+            {expertSports.length > 0 && (
+              <p className="mt-1 text-xs text-gray-500">
+                Showing sports available for the selected host.
+              </p>
+            )}
+          </div>
 
           {selectedSport !== 'training' ? (
             <div className="space-y-3">
@@ -441,6 +509,7 @@ export default function CreateEventPage() {
                 <select
                   value={selectedTrailId}
                   onChange={(e) => handleTrailChange(e.target.value)}
+                  disabled={loadingTrails}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="">No specific trail (general event)</option>
@@ -456,6 +525,16 @@ export default function CreateEventPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   Showing trails for {sportLabels[(selectedSport || 'mtb') as SportType] || 'selected sport'}.
                 </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Changing sport clears trail/event-specific fields to avoid stale data.
+                </p>
+                <div className="mt-2 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                  {loadingTrails
+                    ? 'Loading trails...'
+                    : refreshingTrails
+                      ? 'Refreshing trails...'
+                      : `${trailsBySport.length} trail option${trailsBySport.length === 1 ? '' : 's'}`}
+                </div>
               </div>
 
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -736,7 +815,15 @@ export default function CreateEventPage() {
             </button>
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={() => {
+                if (formState.isDirty) {
+                  const confirmed = window.confirm(
+                    'You have unsaved changes. Leave this page?'
+                  );
+                  if (!confirmed) return;
+                }
+                router.back();
+              }}
               className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancel
