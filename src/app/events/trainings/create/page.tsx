@@ -151,9 +151,9 @@ export default function CreateTrainingPage() {
 
       {loadingUser ? (
         <div className="text-gray-600">Loading...</div>
-      ) : !currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'expert') ? (
+      ) : !currentUser ? (
         <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-red-700">
-          You must be an admin or expert to organize trainings.
+          Unable to load user session. Please login again.
         </div>
       ) : (
         <form

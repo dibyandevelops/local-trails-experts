@@ -8,17 +8,15 @@ export default function CreateTrailPage() {
   const router = useRouter();
   const { data: user = null, isLoading: loadingUser } = useCurrentUser();
 
-  const canCreate = user?.role === 'admin' || user?.role === 'expert';
-
   return (
     <div className="max-w-3xl mx-auto">
       <h1 className="text-4xl font-bold mb-6 text-green-800">Create Trail</h1>
 
       {loadingUser ? (
         <p className="text-gray-600">Loading user...</p>
-      ) : !canCreate ? (
+      ) : !user ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-          Only admin or expert users can submit trails.
+          Unable to load user session. Please login again.
         </div>
       ) : (
         <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
