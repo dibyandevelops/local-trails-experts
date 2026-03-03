@@ -14,7 +14,7 @@ import Map, {
 } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Trail, RouteData } from '@/types';
+import { Trail, RouteData, User, SportType } from '@/types';
 import {
   getSafetyLabelText,
   TRAIL_SAFETY_OPTIONS,
@@ -24,6 +24,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { fetchVerifiedExperts } from '@/services/events/events.service';
 import {
   deleteTrail,
   fetchTrailById,
@@ -31,6 +32,7 @@ import {
   updateTrail,
   uploadTrailRoute,
 } from '@/services/trails/trails.service';
+import EventForm from '@/components/feature-components/event-form/event-form';
 // import {
 //   XAxis,
 //   YAxis,
@@ -55,8 +57,11 @@ const TrailPage: React.FunctionComponent = () => {
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+  const [createEventOpen, setCreateEventOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [requestDescription, setRequestDescription] = useState('');
+  const [selectedExpertId, setSelectedExpertId] = useState('');
+  const [preferredDate, setPreferredDate] = useState('');
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
@@ -116,6 +121,11 @@ const TrailPage: React.FunctionComponent = () => {
     enabled: Boolean(trailId),
   });
 
+  const { data: experts = [] } = useQuery<User[]>({
+    queryKey: QUERY_KEYS.experts.verified,
+    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+  });
+
   useEffect(() => {
     if (!trail) return;
     setSafetyDraft((trail.safety_labels || []) as TrailSafetyLabel[]);
@@ -144,10 +154,17 @@ const TrailPage: React.FunctionComponent = () => {
   });
 
   const requestTrailMutation = useMutation({
-    mutationFn: () => requestTrail(trailId, requestDescription.trim()),
+    mutationFn: () =>
+      requestTrail(trailId, {
+        description: requestDescription.trim(),
+        expert_user_id: selectedExpertId,
+        preferred_date: preferredDate,
+      }),
     onSuccess: () => {
       setRequestMessage('Request sent to experts/admin successfully.');
       setRequestDescription('');
+      setSelectedExpertId('');
+      setPreferredDate('');
       setRequestModalOpen(false);
     },
   });
@@ -192,7 +209,7 @@ const TrailPage: React.FunctionComponent = () => {
 
   const isAdmin = currentUser?.role === 'admin';
   const canUploadRoute = currentUser?.role === 'admin' || currentUser?.role === 'expert';
-  const canRequestTrail = currentUser?.role === 'participant';
+  const canRequestTrail = Boolean(currentUser);
 
   const toggleSafetyLabel = (value: TrailSafetyLabel) => {
     setSafetyDraft((prev) =>
@@ -502,6 +519,15 @@ const TrailPage: React.FunctionComponent = () => {
               Download GPX
             </button>
           )}
+          {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
+            <button
+              type="button"
+              onClick={() => setCreateEventOpen(true)}
+              className="w-full rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-100 sm:w-auto"
+            >
+              Create Event
+            </button>
+          )}
           <button
             type="button"
             disabled={loadingCurrentUser}
@@ -512,10 +538,6 @@ const TrailPage: React.FunctionComponent = () => {
               }
               if (!currentUser) {
                 router.push('/register');
-                return;
-              }
-              if (!canRequestTrail) {
-                setRequestMessage('Only participants can request this trail.');
                 return;
               }
               setRequestMessage(null);
@@ -806,6 +828,15 @@ const TrailPage: React.FunctionComponent = () => {
       )}
 
       <div className="fixed bottom-3 left-1/2 z-40 flex w-[94vw] -translate-x-1/2 gap-2 rounded-xl border border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur sm:hidden">
+        {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
+          <button
+            type="button"
+            onClick={() => setCreateEventOpen(true)}
+            className="flex-1 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800"
+          >
+            Create
+          </button>
+        )}
         {trailImages.length > 0 && (
           <button
             type="button"
@@ -835,10 +866,6 @@ const TrailPage: React.FunctionComponent = () => {
               router.push('/register');
               return;
             }
-            if (!canRequestTrail) {
-              setRequestMessage('Only participants can request this trail.');
-              return;
-            }
             setRequestMessage(null);
             setRequestModalOpen(true);
           }}
@@ -858,11 +885,40 @@ const TrailPage: React.FunctionComponent = () => {
             <p className="mt-1 text-sm text-gray-600">
               This sends your request to experts/admin. Add details to help them.
             </p>
+            <div className="mt-4">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Select Expert
+              </label>
+              <select
+                value={selectedExpertId}
+                onChange={(e) => setSelectedExpertId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">Choose expert</option>
+                {experts.map((expert) => (
+                  <option key={expert.id} value={expert.id}>
+                    {expert.name || expert.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mt-3">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Preferred Date
+              </label>
+              <input
+                type="date"
+                value={preferredDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setPreferredDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
             <textarea
               value={requestDescription}
               onChange={(e) => setRequestDescription(e.target.value)}
               rows={4}
-              className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               placeholder="Describe what you want (preferred date/time, group size, activity type...)"
             />
             <div className="mt-4 flex justify-end gap-2">
@@ -876,6 +932,14 @@ const TrailPage: React.FunctionComponent = () => {
               <button
                 type="button"
                 onClick={async () => {
+                  if (!selectedExpertId) {
+                    setRequestMessage('Please select an expert.');
+                    return;
+                  }
+                  if (!preferredDate) {
+                    setRequestMessage('Please select a preferred date.');
+                    return;
+                  }
                   try {
                     await requestTrailMutation.mutateAsync();
                   } catch (err) {
@@ -889,6 +953,37 @@ const TrailPage: React.FunctionComponent = () => {
               >
                 {requestTrailMutation.isPending ? 'Sending...' : 'Send Request'}
               </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={createEventOpen} onOpenChange={setCreateEventOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 h-[88vh] w-[96vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <Dialog.Title className="truncate pr-2 text-sm font-semibold text-gray-900">
+                Create Event For This Trail
+              </Dialog.Title>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+                Close
+              </Dialog.Close>
+            </div>
+            <div className="h-[calc(88vh-52px)] overflow-y-auto p-4">
+              <EventForm
+                mode="create"
+                lockTrailAndSport
+                embedded
+                prefillTrailId={trail.id}
+                prefillSport={(trail.sport_type || 'mtb') as SportType}
+                onCompleted={() => {
+                  setCreateEventOpen(false);
+                  setActionMessage('Event created successfully.');
+                  setTimeout(() => setActionMessage(null), 2500);
+                }}
+                onCancel={() => setCreateEventOpen(false)}
+              />
             </div>
           </Dialog.Content>
         </Dialog.Portal>

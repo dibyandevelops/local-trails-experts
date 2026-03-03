@@ -48,6 +48,9 @@ export interface Trail {
   created_at: string;
   updated_at: string;
   onClick?: () => void;
+  onViewMap?: () => void;
+  onRequestTrail?: () => void;
+  onCreateEvent?: () => void;
 }
 
 export interface Event {
