@@ -191,7 +191,10 @@ export default function EventForm({
   const selectedTrailId = watch('trail_id');
   const isPaidEvent = watch('is_paid_event');
   const currentTitle = watch('title');
+  const eventDateValue = watch('event_date');
   const requestedDateOnly = normalizeDateOnly(requestedDate);
+  const isEventDateLocked = lockEventDate || Boolean(requestedDateOnly);
+  const lockedEventDateTime = requestedDateOnly ? `${requestedDateOnly}T06:30` : '';
 
   const {
     data: trails = [],
@@ -816,12 +819,28 @@ export default function EventForm({
               <input
                 type="datetime-local"
                 {...register('event_date', { required: true })}
-                disabled={lockEventDate || Boolean(requestedDateOnly)}
+                value={isEventDateLocked ? eventDateValue || lockedEventDateTime : undefined}
+                min={isEventDateLocked ? lockedEventDateTime : undefined}
+                max={isEventDateLocked ? lockedEventDateTime : undefined}
+                onChange={(event) => {
+                  if (!isEventDateLocked) return;
+                  event.preventDefault();
+                  if (lockedEventDateTime) {
+                    setValue('event_date', lockedEventDateTime);
+                  }
+                }}
+                onClick={(event) => {
+                  if (!isEventDateLocked) return;
+                  const input = event.currentTarget as HTMLInputElement & {
+                    showPicker?: () => void;
+                  };
+                  input.showPicker?.();
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
-              {(lockEventDate || requestedDateOnly) && (
+              {isEventDateLocked && (
                 <p className="mt-1 text-xs text-gray-500">
-                  Date/time locked from participant trail request.
+                  Date/time is locked from participant request. You can view it but not edit.
                 </p>
               )}
             </div>
