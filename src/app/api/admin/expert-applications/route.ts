@@ -112,6 +112,24 @@ export async function PATCH(request: NextRequest) {
           [application.email]
         );
 
+        if (application.phone) {
+          const phoneOwner = await client.query(
+            'SELECT id FROM users WHERE phone = $1 LIMIT 1',
+            [application.phone]
+          );
+          const currentUserId = existingUser.rows[0]?.id as string | undefined;
+          if (
+            phoneOwner.rows.length > 0 &&
+            (!currentUserId || phoneOwner.rows[0].id !== currentUserId)
+          ) {
+            await client.query('ROLLBACK');
+            return NextResponse.json(
+              { error: 'Phone number is already in use by another account.' },
+              { status: 409 }
+            );
+          }
+        }
+
         if (existingUser.rows.length === 0) {
           tempPassword = createTempPassword();
           const passwordHash = await bcrypt.hash(tempPassword, 10);

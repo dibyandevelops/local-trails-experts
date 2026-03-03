@@ -9,10 +9,10 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const body = await request.json();
-    console.log(body, 'body')
     const { name, email, city, sports, credentials, phone } = body;
+    const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
 
-    if (!name || !email || !credentials || !phone) {
+    if (!name || !email || !credentials || !normalizedPhone) {
       return NextResponse.json(
         { error: 'Missing required fields: name, email, credentials, phone' },
         { status: 400 }
@@ -26,6 +26,17 @@ export async function POST(request: NextRequest) {
     if (existingUser.rows.length > 0) {
       return NextResponse.json(
         { error: 'Email is already registered. Please log in instead.' },
+        { status: 409 }
+      );
+    }
+
+    const existingPhoneUser = await pool.query(
+      'SELECT id FROM users WHERE phone = $1 LIMIT 1',
+      [normalizedPhone]
+    );
+    if (existingPhoneUser.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'Phone number is already registered. Please use another number.' },
         { status: 409 }
       );
     }
@@ -59,7 +70,7 @@ export async function POST(request: NextRequest) {
       city || null,
       sportsJson,
       credentials,
-      phone,
+      normalizedPhone,
     ]);
 
     const application = result.rows[0];

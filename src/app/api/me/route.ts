@@ -60,6 +60,22 @@ export async function PATCH(request: NextRequest) {
         ? JSON.stringify(sports)
         : null;
 
+    const normalizedPhone =
+      typeof phone === 'string' ? phone.trim() : phone;
+
+    if (normalizedPhone) {
+      const existingPhone = await pool.query(
+        'SELECT id FROM users WHERE phone = $1 AND id <> $2 LIMIT 1',
+        [normalizedPhone, auth.sub]
+      );
+      if (existingPhone.rows.length > 0) {
+        return NextResponse.json(
+          { error: 'Phone number is already in use.' },
+          { status: 409 }
+        );
+      }
+    }
+
     const result = await pool.query(
       `
       UPDATE users
@@ -68,9 +84,8 @@ export async function PATCH(request: NextRequest) {
           bio = $3,
           sports = $4::jsonb,
           phone = $5,
-          phone_verified_at = CASE WHEN $6 THEN NULL ELSE phone_verified_at END,
           updated_at = NOW()
-      WHERE id = $7
+      WHERE id = $6
       RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, created_at, updated_at
     `,
       [
@@ -78,8 +93,7 @@ export async function PATCH(request: NextRequest) {
         city || null,
         bio || null,
         sportsJson,
-        phone || null,
-        phone !== undefined,
+        normalizedPhone || null,
         auth.sub,
       ]
     );

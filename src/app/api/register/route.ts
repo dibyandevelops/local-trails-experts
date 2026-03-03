@@ -33,6 +33,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedPhone = phone.trim();
+    if (!normalizedPhone) {
+      return NextResponse.json(
+        { error: 'Phone number is required.' },
+        { status: 400 }
+      );
+    }
+
     const existing = await pool.query(
       'SELECT id FROM users WHERE email = $1 LIMIT 1',
       [email]
@@ -40,6 +48,17 @@ export async function POST(request: NextRequest) {
     if (existing.rows.length > 0) {
       return NextResponse.json(
         { error: 'Email is already registered.' },
+        { status: 409 }
+      );
+    }
+
+    const existingPhone = await pool.query(
+      'SELECT id FROM users WHERE phone = $1 LIMIT 1',
+      [normalizedPhone]
+    );
+    if (existingPhone.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'Phone number is already registered.' },
         { status: 409 }
       );
     }
@@ -56,7 +75,7 @@ export async function POST(request: NextRequest) {
       VALUES ($1, $2, $3, 'participant', $4::jsonb, $5)
       RETURNING id, email, role
     `,
-      [name, email, passwordHash, sportsJson, phone]
+      [name, email, passwordHash, sportsJson, normalizedPhone]
     );
 
     const user = result.rows[0];

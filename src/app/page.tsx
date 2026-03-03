@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import PhoneVerifyToast from '@/components/phone-verify-toast';
+// import PhoneVerifyToast from '@/components/phone-verify-toast';
 
 export default function Home() {
   return (
     <div className="space-y-16">
-      <PhoneVerifyToast />
+      {/* <PhoneVerifyToast /> */}
       <section className="text-center">
         <p className="text-xs font-semibold tracking-[0.2em] text-green-700 uppercase mb-4">
           Kathmandu • Pokhara • Himalaya
