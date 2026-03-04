@@ -50,8 +50,8 @@ const icon = (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
     role="img"
-    aria-label="Local Guides"
-    className="h-8 w-8 shrink-0"
+    aria-label="LOCAL GUIDES"
+    className="h-9 w-9 shrink-0"
   >
     <defs>
       <linearGradient id="navbg" x1="0" x2="1" y1="0" y2="1">
@@ -59,19 +59,27 @@ const icon = (
         <stop offset="100%" stopColor="#16a34a" />
       </linearGradient>
     </defs>
-    <rect width="512" height="512" rx="112" fill="url(#navbg)" />
-    <path d="M44 220L94 184L142 222L194 188L242 230L296 194L350 236L408 190L468 232" fill="none" stroke="#ffffff" strokeOpacity=".24" strokeWidth="13" strokeLinecap="round" />
-    <path d="M44 286L92 248L146 288L200 248L252 294L306 252L362 300L422 256L468 304" fill="none" stroke="#ffffff" strokeOpacity=".29" strokeWidth="14" strokeLinecap="round" />
-    <path d="M44 350L94 314L148 354L204 312L256 358L312 316L368 364L430 322L468 368" fill="none" stroke="#ffffff" strokeOpacity=".35" strokeWidth="15" strokeLinecap="round" />
-    <path d="M58 468L102 436L148 450L188 396L238 412L292 344L344 360L398 294L468 310" fill="none" stroke="#ffffff" strokeOpacity=".32" strokeWidth="13" strokeLinecap="round" />
-    <path d="M48 66L98 104L142 90L194 138L242 122L296 172L350 158L406 212L462 196" fill="none" stroke="#ffffff" strokeOpacity=".25" strokeWidth="12" strokeLinecap="round" />
-    <path d="M468 84L418 130L374 114L320 162L274 148L222 196L170 182L116 234L58 220" fill="none" stroke="#ffffff" strokeOpacity=".23" strokeWidth="11" strokeLinecap="round" />
-    <path d="M468 406L418 364L372 388L320 342L274 364L224 318L176 340L124 292L66 314" fill="none" stroke="#ffffff" strokeOpacity=".28" strokeWidth="12" strokeLinecap="round" />
-    <path d="M256 46L272 92L234 126L288 164L250 204L304 244L266 286L320 326L282 378L330 466" fill="none" stroke="#ffffff" strokeOpacity=".22" strokeWidth="11" strokeLinecap="round" />
-    <path d="M256 92c-62 0-112 50-112 112 0 82 86 167 102 183a14 14 0 0 0 20 0c16-16 102-101 102-183 0-62-50-112-112-112z" fill="#f0fdf4" />
-    <circle cx="256" cy="214" r="48" fill="#22c55e" />
-    <circle cx="256" cy="214" r="26" fill="#f0fdf4" />
-    <path d="M243 214l12 12 24-24" fill="none" stroke="#166534" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" />
+
+    <rect width="512" height="512" rx="96" fill="url(#navbg)" />
+
+    <path d="M24 210L84 170L136 212L192 176L250 224L314 184L374 232L434 186L488 220" fill="none" stroke="#fff" strokeOpacity=".22" strokeWidth="14" strokeLinecap="round" />
+    <path d="M24 286L82 246L142 300L198 254L258 312L322 264L382 318L440 272L488 324" fill="none" stroke="#fff" strokeOpacity=".26" strokeWidth="15" strokeLinecap="round" />
+    <path d="M24 360L84 324L146 382L206 334L266 390L330 344L392 398L452 354L488 404" fill="none" stroke="#fff" strokeOpacity=".3" strokeWidth="16" strokeLinecap="round" />
+    <path d="M40 484L90 444L140 462L186 396L246 414L304 334L362 352L424 274L488 292" fill="none" stroke="#fff" strokeOpacity=".28" strokeWidth="14" strokeLinecap="round" />
+    <path d="M28 48L86 92L134 74L192 132L246 112L306 170L364 152L426 208L484 192" fill="none" stroke="#fff" strokeOpacity=".21" strokeWidth="13" strokeLinecap="round" />
+    <path d="M488 64L434 120L386 102L328 160L278 142L220 198L164 182L108 238L44 220" fill="none" stroke="#fff" strokeOpacity=".2" strokeWidth="12" strokeLinecap="round" />
+    <path d="M488 428L436 382L386 408L330 350L282 376L226 320L172 348L118 292L56 320" fill="none" stroke="#fff" strokeOpacity=".24" strokeWidth="13" strokeLinecap="round" />
+    <path d="M258 28L276 82L232 126L294 170L248 216L312 262L266 306L330 352L286 410L338 484" fill="none" stroke="#fff" strokeOpacity=".19" strokeWidth="12" strokeLinecap="round" />
+
+    <g fill="#f0fdf4" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="800" letterSpacing="1.4">
+      <text x="52" y="214" fontSize="100">LOCAL</text>
+      <text x="52" y="330" fontSize="100">GUIDES</text>
+    </g>
+
+    <circle cx="428" cy="186" r="44" fill="#22c55e" />
+    <circle cx="428" cy="186" r="39" fill="none" stroke="#bbf7d0" strokeWidth="5" />
+    <path d="M409 186l15 15 29-29" fill="none" stroke="#ffffff" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round" />
+
   </svg>
 );
 type NavbarProps = {
