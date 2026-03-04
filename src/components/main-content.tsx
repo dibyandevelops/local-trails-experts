@@ -3,6 +3,8 @@ import * as React from 'react';
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import AppErrorBoundary from '@/components/app-error-boundary';
+import ClientErrorReporter from '@/components/client-error-reporter';
 
 interface IMainContentProps { children: ReactNode }
 
@@ -37,8 +39,9 @@ const MainContent: React.FunctionComponent<IMainContentProps> = ({
   children,
 }) => (
   <QueryClientProvider client={queryClient}>
+    <ClientErrorReporter />
     <AuthQuerySync />
-    {children}
+    <AppErrorBoundary>{children}</AppErrorBoundary>
   </QueryClientProvider>
 );
 
