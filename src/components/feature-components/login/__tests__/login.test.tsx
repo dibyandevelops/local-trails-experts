@@ -66,11 +66,17 @@ describe('LoginComponent', () => {
   it('has accessible form controls', () => {
     renderWithQuery(<LoginComponent />);
     // Get form inputs by their labels
-    const roleSelect = screen.getByLabelText(/role/i);
+    const roleGroup = screen.getByRole('radiogroup', { name: /role/i });
+    const participantRole = screen.getByRole('radio', { name: /participant/i });
+    const expertRole = screen.getByRole('radio', { name: /expert/i });
+    const adminRole = screen.getByRole('radio', { name: /admin/i });
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
     // Verify controls exist and have required accessibility attributes
-    expect(roleSelect).toBeInTheDocument();
+    expect(roleGroup).toBeInTheDocument();
+    expect(participantRole).toHaveAttribute('aria-checked', 'true');
+    expect(expertRole).toHaveAttribute('aria-checked', 'false');
+    expect(adminRole).toHaveAttribute('aria-checked', 'false');
     expect(emailInput).toHaveAttribute('required');
     expect(emailInput).toHaveAttribute('autocomplete', 'email');
     expect(passwordInput).toHaveAttribute('required');
@@ -93,9 +99,7 @@ describe('LoginComponent', () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: '1MicroPassword' },
     });
-    fireEvent.change(screen.getByLabelText(/role/i), {
-      target: { value: 'admin' },
-    });
+    fireEvent.click(screen.getByRole('radio', { name: /admin/i }));
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
@@ -127,9 +131,7 @@ describe('LoginComponent', () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'Pass12345' },
     });
-    fireEvent.change(screen.getByLabelText(/role/i), {
-      target: { value: 'participant' },
-    });
+    fireEvent.click(screen.getByRole('radio', { name: /participant/i }));
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
@@ -154,9 +156,7 @@ describe('LoginComponent', () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'wrongpass1' },
     });
-    fireEvent.change(screen.getByLabelText(/role/i), {
-      target: { value: 'participant' },
-    });
+    fireEvent.click(screen.getByRole('radio', { name: /participant/i }));
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
@@ -187,9 +187,7 @@ describe('LoginComponent', () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'Pass12345' },
     });
-    fireEvent.change(screen.getByLabelText(/role/i), {
-      target: { value: 'expert' },
-    });
+    fireEvent.click(screen.getByRole('radio', { name: /expert/i }));
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));

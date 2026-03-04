@@ -82,43 +82,57 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
 
   return (
     <div className="mx-auto max-w-lg">
-      <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3">
-        <h1 className="text-2xl font-semibold text-gray-900">Login</h1>
-        <p className="mt-1 text-sm text-gray-600">
+      <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3 dark:border-green-900/70 dark:bg-green-950/40">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Login</h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
           Select your role and continue to your workspace.
         </p>
       </div>
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
         noValidate
       >
-        <div>
-          <label
-            htmlFor="role"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+        <fieldset>
+          <legend className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
             Role
-          </label>
-          <select
-            id="role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-            aria-required="true"
+          </legend>
+          <div
+            role="radiogroup"
+            aria-label="Role"
+            className="grid grid-cols-1 gap-2 sm:grid-cols-3"
           >
-            <option value="participant">Participant</option>
-            <option value="expert">Expert</option>
-            <option value="admin">Admin</option>
-          </select>
-          <p className="mt-1 text-xs text-gray-500" aria-live="polite">
-            {roleMeta[role].hint} Redirects to <span className="font-semibold">{roleMeta[role].destination}</span>.
+            {(Object.keys(roleMeta) as UserRole[]).map((roleKey) => {
+              const selected = roleKey === role;
+              return (
+                <button
+                  key={roleKey}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setRole(roleKey)}
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                    selected
+                      ? 'border-green-700 bg-green-100 text-green-900 dark:border-green-500 dark:bg-green-500/20 dark:text-green-200'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {roleMeta[roleKey].label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400" aria-live="polite">
+            {roleMeta[role].hint} Redirects to{' '}
+            <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-2 py-0.5 font-semibold text-green-700 dark:border-green-900 dark:bg-green-900/40 dark:text-green-300">
+              {roleMeta[role].destination}
+            </span>.
           </p>
-        </div>
+        </fieldset>
 
         <div>
           <label
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="email"
           >
             Email
@@ -130,7 +144,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100 dark:placeholder:text-slate-400"
             required
             autoComplete="email"
             aria-invalid={!!error}
@@ -140,7 +154,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
 
         <div>
           <label
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="password"
           >
             Password
@@ -152,7 +166,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100 dark:placeholder:text-slate-400"
             required
             autoComplete="current-password"
             aria-invalid={!!error}
@@ -162,7 +176,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="text-xs font-medium text-green-700 hover:text-green-800"
+              className="text-xs font-medium text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
             >
               {showPassword ? 'Hide password' : 'Show password'}
             </button>
@@ -185,13 +199,13 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         <button
           type="submit"
           disabled={loginMutation.isPending}
-          className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loginMutation.isPending ? 'Signing in...' : 'Login'}
         </button>
-        <p className="text-center text-xs text-gray-500">
+        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
           Don&apos;t have a participant account?{' '}
-          <Link href="/register" className="font-semibold text-green-700 hover:text-green-800">
+          <Link href="/register" className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200">
             Register
           </Link>
         </p>

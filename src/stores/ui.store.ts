@@ -24,7 +24,7 @@ export type UiState = {
 };
 
 const initialEventsFilterDraft: EventsFilterDraft = {
-  city: 'Kathmandu',
+  city: '',
   sport: '',
   expertise: '',
   expert: '',

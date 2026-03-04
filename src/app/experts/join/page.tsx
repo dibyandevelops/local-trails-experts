@@ -7,7 +7,7 @@ export default function ExpertJoinPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [city, setCity] = useState('Kathmandu');
+  const [city, setCity] = useState('');
   const [selectedSports, setSelectedSports] = useState<string[]>(['mtb']);
   const [credentials, setCredentials] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -57,7 +57,7 @@ export default function ExpertJoinPage() {
       setName('');
       setEmail('');
       setPhone('');
-      setCity('Kathmandu');
+      setCity('');
       setSelectedSports(['mtb']);
       setCredentials('');
     } catch (err) {
@@ -75,12 +75,12 @@ export default function ExpertJoinPage() {
           For Guided Trails & Coaches
         </p>
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
-          Become a Verified Sports Expert in Nepal
+          Become a Verified Sports Expert
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Share your knowledge of Kathmandu, Pokhara, and beyond. Host guided
+          Share your local knowledge from anywhere in the world. Host guided
           MTB rides, hikes, trail runs, and performance training sessions for
-          riders, runners, and travelers from around the world.
+          riders, runners, and travelers.
         </p>
       </section>
 
@@ -92,7 +92,7 @@ export default function ExpertJoinPage() {
           <ul className="space-y-3 text-sm text-gray-700">
             <li className="flex gap-2">
               <span className="mt-1 h-2 w-2 rounded-full bg-green-500" />
-              <span>Stand out in search results for Kathmandu & Pokhara events.</span>
+              <span>Stand out in search results for your city and sport categories.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-1 h-2 w-2 rounded-full bg-green-500" />
@@ -187,15 +187,13 @@ export default function ExpertJoinPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Home Base City
               </label>
-              <select
+              <input
+                type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="Kathmandu">Kathmandu</option>
-                <option value="Pokhara">Pokhara</option>
-                <option value="Other">Other</option>
-              </select>
+                placeholder="e.g., Kathmandu, London, or your city"
+              />
             </div>
 
             <div>

@@ -30,7 +30,7 @@ const defaultValues: TrainingFormValues = {
   venue: '',
   event_date: '',
   required_expertise: 'beginner',
-  city: 'Kathmandu',
+  city: '',
   max_participants: 20,
   is_paid_event: false,
   price_npr: 0,
@@ -127,7 +127,7 @@ export default function CreateTrainingPage() {
         max_participants: values.max_participants || undefined,
         meeting_point: values.venue || undefined,
         required_expertise: values.required_expertise,
-        city: values.city || 'Kathmandu',
+        city: values.city || undefined,
         price_npr: values.is_paid_event ? values.price_npr ?? 0 : 0,
         host_user_id: values.host_user_id || undefined,
       };
@@ -201,12 +201,12 @@ export default function CreateTrainingPage() {
             <label className="mb-2 block text-sm font-medium">
               Venue / Location <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              {...register('venue', { required: true })}
-              placeholder="e.g., Army HQ Ground, Kathmandu"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2"
-            />
+              <input
+                type="text"
+                {...register('venue', { required: true })}
+                placeholder="e.g., Riverside Park Trailhead"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+              />
           </div>
 
           <div>
@@ -247,13 +247,12 @@ export default function CreateTrainingPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium">City</label>
-              <select
+              <input
+                type="text"
                 {...register('city')}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2"
-              >
-                <option value="Kathmandu">Kathmandu</option>
-                <option value="Pokhara">Pokhara</option>
-              </select>
+                placeholder="e.g., Kathmandu, London, or your city"
+              />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Max Participants</label>

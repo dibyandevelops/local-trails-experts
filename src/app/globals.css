@@ -96,4 +96,49 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: landing-reveal 560ms ease-out forwards;
+  }
+
+  .reveal-1 {
+    animation-delay: 30ms;
+  }
+
+  .reveal-2 {
+    animation-delay: 90ms;
+  }
+
+  .reveal-3 {
+    animation-delay: 150ms;
+  }
+
+  .reveal-4 {
+    animation-delay: 210ms;
+  }
+
+  .reveal-5 {
+    animation-delay: 270ms;
+  }
+
+  .reveal-6 {
+    animation-delay: 330ms;
+  }
+}
+
+@keyframes landing-reveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
 }

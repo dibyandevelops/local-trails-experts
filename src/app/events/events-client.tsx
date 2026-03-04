@@ -322,15 +322,13 @@ export default function EventsPageClient() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">City</label>
-            <select
+            <input
+              type="text"
               value={selectedCity}
               onChange={(e) => setEventsFilterDraft({ city: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="Kathmandu">Kathmandu</option>
-              <option value="Pokhara">Pokhara</option>
-              <option value="">All Cities</option>
-            </select>
+              placeholder="Any city (leave blank for all)"
+            />
           </div>
           <div className="flex items-end">
             <label className="flex items-center">

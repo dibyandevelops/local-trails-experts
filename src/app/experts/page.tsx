@@ -23,7 +23,7 @@ const sportOptions = SPORT_OPTIONS;
 
 export default function ExpertsBrowsePage() {
   const router = useRouter();
-  const [selectedCity, setSelectedCity] = useState<string>('Kathmandu');
+  const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedSport, setSelectedSport] = useState<SportType | ''>('');
   const { data: experts = [], isLoading: loading } = useQuery<ExpertWithEvents[]>(
     {
@@ -48,24 +48,22 @@ export default function ExpertsBrowsePage() {
         Find Local Sports Experts
       </h1>
       <p className="text-sm text-gray-600 mb-6 max-w-2xl">
-        Browse verified and upcoming guides, coaches, and outdoor leaders in
-        Kathmandu and Pokhara. Filter by sport to find MTB guides, hiking
-        leaders, trail running partners, and training coaches.
+        Browse verified guides, coaches, and outdoor leaders worldwide. Filter
+        by sport to find MTB guides, hiking leaders, trail running partners,
+        and training coaches.
       </p>
 
       <div className="bg-gray-50 p-4 rounded-xl mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">City</label>
-            <select
+            <input
+              type="text"
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-            >
-              <option value="Kathmandu">Kathmandu</option>
-              <option value="Pokhara">Pokhara</option>
-              <option value="">All Cities</option>
-            </select>
+              placeholder="Any city (leave blank for all)"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
