@@ -5,8 +5,13 @@ import Link from 'next/link';
 import { Event, User } from '@/types';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
-import { fetchExpertEvents, fetchExperts } from '@/services/experts/experts.service';
+import {
+  fetchExpertEvents,
+  fetchExperts,
+  fetchExpertStravaSummary,
+} from '@/services/experts/experts.service';
 import { getSportLabel } from '@/services/constants/sports';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -33,6 +38,11 @@ export default function ExpertDetailPage() {
     },
     enabled: !!expertId,
   });
+  const { data: strava } = useQuery({
+    queryKey: QUERY_KEYS.experts.strava(expertId || ''),
+    queryFn: ({ signal }) => fetchExpertStravaSummary(expertId || '', signal),
+    enabled: !!expertId,
+  });
 
   if (loading) {
     return <div className="text-center py-12 text-gray-600">Loading...</div>;
@@ -56,6 +66,13 @@ export default function ExpertDetailPage() {
     (e) => new Date(e.event_date) >= new Date()
   );
   const sports = Array.isArray(expert.sports) ? expert.sports : [];
+  const lifetimeDistanceKm = Math.round(
+    Number(strava?.stats?.all_ride_totals?.distance || 0) / 1000
+  );
+  const lifetimeRideCount = Number(strava?.stats?.all_ride_totals?.count || 0);
+  const ytdDistanceKm = Math.round(
+    Number(strava?.stats?.ytd_ride_totals?.distance || 0) / 1000
+  );
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -119,6 +136,32 @@ export default function ExpertDetailPage() {
             <p className="text-lg font-semibold text-gray-900">{sports.length}</p>
           </div>
         </div>
+        {strava?.connected && (
+          <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-3 py-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">
+                Strava Activity
+              </p>
+              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-800">
+                Connected
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <p className="text-[11px] text-orange-700">Lifetime Rides</p>
+                <p className="text-base font-semibold text-orange-900">{lifetimeRideCount}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-orange-700">Lifetime Km</p>
+                <p className="text-base font-semibold text-orange-900">{lifetimeDistanceKm}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-orange-700">YTD Km</p>
+                <p className="text-base font-semibold text-orange-900">{ytdDistanceKm}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="mb-8">

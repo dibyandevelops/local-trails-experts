@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import type { UserRole } from '@/types';
 import { loginUser } from '@/services/auth/auth.service';
+import { ApiPath } from '@/services/api/paths';
 
 interface ILoginComponentProps {}
 
@@ -83,7 +84,9 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   return (
     <div className="mx-auto max-w-lg">
       <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3 dark:border-green-900/70 dark:bg-green-950/40">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Login</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+          Login
+        </h1>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
           Select your role and continue to your workspace.
         </p>
@@ -122,11 +125,15 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
               );
             })}
           </div>
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400" aria-live="polite">
+          <p
+            className="mt-2 text-xs text-gray-500 dark:text-gray-400"
+            aria-live="polite"
+          >
             {roleMeta[role].hint} Redirects to{' '}
             <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-2 py-0.5 font-semibold text-green-700 dark:border-green-900 dark:bg-green-900/40 dark:text-green-300">
               {roleMeta[role].destination}
-            </span>.
+            </span>
+            .
           </p>
         </fieldset>
 
@@ -203,12 +210,25 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         >
           {loginMutation.isPending ? 'Signing in...' : 'Login'}
         </button>
-        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-          Don&apos;t have a participant account?{' '}
-          <Link href="/register" className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200">
-            Register
+        {role === 'expert' && (
+          <Link
+            href={`${ApiPath.StravaAuthorize}?mode=login`}
+            className="inline-flex w-full items-center justify-center rounded-lg border border-orange-300 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-900 transition-colors hover:bg-orange-100 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-200 dark:hover:bg-orange-900/50"
+          >
+            Continue With Strava (Experts)
           </Link>
-        </p>
+        )}
+        {role === 'participant' && (
+          <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+            Don&apos;t have a participant account?{' '}
+            <Link
+              href="/register"
+              className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+            >
+              Register
+            </Link>
+          </p>
+        )}
       </form>
     </div>
   );

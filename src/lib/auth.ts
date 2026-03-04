@@ -3,6 +3,7 @@ import type { NextRequest, NextResponse } from 'next/server';
 import type { UserRole } from '@/types';
 
 export const AUTH_COOKIE_NAME = 'mtb_auth';
+export const AUTH_HINT_COOKIE_NAME = 'mtb_auth_hint';
 
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
@@ -96,11 +97,25 @@ export function setAuthCookie(response: NextResponse, token: string) {
     maxAge: TOKEN_TTL_SECONDS,
     path: '/',
   });
+  response.cookies.set(AUTH_HINT_COOKIE_NAME, '1', {
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: TOKEN_TTL_SECONDS,
+    path: '/',
+  });
 }
 
 export function clearAuthCookie(response: NextResponse) {
   response.cookies.set(AUTH_COOKIE_NAME, '', {
     httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 0,
+    path: '/',
+  });
+  response.cookies.set(AUTH_HINT_COOKIE_NAME, '', {
+    httpOnly: false,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     maxAge: 0,

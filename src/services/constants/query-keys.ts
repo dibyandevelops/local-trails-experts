@@ -62,6 +62,7 @@ export const QUERY_KEYS = {
         filters?.verified ? 'true' : 'false',
       ] as const,
     events: (expertId?: string) => ['experts-events', expertId || ''] as const,
+    strava: (expertId?: string) => ['experts-strava', expertId || ''] as const,
   },
   events: {
     byId: (id?: string | null) => ['event', id || ''] as const,

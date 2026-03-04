@@ -17,6 +17,10 @@ const schema = z.object({
   FIREBASE_PROJECT_ID: z.string().optional(),
   FIREBASE_CLIENT_EMAIL: z.string().optional(),
   FIREBASE_PRIVATE_KEY: z.string().optional(),
+  STRAVA_CLIENT_ID: z.string().optional(),
+  STRAVA_CLIENT_SECRET: z.string().optional(),
+  STRAVA_REDIRECT_URI: z.string().optional(),
+  NEXT_PUBLIC_APP_URL: z.string().optional(),
 });
 
 type ServerEnv = z.infer<typeof schema>;

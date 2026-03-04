@@ -51,3 +51,39 @@ export async function fetchExpertEvents(expertId: string, signal?: AbortSignal) 
     throw new Error('Failed to fetch expert events');
   }
 }
+
+export type ExpertStravaSummary = {
+  connected: boolean;
+  profile: {
+    id?: number;
+    username?: string | null;
+    firstname?: string | null;
+    lastname?: string | null;
+    profile?: string | null;
+  } | null;
+  stats: {
+    recent_ride_totals?: { count?: number; distance?: number; moving_time?: number };
+    all_ride_totals?: { count?: number; distance?: number; moving_time?: number };
+    ytd_ride_totals?: { count?: number; distance?: number; moving_time?: number };
+  } | null;
+  syncedAt: string | null;
+};
+
+export async function fetchExpertStravaSummary(
+  expertId: string,
+  signal?: AbortSignal
+): Promise<ExpertStravaSummary> {
+  try {
+    const { data } = await apiClient.get<ExpertStravaSummary>(
+      `${ApiPath.Experts}/${expertId}/strava`,
+      { signal }
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to fetch Strava summary');
+    }
+    throw new Error('Failed to fetch Strava summary');
+  }
+}

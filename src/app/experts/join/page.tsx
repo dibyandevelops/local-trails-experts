@@ -134,7 +134,6 @@ export default function ExpertJoinPage() {
           Tell us about your experience guiding, coaching, or leading outdoor
           activities. This helps us keep the community safe and high-quality.
         </p>
-
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid md:grid-cols-2 gap-4">
             <div>

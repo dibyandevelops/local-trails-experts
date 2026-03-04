@@ -162,6 +162,15 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     return item.requiresRole.includes(user.role);
   };
 
+  const hasExactVisibleNavMatch = navItems.some(
+    (item) => canSeeItem(item) && item.href === pathname
+  );
+  const isNavItemActive = (href: string) => {
+    if (pathname === href) return true;
+    if (hasExactVisibleNavMatch) return false;
+    return pathname.startsWith(`${href}/`);
+  };
+
   const initial =
     user?.name?.trim()?.charAt(0).toUpperCase() ||
     user?.email?.charAt(0).toUpperCase() ||
@@ -190,7 +199,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="hover:text-green-200 transition-colors"
+                  className={`rounded-md px-2 py-1 transition-colors ${
+                    isNavItemActive(item.href)
+                      ? 'bg-green-700 text-white'
+                      : 'hover:text-green-200'
+                  }`}
                 >
                   {item.label}
                 </Link>
@@ -265,7 +278,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="px-2 py-2 rounded hover:bg-green-700 transition-colors"
+                  className={`px-2 py-2 rounded transition-colors ${
+                    isNavItemActive(item.href)
+                      ? 'bg-green-700 text-white'
+                      : 'hover:bg-green-700'
+                  }`}
                   onClick={() => setMobileOpen(false)}
                 >
                   {item.label}

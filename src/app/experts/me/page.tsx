@@ -9,6 +9,10 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
 import * as Dialog from '@radix-ui/react-dialog';
 import EventForm from '@/components/feature-components/event-form/event-form';
+import { useQuery } from '@tanstack/react-query';
+import { fetchExpertStravaSummary } from '@/services/experts/experts.service';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { ApiPath } from '@/services/api/paths';
 
 type ExpertTrailRequest = {
   id: string;
@@ -47,6 +51,11 @@ export default function ExpertProfilePage() {
   });
 
   const sportOptions: { value: SportType; label: string }[] = TRAIL_SPORTS;
+  const { data: stravaSummary } = useQuery({
+    queryKey: QUERY_KEYS.experts.strava(currentUser?.id),
+    queryFn: ({ signal }) => fetchExpertStravaSummary(currentUser?.id || '', signal),
+    enabled: !!currentUser?.id && currentUser.role === 'expert',
+  });
 
   useEffect(() => {
     setUser(currentUser || null);
@@ -109,6 +118,25 @@ export default function ExpertProfilePage() {
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
           Edit Profile
         </h2>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {stravaSummary?.connected ? (
+            <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
+              Strava Connected
+            </span>
+          ) : (
+            <Link
+              href={`${ApiPath.StravaAuthorize}?mode=connect`}
+              className="inline-flex items-center rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 hover:bg-orange-100"
+            >
+              Connect Strava
+            </Link>
+          )}
+          {stravaSummary?.syncedAt && (
+            <span className="text-xs text-gray-500">
+              Last synced {format(new Date(stravaSummary.syncedAt), 'PPP p')}
+            </span>
+          )}
+        </div>
         {user.is_verified_expert && (
           <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold mb-4">
             Verified Expert
