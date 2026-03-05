@@ -145,10 +145,7 @@ export async function GET(request: NextRequest) {
         role: 'expert',
         email: userRow.email,
       });
-      const redirectTo =
-        mode === 'connect'
-          ? new URL('/experts/me?strava=connected', request.url)
-          : new URL(`/experts/${userRow.id}?strava=connected`, request.url);
+      const redirectTo = new URL('/experts/me?strava=connected', request.url);
       const response = NextResponse.redirect(redirectTo);
       response.cookies.set('strava_oauth_state', '', {
         httpOnly: true,

@@ -6,7 +6,8 @@ import { buildStravaAuthorizeUrl, getStravaConfig } from '@/lib/strava';
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    const mode: 'connect' = 'connect';
+    const modeParam = request.nextUrl.searchParams.get('mode');
+    const mode: 'connect' | 'login' = modeParam === 'login' ? 'login' : 'connect';
     const { clientId, clientSecret, redirectUri } = getStravaConfig();
 
     if (!clientId || !clientSecret || !redirectUri) {
@@ -16,8 +17,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!auth || auth.role !== 'expert') {
-      return NextResponse.redirect(new URL('/login', request.url));
+    if (mode === 'connect') {
+      if (!auth || auth.role !== 'expert') {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
     }
 
     const state = randomBytes(24).toString('hex');
