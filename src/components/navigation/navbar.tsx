@@ -177,7 +177,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     'U';
 
   return (
-    <nav className="bg-green-800 text-white shadow-lg">
+    <nav className="relative z-20 bg-green-800 text-white shadow-lg">
       <div className="container mx-auto px-4 py-5">
         <div className="flex min-h-[56px] items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold leading-none">
@@ -249,7 +249,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white text-gray-900 shadow-lg">
+                  <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white text-gray-900 shadow-lg z-30">
                     <button
                       type="button"
                       onClick={handleViewProfile}
