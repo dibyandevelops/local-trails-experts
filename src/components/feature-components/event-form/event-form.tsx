@@ -24,7 +24,7 @@ import {
 } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import TrailSubmissionForm from '@/components/feature-components/trail-submission-form';
-import { TRAIL_SPORTS } from '@/services/constants/sports';
+import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
 
 type EventFormValues = {
   title: string;
@@ -47,27 +47,6 @@ type EventFormValues = {
   host_user_id: string;
 };
 
-const sportLabels: Record<SportType, string> = {
-  mtb: 'MTB Trail Rides',
-  hiking: 'Hiking',
-  trail_running: 'Trail Running',
-  training: 'Training & Coaching',
-  local_tour: 'Local Tours',
-  road_cycling: 'Road Cycling',
-  xc_trails: 'XC Trails',
-  gravel_rides: 'Gravel Rides',
-};
-
-const sportTitlePrefixes: Record<SportType, string> = {
-  mtb: 'MTB Trail Ride',
-  hiking: 'Hiking Event',
-  trail_running: 'Trail Run',
-  training: 'Training Session',
-  local_tour: 'Local Tour',
-  road_cycling: 'Road Cycling Ride',
-  xc_trails: 'XC Trail Ride',
-  gravel_rides: 'Gravel Ride',
-};
 
 function getUpcomingWeekendDateTimeLocal() {
   const now = new Date();
@@ -434,7 +413,10 @@ export default function EventForm({
   const applyTrailDefaults = (selectedTrail: Trail, trailId: string) => {
     setValue('trail_id', trailId);
     const currentTitleValue = getValues('title')?.trim() || '';
-    const prefix = sportTitlePrefixes[selectedSport || 'mtb'] || 'Event';
+    const prefix =
+      TRAIL_SPORTS.find(
+        (sport) => sport.value === selectedTrail.sport_type,
+      )?.label.split(' ')[0] || 'Event';
     const nextAutoTitle = `${prefix}: ${selectedTrail.name}`;
     if (!currentTitleValue || currentTitleValue === lastAutoTitle) {
       setValue('title', nextAutoTitle);
@@ -489,7 +471,7 @@ export default function EventForm({
     if (!selectedTrailId) return;
     const selectedTrail = trailsBySport.find((trail) => trail.id === selectedTrailId);
     if (!selectedTrail) return;
-    const prefix = sportTitlePrefixes[selectedSport || 'mtb'] || 'Event';
+    const prefix = TRAIL_SPORTS.find((sport) => sport.value === selectedTrail.sport_type)?.label.split(' ')[0] || 'Event';
     const nextAutoTitle = `${prefix}: ${selectedTrail.name}`;
     const trimmedTitle = (currentTitle || '').trim();
     if (trimmedTitle === nextAutoTitle) return;
@@ -668,7 +650,7 @@ export default function EventForm({
                       value={sport.value}
                       {...register('sport_type', { required: true })}
                     />
-                    {sportLabels[sport.value as SportType] ?? sport.label}
+                    {getSportLabel(sport.value) ?? sport.label}
                   </label>
                 ))}
               </div>
@@ -687,7 +669,7 @@ export default function EventForm({
               <p className="mt-0.5 text-xs text-gray-600">
                 {selectedLockedTrail?.location || ''}
                 {selectedLockedTrail?.sport_type
-                  ? ` • ${sportLabels[selectedLockedTrail.sport_type as SportType] || selectedLockedTrail.sport_type}`
+                  ? ` • ${getSportLabel(selectedLockedTrail.sport_type) || selectedLockedTrail.sport_type}`
                   : ''}
               </p>
             </div>
@@ -714,7 +696,7 @@ export default function EventForm({
                   Tip: Selecting a trail auto-fills title, description, itinerary, and difficulty.
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Showing trails for {sportLabels[(selectedSport || 'mtb') as SportType] || 'selected sport'}.
+                  Showing trails for {getSportLabel((selectedSport || 'mtb') as SportType) || 'selected sport'}.
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   Changing sport clears trail/event-specific fields to avoid stale data.

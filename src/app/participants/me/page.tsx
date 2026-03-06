@@ -483,7 +483,7 @@ export default function ParticipantProfilePage() {
                   </p>
                   {event.sport_type && (
                     <p className="text-xs text-gray-500">
-                      Sport: {event.sport_type}
+                      Sport: {getSportLabel(event.sport_type)}
                     </p>
                   )}
                 </div>

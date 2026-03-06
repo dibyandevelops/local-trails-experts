@@ -6,6 +6,7 @@ import type { Booking, Event } from '@/types';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { getSportLabel } from '@/services/constants/sports';
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -113,7 +114,7 @@ export default function EventDetailPage() {
         )}
         {event.sport_type && (
           <p>
-            <span className="font-semibold">Sport:</span> {event.sport_type}
+            <span className="font-semibold">Sport:</span> {getSportLabel(event.sport_type)}
           </p>
         )}
         {event.required_expertise && (

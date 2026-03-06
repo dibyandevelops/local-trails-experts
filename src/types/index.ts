@@ -5,6 +5,8 @@ export type UserRole = 'participant' | 'expert' | 'admin';
 
 export type SportType =
   | 'mtb'
+  | 'downhill_mtb'
+  | 'enduro_mtb'
   | 'hiking'
   | 'trail_running'
   | 'training'

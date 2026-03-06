@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateEventInput, Difficulty, ExpertiseLevel, SportType, User } from '@/types';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { getSportLabel } from '@/services/constants/sports';
 import {
   fetchAdminExpertApplications,
   fetchAdminPendingTrails,
@@ -443,7 +444,7 @@ export default function AdminPage() {
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{trail.name}</p>
                   <p className="text-xs text-gray-500">
-                    {trail.sport_type} • {trail.difficulty} • {trail.location}
+                    {getSportLabel(trail.sport_type)} • {trail.difficulty} • {trail.location}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Submitted by {trail.submitted_by_name || 'Expert'} ({trail.submitted_by_email || 'N/A'})

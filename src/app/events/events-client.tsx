@@ -19,6 +19,7 @@ import {
 import { fetchMyParticipantEvents } from '@/services/participants/participants.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { useUiStore } from '@/stores/ui.store';
+import { SPORT_OPTIONS } from '@/services/constants/sports';
 
 const EMPTY_EVENTS: Event[] = [];
 
@@ -264,13 +265,7 @@ export default function EventsPageClient() {
   };
 
   const expertiseLevels: ExpertiseLevel[] = ['beginner', 'intermediate', 'advanced', 'expert'];
-  const sportTypes: { value: SportType; label: string }[] = [
-    { value: 'mtb', label: 'MTB Trail Ride' },
-    { value: 'hiking', label: 'Hiking' },
-    { value: 'trail_running', label: 'Trail Running' },
-    { value: 'training', label: 'Training' },
-    { value: 'local_tour', label: 'Local Tour' },
-  ];
+  const sportTypes: { value: SportType; label: string }[] = SPORT_OPTIONS;
 
   const eventsByExpertise = expertiseLevels.reduce((acc, level) => {
     acc[level] = events.filter((event) => event.required_expertise === level);
