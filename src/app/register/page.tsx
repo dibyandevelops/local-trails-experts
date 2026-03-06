@@ -85,11 +85,12 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">
-        Participant Registration
+      <h1 className="text-4xl font-bold mb-2 text-green-800">
+        Join the Adventure! 🚵
       </h1>
-      <p className="text-sm text-gray-600 mb-6">
-        Create a participant account to join events and save your profile.
+      <p className="text-sm text-gray-600 mb-6 max-w-2xl">
+        Create your free account to unlock epic trails, connect with verified guides and coaches,
+        save your favorite spots, and never miss an event. Your next great outdoor experience starts here!
       </p>
 
       <form
@@ -149,12 +150,12 @@ export default function RegisterPage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sports
+            Choose Your Sports 🎯
           </label>
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-xs font-medium text-gray-600">
-                Same sport categories as event creation
+                Pick your adventure style — you can always change these later!
               </p>
               <p className="text-xs font-semibold text-gray-700">
                 {form.sports.length} selected
@@ -193,7 +194,7 @@ export default function RegisterPage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Password
+            Create a Strong Password 🔐
           </label>
           <input
             type="password"
@@ -208,10 +209,10 @@ export default function RegisterPage() {
           />
           <div className="mt-2 text-xs text-gray-600 space-y-1">
             <p className={passwordChecks.length ? 'text-green-700' : ''}>
-              • At least 8 characters
+              ✅ At least 8 characters
             </p>
             <p className={passwordChecks.number ? 'text-green-700' : ''}>
-              • Includes at least one number
+              ✅ Includes at least one number
             </p>
           </div>
         </div>
@@ -232,7 +233,7 @@ export default function RegisterPage() {
           disabled={loading || Boolean(validateForm())}
           className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
         >
-          {loading ? 'Creating account...' : 'Register'}
+          {loading ? 'Creating account...' : 'Start My Adventure! 🌟'}
         </button>
       </form>
     </div>
