@@ -2,6 +2,7 @@
 import type { Metadata, Viewport } from 'next';
 
 import Navbar from '@/components/navigation/navbar';
+import Footer from '@/components/navigation/footer';
 import PWARegister from '@/components/pwa-register';
 import PushNotificationPrompt from '@/components/push-notification-prompt';
 import { getServerCurrentUser } from '@/lib/auth-server';
@@ -59,6 +60,7 @@ export default async function RootLayout({
           <PushNotificationPrompt />
           <Navbar initialUser={initialUser} />
           <main className="container mx-auto px-4 py-8">{children}</main>
+          <Footer />
         </MainContent>
       </body>
     </html>
