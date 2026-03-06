@@ -344,6 +344,7 @@ export default function EventForm({
   useEffect(() => {
     if (isEditMode) return;
     if (loadingUser || loadingEditData) return;
+    if(!selectedTrailId) return // focus meeting point only after trail is selected, since it's the next logical step and we want to guide users there
     const timer = window.setTimeout(() => {
       setFocus('meeting_point');
     }, 0);
