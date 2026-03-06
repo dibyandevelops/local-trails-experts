@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import TrailSubmissionForm from '@/components/feature-components/trail-submission-form';
+import MultiTrailSubmissionForm from '@/components/feature-components/trail-submission-form/MultiTrailSubmissionForm';
 
 export default function CreateTrailPage() {
   const router = useRouter();
@@ -26,14 +26,20 @@ export default function CreateTrailPage() {
             </p>
           )}
 
-          <TrailSubmissionForm
+          <p className="text-sm text-gray-600">
+            Add up to 5 trails per submission. Fill each section and click &quot;Add another trail&quot; to include more, then submit.
+          </p>
+
+          <MultiTrailSubmissionForm
             userRole={user.role}
-            submitLabel={user.role === 'expert' ? 'Submit Trail for Approval' : 'Create Trail'}
+            submitLabel={user.role === 'expert' ? 'Submit Trails for Approval' : 'Create Trails'}
             onSuccess={(data) => {
               if (data.requiresApproval) {
                 return;
               }
-              router.push(`/trails/${data.trail.id}`);
+              if (data.trail?.id) {
+                router.push(`/trails/${data.trail.id}`);
+              }
             }}
           />
         </div>
