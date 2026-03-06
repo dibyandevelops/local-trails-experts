@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmailSafe } from '@/lib/email';
+import type { UserRole } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const body = await request.json();
-    const { name, email, city, sports, credentials, phone } = body;
+    const { name, email, city, sports, credentials, phone, password } = body;
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
 
     if (!name || !email || !credentials || !normalizedPhone) {
@@ -19,14 +21,69 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!password || password.length < 8 || !/\d/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters and include a number.' },
+        { status: 400 }
+      );
+    }
+
     const existingUser = await pool.query(
-      'SELECT id FROM users WHERE email = $1 LIMIT 1',
+      'SELECT id, password_hash FROM users WHERE email = $1 LIMIT 1',
       [email]
     );
+
     if (existingUser.rows.length > 0) {
+      // Check if user already has expert role
+      const existingUserData = await pool.query(
+        'SELECT role FROM users WHERE email = $1 LIMIT 1',
+        [email]
+      );
+
+      if (existingUserData.rows[0]?.role === 'expert') {
+        return NextResponse.json(
+          { error: 'You are already registered as an expert. Please log in.' },
+          { status: 409 }
+        );
+      }
+
+      // Upgrade existing user to expert
+      const sportsJson = Array.isArray(sports) && sports.length > 0
+        ? JSON.stringify(sports)
+        : null;
+
+      await pool.query(
+        `
+        UPDATE users
+        SET role = 'expert',
+            is_verified_expert = TRUE,
+            bio = COALESCE($2, bio),
+            city = COALESCE($3, city),
+            sports = COALESCE($4::jsonb, sports),
+            phone = COALESCE($5, phone)
+        WHERE id = $1
+      `,
+        [
+          existingUser.rows[0].id,
+          credentials,
+          city || null,
+          sportsJson,
+          normalizedPhone,
+        ]
+      );
+
+      await sendEmailSafe({
+        to: email,
+        subject: 'You are now a Verified Expert',
+        text: `Hi ${name}, your account has been upgraded to expert. You can now log in and start hosting events.`,
+        html: `<p>Hi ${name},</p><p>Your account has been upgraded to expert.</p><p>You can now log in and start hosting events.</p>`,
+      });
+
       return NextResponse.json(
-        { error: 'Email is already registered. Please log in instead.' },
-        { status: 409 }
+        {
+          message: 'Your account has been upgraded to expert. You can now log in.',
+        },
+        { status: 200 }
       );
     }
 
@@ -41,59 +98,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingApplication = await pool.query(
-      'SELECT id, status FROM expert_applications WHERE email = $1 LIMIT 1',
-      [email]
-    );
-    if (existingApplication.rows.length > 0) {
-      return NextResponse.json(
-        { error: 'An application already exists for this email.' },
-        { status: 409 }
-      );
-    }
-
     // Fix: Ensure sports is passed as a proper JSON string for the JSON column in Postgres
     let sportsJson: string | null = null;
     if (Array.isArray(sports) && sports.length > 0) {
       sportsJson = JSON.stringify(sports);
     }
 
+    // Hash the user-provided password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Create user directly with expert role (auto-approved)
     const query = `
-      INSERT INTO expert_applications (name, email, city, sports, credentials, phone)
-      VALUES ($1, $2, $3, $4::json, $5, $6)
-      RETURNING id, status, created_at
+      INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert, phone)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE, $8)
+      RETURNING id, name, email, role, created_at
     `;
 
     const result = await pool.query(query, [
       name,
       email,
+      passwordHash,
+      'expert' as UserRole,
+      credentials,
       city || null,
       sportsJson,
-      credentials,
       normalizedPhone,
     ]);
 
-    const application = result.rows[0];
+    const user = result.rows[0];
 
     await sendEmailSafe({
       to: email,
-      subject: 'Expert Application Received',
-      text: `Hi ${name}, we received your expert application and will review it shortly.`,
-      html: `<p>Hi ${name},</p><p>We received your expert application and will review it shortly.</p>`,
+      subject: 'Welcome as a Verified Expert',
+      text: `Hi ${name}, your expert account has been created successfully. You can now log in and start hosting events.`,
+      html: `<p>Hi ${name},</p><p>Your expert account has been created successfully.</p><p>You can now log in and start hosting events.</p>`,
     });
 
     return NextResponse.json(
       {
-        application,
-        message:
-          'Application submitted. We will review your credentials and mark you as verified.',
+        user,
+        message: 'Expert account created successfully. You can now log in.',
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error submitting expert application:', error);
+    console.error('Error creating expert account:', error);
     return NextResponse.json(
-      { error: 'Failed to submit application' },
+      { error: 'Failed to create expert account' },
       { status: 500 }
     );
   }

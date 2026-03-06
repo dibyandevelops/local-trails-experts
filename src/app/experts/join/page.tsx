@@ -1,17 +1,20 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
+import { loginUser } from '@/services/auth/auth.service';
 
 export default function ExpertJoinPage() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
+  const [password, setPassword] = useState('');
   const [selectedSports, setSelectedSports] = useState<string[]>(['mtb']);
   const [credentials, setCredentials] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const toggleSport = (value: string) => {
@@ -25,7 +28,6 @@ export default function ExpertJoinPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setSuccessMessage(null);
     setErrorMessage(null);
 
     try {
@@ -39,6 +41,7 @@ export default function ExpertJoinPage() {
           email,
           phone,
           city,
+          password,
           sports: selectedSports,
           credentials,
         }),
@@ -51,15 +54,24 @@ export default function ExpertJoinPage() {
         return;
       }
 
-      setSuccessMessage(
-        'Thank you! Your application is under review. Once approved, you will receive a verified expert badge.'
-      );
-      setName('');
-      setEmail('');
-      setPhone('');
-      setCity('');
-      setSelectedSports(['mtb']);
-      setCredentials('');
+      // After successful signup, automatically log in the user
+      try {
+        await loginUser({
+          email,
+          password,
+          role: 'expert',
+        });
+
+        // Dispatch auth changed event to update UI
+        window.dispatchEvent(new Event('auth-changed'));
+
+        // Redirect to create event page
+        router.push('/events/create');
+      } catch (loginErr) {
+        console.error('Auto-login failed after signup:', loginErr);
+        // If auto-login fails, redirect to login page with a message
+        router.push('/login?role=expert&message=signup-success');
+      }
     } catch (err) {
       console.error(err);
       setErrorMessage('Something went wrong. Please try again.');
@@ -181,6 +193,24 @@ export default function ExpertJoinPage() {
             </p>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="Min 8 characters with a number"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Must be at least 8 characters and include a number.
+            </p>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -235,9 +265,6 @@ export default function ExpertJoinPage() {
           {errorMessage && (
             <p className="text-sm text-red-600">{errorMessage}</p>
           )}
-          {successMessage && (
-            <p className="text-sm text-green-700">{successMessage}</p>
-          )}
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-2">
             <button
@@ -248,7 +275,7 @@ export default function ExpertJoinPage() {
               {submitting ? 'Submitting...' : 'Submit Application'}
             </button>
             <p className="text-xs text-gray-500 max-w-md">
-              After approval, your profile and hosted events can display a
+              Once registered, your profile and hosted events can display a
               <span className="inline-flex items-center ml-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-semibold text-[11px]">
                 Verified Expert
               </span>{' '}

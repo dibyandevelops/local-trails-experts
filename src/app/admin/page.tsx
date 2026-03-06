@@ -1,58 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateEventInput, Difficulty, ExpertiseLevel, SportType, User } from '@/types';
+import { useState } from 'react';
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
+import type { User } from '@/types';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { getSportLabel } from '@/services/constants/sports';
 import {
-  fetchAdminExpertApplications,
   fetchAdminPendingTrails,
   fetchAdminTrailRequests,
   moderateAdminTrail,
-  sendAdminVerificationRequest,
-  updateAdminExpertApplicationStatus,
-  type ExpertApplication,
   type PendingTrail,
   type TrailInterestRequest,
 } from '@/services/admin/admin.service';
 
 export default function AdminPage() {
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
-  const [appError, setAppError] = useState<string | null>(null);
-  const [appNotice, setAppNotice] = useState<string | null>(null);
-  const [verificationDrafts, setVerificationDrafts] = useState<Record<string, string>>({});
-  const [sendingVerificationFor, setSendingVerificationFor] = useState<string | null>(null);
   const [trailModerationMessage, setTrailModerationMessage] = useState<string | null>(null);
   const [trailRequestMessage, setTrailRequestMessage] = useState<string | null>(null);
-
-  const [eventForm, setEventForm] = useState<CreateEventInput>({
-    title: '',
-    event_date: '',
-    required_expertise: 'beginner',
-    description: '',
-    organizer_name: '',
-    organizer_email: '',
-    meeting_point: '',
-    difficulty: 'easy',
-    sport_type: 'mtb',
-    city: '',
-    price_npr: 0,
-    max_participants: 20,
-    host_user_id: undefined,
-  });
-  // const [eventSubmitting, setEventSubmitting] = useState(false);
-  // const [eventMessage, setEventMessage] = useState<string | null>(null);
-
-  const {
-    data: applications = [],
-    isLoading: loadingApps,
-  } = useQuery<ExpertApplication[]>({
-    queryKey: QUERY_KEYS.admin.expertApplications(statusFilter),
-    queryFn: () => fetchAdminExpertApplications(statusFilter),
-  });
 
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,
@@ -75,43 +40,6 @@ export default function AdminPage() {
     queryFn: () => fetchAdminTrailRequests(),
   });
 
-  const updateApplicationMutation = useMutation({
-    mutationFn: ({
-      id,
-      status,
-    }: {
-      id: string;
-      status: 'pending' | 'approved' | 'rejected';
-    }) => updateAdminExpertApplicationStatus(id, status),
-    onSuccess: async (data) => {
-      await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.admin.expertApplications(statusFilter),
-      });
-      if (data?.tempPassword) {
-        setAppNotice(`Temp password for ${data.application?.email}: ${data.tempPassword}`);
-      }
-    },
-    onError: () => {
-      setAppError('Unable to update application status.');
-    },
-  });
-
-  const verificationRequestMutation = useMutation({
-    mutationFn: ({
-      applicationId,
-      message,
-    }: {
-      applicationId: string;
-      message: string;
-    }) => sendAdminVerificationRequest(applicationId, message),
-    onSuccess: () => {
-      setAppNotice('Verification request email sent.');
-    },
-    onError: () => {
-      setAppError('Unable to send verification request email.');
-    },
-  });
-
   const moderateTrailMutation = useMutation({
     mutationFn: ({
       id,
@@ -121,7 +49,7 @@ export default function AdminPage() {
       status: 'approved' | 'rejected';
     }) => moderateAdminTrail(id, status),
     onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.pendingTrails });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'pending-trails'] });
       setTrailModerationMessage(
         variables.status === 'approved'
           ? 'Trail approved and now visible for event creation.'
@@ -133,36 +61,6 @@ export default function AdminPage() {
     },
   });
 
-  const updateApplicationStatus = async (
-    id: string,
-    status: ExpertApplication['status']
-  ) => {
-    setAppError(null);
-    setAppNotice(null);
-    await updateApplicationMutation.mutateAsync({ id, status });
-  };
-
-  const sendVerificationRequest = async (applicationId: string) => {
-    const message = (verificationDrafts[applicationId] || '').trim();
-    if (!message) {
-      setAppError('Please enter a message before sending verification request.');
-      return;
-    }
-
-    try {
-      setSendingVerificationFor(applicationId);
-      setAppError(null);
-      setAppNotice(null);
-      await verificationRequestMutation.mutateAsync({ applicationId, message });
-      setVerificationDrafts((prev) => ({ ...prev, [applicationId]: '' }));
-    } catch (error) {
-      console.error('Error sending verification request email', error);
-      // message is handled via mutation onError
-    } finally {
-      setSendingVerificationFor(null);
-    }
-  };
-
   const moderateTrail = async (id: string, status: 'approved' | 'rejected') => {
     try {
       setTrailModerationMessage(null);
@@ -173,77 +71,6 @@ export default function AdminPage() {
     }
   };
 
-  // const handleEventChange = (field: keyof CreateEventInput, value: string | number) => {
-  //   setEventForm((prev) => ({
-  //     ...prev,
-  //     [field]: value,
-  //   }));
-  // };
-
-  const selectedExpert = eventForm.host_user_id
-    ? experts.find((expert) => expert.id === eventForm.host_user_id)
-    : undefined;
-  const expertSports = Array.isArray(selectedExpert?.sports)
-    ? selectedExpert?.sports
-    : [];
-
-  useEffect(() => {
-    if (expertSports.length === 0) return;
-    if (!eventForm.sport_type || !expertSports.includes(eventForm.sport_type)) {
-      setEventForm((prev) => ({
-        ...prev,
-        sport_type: expertSports[0] as SportType,
-      }));
-    }
-  }, [expertSports, eventForm.sport_type]);
-
-  // const handleCreateEvent = async (event: React.FormEvent) => {
-  //   event.preventDefault();
-  //   setEventMessage(null);
-
-  //   if (!eventForm.title || !eventForm.event_date || !eventForm.required_expertise) {
-  //     setEventMessage('Please fill in the required fields.');
-  //     return;
-  //   }
-
-  //   if (!eventForm.host_user_id) {
-  //     setEventMessage('Please select an approved expert host.');
-  //     return;
-  //   }
-
-  //   try {
-  //     setEventSubmitting(true);
-  //     const res = await fetch('/api/events', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify(eventForm),
-  //     });
-  //     const data = await res.json();
-  //     if (!res.ok) {
-  //       throw new Error(data?.error || 'Failed to create event');
-  //     }
-  //     setEventMessage('Event created successfully.');
-  //     setEventForm((prev) => ({
-  //       ...prev,
-  //       title: '',
-  //       description: '',
-  //       event_date: '',
-  //       organizer_name: '',
-  //       organizer_email: '',
-  //       meeting_point: '',
-  //       city: '',
-  //       price_npr: 0,
-  //       max_participants: 20,
-  //       host_user_id: undefined,
-  //     }));
-  //   } catch (error) {
-  //     console.error('Error creating event', error);
-  //     setEventMessage('Unable to create event.');
-  //   } finally {
-  //     setEventSubmitting(false);
-  //   }
-  // };
-
   return (
     <div className="space-y-10">
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
@@ -251,121 +78,10 @@ export default function AdminPage() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Admin Console</h1>
             <p className="text-sm text-gray-600">
-              Review expert applications and publish new events.
+              Review trail requests and publish new events.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-              Filter
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            >
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="all">All</option>
-            </select>
-          </div>
         </div>
-
-        {appError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4">
-            {appError}
-          </p>
-        )}
-        {appNotice && (
-          <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-4">
-            {appNotice}
-          </p>
-        )}
-
-        {loadingApps ? (
-          <p className="text-sm text-gray-600">Loading applications...</p>
-        ) : applications.length === 0 ? (
-          <p className="text-sm text-gray-600">No applications to review.</p>
-        ) : (
-          <div className="space-y-4">
-            {applications.map((app) => (
-              <div
-                key={app.id}
-                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-start md:justify-between gap-4"
-              >
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">
-                    {app.name}
-                  </h3>
-                  <p className="text-xs text-gray-500">{app.email}</p>
-                  {app.city && (
-                    <p className="text-xs text-gray-500">City: {app.city}</p>
-                  )}
-                  {Array.isArray(app.sports) && app.sports.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {app.sports.map((sport) => (
-                        <span
-                          key={sport}
-                          className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-medium"
-                        >
-                          {sport}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-600 mt-2 whitespace-pre-line">
-                    {app.credentials}
-                  </p>
-                  <div className="mt-3">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Ask for more verification
-                    </label>
-                    <textarea
-                      value={verificationDrafts[app.id] || ''}
-                      onChange={(e) =>
-                        setVerificationDrafts((prev) => ({
-                          ...prev,
-                          [app.id]: e.target.value,
-                        }))
-                      }
-                      className="w-full min-h-[72px] rounded-lg border border-gray-300 px-2 py-1.5 text-xs"
-                      placeholder="Request specific documents or clarifications..."
-                    />
-                    <button
-                      type="button"
-                      onClick={() => sendVerificationRequest(app.id)}
-                      disabled={sendingVerificationFor === app.id}
-                      className="mt-2 px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {sendingVerificationFor === app.id
-                        ? 'Sending...'
-                        : 'Send verification email'}
-                    </button>
-                  </div>
-                </div>
-                <div className="flex flex-col items-start gap-2">
-                  <span className="text-[11px] uppercase tracking-wide text-gray-500">
-                    Status: {app.status}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => updateApplicationStatus(app.id, 'approved')}
-                      className="px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => updateApplicationStatus(app.id, 'rejected')}
-                      className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
