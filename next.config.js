@@ -3,6 +3,9 @@ const { withSentryConfig } = require("@sentry/nextjs");
 
 const nextConfig = {
   reactStrictMode: true,
+  serverActions: {
+    bodySizeLimit: '10mb',
+  },
 };
 
 module.exports = withSentryConfig(nextConfig, { silent: true });
