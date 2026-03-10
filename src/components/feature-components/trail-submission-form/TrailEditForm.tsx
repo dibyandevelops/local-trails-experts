@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Dialog from '@radix-ui/react-dialog';
+import { useRouter } from 'next/navigation';
 import type { Difficulty, SportType, Trail } from '@/types';
 import { TRAIL_SAFETY_OPTIONS, type TrailSafetyLabel } from '@/lib/trail-safety';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
@@ -19,7 +20,6 @@ type FormValues = {
   distance_km: string;
   elevation_gain_m: string;
   estimated_time_hours: string;
-  image_url: string;
   safety_labels: TrailSafetyLabel[];
 };
 
@@ -28,13 +28,24 @@ function toStringOrEmpty(value: number | string | null | undefined) {
   return String(value);
 }
 
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function TrailEditForm({ trailId }: { trailId: string }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const gpxInputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingGpx, setPendingGpx] = useState<File | null>(null);
+  const [trailImages, setTrailImages] = useState<string[]>([]);
 
   const { data: trail, isLoading } = useQuery<Trail>({
     queryKey: QUERY_KEYS.trails.byId(trailId),
@@ -52,7 +63,6 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       distance_km: toStringOrEmpty(trail?.distance_km),
       elevation_gain_m: toStringOrEmpty(trail?.elevation_gain_m),
       estimated_time_hours: toStringOrEmpty(trail?.estimated_time_hours),
-      image_url: trail?.image_url ?? '',
       safety_labels: (trail?.safety_labels as TrailSafetyLabel[] | null) ?? [],
     };
   }, [trail]);
@@ -64,6 +74,15 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
   useEffect(() => {
     reset(defaultValues);
   }, [defaultValues, reset]);
+
+  useEffect(() => {
+    if (!trail) return;
+    const list = [
+      ...(Array.isArray(trail.trail_images) ? trail.trail_images : []),
+      trail.image_url,
+    ].filter((value): value is string => Boolean(value));
+    setTrailImages(Array.from(new Set(list)));
+  }, [trail?.id]);
 
   const safetyLabels = watch('safety_labels') || [];
 
@@ -119,7 +138,8 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       // distance_km is derived from GPX; keep read-only on the form.
       elevation_gain_m: values.elevation_gain_m ? Number(values.elevation_gain_m) : null,
       estimated_time_hours: values.estimated_time_hours ? Number(values.estimated_time_hours) : null,
-      image_url: (values.image_url || '').trim() || null,
+      image_url: trailImages[0] || null,
+      trail_images: trailImages,
       safety_labels: values.safety_labels || [],
     });
   };
@@ -257,12 +277,60 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Cover image URL</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Trail photos</label>
           <input
-            {...register('image_url')}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500"
-            placeholder="https://..."
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={async (event) => {
+              const files = Array.from(event.target.files || []);
+              if (files.length === 0) return;
+              setError(null);
+              try {
+                const next = await Promise.all(files.map((f) => fileToDataUrl(f)));
+                setTrailImages((prev) => Array.from(new Set([...prev, ...next].filter(Boolean))));
+              } catch (e) {
+                setError(e instanceof Error ? e.message : 'Failed to process images');
+              } finally {
+                // allow selecting the same file again
+                event.currentTarget.value = '';
+              }
+            }}
+            className="block w-full text-sm"
           />
+          {trailImages.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {trailImages.slice(0, 8).map((src, index) => (
+                <div
+                  key={`trail-edit-img-${index}`}
+                  className="relative h-20 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt={`Trail photo ${index + 1}`} className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTrailImages((prev) => prev.filter((_, i) => i !== index));
+                    }}
+                    className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white hover:bg-black/70"
+                    aria-label="Remove photo"
+                    title="Remove photo"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {trailImages.length > 8 && (
+                <div className="grid h-20 w-24 place-items-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-xs font-semibold text-gray-600">
+                  +{trailImages.length - 8} more
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="mt-2 text-xs text-gray-500">
+              Add at least one photo to use it as the cover image.
+            </p>
+          )}
         </div>
 
         <div>
@@ -289,13 +357,29 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={updateMutation.isPending || uploadRouteMutation.isPending}
-          className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {updateMutation.isPending ? 'Saving...' : 'Save changes'}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="button"
+            disabled={updateMutation.isPending || uploadRouteMutation.isPending}
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.history.length > 1) {
+                router.back();
+                return;
+              }
+              router.push(`/trails/${trailId}`);
+            }}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={updateMutation.isPending || uploadRouteMutation.isPending}
+            className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          >
+            {updateMutation.isPending ? 'Saving...' : 'Save changes'}
+          </button>
+        </div>
       </form>
 
       <Dialog.Root open={confirmOpen} onOpenChange={setConfirmOpen}>
