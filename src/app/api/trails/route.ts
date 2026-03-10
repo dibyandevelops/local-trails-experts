@@ -185,17 +185,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const hasSafetyLabelsField = rawSafety.length > 0;
     const isAdmin = auth?.role === 'admin';
     const isExpert = auth?.role === 'expert';
-
-    // Only admins and experts can set safety labels
-    if (hasSafetyLabelsField && !isAdmin && !isExpert) {
-      return NextResponse.json(
-        { error: 'Only admins and experts can set safety labels' },
-        { status: 403 }
-      );
-    }
 
     const routeData = await parseGPX(await gpxFile.text());
     const firstPoint = routeData.coordinates[0];
@@ -243,7 +234,8 @@ export async function POST(request: NextRequest) {
         estimated_time_hours ?? null,
         image_url || trailImagesInput[0] || null,
         trailImagesInput,
-        (isAdmin || isExpert) ? normalizeSafetyLabels(safetyLabelsInput) : [],
+        // Public: anyone can submit safety labels; admins can still edit later.
+        normalizeSafetyLabels(safetyLabelsInput),
         JSON.stringify(routeData),
         sport_type,
         trailStatus,
@@ -290,4 +282,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
