@@ -472,8 +472,23 @@ const TrailPage: React.FunctionComponent = () => {
         </div>
         <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold text-green-800 sm:text-4xl">{trail.name}</h1>
-            <p className="text-gray-600 mb-4">{trail.location}</p>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold text-green-800 sm:text-4xl">{trail.name}</h1>
+              {trail.status === 'pending' && (
+                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                  Pending
+                </span>
+              )}
+            </div>
+            <p className="text-gray-600">{trail.location}</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Added by{' '}
+              <span className="font-semibold text-gray-700">
+                {(trail.submitted_by_name || trail.expert_name || trail.created_by || '').trim() ||
+                  'LocalMTBGroup'}
+              </span>
+              {trail.submitted_by_email ? ` (${trail.submitted_by_email})` : ''}
+            </p>
           </div>
         </div>
         <div className="mb-4 flex flex-wrap items-stretch gap-2">

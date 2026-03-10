@@ -50,6 +50,8 @@ export interface Trail {
   created_at: string;
   updated_at: string;
   submitted_by_user_id?: string | null;
+  submitted_by_name?: string | null;
+  submitted_by_email?: string | null;
   created_by?: string | null;
   expert_name?: string | null;
   status?: string | null;

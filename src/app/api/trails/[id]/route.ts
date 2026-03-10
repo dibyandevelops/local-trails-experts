@@ -11,7 +11,18 @@ export async function GET(
   try {
     const { id } = params;
 
-    const result = await pool.query('SELECT * FROM trails WHERE id = $1', [id]);
+    const result = await pool.query(
+      `
+        SELECT
+          t.*,
+          u.name AS submitted_by_name,
+          u.email AS submitted_by_email
+        FROM trails t
+        LEFT JOIN users u ON u.id = t.submitted_by_user_id
+        WHERE t.id = $1
+      `,
+      [id]
+    );
 
     if (result.rows.length === 0) {
       return NextResponse.json(

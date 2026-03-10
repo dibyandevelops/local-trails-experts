@@ -18,13 +18,22 @@ export type ExpertApplication = {
 export type PendingTrail = {
   id: string;
   name: string;
+  description?: string | null;
   sport_type: string;
   difficulty: string;
   location: string;
+  distance_km?: number | null;
+  elevation_gain_m?: number | null;
+  estimated_time_hours?: number | null;
+  image_url?: string | null;
+  trail_images?: string[] | null;
+  safety_labels?: string[] | null;
+  route_data?: unknown | null;
   status: 'pending' | 'approved' | 'rejected';
   submitted_by_name: string | null;
   submitted_by_email: string | null;
   created_at: string;
+  updated_at?: string;
 };
 
 export type TrailInterestRequest = {
