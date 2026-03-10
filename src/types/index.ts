@@ -49,10 +49,18 @@ export interface Trail {
   route_data: RouteData | null;
   created_at: string;
   updated_at: string;
+  submitted_by_user_id?: string | null;
+  created_by?: string | null;
+  expert_name?: string | null;
+  status?: string | null;
+  is_hidden?: boolean | null;
   onClick?: () => void;
   onViewMap?: () => void;
   onRequestTrail?: () => void;
   onCreateEvent?: () => void;
+  onDelete?: () => void;
+  onHide?: () => void;
+  onUnhide?: () => void;
 }
 
 export interface Event {

@@ -54,7 +54,38 @@ export async function PATCH(
     }
 
     const { id } = params;
-    const body = (await request.json()) as Partial<Trail>;
+    const body = await request.json() as Partial<Trail> & { action?: 'hide' | 'unhide' | 'delete' };
+
+    // Handle hide/unhide action using is_hidden column
+    if (body.action === 'hide' || body.action === 'unhide') {
+      const isHidden = body.action === 'hide';
+      const result = await pool.query(
+        `UPDATE trails SET is_hidden = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [isHidden, id]
+      );
+
+      if (result.rows.length === 0) {
+        return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ trail: result.rows[0], success: true }, { status: 200 });
+    }
+
+    // Handle delete action
+    if (body.action === 'delete') {
+      const result = await pool.query(
+        'DELETE FROM trails WHERE id = $1 RETURNING id',
+        [id]
+      );
+
+      if (result.rows.length === 0) {
+        return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
+    // Original update logic for other fields
     const hasSafetyLabelsField = Object.prototype.hasOwnProperty.call(
       body,
       'safety_labels'

@@ -58,15 +58,18 @@ export async function GET(request: NextRequest) {
       whereClause += ` AND status = $${paramIndex}`;
       params.push(status);
       paramIndex++;
-    } else {
+    } else if (auth?.role === 'admin') {
       whereClause += ` AND status = 'approved'`;
+    } else {
+      whereClause += ` AND status = 'approved' AND is_hidden = FALSE`;
     }
 
     const listQuery = `
-      SELECT *
-      FROM trails
+      SELECT t.*, u.name as created_by
+      FROM trails t
+      LEFT JOIN users u ON t.submitted_by_user_id = u.id
       ${whereClause}
-      ORDER BY name ASC
+      ORDER BY t.name ASC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
     const listParams = [...params, pageSize, offset];
@@ -106,11 +109,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get optional auth - create trail is now public
     const auth = getAuthFromRequest(request);
-    if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
+    // Parse the form data first to check required fields
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
       return NextResponse.json(
@@ -184,9 +186,13 @@ export async function POST(request: NextRequest) {
     }
 
     const hasSafetyLabelsField = rawSafety.length > 0;
-    if (hasSafetyLabelsField && auth.role !== 'admin') {
+    const isAdmin = auth?.role === 'admin';
+    const isExpert = auth?.role === 'expert';
+
+    // Only admins and experts can set safety labels
+    if (hasSafetyLabelsField && !isAdmin && !isExpert) {
       return NextResponse.json(
-        { error: 'Only admins can set safety labels' },
+        { error: 'Only admins and experts can set safety labels' },
         { status: 403 }
       );
     }
@@ -199,21 +205,30 @@ export async function POST(request: NextRequest) {
     const elevation_gain_m =
       elevationOverride ?? routeData.elevationGain ?? null;
 
-    const submitterResult = await pool.query(
-      'SELECT name, email FROM users WHERE id = $1 LIMIT 1',
-      [auth.sub]
-    );
-    const submitter = submitterResult.rows[0];
-    const isAdmin = auth.role === 'admin';
+    // Get submitter info if authenticated
+    let submitter = null;
+    let submitterEmail = null;
+    if (auth?.sub) {
+      const submitterResult = await pool.query(
+        'SELECT name, email FROM users WHERE id = $1 LIMIT 1',
+        [auth.sub]
+      );
+      submitter = submitterResult.rows[0];
+      submitterEmail = submitter?.email;
+    }
+
+    // Auto-approve trails created by admins or experts
+    const shouldAutoApprove = isAdmin || isExpert;
+    const trailStatus = shouldAutoApprove ? 'approved' : 'pending';
 
     const result = await pool.query(
       `
       INSERT INTO trails (
         name, description, difficulty, location, latitude, longitude,
         distance_km, elevation_gain_m, estimated_time_hours, image_url, trail_images, safety_labels, route_data, sport_type,
-        status, submitted_by_user_id, approved_by_admin_id, approved_at
+        status, submitted_by_user_id, approved_by_admin_id, approved_at, is_hidden
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,$16,$17,$18)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,$16,$17,$18,$19)
       RETURNING *
       `,
       [
@@ -228,17 +243,19 @@ export async function POST(request: NextRequest) {
         estimated_time_hours ?? null,
         image_url || trailImagesInput[0] || null,
         trailImagesInput,
-        isAdmin ? normalizeSafetyLabels(safetyLabelsInput) : [],
+        (isAdmin || isExpert) ? normalizeSafetyLabels(safetyLabelsInput) : [],
         JSON.stringify(routeData),
         sport_type,
-        isAdmin ? 'approved' : 'pending',
-        auth.sub,
-        isAdmin ? auth.sub : null,
-        isAdmin ? new Date() : null,
+        trailStatus,
+        auth?.sub || null,
+        isAdmin && auth?.sub ? auth.sub : null,
+        isAdmin && auth?.sub ? new Date() : null,
+        false, // is_hidden default
       ]
     );
 
-    if (!isAdmin) {
+    // Send notification email for pending trails
+    if (trailStatus === 'pending') {
       const adminsResult = await pool.query(
         `SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL`
       );
@@ -250,9 +267,9 @@ export async function POST(request: NextRequest) {
         adminEmails.map((to: string) =>
           sendEmailSafe({
             to,
-            subject: `Urgent trail approval needed (${sport_type})`,
-            text: `An expert submitted a new trail for approval.\n\nTrail: ${name}\nSport: ${sport_type}\nSubmitted by: ${submitter?.name || auth.email} (${submitter?.email || auth.email})\nLocation: ${location}\nPlease review in admin console.`,
-            html: `<p>An expert submitted a new trail for approval.</p><p><strong>Trail:</strong> ${name}</p><p><strong>Sport:</strong> ${sport_type}</p><p><strong>Submitted by:</strong> ${submitter?.name || auth.email} (${submitter?.email || auth.email})</p><p><strong>Location:</strong> ${location}</p><p>Please review in admin console.</p>`,
+            subject: `Trail approval needed (${sport_type})`,
+            text: `A new trail has been submitted for approval.\n\nTrail: ${name}\nSport: ${sport_type}\nSubmitted by: ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})\nLocation: ${location}\nPlease review in admin console.`,
+            html: `<p>A new trail has been submitted for approval.</p><p><strong>Trail:</strong> ${name}</p><p><strong>Sport:</strong> ${sport_type}</p><p><strong>Submitted by:</strong> ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})</p><p><strong>Location:</strong> ${location}</p><p>Please review in admin console.</p>`,
           })
         )
       );
@@ -261,7 +278,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         trail: result.rows[0],
-        requiresApproval: !isAdmin,
+        requiresApproval: trailStatus === 'pending',
       },
       { status: 201 }
     );
@@ -273,3 +290,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

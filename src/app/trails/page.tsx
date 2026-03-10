@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { fetchTrailsPaginated, requestTrail } from '@/services/trails/trails.service';
+import { fetchTrailsPaginated, requestTrail, deleteTrail, hideTrail, unhideTrail } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
@@ -36,6 +36,13 @@ function TrailGallery({
   onRequestTrail,
   onCreateEvent,
   canCreateEvent,
+  isAdmin,
+  onDeleteTrail,
+  onHideTrail,
+  onUnhideTrail,
+  deletingTrailId,
+  hidingTrailId,
+  unhidingTrailId,
 }: {
   trails: Trail[];
   viewMode: TrailsViewMode;
@@ -43,6 +50,13 @@ function TrailGallery({
   onRequestTrail: (trail: Trail) => void;
   onCreateEvent: (trail: Trail) => void;
   canCreateEvent: boolean;
+  isAdmin: boolean;
+  onDeleteTrail?: (trailId: string) => void;
+  onHideTrail?: (trailId: string) => void;
+  onUnhideTrail?: (trailId: string) => void;
+  deletingTrailId?: string | null;
+  hidingTrailId?: string | null;
+  unhidingTrailId?: string | null;
 }) {
   const router = useRouter();
   if (viewMode === 'list') {
@@ -75,6 +89,12 @@ function TrailGallery({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-semibold text-gray-900">{trail.name}</p>
                 <p className="truncate text-sm text-gray-600">{trail.location}</p>
+                {/* Created by badge for list view */}
+                {(trail.created_by || trail.expert_name) && (
+                  <p className="mt-1 text-xs font-medium text-blue-600">
+                    Created by: {trail.expert_name || trail.created_by}
+                  </p>
+                )}
                 <p className="mt-1 text-xs text-gray-500">
                   {trail.distance_km ? `${trail.distance_km} km` : '—'} •{' '}
                   {trail.elevation_gain_m ? `${trail.elevation_gain_m}m` : '—'} •{' '}
@@ -171,6 +191,22 @@ function TrailGallery({
                   },
                 }
               : {}),
+            ...(isAdmin
+              ? {
+                  deleteLoading: deletingTrailId === trail.id,
+                  hideLoading: hidingTrailId === trail.id,
+                  unhideLoading: unhidingTrailId === trail.id,
+                  onDelete() {
+                    onDeleteTrail?.(trail.id);
+                  },
+                  onHide() {
+                    onHideTrail?.(trail.id);
+                  },
+                  onUnhide() {
+                    onUnhideTrail?.(trail.id);
+                  },
+                }
+              : {}),
           }}
         />
       ))}
@@ -264,6 +300,7 @@ function TrailsPageContent() {
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
   });
+  const queryClient = useQueryClient();
 
   const {
     data,
@@ -334,7 +371,74 @@ function TrailsPageContent() {
     },
   });
 
+  const invalidateTrailsQueries = (trailId?: string) => {
+    queryClient.invalidateQueries({ queryKey: ['trails-infinite'] });
+    queryClient.invalidateQueries({ queryKey: ['trails-paginated'] });
+    queryClient.invalidateQueries({ queryKey: ['trails'] });
+    if (trailId) {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
+    }
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: (trailId: string) => deleteTrail(trailId),
+    onSuccess: (_data, trailId) => {
+      setToastTitle('Trail deleted');
+      setToastDescription('The trail has been permanently deleted.');
+      setToastOpen(true);
+      // Refresh the trails list
+      invalidateTrailsQueries(trailId);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete trail.';
+      setToastTitle('Delete failed');
+      setToastDescription(message);
+      setToastOpen(true);
+    },
+  });
+
+  const hideMutation = useMutation({
+    mutationFn: (trailId: string) => hideTrail(trailId),
+    onSuccess: (_data, trailId) => {
+      setToastTitle('Trail hidden');
+      setToastDescription('The trail has been hidden from public view.');
+      setToastOpen(true);
+      // Refresh the trails list
+      invalidateTrailsQueries(trailId);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to hide trail.';
+      setToastTitle('Hide failed');
+      setToastDescription(message);
+      setToastOpen(true);
+    },
+  });
+
+  const unhideMutation = useMutation({
+    mutationFn: (trailId: string) => unhideTrail(trailId),
+    onSuccess: (_data, trailId) => {
+      setToastTitle('Trail visible');
+      setToastDescription('The trail is now visible to all users.');
+      setToastOpen(true);
+      // Refresh the trails list
+      invalidateTrailsQueries(trailId);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to unhide trail.';
+      setToastTitle('Unhide failed');
+      setToastDescription(message);
+      setToastOpen(true);
+    },
+  });
+
   const trails = data?.pages.flatMap((pageData) => pageData.trails) || [];
+  const isAdmin = user?.role === 'admin';
+  const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
+  const hidingTrailId = hideMutation.isPending ? hideMutation.variables : null;
+  const unhidingTrailId = unhideMutation.isPending ? unhideMutation.variables : null;
   const selectedCreateEventTrail =
     trails.find((trail) => trail.id === createEventTrailId) ?? null;
   const pagination =
@@ -749,6 +853,13 @@ function TrailsPageContent() {
             trails={trails}
             viewMode={viewMode}
             canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
+            isAdmin={isAdmin}
+            onDeleteTrail={(trailId) => deleteMutation.mutate(trailId)}
+            onHideTrail={(trailId) => hideMutation.mutate(trailId)}
+            onUnhideTrail={(trailId) => unhideMutation.mutate(trailId)}
+            deletingTrailId={deletingTrailId}
+            hidingTrailId={hidingTrailId}
+            unhidingTrailId={unhidingTrailId}
             onViewMap={(trail) => {
               setMapTrail(trail);
               setMapOpen(true);

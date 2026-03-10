@@ -150,7 +150,8 @@ export async function updateTrail(trailId: string, payload: Partial<Trail>) {
 export async function deleteTrail(trailId: string) {
   try {
     const { data } = await apiClient.delete<{ success: boolean }>(
-      `${ApiPath.Trails}/${trailId}`
+      `${ApiPath.Trails}/${trailId}`,
+      { data: { action: 'delete' } }
     );
     return data;
   } catch (error) {
@@ -159,6 +160,38 @@ export async function deleteTrail(trailId: string) {
       throw new Error(apiError?.error || 'Failed to delete trail');
     }
     throw new Error('Failed to delete trail');
+  }
+}
+
+export async function hideTrail(trailId: string) {
+  try {
+    const { data } = await apiClient.patch<{ success: boolean; trail: Trail }>(
+      `${ApiPath.Trails}/${trailId}`,
+      { action: 'hide' }
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to hide trail');
+    }
+    throw new Error('Failed to hide trail');
+  }
+}
+
+export async function unhideTrail(trailId: string) {
+  try {
+    const { data } = await apiClient.patch<{ success: boolean; trail: Trail }>(
+      `${ApiPath.Trails}/${trailId}`,
+      { action: 'unhide' }
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to unhide trail');
+    }
+    throw new Error('Failed to unhide trail');
   }
 }
 

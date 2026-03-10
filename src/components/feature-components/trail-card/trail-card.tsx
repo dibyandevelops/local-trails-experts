@@ -39,7 +39,13 @@ const Card = ({
     </div>
   );
 };
-export const TrailCard: React.FunctionComponent<Trail> = (trail) => {
+export type TrailCardProps = Trail & {
+  hideLoading?: boolean;
+  unhideLoading?: boolean;
+  deleteLoading?: boolean;
+};
+
+export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const images = React.useMemo(() => {
     const list = [
       ...(Array.isArray(trail.trail_images) ? trail.trail_images : []),
@@ -105,8 +111,8 @@ export const TrailCard: React.FunctionComponent<Trail> = (trail) => {
                     event.stopPropagation();
                     setActiveImageIndex((prev) =>
                       prev === images.length - 1 ? 0 : prev + 1
-                );
-              }}
+                    );
+                  }}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
               aria-label="Next trail image"
             >
@@ -148,7 +154,14 @@ export const TrailCard: React.FunctionComponent<Trail> = (trail) => {
             {trail.difficulty}
           </span>
         </div>
-        <p className="mb-3 text-sm text-gray-600">{trail.location}</p>
+        <p className="mb-2 text-sm text-gray-600">{trail.location}</p>
+
+        {(trail.created_by || trail.expert_name) && (
+          <p className="mb-3 text-xs font-medium text-blue-600">
+            Created by: {trail.expert_name || trail.created_by}
+          </p>
+        )}
+
         {trail.sport_type && (
           <p className="mb-2 text-xs font-medium text-gray-500">
             {getSportLabel(trail.sport_type)}
@@ -229,6 +242,65 @@ export const TrailCard: React.FunctionComponent<Trail> = (trail) => {
                 title="Request this trail activity with preferred expert/date"
               >
                 Request Trail
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Admin delete/hide buttons */}
+        {(trail.onDelete || trail.onHide || trail.onUnhide) && (
+          <div className="mt-3 flex flex-wrap gap-2 border-t pt-3 border-gray-200">
+            {/* Hidden badge indicator */}
+            {trail.is_hidden && (
+              <span className="rounded-full bg-gray-200 px-2 py-1 text-[10px] font-semibold text-gray-600">
+                Hidden
+              </span>
+            )}
+            {trail.onUnhide && trail.is_hidden && (
+              <button
+                type="button"
+                disabled={trail.unhideLoading || trail.deleteLoading || trail.hideLoading}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  trail.onUnhide?.();
+                }}
+                className="rounded-md border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800 hover:bg-green-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                title="Make this trail visible again"
+              >
+                {trail.unhideLoading ? 'Unhiding...' : 'Unhide'}
+              </button>
+            )}
+            {trail.onHide && !trail.is_hidden && (
+              <button
+                type="button"
+                disabled={trail.hideLoading || trail.deleteLoading || trail.unhideLoading}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  trail.onHide?.();
+                }}
+                className="rounded-md border border-yellow-300 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-800 hover:bg-yellow-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                title="Hide this trail from public view"
+              >
+                {trail.hideLoading ? 'Hiding...' : 'Hide'}
+              </button>
+            )}
+            {trail.onDelete && (
+              <button
+                type="button"
+                disabled={trail.deleteLoading || trail.hideLoading || trail.unhideLoading}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (confirm('Are you sure you want to delete this trail? This action cannot be undone.')) {
+                    trail.onDelete?.();
+                  }
+                }}
+                className="rounded-md border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-800 hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                title="Delete this trail permanently"
+              >
+                {trail.deleteLoading ? 'Deleting...' : 'Delete'}
               </button>
             )}
           </div>
