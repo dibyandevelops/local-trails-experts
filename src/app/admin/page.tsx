@@ -1,36 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
-import type { User } from '@/types';
-import { fetchVerifiedExperts } from '@/services/events/events.service';
+import { useQuery } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
-import { getSportLabel } from '@/services/constants/sports';
 import {
-  fetchAdminPendingTrails,
   fetchAdminTrailRequests,
-  moderateAdminTrail,
-  type PendingTrail,
   type TrailInterestRequest,
 } from '@/services/admin/admin.service';
 
 export default function AdminPage() {
-  const queryClient = useQueryClient();
-  const [trailModerationMessage, setTrailModerationMessage] = useState<string | null>(null);
   const [trailRequestMessage, setTrailRequestMessage] = useState<string | null>(null);
-
-  const { data: experts = [] } = useQuery<User[]>({
-    queryKey: QUERY_KEYS.experts.verified,
-    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
-  });
-
-  const {
-    data: pendingTrails = [],
-    isLoading: loadingPendingTrails,
-  } = useQuery<PendingTrail[]>({
-    queryKey: QUERY_KEYS.admin.pendingTrails,
-    queryFn: () => fetchAdminPendingTrails(),
-  });
 
   const {
     data: trailRequests = [],
@@ -39,37 +18,6 @@ export default function AdminPage() {
     queryKey: QUERY_KEYS.admin.trailRequests,
     queryFn: () => fetchAdminTrailRequests(),
   });
-
-  const moderateTrailMutation = useMutation({
-    mutationFn: ({
-      id,
-      status,
-    }: {
-      id: string;
-      status: 'approved' | 'rejected';
-    }) => moderateAdminTrail(id, status),
-    onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'pending-trails'] });
-      setTrailModerationMessage(
-        variables.status === 'approved'
-          ? 'Trail approved and now visible for event creation.'
-          : 'Trail rejected.'
-      );
-    },
-    onError: () => {
-      setTrailModerationMessage('Unable to update trail status.');
-    },
-  });
-
-  const moderateTrail = async (id: string, status: 'approved' | 'rejected') => {
-    try {
-      setTrailModerationMessage(null);
-      await moderateTrailMutation.mutateAsync({ id, status });
-    } catch (error) {
-      console.error('Error moderating trail', error);
-      // message is handled via mutation onError
-    }
-  };
 
   return (
     <div className="space-y-10">
@@ -128,60 +76,6 @@ export default function AdminPage() {
                     {request.description}
                   </p>
                 )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Pending Trail Approvals
-        </h2>
-        <p className="text-sm text-gray-600 mb-5">
-          Review trails submitted by experts and approve or reject.
-        </p>
-        {trailModerationMessage && (
-          <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">
-            {trailModerationMessage}
-          </p>
-        )}
-        {loadingPendingTrails ? (
-          <p className="text-sm text-gray-600">Loading pending trails...</p>
-        ) : pendingTrails.length === 0 ? (
-          <p className="text-sm text-gray-600">No pending trails.</p>
-        ) : (
-          <div className="space-y-3">
-            {pendingTrails.map((trail) => (
-              <div
-                key={trail.id}
-                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{trail.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {getSportLabel(trail.sport_type)} • {trail.difficulty} • {trail.location}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Submitted by {trail.submitted_by_name || 'Expert'} ({trail.submitted_by_email || 'N/A'})
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => moderateTrail(trail.id, 'approved')}
-                    className="px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moderateTrail(trail.id, 'rejected')}
-                    className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700"
-                  >
-                    Reject
-                  </button>
-                </div>
               </div>
             ))}
           </div>
