@@ -525,6 +525,15 @@ const TrailPage: React.FunctionComponent = () => {
               Download GPX
             </button>
           )}
+          {currentUser?.role === 'admin' && (
+            <button
+              type="button"
+              onClick={() => router.push(`/trails/create?trailId=${trailId}`)}
+              className="w-full rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100 sm:w-auto"
+            >
+              Edit Trail
+            </button>
+          )}
           {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
             <button
               type="button"
