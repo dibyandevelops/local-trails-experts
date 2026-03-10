@@ -354,6 +354,7 @@ export default function MultiTrailSubmissionForm({
               <label className="mb-1 block text-sm font-medium text-gray-700">Distance (km)</label>
               <input
                 type="number"
+                step="any"
                 {...register(`trails.${index}.distance_km`)}
                 readOnly
                 className={inputClass}
@@ -363,6 +364,7 @@ export default function MultiTrailSubmissionForm({
               <label className="mb-1 block text-sm font-medium text-gray-700">Elevation Gain (m)</label>
               <input
                 type="number"
+                step="any"
                 {...register(`trails.${index}.elevation_gain_m`)}
                 className={inputClass}
               />
@@ -371,6 +373,7 @@ export default function MultiTrailSubmissionForm({
               <label className="mb-1 block text-sm font-medium text-gray-700">Estimated Time (hours)</label>
               <input
                 type="number"
+                step="any"
                 {...register(`trails.${index}.estimated_time_hours`)}
                 className={inputClass}
               />
