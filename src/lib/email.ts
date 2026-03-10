@@ -11,6 +11,8 @@ function getEmailConfig() {
     process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '';
   return {
     from: (process.env.EMAIL_FROM || defaultMailbox).trim(),
+    resendApiKey: (process.env.RESEND_API_KEY || '').trim(),
+    resendFrom: (process.env.RESEND_FROM || '').trim(),
     smtpHost: (process.env.SMTP_HOST || 'smtp.gmail.com').trim(),
     smtpPort: Number(process.env.SMTP_PORT || '465'),
     smtpSecure: (process.env.SMTP_SECURE || 'true') === 'true',
@@ -32,6 +34,8 @@ function parseFrom(from: string) {
 export async function sendEmail(input: SendEmailInput) {
   const {
     from,
+    resendApiKey,
+    resendFrom,
     smtpHost,
     smtpPort,
     smtpSecure,
@@ -39,16 +43,43 @@ export async function sendEmail(input: SendEmailInput) {
     smtpPass,
     overrideTo,
   } = getEmailConfig();
+
+  const fromSender = parseFrom(from);
+  const targetTo = overrideTo || input.to;
+
+  // Prefer Resend when configured (more reliable than consumer SMTP).
+  if (resendApiKey) {
+    const fromValue =
+      resendFrom ||
+      (from.includes('<') ? from : `${fromSender.name} <${fromSender.email}>`) ||
+      'Local Guides <onboarding@resend.dev>';
+
+    const { Resend } = await import('resend');
+    const resend = new Resend(resendApiKey);
+    const result = await resend.emails.send({
+      from: fromValue,
+      to: targetTo,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+    });
+    if ((result as any)?.error) {
+      const message =
+        typeof (result as any).error?.message === 'string'
+          ? (result as any).error.message
+          : 'Failed to send email';
+      throw new Error(message);
+    }
+    return { sent: true as const, provider: 'resend' as const };
+  }
+
   if (!smtpPass) {
-    console.warn('SMTP_PASS is not configured. Skipping email send.', {
+    console.warn('Email provider is not configured. Skipping email send.', {
       to: input.to,
       subject: input.subject,
     });
     return { sent: false, skipped: true as const };
   }
-
-  const fromSender = parseFrom(from);
-  const targetTo = overrideTo || input.to;
 
   // Lazy-load to avoid hard compile-time dependency coupling.
   const nodeRequire = eval('require');
@@ -71,7 +102,7 @@ export async function sendEmail(input: SendEmailInput) {
     html: input.html,
   });
 
-  return { sent: true as const };
+  return { sent: true as const, provider: 'smtp' as const };
 }
 
 export async function sendEmailSafe(input: SendEmailInput) {
