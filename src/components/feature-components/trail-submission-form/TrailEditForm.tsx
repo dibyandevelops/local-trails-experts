@@ -95,6 +95,13 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       await queryClient.invalidateQueries({ queryKey: ['trails'] });
       await queryClient.invalidateQueries({ queryKey: ['trails-paginated'] });
       await queryClient.invalidateQueries({ queryKey: ['trails-infinite'] });
+
+      // Return to the page the admin came from (pending list, trail details, etc.).
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        router.back();
+      } else {
+        router.push(`/trails/${trailId}`);
+      }
     },
     onError: (e) => {
       setNotice(null);
@@ -293,7 +300,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
                 setError(e instanceof Error ? e.message : 'Failed to process images');
               } finally {
                 // allow selecting the same file again
-                event.currentTarget.value = '';
+                if(event?.currentTarget) event.currentTarget.value = '';
               }
             }}
             className="block w-full text-sm"
@@ -377,7 +384,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
             disabled={updateMutation.isPending || uploadRouteMutation.isPending}
             className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-            {updateMutation.isPending ? 'Saving...' : 'Save changes'}
+            {updateMutation.isPending ? 'Updating...' : 'Update trail'}
           </button>
         </div>
       </form>
