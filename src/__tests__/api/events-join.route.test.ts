@@ -3,6 +3,7 @@ import { POST } from '@/app/api/events/[id]/join/route';
 import pool from '@/lib/db';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmailSafe } from '@/lib/email';
+import { sendPushToUserIds } from '@/lib/push';
 
 vi.mock('@/lib/db', () => ({
   default: {
@@ -18,11 +19,16 @@ vi.mock('@/lib/email', () => ({
   sendEmailSafe: vi.fn(),
 }));
 
+vi.mock('@/lib/push', () => ({
+  sendPushToUserIds: vi.fn(),
+}));
+
 describe('POST /api/events/[id]/join', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(rateLimit).mockResolvedValue(null);
     vi.mocked(sendEmailSafe).mockResolvedValue({ sent: true } as never);
+    vi.mocked(sendPushToUserIds).mockResolvedValue({ sent: 0, failed: 0 } as never);
   });
 
   it('joins event and sends participant + organizer emails', async () => {
@@ -49,7 +55,13 @@ describe('POST /api/events/[id]/join', () => {
           },
         ],
       } as never)
-      .mockResolvedValueOnce({ rows: [] } as never);
+      .mockResolvedValueOnce({ rows: [] } as never)
+      .mockResolvedValueOnce({
+        rows: [
+          { id: 'user-participant', email: 'rider@example.com' },
+          { id: 'user-organizer', email: 'guide@example.com' },
+        ],
+      } as never);
 
     const request = new NextRequest('http://localhost/api/events/event-1/join', {
       method: 'POST',
