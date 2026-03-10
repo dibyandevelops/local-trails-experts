@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Trail } from '@/types';
 import { getSafetyLabelText } from '@/lib/trail-safety';
 import { getSportLabel } from '@/services/constants/sports';
+import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 
 const Card = ({
   children,
@@ -54,14 +55,11 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       trail.image_url,
     ].filter((value): value is string => Boolean(value));
 
-    if (list.length === 0) {
-      return ['/tmp_pictures/Kapan-Monastery.jpg'];
-    }
-
     return Array.from(new Set(list));
   }, [trail.trail_images, trail.image_url]);
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
   const hasMultipleImages = images.length > 1;
+  const hasImage = images.length > 0;
 
   React.useEffect(() => {
     setActiveImageIndex(0);
@@ -70,11 +68,16 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   return (
     <Card key={trail.id} trailName={trail.name} onClick={trail.onClick}>
       <div className="relative">
-        <img
-          src={images[activeImageIndex]}
-          alt={trail.name}
-          className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-        />
+        {hasImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={images[activeImageIndex]}
+            alt={trail.name}
+            className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          />
+        ) : (
+          <TrailImagePlaceholder className="h-40 w-full" label="Local Guides" />
+        )}
         {trail.onViewMap && (
           <button
             type="button"

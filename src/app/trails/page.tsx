@@ -24,6 +24,7 @@ import Map, {
 import 'maplibre-gl/dist/maplibre-gl.css';
 import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
+import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_VIEW_KEY = 'trails_view_mode';
@@ -69,7 +70,7 @@ function TrailGallery({
           const image =
             trail.image_url ||
             (Array.isArray(trail.trail_images) ? trail.trail_images[0] : null) ||
-            '/tmp_pictures/Kapan-Monastery.jpg';
+            null;
           return (
             <div
               key={trail.id}
@@ -88,7 +89,12 @@ function TrailGallery({
               }}
               className="flex w-full flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:bg-gray-50 sm:flex-row sm:items-center"
             >
-              <img src={image} alt={trail.name} className="h-20 w-24 rounded object-cover" />
+              {image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={image} alt={trail.name} className="h-20 w-24 rounded object-cover" />
+              ) : (
+                <TrailImagePlaceholder className="h-20 w-24 rounded" compact />
+              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-semibold text-gray-900">{trail.name}</p>
                 <p className="truncate text-sm text-gray-600">{trail.location}</p>
