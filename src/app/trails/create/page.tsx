@@ -3,14 +3,21 @@
 import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import MultiTrailSubmissionForm from '@/components/feature-components/trail-submission-form/MultiTrailSubmissionForm';
+import { useSearchParams } from 'next/navigation';
+import TrailEditForm from '@/components/feature-components/trail-submission-form/TrailEditForm';
 
 export default function CreateTrailPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const trailId = searchParams.get('trailId');
+  const isEditMode = Boolean(trailId);
   const { data: user = null, isLoading: loadingUser } = useCurrentUser();
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-4xl font-bold mb-6 text-green-800">Create Trail</h1>
+      <h1 className="text-4xl font-bold mb-6 text-green-800">
+        {isEditMode ? 'Edit Trail' : 'Create Trail'}
+      </h1>
 
       {loadingUser ? (
         <p className="text-gray-600">Loading user...</p>
@@ -20,28 +27,39 @@ export default function CreateTrailPage() {
         </div>
       ) : (
         <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          {user?.role === 'expert' && (
+          {!isEditMode && user?.role === 'expert' && (
             <p className="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
               Expert-submitted trails require admin approval before they appear in event trail options.
             </p>
           )}
 
-          <p className="text-sm text-gray-600">
-            Add up to 5 trails per submission. Fill each section and click &quot;Add another trail&quot; to include more, then submit.
-          </p>
-
-          <MultiTrailSubmissionForm
-            userRole={user.role}
-            submitLabel={user.role === 'expert' ? 'Submit Trails for Approval' : 'Create Trails'}
-            onSuccess={(data) => {
-              if (data.requiresApproval) {
-                return;
-              }
-              if (data.trail?.id) {
-                router.push(`/trails/${data.trail.id}`);
-              }
-            }}
-          />
+          {isEditMode ? (
+            user.role === 'admin' && trailId ? (
+              <TrailEditForm trailId={trailId} />
+            ) : (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+                Only admins can edit trails.
+              </div>
+            )
+          ) : (
+            <>
+              <p className="text-sm text-gray-600">
+                Add up to 5 trails per submission. Fill each section and click &quot;Add another trail&quot; to include more, then submit.
+              </p>
+              <MultiTrailSubmissionForm
+                userRole={user.role}
+                submitLabel={user.role === 'expert' ? 'Submit Trails for Approval' : 'Create Trails'}
+                onSuccess={(data) => {
+                  if (data.requiresApproval) {
+                    return;
+                  }
+                  if (data.trail?.id) {
+                    router.push(`/trails/${data.trail.id}`);
+                  }
+                }}
+              />
+            </>
+          )}
         </div>
       )}
     </div>

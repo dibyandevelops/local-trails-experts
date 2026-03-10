@@ -43,6 +43,8 @@ export type TrailCardProps = Trail & {
   hideLoading?: boolean;
   unhideLoading?: boolean;
   deleteLoading?: boolean;
+  editLoading?: boolean;
+  onEdit?: () => void;
 };
 
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
@@ -248,13 +250,28 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
         )}
 
         {/* Admin delete/hide buttons */}
-        {(trail.onDelete || trail.onHide || trail.onUnhide) && (
+        {(trail.onDelete || trail.onHide || trail.onUnhide || trail.onEdit) && (
           <div className="mt-3 flex flex-wrap gap-2 border-t pt-3 border-gray-200">
             {/* Hidden badge indicator */}
             {trail.is_hidden && (
               <span className="rounded-full bg-gray-200 px-2 py-1 text-[10px] font-semibold text-gray-600">
                 Hidden
               </span>
+            )}
+            {trail.onEdit && (
+              <button
+                type="button"
+                disabled={trail.deleteLoading || trail.hideLoading || trail.unhideLoading || trail.editLoading}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  trail.onEdit?.();
+                }}
+                className="rounded-md border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 hover:bg-sky-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                title="Edit trail details"
+              >
+                {trail.editLoading ? 'Opening...' : 'Edit'}
+              </button>
             )}
             {trail.onUnhide && trail.is_hidden && (
               <button

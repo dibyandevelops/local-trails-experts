@@ -37,6 +37,7 @@ function TrailGallery({
   onCreateEvent,
   canCreateEvent,
   isAdmin,
+  onEditTrail,
   onDeleteTrail,
   onHideTrail,
   onUnhideTrail,
@@ -51,6 +52,7 @@ function TrailGallery({
   onCreateEvent: (trail: Trail) => void;
   canCreateEvent: boolean;
   isAdmin: boolean;
+  onEditTrail?: (trail: Trail) => void;
   onDeleteTrail?: (trailId: string) => void;
   onHideTrail?: (trailId: string) => void;
   onUnhideTrail?: (trailId: string) => void;
@@ -121,6 +123,20 @@ function TrailGallery({
                 </div>
               </div>
               <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end sm:self-start">
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onEditTrail?.(trail);
+                    }}
+                    className="rounded-md border border-sky-300 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-800 hover:bg-sky-100"
+                    title="Edit trail details"
+                  >
+                    Edit
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={(event) => {
@@ -196,6 +212,9 @@ function TrailGallery({
                   deleteLoading: deletingTrailId === trail.id,
                   hideLoading: hidingTrailId === trail.id,
                   unhideLoading: unhidingTrailId === trail.id,
+                  onEdit() {
+                    onEditTrail?.(trail);
+                  },
                   onDelete() {
                     onDeleteTrail?.(trail.id);
                   },
@@ -854,6 +873,9 @@ function TrailsPageContent() {
             viewMode={viewMode}
             canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
             isAdmin={isAdmin}
+            onEditTrail={(trail) => {
+              router.push(`/trails/create?trailId=${trail.id}`);
+            }}
             onDeleteTrail={(trailId) => deleteMutation.mutate(trailId)}
             onHideTrail={(trailId) => hideMutation.mutate(trailId)}
             onUnhideTrail={(trailId) => unhideMutation.mutate(trailId)}
