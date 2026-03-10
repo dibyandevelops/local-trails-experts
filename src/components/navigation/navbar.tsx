@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ThemeToggle from '@/components/theme-toggle';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { User } from '@/types';
+import type { User, UserRole } from '@/types';
+import LoginModal from '@/components/auth/login-modal';
 
 type NavItem = {
   label: string;
@@ -89,6 +90,7 @@ type NavbarProps = {
 export default function Navbar({ initialUser = null }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { data: user = null, isLoading: loadingUser } = useCurrentUser(initialUser);
   const { data: alertsData } = useQuery<{ unreadCount: number }>({
@@ -106,12 +108,67 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginInitialRole, setLoginInitialRole] = useState<UserRole | undefined>(undefined);
+  const [loginMessage, setLoginMessage] = useState<string | null>(null);
+  const [loginNext, setLoginNext] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMobileOpen(false);
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const loginFlag = searchParams.get('login');
+    if (loginFlag !== '1' && loginFlag !== 'true') return;
+
+    if (user) {
+      // Already authenticated; just strip the flag.
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('login');
+        url.searchParams.delete('role');
+        url.searchParams.delete('message');
+        url.searchParams.delete('next');
+        const nextUrl = `${url.pathname}${url.search ? url.search : ''}${url.hash ? url.hash : ''}`;
+        window.history.replaceState(null, '', nextUrl);
+      }
+      return;
+    }
+
+    const errorParam = searchParams.get('error');
+    const errorMessage =
+      errorParam === 'strava_denied'
+        ? 'Strava authorization was cancelled.'
+        : errorParam === 'strava_expert_only'
+          ? 'Strava connect is available for experts only.'
+          : errorParam
+            ? 'Could not connect to Strava. Please try again.'
+            : null;
+
+    const roleParam = searchParams.get('role');
+    const initialRole: UserRole | undefined =
+      roleParam === 'admin' || roleParam === 'expert' || roleParam === 'participant'
+        ? roleParam
+        : undefined;
+    setLoginInitialRole(initialRole);
+    setLoginMessage(searchParams.get('message') || errorMessage);
+    setLoginNext(searchParams.get('next'));
+    setLoginOpen(true);
+
+    // Strip login-related params so refresh/back doesn't keep reopening the modal.
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('login');
+      url.searchParams.delete('role');
+      url.searchParams.delete('message');
+      url.searchParams.delete('next');
+      const nextUrl = `${url.pathname}${url.search ? url.search : ''}${url.hash ? url.hash : ''}`;
+      window.history.replaceState(null, '', nextUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString(), user?.id]);
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
@@ -134,7 +191,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       setMobileOpen(false);
       queryClient.setQueryData(['me'], null);
       window.dispatchEvent(new Event('auth-changed'));
-      router.push('/login');
+      router.push('/');
     }
   };
 
@@ -229,12 +286,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             )}
 
             {!loadingUser && !user && (
-              <Link
-                href="/login"
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginInitialRole(undefined);
+                  setLoginMessage(null);
+                  setLoginNext(null);
+                  setLoginOpen(true);
+                }}
                 className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-white text-green-800 text-sm font-semibold hover:bg-green-100"
               >
                 Login
-              </Link>
+              </button>
             )}
 
             {!loadingUser && user && (
@@ -303,13 +366,19 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               </Link>
             )}
             {!loadingUser && !user && (
-              <Link
-                href="/login"
-                className="px-2 py-2 rounded bg-white text-green-800 font-semibold"
-                onClick={() => setMobileOpen(false)}
+              <button
+                type="button"
+                className="px-2 py-2 rounded bg-white text-green-800 font-semibold text-left"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setLoginInitialRole(undefined);
+                  setLoginMessage(null);
+                  setLoginNext(null);
+                  setLoginOpen(true);
+                }}
               >
                 Login
-              </Link>
+              </button>
             )}
             {!loadingUser && user && (
               <>
@@ -332,6 +401,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           </div>
         )}
       </div>
+      <LoginModal
+        open={loginOpen}
+        onOpenChange={setLoginOpen}
+        initialRole={loginInitialRole}
+        message={loginMessage}
+        next={loginNext}
+      />
     </nav>
   );
 }

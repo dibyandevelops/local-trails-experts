@@ -8,7 +8,12 @@ import type { UserRole } from '@/types';
 import { loginUser } from '@/services/auth/auth.service';
 import { ApiPath } from '@/services/api/paths';
 
-interface ILoginComponentProps {}
+interface ILoginComponentProps {
+  initialRole?: UserRole;
+  embedded?: boolean;
+  onLoggedIn?: () => void;
+  next?: string | null;
+}
 
 const roleMeta: Record<UserRole, { label: string; destination: string; hint: string }> = {
   participant: {
@@ -29,15 +34,19 @@ const roleMeta: Record<UserRole, { label: string; destination: string; hint: str
 };
 
 const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
-  props,
+  { initialRole = 'participant', embedded = false, onLoggedIn, next = null },
 ) => {
   const router = useRouter();
-  const [role, setRole] = React.useState<UserRole>('participant');
+  const [role, setRole] = React.useState<UserRole>(initialRole);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const errorRef = React.useRef<HTMLParagraphElement | null>(null);
+
+  React.useEffect(() => {
+    setRole(initialRole);
+  }, [initialRole]);
 
   React.useEffect(() => {
     if (error) {
@@ -49,6 +58,11 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
     mutationFn: loginUser,
     onSuccess: (data) => {
       window.dispatchEvent(new Event('auth-changed'));
+      onLoggedIn?.();
+      if (next) {
+        router.push(next);
+        return;
+      }
       if (role === 'expert') {
         router.push(`/experts/${data.user.id}`);
       } else if (role === 'participant') {
@@ -83,14 +97,16 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
 
   return (
     <div className="mx-auto max-w-lg">
-      <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3 dark:border-green-900/70 dark:bg-green-950/40">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-          Login
-        </h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          Select your role and continue to your workspace.
-        </p>
-      </div>
+      {!embedded && (
+        <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3 dark:border-green-900/70 dark:bg-green-950/40">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            Login
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+            Select your role and continue to your workspace.
+          </p>
+        </div>
+      )}
       <form
         onSubmit={handleSubmit}
         className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
@@ -218,7 +234,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             Continue With Strava (Experts)
           </Link>
         )}
-        {role === 'participant' && (
+        {!embedded && role === 'participant' && (
           <p className="text-center text-xs text-gray-500 dark:text-gray-400">
             Don&apos;t have a participant account?{' '}
             <Link

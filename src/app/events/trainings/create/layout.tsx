@@ -9,11 +9,10 @@ export default function CreateTrainingLayout({
 }) {
   const auth = getServerAuthPayload();
   if (!auth) {
-    redirect('/login');
+    redirect(`/?login=1&next=${encodeURIComponent('/events/trainings/create')}`);
   }
   if (auth.role !== 'admin' && auth.role !== 'expert') {
     redirect('/events');
   }
   return <>{children}</>;
 }
-

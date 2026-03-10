@@ -70,7 +70,7 @@ export default function ExpertJoinPage() {
       } catch (loginErr) {
         console.error('Auto-login failed after signup:', loginErr);
         // If auto-login fails, redirect to login page with a message
-        router.push('/login?role=expert&message=signup-success');
+        router.push('/?login=1&role=expert&message=signup-success&next=%2Fevents%2Fcreate');
       }
     } catch (err) {
       console.error(err);
