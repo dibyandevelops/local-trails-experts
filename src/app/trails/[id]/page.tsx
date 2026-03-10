@@ -33,6 +33,7 @@ import {
   uploadTrailRoute,
 } from '@/services/trails/trails.service';
 import EventForm from '@/components/feature-components/event-form/event-form';
+import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 // import {
 //   XAxis,
 //   YAxis,
@@ -66,30 +67,20 @@ const TrailPage: React.FunctionComponent = () => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const mapStyle =
-    process.env.NEXT_PUBLIC_MAP_STYLE_URL ||
-    (process.env.NEXT_PUBLIC_MAPTILER_KEY
-      ? `https://api.maptiler.com/maps/satellite/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
-      : ({
-          version: 8,
-          sources: {
-            esri: {
-              type: 'raster',
-              tiles: [
-                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-              ],
-              tileSize: 256,
-              attribution: 'Esri, Maxar, Earthstar Geographics',
-            },
-          },
-          layers: [
-            {
-              id: 'esri-satellite',
-              type: 'raster',
-              source: 'esri',
-            },
-          ],
-        } as any));
+  const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
+    if (typeof window === 'undefined') return 'satellite';
+    const saved = window.localStorage.getItem('mtb_map_style_mode');
+    return saved === 'map' || saved === 'satellite' ? saved : 'satellite';
+  });
+  const mapStyle = getMapStyle(mapStyleMode);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('mtb_map_style_mode', mapStyleMode);
+    } catch {
+      // ignore
+    }
+  }, [mapStyleMode]);
 
   useEffect(() => {
     if (!galleryModalOpen) return;
@@ -690,6 +681,34 @@ const TrailPage: React.FunctionComponent = () => {
             style={{ width: '100%', height: '100%' }}
             mapStyle={mapStyle}
           >
+            <div className="absolute left-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
+              <button
+                type="button"
+                aria-pressed={mapStyleMode === 'satellite'}
+                onClick={() => setMapStyleMode('satellite')}
+                className={`px-3 py-2 text-xs font-semibold transition ${
+                  mapStyleMode === 'satellite'
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/80 hover:bg-white/10'
+                }`}
+                title="Satellite imagery with places/labels"
+              >
+                Satellite
+              </button>
+              <button
+                type="button"
+                aria-pressed={mapStyleMode === 'map'}
+                onClick={() => setMapStyleMode('map')}
+                className={`px-3 py-2 text-xs font-semibold transition ${
+                  mapStyleMode === 'map'
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/80 hover:bg-white/10'
+                }`}
+                title="Simple map view with places"
+              >
+                Map
+              </button>
+            </div>
             <NavigationControl position="top-right" showCompass showZoom />
             <FullscreenControl position="top-right" />
             <ScaleControl position="bottom-left" unit="metric" />
