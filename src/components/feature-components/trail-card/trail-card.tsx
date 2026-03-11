@@ -46,6 +46,8 @@ export type TrailCardProps = Trail & {
   deleteLoading?: boolean;
   editLoading?: boolean;
   onEdit?: () => void;
+  isRequested?: boolean;
+  onCancelRequest?: () => void;
 };
 
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
@@ -205,7 +207,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             </span>
           )}
         </div>
-        {(trail.onViewMap || trail.onRequestTrail || trail.onCreateEvent) && (
+        {(trail.onViewMap || trail.onRequestTrail || trail.onCreateEvent || trail.onCancelRequest) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {trail.onCreateEvent && (
               <button
@@ -243,10 +245,32 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   event.stopPropagation();
                   trail.onRequestTrail?.();
                 }}
-                className="rounded-md border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800 hover:bg-green-100"
-                title="Request this trail activity with preferred expert/date"
+                className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${
+                  trail.isRequested
+                    ? 'border-amber-300 bg-amber-50 text-amber-800'
+                    : 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
+                }`}
+                title={
+                  trail.isRequested
+                    ? 'Trail requested'
+                    : 'Request this trail activity with preferred expert/date'
+                }
               >
-                Request Trail
+                {trail.isRequested ? 'Trail Requested' : 'Request Trail'}
+              </button>
+            )}
+            {trail.onCancelRequest && trail.isRequested && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  trail.onCancelRequest?.();
+                }}
+                className="rounded-md border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+                title="Cancel your trail request"
+              >
+                Cancel Request
               </button>
             )}
           </div>

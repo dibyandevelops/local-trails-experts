@@ -36,6 +36,7 @@ function TrailGallery({
   viewMode,
   onViewMap,
   onRequestTrail,
+  onCancelRequest,
   onCreateEvent,
   canCreateEvent,
   isAdmin,
@@ -47,10 +48,11 @@ function TrailGallery({
   hidingTrailId,
   unhidingTrailId,
 }: {
-  trails: Trail[];
+  trails: Array<Trail & { isRequested?: boolean }>;
   viewMode: TrailsViewMode;
   onViewMap: (trail: Trail) => void;
-  onRequestTrail: (trail: Trail) => void;
+  onRequestTrail: (trail: Trail & { isRequested?: boolean }) => void;
+  onCancelRequest?: (trail: Trail & { isRequested?: boolean }) => void;
   onCreateEvent: (trail: Trail) => void;
   canCreateEvent: boolean;
   isAdmin: boolean;
@@ -161,13 +163,33 @@ function TrailGallery({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    onRequestTrail(trail);
+                    if (!trail.isRequested) {
+                      onRequestTrail(trail);
+                    }
                   }}
-                  className="rounded-md border border-green-300 bg-green-50 px-2 py-1 text-xs font-semibold text-green-800 hover:bg-green-100"
-                  title="Request this trail activity with preferred expert/date"
+                  className={`rounded-md border px-2 py-1 text-xs font-semibold ${
+                    trail.isRequested
+                      ? 'border-amber-300 bg-amber-50 text-amber-800'
+                      : 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
+                  }`}
+                  title={trail.isRequested ? 'Trail requested' : 'Request this trail activity with preferred expert/date'}
                 >
-                  Request
+                  {trail.isRequested ? 'Trail Requested' : 'Request'}
                 </button>
+                {trail.isRequested && onCancelRequest && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onCancelRequest(trail);
+                    }}
+                    className="rounded-md border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+                    title="Cancel your trail request"
+                  >
+                    Cancel Request
+                  </button>
+                )}
                 {canCreateEvent && (
                   <button
                     type="button"
@@ -197,6 +219,7 @@ function TrailGallery({
           key={trail.id}
           {...{
             ...trail,
+            isRequested: trail.isRequested,
             onClick() {
               sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
               router.push(`/trails/${trail.id}`);
@@ -206,6 +229,9 @@ function TrailGallery({
             },
             onRequestTrail() {
               onRequestTrail(trail);
+            },
+            onCancelRequest() {
+              onCancelRequest?.(trail);
             },
             ...(canCreateEvent
               ? {
@@ -313,6 +339,7 @@ function TrailsPageContent() {
   const [selectedExpertId, setSelectedExpertId] = useState('');
   const [requestFeedback, setRequestFeedback] = useState('');
   const [requestModalMessage, setRequestModalMessage] = useState('');
+  const [requestedByTrailId, setRequestedByTrailId] = useState<Record<string, string>>({});
   const [toastOpen, setToastOpen] = useState(false);
   const [toastTitle, setToastTitle] = useState('Request sent');
   const [toastDescription, setToastDescription] = useState(
@@ -327,6 +354,22 @@ function TrailsPageContent() {
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
   });
   const queryClient = useQueryClient();
+
+  const loadParticipantRequests = async () => {
+    if (!user || user.role !== 'participant') return;
+    try {
+      const response = await fetch('/api/participants/me/trail-requests');
+      const data = await response.json();
+      if (!response.ok) return;
+      const map: Record<string, string> = {};
+      (data.requests || []).forEach((req: { id: string; trail_id: string }) => {
+        if (req.trail_id && req.id) map[req.trail_id] = req.id;
+      });
+      setRequestedByTrailId(map);
+    } catch {
+      // ignore
+    }
+  };
 
   const {
     data,
@@ -380,6 +423,7 @@ function TrailsPageContent() {
       setToastTitle('Request sent');
       setToastDescription('Your trail request was submitted successfully.');
       setToastOpen(true);
+      loadParticipantRequests();
       setRequestOpen(false);
       setRequestTrailItem(null);
       setRequestDescription('');
@@ -392,6 +436,37 @@ function TrailsPageContent() {
       setRequestFeedback(message);
       setRequestModalMessage(message);
       setToastTitle('Request failed');
+      setToastDescription(message);
+      setToastOpen(true);
+    },
+  });
+
+  const cancelRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const response = await fetch(`/api/participants/me/trail-requests/${requestId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to cancel request');
+      }
+      return data;
+    },
+    onSuccess: (_data, requestId) => {
+      setRequestedByTrailId((prev) => {
+        const next = { ...prev };
+        const trailId = Object.keys(next).find((id) => next[id] === requestId);
+        if (trailId) delete next[trailId];
+        return next;
+      });
+      setToastTitle('Request cancelled');
+      setToastDescription('Your trail request was cancelled.');
+      setToastOpen(true);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to cancel request.';
+      setToastTitle('Cancel failed');
       setToastDescription(message);
       setToastOpen(true);
     },
@@ -460,7 +535,10 @@ function TrailsPageContent() {
     },
   });
 
-  const trails = data?.pages.flatMap((pageData) => pageData.trails) || [];
+  const trails = (data?.pages.flatMap((pageData) => pageData.trails) || []).map((trail) => ({
+    ...trail,
+    isRequested: Boolean(requestedByTrailId[trail.id]),
+  }));
   const isAdmin = user?.role === 'admin';
   const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
   const hidingTrailId = hideMutation.isPending ? hideMutation.variables : null;
@@ -639,6 +717,14 @@ function TrailsPageContent() {
     if (typeof window === 'undefined') return;
     localStorage.setItem(TRAILS_VIEW_KEY, viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    if (!user || user.role !== 'participant') {
+      setRequestedByTrailId({});
+      return;
+    }
+    loadParticipantRequests();
+  }, [user?.id, user?.role]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -892,10 +978,20 @@ function TrailsPageContent() {
                 router.push('/register');
                 return;
               }
+              if (trail.isRequested) {
+                return;
+              }
               setRequestTrailItem(trail);
               setRequestOpen(true);
               setRequestFeedback('');
               setRequestModalMessage('');
+            }}
+            onCancelRequest={(trail) => {
+              const requestId = requestedByTrailId[trail.id];
+              if (!requestId) return;
+              const confirmed = window.confirm('Cancel your trail request?');
+              if (!confirmed) return;
+              cancelRequestMutation.mutate(requestId);
             }}
             onCreateEvent={(trail) => {
               setCreateEventTrailId(trail.id);
