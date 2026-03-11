@@ -56,7 +56,10 @@ export default function ThemeToggle({
     <button
       type="button"
       onClick={toggleTheme}
-      className={className || 'rounded-lg border border-green-600 px-3 py-1.5 text-sm hover:bg-green-700'}
+      className={
+        className ||
+        'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-green-600 text-sm hover:bg-green-700'
+      }
       aria-label={
         (mounted ? theme : 'light') === 'dark'
           ? 'Switch to light mode'
@@ -68,7 +71,44 @@ export default function ThemeToggle({
           : 'Switch to dark mode'
       }
     >
-      {!mounted ? 'Theme' : theme === 'dark' ? 'Light' : 'Dark'}
+      <span className="sr-only">
+        {(mounted ? theme : 'light') === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      </span>
+      {!mounted || theme === 'dark' ? (
+        <svg
+          viewBox="0 0 24 24"
+          className="h-5 w-5 text-yellow-200"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 4.5a1 1 0 0 1 1 1V7a1 1 0 0 1-2 0V5.5a1 1 0 0 1 1-1Z"
+            fill="currentColor"
+          />
+          <path
+            d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"
+            fill="currentColor"
+          />
+          <path
+            d="M5.6 7.1a1 1 0 0 1 1.4 0l1 1a1 1 0 1 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4ZM4.5 12a1 1 0 0 1 1-1H7a1 1 0 1 1 0 2H5.5a1 1 0 0 1-1-1ZM7 16.9a1 1 0 0 1 0 1.4l-1 1a1 1 0 1 1-1.4-1.4l1-1a1 1 0 0 1 1.4 0ZM12 17a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V18a1 1 0 0 1 1-1ZM17 16.9a1 1 0 0 1 1.4 0l1 1a1 1 0 0 1-1.4 1.4l-1-1a1 1 0 0 1 0-1.4ZM17 7.1a1 1 0 0 1 0 1.4l-1 1A1 1 0 1 1 14.6 8l1-1a1 1 0 0 1 1.4 0ZM18.5 11a1 1 0 0 1 0 2H17a1 1 0 1 1 0-2h1.5Z"
+            fill="currentColor"
+          />
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          className="h-5 w-5 text-slate-100"
+          aria-hidden="true"
+        >
+          <path
+            d="M20.2 14.5a7.5 7.5 0 0 1-9.7-9.7 1 1 0 0 0-1.3-1.2 9 9 0 1 0 12.2 12.2 1 1 0 0 0-1.2-1.3Z"
+            fill="currentColor"
+          />
+          <path
+            d="M16.7 5.2a1 1 0 0 0 0 1.4l.6.6-.6.6a1 1 0 1 0 1.4 1.4l.6-.6.6.6a1 1 0 1 0 1.4-1.4l-.6-.6.6-.6a1 1 0 1 0-1.4-1.4l-.6.6-.6-.6a1 1 0 0 0-1.4 0Z"
+            fill="currentColor"
+          />
+        </svg>
+      )}
     </button>
   );
 }

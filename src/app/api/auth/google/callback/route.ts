@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
   if (!existing.rows[0]) {
     const res = NextResponse.redirect(
       new URL(
-        `/?login=1&role=participant&message=${encodeURIComponent(
+        `/register?message=${encodeURIComponent(
           'No participant account found for this Google email. Please register first.'
         )}`,
         baseUrl

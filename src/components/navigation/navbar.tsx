@@ -20,7 +20,6 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: 'Search Trails', href: '/trails' },
   { label: 'Events', href: '/events' },
-  { label: 'Join Experts', href: '/register', showFor: ['anonymous'] },
   {
     label: 'Create Event',
     href: '/events/create',
@@ -266,7 +265,15 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 </Link>
               ) : null
             )}
-            <ThemeToggle className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-green-600 text-sm font-semibold hover:bg-green-700" />
+            {!loadingUser && !user && (
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/20"
+              >
+                Register
+              </Link>
+            )}
+            <ThemeToggle className="inline-flex items-center justify-center rounded-lg border border-green-600 hover:bg-green-700" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
@@ -352,7 +359,16 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 </Link>
               ) : null
             )}
-            <ThemeToggle className="text-left px-2 py-2 rounded border border-green-600 hover:bg-green-700" />
+            {!loadingUser && !user && (
+              <Link
+                href="/register"
+                className="px-2 py-2 rounded bg-white/10 text-white font-semibold"
+                onClick={() => setMobileOpen(false)}
+              >
+                Register
+              </Link>
+            )}
+            <ThemeToggle className="inline-flex items-center justify-start px-2 py-2 rounded border border-green-600 hover:bg-green-700" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
