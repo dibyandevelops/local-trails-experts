@@ -58,7 +58,7 @@ export default function ThemeToggle({
       onClick={toggleTheme}
       className={
         className ||
-        'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-green-600 text-sm hover:bg-green-700'
+        'inline-flex items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm hover:bg-green-700'
       }
       aria-label={
         (mounted ? theme : 'light') === 'dark'
@@ -71,13 +71,13 @@ export default function ThemeToggle({
           : 'Switch to dark mode'
       }
     >
-      <span className="sr-only">
-        {(mounted ? theme : 'light') === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      <span className="text-sm font-semibold">
+        {!mounted ? 'Theme' : theme === 'dark' ? 'Light' : 'Dark'}
       </span>
       {!mounted || theme === 'dark' ? (
         <svg
           viewBox="0 0 24 24"
-          className="h-4 w-4 text-yellow-200"
+          className="h-5 w-5 text-yellow-200"
           aria-hidden="true"
         >
           <path
@@ -96,7 +96,7 @@ export default function ThemeToggle({
       ) : (
         <svg
           viewBox="0 0 24 24"
-          className="h-4 w-4 text-slate-100"
+          className="h-5 w-5 text-slate-100"
           aria-hidden="true"
         >
           <path
