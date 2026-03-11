@@ -143,7 +143,7 @@ export default function RegisterPage() {
               value={form.name}
               onChange={(event) => setForm({ ...form, name: event.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="e.g., Dibyan Shrestha"
+              placeholder="e.g., Deepa Shrestha"
               required
             />
           </div>

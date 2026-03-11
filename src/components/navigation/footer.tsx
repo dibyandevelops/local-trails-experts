@@ -10,7 +10,7 @@ function buildMailto(params: { to: string; subject: string; body: string }) {
 
 export default function Footer() {
   const year = new Date().getFullYear();
-  const brand = 'localMTBGroup';
+  const brand = 'LocalMTBGroup';
   const contactEmail = 'dibyan.softwaredev@gmail.com';
 
   const contactHref = buildMailto({
