@@ -264,11 +264,13 @@ export async function POST(request: NextRequest) {
         bodyHtml: `A new trail has been submitted for approval.<br/><br/><strong>Trail:</strong> ${name}<br/><strong>Sport:</strong> ${sport_type}<br/><strong>Submitted by:</strong> ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})<br/><strong>Location:</strong> ${location}<br/>Please review in the admin console.`,
         bodyText: `A new trail has been submitted for approval.\n\nTrail: ${name}\nSport: ${sport_type}\nSubmitted by: ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})\nLocation: ${location}\nPlease review in admin console.`,
       });
+      const dedupeKey = `trail-approval:${name}:${sport_type}:${submitterEmail || 'anonymous'}`;
       await Promise.all(
         adminEmails.map((to: string) =>
           sendEmailSafe({
             to,
             ...approvalEmail,
+            dedupeKey,
           })
         )
       );

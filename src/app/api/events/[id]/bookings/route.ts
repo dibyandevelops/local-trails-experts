@@ -172,9 +172,10 @@ export async function POST(
       await sendEmailSafe({
         to: user.email,
         ...participantEmail,
+        dedupeKey: `booking:create:${params.id}:${user.email}:${bookingStatus}:${spots}`,
       });
 
-      if (event.organizer_email) {
+      if (event.organizer_email && event.organizer_email !== user.email) {
         const organizerEmailPayload = buildBrandedEmail({
           subject: `New booking: ${event.title}`,
           appUrl: getAppUrl(),
@@ -186,6 +187,7 @@ export async function POST(
         await sendEmailSafe({
           to: event.organizer_email,
           ...organizerEmailPayload,
+          dedupeKey: `booking:organizer:${params.id}:${event.organizer_email}:${user.email}:${spots}`,
         });
       }
 

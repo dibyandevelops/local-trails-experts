@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
     await sendEmailSafe({
       to: application.email,
       ...verificationEmail,
+      dedupeKey: `expert-application:verification:${application.id}:${application.email}:${message.trim().slice(0, 120)}`,
     });
 
     return NextResponse.json({ success: true }, { status: 200 });

@@ -5,6 +5,7 @@ type SendEmailInput = {
   text: string;
   from?: string;
   replyTo?: string;
+  dedupeKey?: string;
 };
 
 function getEmailConfig() {
@@ -24,6 +25,24 @@ function getEmailConfig() {
     // Temporary safety routing: all outgoing mail lands in one inbox.
     overrideTo: (process.env.EMAIL_OVERRIDE_TO || defaultMailbox).trim(),
   };
+}
+
+const dedupeWindowMs = 2 * 60 * 1000;
+const recentEmailSends = new Map<string, number>();
+
+function shouldDedupeSend(key: string): boolean {
+  const now = Date.now();
+  const last = recentEmailSends.get(key);
+  if (typeof last === 'number' && now - last < dedupeWindowMs) {
+    return true;
+  }
+  recentEmailSends.set(key, now);
+  recentEmailSends.forEach((timestamp, storedKey) => {
+    if (now - timestamp > dedupeWindowMs) {
+      recentEmailSends.delete(storedKey);
+    }
+  });
+  return false;
 }
 
 function parseFrom(from: string) {
@@ -49,6 +68,15 @@ export async function sendEmail(input: SendEmailInput) {
   const effectiveFrom = (input.from || from).trim();
   const fromSender = parseFrom(effectiveFrom);
   const targetTo = overrideTo || input.to;
+
+  if (overrideTo) {
+    const dedupeKey =
+      input.dedupeKey ||
+      `${overrideTo}|${input.subject}|${(input.text || '').slice(0, 200)}`;
+    if (shouldDedupeSend(dedupeKey)) {
+      return { sent: false as const, skipped: true as const, deduped: true as const };
+    }
+  }
 
   // Prefer Resend when configured (more reliable than consumer SMTP).
   if (resendApiKey) {

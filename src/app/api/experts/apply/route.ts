@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
       await sendEmailSafe({
         to: email,
         ...upgradeEmail,
+        dedupeKey: `expert-upgrade:${email}`,
       });
 
       return NextResponse.json(
@@ -147,6 +148,7 @@ export async function POST(request: NextRequest) {
     await sendEmailSafe({
       to: email,
       ...welcomeExpertEmail,
+      dedupeKey: `expert-welcome:${email}`,
     });
 
     return NextResponse.json(

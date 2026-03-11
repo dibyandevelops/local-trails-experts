@@ -115,4 +115,50 @@ describe('POST /api/events/[id]/join', () => {
     expect(body.error).toMatch(/already joined/i);
     expect(sendEmailSafe).not.toHaveBeenCalled();
   });
+
+  it('does not send duplicate organizer email when organizer matches participant', async () => {
+    vi.mocked(pool.query)
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            max_participants: 10,
+            current_participants: 2,
+            title: 'Sunrise Ride',
+            event_date: '2026-03-05T06:00:00.000Z',
+            organizer_name: 'Guide One',
+            organizer_email: 'rider@example.com',
+          },
+        ],
+      } as never)
+      .mockResolvedValueOnce({ rows: [] } as never)
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'ep-1',
+            event_id: 'event-1',
+            participant_email: 'rider@example.com',
+          },
+        ],
+      } as never)
+      .mockResolvedValueOnce({ rows: [] } as never)
+      .mockResolvedValueOnce({
+        rows: [{ id: 'user-participant', email: 'rider@example.com' }],
+      } as never);
+
+    const request = new NextRequest('http://localhost/api/events/event-1/join', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        participant_name: 'Rider A',
+        participant_email: 'rider@example.com',
+        phone: '+9779800000000',
+        expertise_level: 'beginner',
+      }),
+    });
+
+    const response = await POST(request, { params: { id: 'event-1' } });
+
+    expect(response.status).toBe(201);
+    expect(sendEmailSafe).toHaveBeenCalledTimes(1);
+  });
 });

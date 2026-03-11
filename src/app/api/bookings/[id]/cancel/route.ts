@@ -102,9 +102,10 @@ export async function POST(
       await sendEmailSafe({
         to: booking.email,
         ...participantEmail,
+        dedupeKey: `booking:cancel:${booking.id}:${booking.email}:${refundNpr}`,
       });
 
-      if (booking.organizer_email) {
+      if (booking.organizer_email && booking.organizer_email !== booking.email) {
         const organizerEmail = buildBrandedEmail({
           subject: `Booking cancelled: ${booking.title}`,
           appUrl: getAppUrl(),
@@ -116,6 +117,7 @@ export async function POST(
         await sendEmailSafe({
           to: booking.organizer_email,
           ...organizerEmail,
+          dedupeKey: `booking:cancel:organizer:${booking.id}:${booking.organizer_email}:${booking.email}`,
         });
       }
 

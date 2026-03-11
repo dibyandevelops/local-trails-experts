@@ -140,11 +140,13 @@ export async function POST(
       bodyText: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateRaw}\nPreferred expert: ${expert.name || expert.email}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
     });
 
+    const dedupeKey = `trail-request:${trailId}:${preferredDateRaw}:${expertUserId}:${auth.sub}`;
     await Promise.all(
       uniqueRecipients.map((to) =>
         sendEmailSafe({
           to,
           ...requestEmail,
+          dedupeKey,
         })
       )
     );

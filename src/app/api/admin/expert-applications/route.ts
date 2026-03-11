@@ -198,6 +198,7 @@ export async function PATCH(request: NextRequest) {
         await sendEmailSafe({
           to: application.email,
           ...approvalEmail,
+          dedupeKey: `expert-application:approved:${application.id}:${application.email}`,
         });
       }
 
@@ -216,6 +217,7 @@ export async function PATCH(request: NextRequest) {
         await sendEmailSafe({
           to: application.email,
           ...rejectedEmail,
+          dedupeKey: `expert-application:rejected:${application.id}:${application.email}`,
         });
       }
 

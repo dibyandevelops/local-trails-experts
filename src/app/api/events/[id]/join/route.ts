@@ -110,9 +110,10 @@ export async function POST(
     await sendEmailSafe({
       to: participant_email,
       ...participantEmail,
+      dedupeKey: `event-join:participant:${eventId}:${participant_email}`,
     });
 
-    if (organizer_email) {
+    if (organizer_email && organizer_email !== participant_email) {
       const organizerEmailPayload = buildBrandedEmail({
         subject: `New participant joined: ${title}`,
         appUrl: getAppUrl(),
@@ -124,6 +125,7 @@ export async function POST(
       await sendEmailSafe({
         to: organizer_email,
         ...organizerEmailPayload,
+        dedupeKey: `event-join:organizer:${eventId}:${organizer_email}:${participant_email}`,
       });
     }
 
