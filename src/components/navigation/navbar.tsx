@@ -273,7 +273,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 Register
               </Link>
             )}
-            <ThemeToggle className="inline-flex items-center justify-center rounded-lg border border-green-600 hover:bg-green-700" />
+            <ThemeToggle className="inline-flex items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
@@ -368,7 +368,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 Register
               </Link>
             )}
-            <ThemeToggle className="inline-flex items-center justify-start px-2 py-2 rounded border border-green-600 hover:bg-green-700" />
+            <ThemeToggle className="inline-flex items-center gap-2 rounded border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"

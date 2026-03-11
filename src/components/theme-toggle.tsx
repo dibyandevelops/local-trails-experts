@@ -58,7 +58,7 @@ export default function ThemeToggle({
       onClick={toggleTheme}
       className={
         className ||
-        'inline-flex items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm hover:bg-green-700'
+        'inline-flex items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700'
       }
       aria-label={
         (mounted ? theme : 'light') === 'dark'
