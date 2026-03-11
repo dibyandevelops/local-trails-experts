@@ -77,7 +77,7 @@ export default function ThemeToggle({
       {!mounted || theme === 'dark' ? (
         <svg
           viewBox="0 0 24 24"
-          className="h-5 w-5 text-yellow-200"
+          className="h-4 w-4 text-yellow-200"
           aria-hidden="true"
         >
           <path
@@ -96,7 +96,7 @@ export default function ThemeToggle({
       ) : (
         <svg
           viewBox="0 0 24 24"
-          className="h-5 w-5 text-slate-100"
+          className="h-4 w-4 text-slate-100"
           aria-hidden="true"
         >
           <path
