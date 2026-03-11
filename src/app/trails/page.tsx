@@ -978,6 +978,12 @@ function TrailsPageContent() {
                 router.push('/register');
                 return;
               }
+              if (user.role !== 'participant') {
+                setToastTitle('Participants only');
+                setToastDescription('Only participants can request trails.');
+                setToastOpen(true);
+                return;
+              }
               if (trail.isRequested) {
                 return;
               }
@@ -987,6 +993,9 @@ function TrailsPageContent() {
               setRequestModalMessage('');
             }}
             onCancelRequest={(trail) => {
+              if (!user || user.role !== 'participant') {
+                return;
+              }
               const requestId = requestedByTrailId[trail.id];
               if (!requestId) return;
               const confirmed = window.confirm('Cancel your trail request?');
