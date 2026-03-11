@@ -33,8 +33,27 @@ function sendClientError(payload: ClientErrorPayload) {
 export default function ClientErrorReporter() {
   useEffect(() => {
     const onError = (event: ErrorEvent) => {
+      const message = event.message || 'Unknown client error';
+      // When a client has stale/corrupted chunks (common after deploys or dev HMR),
+      // webpack can throw errors like "originalFactory is undefined".
+      if (
+        typeof window !== 'undefined' &&
+        (message.includes('originalFactory is undefined') ||
+          message.includes('ChunkLoadError'))
+      ) {
+        const guardKey = 'mtb_self_heal_reload_v1';
+        try {
+          if (!sessionStorage.getItem(guardKey)) {
+            sessionStorage.setItem(guardKey, '1');
+            window.location.reload();
+            return;
+          }
+        } catch {
+          // ignore
+        }
+      }
       sendClientError({
-        message: event.message || 'Unknown client error',
+        message,
         stack: event.error?.stack || null,
         source: event.filename || 'window.onerror',
         page: window.location.pathname,
