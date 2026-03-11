@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { sendEmailSafe } from '@/lib/email';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,13 +34,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 });
     }
 
+    const verificationEmail = buildBrandedEmail({
+      subject: 'Additional verification requested',
+      appUrl: getAppUrl(),
+      headline: 'Verification needed',
+      subhead: 'Expert application follow-up',
+      greetingName: application.name,
+      bodyHtml: `Our admin team needs additional verification details for your expert application:<br/><br/>${message
+        .trim()
+        .replace(/\n/g, '<br/>')}<br/><br/>Please reply with the requested information.`,
+      bodyText: `Our admin team needs additional verification details for your expert application:\n\n${message.trim()}\n\nPlease reply with the requested information.`,
+    });
     await sendEmailSafe({
       to: application.email,
-      subject: 'Additional verification requested',
-      text: `Hi ${application.name},\n\nOur admin team needs additional verification details for your expert application:\n\n${message.trim()}\n\nPlease reply with the requested information.`,
-      html: `<p>Hi ${application.name},</p><p>Our admin team needs additional verification details for your expert application:</p><p>${message
-        .trim()
-        .replace(/\n/g, '<br/>')}</p><p>Please reply with the requested information.</p>`,
+      ...verificationEmail,
     });
 
     return NextResponse.json({ success: true }, { status: 200 });

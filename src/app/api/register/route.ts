@@ -4,6 +4,7 @@ import pool from '@/lib/db';
 import { setAuthCookie, signAuthToken } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmailSafe } from '@/lib/email';
+import { buildWelcomeEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(request: NextRequest) {
   try {
@@ -88,11 +89,25 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true, user }, { status: 201 });
     setAuthCookie(response, token);
 
+    const { subject, text, html } = buildWelcomeEmail({
+      name,
+      appUrl: getAppUrl(),
+    });
+    const fromBase =
+      (process.env.RESEND_FROM || process.env.EMAIL_FROM || '').trim() ||
+      'Local Guides <onboarding@resend.dev>';
+    const from =
+      fromBase.includes('<') && fromBase.includes('>')
+        ? fromBase.replace(/^[^<]+/, `${name} via Local Guides `)
+        : `${name} via Local Guides <${fromBase}>`;
+
     await sendEmailSafe({
       to: email,
-      subject: 'Welcome to Local Guides',
-      text: `Hi ${name}, your participant account is ready. You can now join events and manage your profile.`,
-      html: `<p>Hi ${name},</p><p>Your participant account is ready. You can now join events and manage your profile.</p>`,
+      subject,
+      text,
+      html,
+      from,
+      replyTo: email,
     });
 
     return response;

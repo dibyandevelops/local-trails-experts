@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { calculateRefund, getCancellationPolicy } from '@/lib/booking-policy';
 import { sendEmailSafe } from '@/lib/email';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(
   request: NextRequest,
@@ -89,19 +90,32 @@ export async function POST(
 
       await client.query('COMMIT');
 
+      const participantEmail = buildBrandedEmail({
+        subject: `Booking cancelled: ${booking.title}`,
+        appUrl: getAppUrl(),
+        headline: 'Booking cancelled',
+        subhead: booking.title,
+        greetingName: booking.name || 'there',
+        bodyHtml: `Your booking for <strong>${booking.title}</strong> was cancelled.<br/>Refund NPR: <strong>${refundNpr}</strong><br/>${policy.note}`,
+        bodyText: `Your booking was cancelled. Refund NPR: ${refundNpr}. Policy: ${policy.note}`,
+      });
       await sendEmailSafe({
         to: booking.email,
-        subject: `Booking cancelled: ${booking.title}`,
-        text: `Hi ${booking.name || 'there'}, your booking was cancelled. Refund NPR: ${refundNpr}. Policy: ${policy.note}`,
-        html: `<p>Hi ${booking.name || 'there'},</p><p>Your booking for <strong>${booking.title}</strong> was cancelled.</p><p>Refund NPR: <strong>${refundNpr}</strong></p><p>${policy.note}</p>`,
+        ...participantEmail,
       });
 
       if (booking.organizer_email) {
+        const organizerEmail = buildBrandedEmail({
+          subject: `Booking cancelled: ${booking.title}`,
+          appUrl: getAppUrl(),
+          headline: 'Booking cancelled',
+          subhead: booking.title,
+          bodyHtml: `${booking.name || booking.email} cancelled their booking for <strong>${booking.title}</strong>.`,
+          bodyText: `${booking.name || booking.email} cancelled their booking.`,
+        });
         await sendEmailSafe({
           to: booking.organizer_email,
-          subject: `Booking cancelled: ${booking.title}`,
-          text: `${booking.name || booking.email} cancelled their booking.`,
-          html: `<p>${booking.name || booking.email} cancelled their booking for <strong>${booking.title}</strong>.</p>`,
+          ...organizerEmail,
         });
       }
 

@@ -4,6 +4,7 @@ import pool from '@/lib/db';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmailSafe } from '@/lib/email';
 import type { UserRole } from '@/types';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,11 +73,18 @@ export async function POST(request: NextRequest) {
         ]
       );
 
+      const upgradeEmail = buildBrandedEmail({
+        subject: 'You are now a Verified Expert',
+        appUrl: getAppUrl(),
+        headline: 'Verified expert access',
+        subhead: 'Your account has been upgraded.',
+        greetingName: name,
+        bodyHtml: 'You can now log in and start hosting events.',
+        bodyText: 'You can now log in and start hosting events.',
+      });
       await sendEmailSafe({
         to: email,
-        subject: 'You are now a Verified Expert',
-        text: `Hi ${name}, your account has been upgraded to expert. You can now log in and start hosting events.`,
-        html: `<p>Hi ${name},</p><p>Your account has been upgraded to expert.</p><p>You can now log in and start hosting events.</p>`,
+        ...upgradeEmail,
       });
 
       return NextResponse.json(
@@ -127,11 +135,18 @@ export async function POST(request: NextRequest) {
 
     const user = result.rows[0];
 
+    const welcomeExpertEmail = buildBrandedEmail({
+      subject: 'Welcome as a Verified Expert',
+      appUrl: getAppUrl(),
+      headline: 'Welcome to Local Guides',
+      subhead: 'Your expert account is ready.',
+      greetingName: name,
+      bodyHtml: 'You can now log in and start hosting events.',
+      bodyText: 'You can now log in and start hosting events.',
+    });
     await sendEmailSafe({
       to: email,
-      subject: 'Welcome as a Verified Expert',
-      text: `Hi ${name}, your expert account has been created successfully. You can now log in and start hosting events.`,
-      html: `<p>Hi ${name},</p><p>Your expert account has been created successfully.</p><p>You can now log in and start hosting events.</p>`,
+      ...welcomeExpertEmail,
     });
 
     return NextResponse.json(

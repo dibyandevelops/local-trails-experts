@@ -4,6 +4,7 @@ import { JoinEventInput } from '@/types';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmailSafe } from '@/lib/email';
 import { sendPushToUserIds } from '@/lib/push';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(
   request: NextRequest,
@@ -96,19 +97,33 @@ export async function POST(
       [eventId]
     );
 
+    const eventDateLabel = new Date(event_date).toLocaleString();
+    const participantEmail = buildBrandedEmail({
+      subject: `Joined: ${title}`,
+      appUrl: getAppUrl(),
+      headline: `You're in for ${title}`,
+      subhead: `Scheduled for ${eventDateLabel}.`,
+      greetingName: participant_name,
+      bodyHtml: `You have successfully joined <strong>${title}</strong> scheduled for ${eventDateLabel}.`,
+      bodyText: `You have successfully joined "${title}" scheduled for ${eventDateLabel}.`,
+    });
     await sendEmailSafe({
       to: participant_email,
-      subject: `Joined: ${title}`,
-      text: `Hi ${participant_name}, you have successfully joined "${title}" scheduled for ${new Date(event_date).toLocaleString()}.`,
-      html: `<p>Hi ${participant_name},</p><p>You have successfully joined <strong>${title}</strong> scheduled for ${new Date(event_date).toLocaleString()}.</p>`,
+      ...participantEmail,
     });
 
     if (organizer_email) {
+      const organizerEmailPayload = buildBrandedEmail({
+        subject: `New participant joined: ${title}`,
+        appUrl: getAppUrl(),
+        headline: 'New participant joined',
+        subhead: `${participant_name} joined ${title}.`,
+        bodyHtml: `${participant_name} (${participant_email}) joined your event <strong>${title}</strong>.`,
+        bodyText: `${participant_name} (${participant_email}) joined your event "${title}".`,
+      });
       await sendEmailSafe({
         to: organizer_email,
-        subject: `New participant joined: ${title}`,
-        text: `${participant_name} (${participant_email}) joined your event "${title}".`,
-        html: `<p>${participant_name} (${participant_email}) joined your event <strong>${title}</strong>.</p>`,
+        ...organizerEmailPayload,
       });
     }
 

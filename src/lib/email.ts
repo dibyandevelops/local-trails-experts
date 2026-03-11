@@ -3,6 +3,8 @@ type SendEmailInput = {
   subject: string;
   html: string;
   text: string;
+  from?: string;
+  replyTo?: string;
 };
 
 function getEmailConfig() {
@@ -44,14 +46,18 @@ export async function sendEmail(input: SendEmailInput) {
     overrideTo,
   } = getEmailConfig();
 
-  const fromSender = parseFrom(from);
+  const effectiveFrom = (input.from || from).trim();
+  const fromSender = parseFrom(effectiveFrom);
   const targetTo = overrideTo || input.to;
 
   // Prefer Resend when configured (more reliable than consumer SMTP).
   if (resendApiKey) {
+    const baseFrom = input.from || resendFrom || effectiveFrom;
     const fromValue =
-      resendFrom ||
-      (from.includes('<') ? from : `${fromSender.name} <${fromSender.email}>`) ||
+      baseFrom ||
+      (effectiveFrom.includes('<')
+        ? effectiveFrom
+        : `${fromSender.name} <${fromSender.email}>`) ||
       'Local Guides <onboarding@resend.dev>';
 
     const { Resend } = await import('resend');
@@ -62,6 +68,7 @@ export async function sendEmail(input: SendEmailInput) {
       subject: input.subject,
       html: input.html,
       text: input.text,
+      replyTo: input.replyTo,
     });
     if ((result as any)?.error) {
       const message =
@@ -100,6 +107,7 @@ export async function sendEmail(input: SendEmailInput) {
     subject: input.subject,
     text: input.text,
     html: input.html,
+    replyTo: input.replyTo,
   });
 
   return { sent: true as const, provider: 'smtp' as const };

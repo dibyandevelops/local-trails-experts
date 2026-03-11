@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmailSafe } from '@/lib/email';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function GET(
   request: NextRequest,
@@ -159,19 +160,32 @@ export async function POST(
 
       await client.query('COMMIT');
 
+      const participantEmail = buildBrandedEmail({
+        subject: `Booking ${bookingStatus === 'confirmed' ? 'Confirmed' : 'Created'}: ${event.title}`,
+        appUrl: getAppUrl(),
+        headline: `Booking ${bookingStatus === 'confirmed' ? 'confirmed' : 'created'}`,
+        subhead: event.title,
+        greetingName: user.name || 'there',
+        bodyHtml: `Your booking for <strong>${event.title}</strong> is <strong>${bookingStatus}</strong>.<br/>Total NPR: <strong>${totalPrice}</strong>.`,
+        bodyText: `Your booking for ${event.title} is ${bookingStatus}. Total NPR: ${totalPrice}.`,
+      });
       await sendEmailSafe({
         to: user.email,
-        subject: `Booking ${bookingStatus === 'confirmed' ? 'Confirmed' : 'Created'}: ${event.title}`,
-        text: `Hi ${user.name || 'there'}, your booking for ${event.title} is ${bookingStatus}. Total NPR: ${totalPrice}.`,
-        html: `<p>Hi ${user.name || 'there'},</p><p>Your booking for <strong>${event.title}</strong> is <strong>${bookingStatus}</strong>.</p><p>Total NPR: <strong>${totalPrice}</strong></p>`,
+        ...participantEmail,
       });
 
       if (event.organizer_email) {
+        const organizerEmailPayload = buildBrandedEmail({
+          subject: `New booking: ${event.title}`,
+          appUrl: getAppUrl(),
+          headline: 'New booking received',
+          subhead: event.title,
+          bodyHtml: `${user.name || user.email} booked ${spots} spot(s) for <strong>${event.title}</strong>.`,
+          bodyText: `${user.name || user.email} booked ${spots} spot(s) for ${event.title}.`,
+        });
         await sendEmailSafe({
           to: event.organizer_email,
-          subject: `New booking: ${event.title}`,
-          text: `${user.name || user.email} booked ${spots} spot(s).`,
-          html: `<p>${user.name || user.email} booked ${spots} spot(s) for <strong>${event.title}</strong>.</p>`,
+          ...organizerEmailPayload,
         });
       }
 

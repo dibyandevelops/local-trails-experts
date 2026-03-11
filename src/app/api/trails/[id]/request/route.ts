@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { sendEmailSafe } from '@/lib/email';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(
   request: NextRequest,
@@ -130,13 +131,20 @@ export async function POST(
       .filter(Boolean);
     const uniqueRecipients = Array.from(new Set([...recipients, expert.email]));
 
+    const requestEmail = buildBrandedEmail({
+      subject: `Trail request: ${trail.name}`,
+      appUrl: getAppUrl(),
+      headline: 'New trail request',
+      subhead: trail.name,
+      bodyHtml: `A participant requested activity on this trail.<br/><br/><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateRaw}<br/><strong>Preferred expert:</strong> ${expert.name || expert.email}<br/><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})<br/><strong>Description:</strong> ${description || 'No additional details.'}`,
+      bodyText: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateRaw}\nPreferred expert: ${expert.name || expert.email}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
+    });
+
     await Promise.all(
       uniqueRecipients.map((to) =>
         sendEmailSafe({
           to,
-          subject: `Trail request: ${trail.name}`,
-          text: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateRaw}\nPreferred expert: ${expert.name || expert.email}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
-          html: `<p>A participant requested activity on this trail.</p><p><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateRaw}<br/><strong>Preferred expert:</strong> ${expert.name || expert.email}</p><p><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})</p><p><strong>Description:</strong><br/>${description || 'No additional details.'}</p>`,
+          ...requestEmail,
         })
       )
     );

@@ -5,6 +5,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 import { normalizeSafetyLabels } from '@/lib/trail-safety';
 import { parseGPX } from '@/lib/gpx-parser';
 import { DEFAULT_TRAIL_SPORT } from '@/services/constants/sports';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 function parseOptionalNumber(raw: string | null) {
   if (!raw || !raw.trim()) return null;
@@ -255,13 +256,19 @@ export async function POST(request: NextRequest) {
         .map((row) => row.email)
         .filter(Boolean);
       const { sendEmailSafe } = await import('@/lib/email');
+      const approvalEmail = buildBrandedEmail({
+        subject: `Trail approval needed (${sport_type})`,
+        appUrl: getAppUrl(),
+        headline: 'Trail approval needed',
+        subhead: name,
+        bodyHtml: `A new trail has been submitted for approval.<br/><br/><strong>Trail:</strong> ${name}<br/><strong>Sport:</strong> ${sport_type}<br/><strong>Submitted by:</strong> ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})<br/><strong>Location:</strong> ${location}<br/>Please review in the admin console.`,
+        bodyText: `A new trail has been submitted for approval.\n\nTrail: ${name}\nSport: ${sport_type}\nSubmitted by: ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})\nLocation: ${location}\nPlease review in admin console.`,
+      });
       await Promise.all(
         adminEmails.map((to: string) =>
           sendEmailSafe({
             to,
-            subject: `Trail approval needed (${sport_type})`,
-            text: `A new trail has been submitted for approval.\n\nTrail: ${name}\nSport: ${sport_type}\nSubmitted by: ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})\nLocation: ${location}\nPlease review in admin console.`,
-            html: `<p>A new trail has been submitted for approval.</p><p><strong>Trail:</strong> ${name}</p><p><strong>Sport:</strong> ${sport_type}</p><p><strong>Submitted by:</strong> ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})</p><p><strong>Location:</strong> ${location}</p><p>Please review in admin console.</p>`,
+            ...approvalEmail,
           })
         )
       );

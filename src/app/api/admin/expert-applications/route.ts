@@ -4,6 +4,7 @@ import pool from '@/lib/db';
 import { createTempPassword, getAuthFromRequest } from '@/lib/auth';
 import type { UserRole } from '@/types';
 import { sendEmailSafe } from '@/lib/email';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 type ExpertApplicationStatus = 'pending' | 'approved' | 'rejected';
 
@@ -185,20 +186,36 @@ export async function PATCH(request: NextRequest) {
         const passwordNote = tempPassword
           ? `Your temporary password is: ${tempPassword}`
           : 'Your existing account has been upgraded to expert access.';
+        const approvalEmail = buildBrandedEmail({
+          subject: 'Your expert application is approved',
+          appUrl: getAppUrl(),
+          headline: 'Expert application approved',
+          subhead: application.name || application.email,
+          greetingName: application.name,
+          bodyHtml: `Your expert application has been approved.<br/>${passwordNote}`,
+          bodyText: `Your expert application has been approved. ${passwordNote}`,
+        });
         await sendEmailSafe({
           to: application.email,
-          subject: 'Your expert application is approved',
-          text: `Hi ${application.name}, your expert application has been approved. ${passwordNote}`,
-          html: `<p>Hi ${application.name},</p><p>Your expert application has been approved.</p><p>${passwordNote}</p>`,
+          ...approvalEmail,
         });
       }
 
       if (status === 'rejected') {
+        const rejectedEmail = buildBrandedEmail({
+          subject: 'Your expert application was reviewed',
+          appUrl: getAppUrl(),
+          headline: 'Expert application update',
+          subhead: application.name || application.email,
+          greetingName: application.name,
+          bodyHtml:
+            'Your expert application is currently not approved. You can submit updated credentials and apply again.',
+          bodyText:
+            'Your expert application is currently not approved. You can submit updated credentials and apply again.',
+        });
         await sendEmailSafe({
           to: application.email,
-          subject: 'Your expert application was reviewed',
-          text: `Hi ${application.name}, your expert application is currently not approved. You can submit updated credentials and apply again.`,
-          html: `<p>Hi ${application.name},</p><p>Your expert application is currently not approved. You can submit updated credentials and apply again.</p>`,
+          ...rejectedEmail,
         });
       }
 
