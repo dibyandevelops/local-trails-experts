@@ -147,7 +147,7 @@ export default function ParticipantProfilePage() {
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Google Login</h2>
             <p className="text-sm text-gray-600">
-              Connect your Google account to enable one-tap login for this participant profile.
+              Connect your Google account to enable one-tap login
             </p>
           </div>
           {user.google_sub ? (
