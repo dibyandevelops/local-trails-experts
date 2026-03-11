@@ -1015,16 +1015,6 @@ function TrailsPageContent() {
               <p className="text-sm text-gray-600">
                 Showing {trails.length} of {pagination.total} trails
               </p>
-              {/* <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={!hasNextPage || isFetchingNextPage}
-                  onClick={() => fetchNextPage()}
-                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {hasNextPage ? 'Load More' : 'No More Trails'}
-                </button>
-              </div> */}
             </div>
           )}
           <div ref={loadMoreRef} className="h-2 w-full" aria-hidden="true" />
