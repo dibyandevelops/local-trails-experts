@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SportType } from '@/types';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -17,6 +18,22 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const url = new URL(window.location.href);
+      const msg = url.searchParams.get('message');
+      if (msg) {
+        setNotice(msg);
+        url.searchParams.delete('message');
+        window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const passwordChecks = useMemo(
     () => ({
@@ -83,6 +100,10 @@ export default function RegisterPage() {
     }
   };
 
+  if (!mounted) {
+    return <div className="max-w-lg mx-auto" />;
+  }
+
   return (
     <div className="max-w-lg mx-auto">
       <h1 className="text-4xl font-bold mb-2 text-green-800">
@@ -97,6 +118,11 @@ export default function RegisterPage() {
         onSubmit={handleSubmit}
         className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4"
       >
+        {notice && (
+          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            {notice}
+          </p>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
