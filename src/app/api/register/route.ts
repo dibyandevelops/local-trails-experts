@@ -12,12 +12,13 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const body = await request.json();
-    const { name, email, sports, password, phone } = body as {
+    const { name, email, sports, password, phone, city } = body as {
       name?: string;
       email?: string;
       sports?: string[];
       password?: string;
       phone?: string;
+      city?: string;
     };
 
     if (!name || !email || !password || !phone) {
@@ -72,11 +73,11 @@ export async function POST(request: NextRequest) {
 
     const result = await pool.query(
       `
-      INSERT INTO users (name, email, password_hash, role, sports, phone)
-      VALUES ($1, $2, $3, 'participant', $4::jsonb, $5)
+      INSERT INTO users (name, email, password_hash, role, sports, phone, city)
+      VALUES ($1, $2, $3, 'participant', $4::jsonb, $5, $6)
       RETURNING id, email, role
     `,
-      [name, email, passwordHash, sportsJson, normalizedPhone]
+      [name, email, passwordHash, sportsJson, normalizedPhone, city || null]
     );
 
     const user = result.rows[0];

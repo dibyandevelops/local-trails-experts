@@ -57,7 +57,7 @@ export default function Home() {
             href="/register"
             className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base"
           >
-            Register as Participant
+            Join Experts
           </Link>
           {/* <Link
             href="/experts/join"

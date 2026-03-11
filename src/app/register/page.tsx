@@ -14,6 +14,7 @@ export default function RegisterPage() {
     sports: [] as SportType[],
     password: '',
     phone: '',
+    city: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +82,7 @@ export default function RegisterPage() {
             sports: form.sports,
             password: form.password,
             phone: form.phone.trim(),
+            city: form.city.trim() || null,
           }),
         });
 
@@ -91,7 +93,14 @@ export default function RegisterPage() {
 
       setSuccess('Account created! You are now signed in.');
       window.dispatchEvent(new Event('auth-changed'));
-      setForm({ name: '', email: '', sports: [], password: '', phone: '' });
+      setForm({
+        name: '',
+        email: '',
+        sports: [],
+        password: '',
+        phone: '',
+        city: '',
+      });
       router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to register.');
@@ -172,6 +181,21 @@ export default function RegisterPage() {
             <p className="text-xs text-gray-500 mt-1">
               Use international format (e.g., +977...).
             </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              City
+            </label>
+            <input
+              type="text"
+              autoComplete="address-level2"
+              value={form.city}
+              onChange={(event) =>
+                setForm({ ...form, city: event.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="e.g., Kathmandu"
+            />
           </div>
         </div>
         <div>

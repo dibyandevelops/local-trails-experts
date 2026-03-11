@@ -249,7 +249,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
               href="/register"
               className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
             >
-              Register
+              Join Experts
             </Link>
           </p>
         )}

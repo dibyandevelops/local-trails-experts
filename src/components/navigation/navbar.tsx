@@ -270,7 +270,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 href="/register"
                 className="inline-flex items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/25"
               >
-                Register
+                Join Experts
               </Link>
             )}
             <ThemeToggle className="inline-flex items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
@@ -365,7 +365,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 className="inline-flex items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-50"
                 onClick={() => setMobileOpen(false)}
               >
-                Register
+                Join Experts
               </Link>
             )}
             <ThemeToggle className="inline-flex items-center gap-2 rounded border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
