@@ -135,6 +135,7 @@ export interface User {
   is_verified_expert: boolean;
   phone?: string | null;
   phone_verified_at?: string | null;
+  google_sub?: string | null;
   created_at: string;
   updated_at: string;
   last_login_at?: string | null;

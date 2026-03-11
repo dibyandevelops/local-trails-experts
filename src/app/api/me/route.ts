@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(
       `
-      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, created_at, updated_at
+      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, created_at, updated_at
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -86,7 +86,7 @@ export async function PATCH(request: NextRequest) {
           phone = $5,
           updated_at = NOW()
       WHERE id = $6
-      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, created_at, updated_at
+      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, created_at, updated_at
     `,
       [
         name || null,

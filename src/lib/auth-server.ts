@@ -18,7 +18,7 @@ export async function getServerCurrentUser(): Promise<User | null> {
   if (!auth) return null;
   const result = await pool.query(
     `
-    SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, created_at, updated_at
+    SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, created_at, updated_at
     FROM users
     WHERE id = $1
     LIMIT 1
@@ -27,4 +27,3 @@ export async function getServerCurrentUser(): Promise<User | null> {
   );
   return result.rows[0] || null;
 }
-

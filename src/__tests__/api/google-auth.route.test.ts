@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server';
 import { GET as startGoogle } from '@/app/api/auth/google/start/route';
 import { GET as googleCallback } from '@/app/api/auth/google/callback/route';
 import pool from '@/lib/db';
-import bcrypt from 'bcryptjs';
-import { createTempPassword, setAuthCookie, signAuthToken } from '@/lib/auth';
+import { setAuthCookie, signAuthToken } from '@/lib/auth';
+import { getAuthFromRequest } from '@/lib/auth';
 
 vi.mock('@/lib/db', () => ({
   default: {
@@ -11,14 +11,8 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-  },
-}));
-
 vi.mock('@/lib/auth', () => ({
-  createTempPassword: vi.fn(),
+  getAuthFromRequest: vi.fn(),
   signAuthToken: vi.fn(),
   setAuthCookie: vi.fn(),
 }));
@@ -43,14 +37,13 @@ describe('Google participant auth routes', () => {
     expect(response.cookies.get('mtb_google_oauth_next')?.value).toBe('/trails');
   });
 
-  it('GET /api/auth/google/callback creates participant if missing and sets auth cookie', async () => {
-    vi.mocked(createTempPassword).mockReturnValue('temp-pass' as never);
-    vi.mocked(bcrypt.hash).mockResolvedValue('hashed' as never);
+  it('GET /api/auth/google/callback logs in only when participant is connected to Google', async () => {
     vi.mocked(signAuthToken).mockReturnValue('signed.jwt.token' as never);
 
     vi.mocked(pool.query)
-      .mockResolvedValueOnce({ rows: [] } as never) // SELECT by email
-      .mockResolvedValueOnce({ rows: [{ id: 'p-1' }] } as never) // INSERT user
+      .mockResolvedValueOnce({
+        rows: [{ id: 'p-1', role: 'participant', email: 'p@example.com', google_sub: 'sub-1' }],
+      } as never) // SELECT participant by email
       .mockResolvedValueOnce({ rows: [] } as never); // UPDATE last_login
 
     const fetchSpy = vi
@@ -59,7 +52,9 @@ describe('Google participant auth routes', () => {
         new Response(JSON.stringify({ access_token: 'at-1' }), { status: 200 })
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ email: 'p@example.com', name: 'Pat' }), { status: 200 })
+        new Response(JSON.stringify({ email: 'p@example.com', name: 'Pat', sub: 'sub-1' }), {
+          status: 200,
+        })
       );
 
     const request = new NextRequest(
@@ -78,5 +73,49 @@ describe('Google participant auth routes', () => {
     expect(setAuthCookie).toHaveBeenCalledWith(response, 'signed.jwt.token');
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
-});
 
+  it('connect mode links google_sub to the current participant and redirects to profile', async () => {
+    vi.mocked(getAuthFromRequest).mockReturnValue({
+      sub: 'p-1',
+      role: 'participant',
+      email: 'p@example.com',
+      iat: 0,
+      exp: 9999999999,
+    } as never);
+
+    vi.mocked(pool.query)
+      .mockResolvedValueOnce({
+        rows: [{ id: 'p-1', email: 'p@example.com', role: 'participant', google_sub: null }],
+      } as never) // SELECT me
+      .mockResolvedValueOnce({ rows: [] } as never) // SELECT existingSub
+      .mockResolvedValueOnce({ rows: [] } as never); // UPDATE users
+
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ access_token: 'at-1' }), { status: 200 })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ email: 'p@example.com', name: 'Pat', sub: 'sub-2' }), {
+          status: 200,
+        })
+      );
+
+    const request = new NextRequest(
+      'http://localhost/api/auth/google/callback?code=code-1&state=state-1',
+      {
+        headers: {
+          cookie:
+            'mtb_google_oauth_state=state-1; mtb_google_oauth_next=%2Ftrails; mtb_google_oauth_mode=connect',
+        },
+      }
+    );
+
+    const response = await googleCallback(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('http://localhost/participants/me?message=google_connected');
+    expect(setAuthCookie).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+});

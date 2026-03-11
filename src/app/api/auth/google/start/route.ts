@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
+import { getAuthFromRequest } from '@/lib/auth';
 
 const STATE_COOKIE = 'mtb_google_oauth_state';
 const NEXT_COOKIE = 'mtb_google_oauth_next';
+const MODE_COOKIE = 'mtb_google_oauth_mode';
 
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -15,6 +17,16 @@ export async function GET(request: NextRequest) {
 
   const url = new URL(request.url);
   const next = url.searchParams.get('next') || '/trails';
+  const mode = url.searchParams.get('mode') === 'connect' ? 'connect' : 'login';
+
+  if (mode === 'connect') {
+    const auth = getAuthFromRequest(request);
+    if (!auth || auth.role !== 'participant') {
+      return NextResponse.redirect(
+        new URL('/?login=1&role=participant&message=Please sign in as a participant to connect Google.', baseUrl)
+      );
+    }
+  }
 
   const state = randomBytes(16).toString('hex');
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
@@ -43,6 +55,12 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 10,
     path: '/',
   });
+  res.cookies.set(MODE_COOKIE, mode, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 10,
+    path: '/',
+  });
   return res;
 }
-

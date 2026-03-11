@@ -51,6 +51,7 @@ export default function ParticipantProfilePage() {
   const [savingRequestId, setSavingRequestId] = useState<string | null>(null);
   const [cancellingRequestId, setCancellingRequestId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [googleNotice, setGoogleNotice] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -76,6 +77,20 @@ export default function ParticipantProfilePage() {
       });
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const msg = url.searchParams.get('message');
+      if (msg === 'google_connected') {
+        setGoogleNotice('Google account connected. You can use Google login next time.');
+        url.searchParams.delete('message');
+        window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -127,6 +142,39 @@ export default function ParticipantProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Google Login</h2>
+            <p className="text-sm text-gray-600">
+              Connect your Google account to enable one-tap login for this participant profile.
+            </p>
+          </div>
+          {user.google_sub ? (
+            <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+              Connected
+            </span>
+          ) : (
+            <Link
+              href={`/api/auth/google/start?mode=connect&next=${encodeURIComponent('/participants/me')}`}
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+            >
+              Connect Google
+            </Link>
+          )}
+        </div>
+        {googleNotice && (
+          <p className="mt-3 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-700">
+            {googleNotice}
+          </p>
+        )}
+        {!user.google_sub && (
+          <p className="mt-3 text-xs text-gray-500">
+            For security, the Google email must match your participant account email.
+          </p>
+        )}
+      </section>
+
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
           Edit Profile
