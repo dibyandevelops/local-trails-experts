@@ -38,6 +38,7 @@ function TrailGallery({
   onRequestTrail,
   onCancelRequest,
   onCreateEvent,
+  canRequestTrail,
   canCreateEvent,
   isAdmin,
   onEditTrail,
@@ -51,9 +52,10 @@ function TrailGallery({
   trails: Array<Trail & { isRequested?: boolean }>;
   viewMode: TrailsViewMode;
   onViewMap: (trail: Trail) => void;
-  onRequestTrail: (trail: Trail & { isRequested?: boolean }) => void;
+  onRequestTrail?: (trail: Trail & { isRequested?: boolean }) => void;
   onCancelRequest?: (trail: Trail & { isRequested?: boolean }) => void;
   onCreateEvent: (trail: Trail) => void;
+  canRequestTrail: boolean;
   canCreateEvent: boolean;
   isAdmin: boolean;
   onEditTrail?: (trail: Trail) => void;
@@ -158,25 +160,31 @@ function TrailGallery({
                 >
                   Map
                 </button>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (!trail.isRequested) {
-                      onRequestTrail(trail);
+                {canRequestTrail && onRequestTrail && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      if (!trail.isRequested) {
+                        onRequestTrail(trail);
+                      }
+                    }}
+                    className={`rounded-md border px-2 py-1 text-xs font-semibold ${
+                      trail.isRequested
+                        ? 'border-amber-300 bg-amber-50 text-amber-800'
+                        : 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
+                    }`}
+                    title={
+                      trail.isRequested
+                        ? 'Trail requested'
+                        : 'Request this trail activity with preferred expert/date'
                     }
-                  }}
-                  className={`rounded-md border px-2 py-1 text-xs font-semibold ${
-                    trail.isRequested
-                      ? 'border-amber-300 bg-amber-50 text-amber-800'
-                      : 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
-                  }`}
-                  title={trail.isRequested ? 'Trail requested' : 'Request this trail activity with preferred expert/date'}
-                >
-                  {trail.isRequested ? 'Trail Requested' : 'Request'}
-                </button>
-                {trail.isRequested && onCancelRequest && (
+                  >
+                    {trail.isRequested ? 'Trail Requested' : 'Request'}
+                  </button>
+                )}
+                {canRequestTrail && trail.isRequested && onCancelRequest && (
                   <button
                     type="button"
                     onClick={(event) => {
@@ -227,12 +235,16 @@ function TrailGallery({
             onViewMap() {
               onViewMap(trail);
             },
-            onRequestTrail() {
-              onRequestTrail(trail);
-            },
-            onCancelRequest() {
-              onCancelRequest?.(trail);
-            },
+            ...(canRequestTrail && onRequestTrail
+              ? {
+                  onRequestTrail() {
+                    onRequestTrail(trail);
+                  },
+                  onCancelRequest() {
+                    onCancelRequest?.(trail);
+                  },
+                }
+              : {}),
             ...(canCreateEvent
               ? {
                   onCreateEvent() {
@@ -540,6 +552,7 @@ function TrailsPageContent() {
     isRequested: Boolean(requestedByTrailId[trail.id]),
   }));
   const isAdmin = user?.role === 'admin';
+  const isParticipant = user?.role === 'participant';
   const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
   const hidingTrailId = hideMutation.isPending ? hideMutation.variables : null;
   const unhidingTrailId = unhideMutation.isPending ? unhideMutation.variables : null;
@@ -1022,6 +1035,7 @@ function TrailsPageContent() {
             trails={trails}
             viewMode={viewMode}
             canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
+            canRequestTrail={isParticipant}
             isAdmin={isAdmin}
             onEditTrail={(trail) => {
               router.push(`/trails/create?trailId=${trail.id}`);
@@ -1042,9 +1056,6 @@ function TrailsPageContent() {
                 return;
               }
               if (user.role !== 'participant') {
-                setToastTitle('Participants only');
-                setToastDescription('Only participants can request trails.');
-                setToastOpen(true);
                 return;
               }
               if (trail.isRequested) {

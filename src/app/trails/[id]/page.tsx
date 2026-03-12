@@ -218,8 +218,8 @@ const TrailPage: React.FunctionComponent = () => {
   const isOwnerExpert =
     currentUser?.role === 'expert' && trail?.submitted_by_user_id === currentUser?.id;
   const canManageTrail = isAdmin || isOwnerExpert;
-  const canUploadRoute = currentUser?.role === 'admin' || currentUser?.role === 'expert';
-  const canRequestTrail = Boolean(currentUser);
+  const canUploadRoute = currentUser?.role === 'admin';
+  const canRequestTrail = currentUser?.role === 'participant';
 
   const toggleSafetyLabel = (value: TrailSafetyLabel) => {
     setSafetyDraft((prev) =>
@@ -568,25 +568,27 @@ const TrailPage: React.FunctionComponent = () => {
               Create Event
             </button>
           )}
-          <button
-            type="button"
-            disabled={loadingCurrentUser}
-            onClick={() => {
-              if (loadingCurrentUser) {
-                setRequestMessage('Checking your account. Please try again in a second.');
-                return;
-              }
-              if (!currentUser) {
-                router.push('/register');
-                return;
-              }
-              setRequestMessage(null);
-              setRequestModalOpen(true);
-            }}
-            className="w-full rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-          >
-            Request This Trail
-          </button>
+          {canRequestTrail && (
+            <button
+              type="button"
+              disabled={loadingCurrentUser}
+              onClick={() => {
+                if (loadingCurrentUser) {
+                  setRequestMessage('Checking your account. Please try again in a second.');
+                  return;
+                }
+                if (!currentUser) {
+                  router.push('/register');
+                  return;
+                }
+                setRequestMessage(null);
+                setRequestModalOpen(true);
+              }}
+              className="w-full rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            >
+              Request This Trail
+            </button>
+          )}
           {uploadSuccess && (
             <span className="text-sm text-green-600">Route uploaded successfully.</span>
           )}
