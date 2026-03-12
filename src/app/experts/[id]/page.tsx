@@ -12,7 +12,6 @@ import {
 } from '@/services/experts/experts.service';
 import { getSportLabel } from '@/services/constants/sports';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
-import { useCurrentUser } from '@/hooks/use-current-user';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -21,11 +20,6 @@ interface ExpertDetail extends User {
 export default function ExpertDetailPage() {
   const params = useParams<{ id: string }>();
   const expertId = params?.id;
-  const { data: currentUser } = useCurrentUser();
-  const canViewStrava =
-    Boolean(currentUser?.id) &&
-    currentUser?.role === 'expert' &&
-    currentUser?.id === expertId;
 
   const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
     queryKey: ['expert-detail', expertId || ''],
@@ -47,7 +41,7 @@ export default function ExpertDetailPage() {
   const { data: strava } = useQuery({
     queryKey: QUERY_KEYS.experts.strava(expertId || ''),
     queryFn: ({ signal }) => fetchExpertStravaSummary(expertId || '', signal),
-    enabled: !!expertId && canViewStrava,
+    enabled: !!expertId,
   });
 
   if (loading) {
@@ -76,13 +70,7 @@ export default function ExpertDetailPage() {
     (e) => new Date(e.event_date) >= new Date()
   );
   const sports = Array.isArray(expert.sports) ? expert.sports : [];
-  const lifetimeDistanceKm = Math.round(
-    Number(strava?.stats?.all_ride_totals?.distance || 0) / 1000
-  );
-  const lifetimeRideCount = Number(strava?.stats?.all_ride_totals?.count || 0);
-  const ytdDistanceKm = Math.round(
-    Number(strava?.stats?.ytd_ride_totals?.distance || 0) / 1000
-  );
+  const stravaProfileId = strava?.profile?.id;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -120,6 +108,16 @@ export default function ExpertDetailPage() {
               <span className="inline-flex items-center rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white dark:bg-emerald-400 dark:text-emerald-950">
                 Verified Expert
               </span>
+            )}
+            {strava?.connected && stravaProfileId && (
+              <a
+                href={`https://www.strava.com/athletes/${stravaProfileId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 shadow-sm transition hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100 dark:hover:bg-orange-900/60"
+              >
+                Strava Verified
+              </a>
             )}
             <Link
               href={`/events?expert=${expert.id}`}
@@ -167,57 +165,6 @@ export default function ExpertDetailPage() {
             </p>
           </div>
         </div>
-        {canViewStrava && strava?.connected && (
-          <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-3 py-3 dark:border-orange-900/70 dark:bg-orange-950/40">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-orange-700 dark:text-orange-200">
-                Strava Activity
-              </p>
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-800 dark:bg-orange-900/60 dark:text-orange-100">
-                Connected
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <p className="text-[11px] text-orange-700 dark:text-orange-200">
-                  Lifetime Rides
-                </p>
-                <p className="text-base font-semibold text-orange-900 dark:text-orange-50">
-                  {lifetimeRideCount}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] text-orange-700 dark:text-orange-200">
-                  Lifetime Km
-                </p>
-                <p className="text-base font-semibold text-orange-900 dark:text-orange-50">
-                  {lifetimeDistanceKm}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] text-orange-700 dark:text-orange-200">
-                  YTD Km
-                </p>
-                <p className="text-base font-semibold text-orange-900 dark:text-orange-50">
-                  {ytdDistanceKm}
-                </p>
-              </div>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-orange-700 dark:text-orange-200">
-              {strava?.profile?.id && (
-                <a
-                  href={`https://www.strava.com/athletes/${strava.profile.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-semibold text-orange-700 underline decoration-orange-400 dark:text-orange-100 dark:decoration-orange-300"
-                >
-                  View on Strava
-                </a>
-              )}
-              <span className="uppercase tracking-wide">Powered by Strava</span>
-            </div>
-          </div>
-        )}
       </section>
 
       <section className="mb-8">

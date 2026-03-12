@@ -96,8 +96,23 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     if (!isSelf) {
+      const publicProfile =
+        connected && (profile || expert.strava_athlete_id)
+          ? {
+              id: profile?.id ?? Number(expert.strava_athlete_id),
+              username: profile?.username ?? null,
+              firstname: profile?.firstname ?? null,
+              lastname: profile?.lastname ?? null,
+              profile: profile?.profile ?? null,
+            }
+          : null;
       return NextResponse.json(
-        { connected: false, profile: null, stats: null, syncedAt: null },
+        {
+          connected,
+          profile: publicProfile,
+          stats: null,
+          syncedAt: null,
+        },
         { status: 200 }
       );
     }
