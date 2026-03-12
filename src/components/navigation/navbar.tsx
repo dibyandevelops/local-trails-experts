@@ -50,8 +50,8 @@ const icon = (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
     role="img"
-    aria-label="LOCAL TRAILS GUIDES"
-    className="h-9 w-9 shrink-0"
+    aria-label="LOCAL TRAILS EXPERTS"
+    className="h-10 w-10 shrink-0"
   >
     <defs>
       <linearGradient id="navbg" x1="0" x2="1" y1="0" y2="1">
@@ -74,7 +74,7 @@ const icon = (
     <g fill="#f0fdf4" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="800" letterSpacing="1.2">
       <text x="52" y="190" fontSize="82">LOCAL</text>
       <text x="52" y="270" fontSize="82">TRAILS</text>
-      <text x="52" y="360" fontSize="98">GUIDES</text>
+      <text x="52" y="360" fontSize="98">EXPERTS</text>
     </g>
 
     <circle cx="428" cy="186" r="44" fill="#22c55e" />
@@ -237,9 +237,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     <nav className="relative z-20 bg-green-800 text-white shadow-lg">
       <div className="container mx-auto px-4 py-5">
         <div className="flex min-h-[56px] items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold leading-none">
+          <Link href="/" className="inline-flex items-center gap-3 text-2xl font-bold leading-none">
             {icon}
-            <span className="pt-0.5">Local Trails & Guides</span>
+            <span>Local Trails & Experts</span>
           </Link>
           <button
             type="button"

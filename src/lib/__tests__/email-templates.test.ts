@@ -8,7 +8,7 @@ describe('buildWelcomeEmail', () => {
       appUrl: 'https://localguides.app',
     });
 
-    expect(subject).toBe('Welcome to Local Trails & Guides');
+    expect(subject).toBe('Welcome to Local Trails & Experts');
     expect(text).toContain('Join events: https://localguides.app/events');
     expect(text).toContain('Search trails: https://localguides.app/trails');
     expect(text).toContain('Manage your profile: https://localguides.app/participants/me');

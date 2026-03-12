@@ -11,7 +11,7 @@ type Props = {
 export default function TrailImagePlaceholder({
   className = '',
   compact = false,
-  label = 'Local Trails & Guides',
+  label = 'Local Trails & Experts',
 }: Props) {
   return (
     <div

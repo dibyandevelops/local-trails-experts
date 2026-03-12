@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LOCAL TRAILS GUIDES">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LOCAL TRAILS EXPERTS">
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0%" stop-color="#14532d"/>
@@ -20,7 +20,7 @@
   <g fill="#f0fdf4" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="800" letter-spacing="1.2">
     <text x="52" y="190" font-size="82">LOCAL</text>
     <text x="52" y="270" font-size="82">TRAILS</text>
-    <text x="52" y="360" font-size="98">GUIDES</text>
+    <text x="52" y="360" font-size="98">EXPERTS</text>
   </g>
 
   <circle cx="428" cy="186" r="44" fill="#22c55e"/>
