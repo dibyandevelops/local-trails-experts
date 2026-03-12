@@ -61,6 +61,10 @@ export async function GET(request: NextRequest) {
       paramIndex++;
     } else if (auth?.role === 'admin') {
       whereClause += ` AND status = 'approved'`;
+    } else if (auth?.role === 'expert') {
+      whereClause += ` AND (status = 'approved' AND is_hidden = FALSE OR t.submitted_by_user_id = $${paramIndex})`;
+      params.push(auth.sub);
+      paramIndex++;
     } else {
       whereClause += ` AND status = 'approved' AND is_hidden = FALSE`;
     }
@@ -75,7 +79,7 @@ export async function GET(request: NextRequest) {
     `;
     const listParams = [...params, pageSize, offset];
 
-    const countQuery = `SELECT COUNT(*)::int AS total FROM trails ${whereClause}`;
+    const countQuery = `SELECT COUNT(*)::int AS total FROM trails t ${whereClause}`;
 
     const [result, countResult] = await Promise.all([
       pool.query(listQuery, listParams),

@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchExpertStravaSummary } from '@/services/experts/experts.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { ApiPath } from '@/services/api/paths';
+import { hideTrail, unhideTrail } from '@/services/trails/trails.service';
 
 type ExpertTrailRequest = {
   id: string;
@@ -28,20 +29,34 @@ type ExpertTrailRequest = {
   trail_location: string | null;
 };
 
+type ExpertTrail = {
+  id: string;
+  name: string;
+  location: string | null;
+  sport_type: string | null;
+  difficulty: string | null;
+  created_at: string;
+  is_hidden: boolean;
+};
+
 export default function ExpertProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [trailRequests, setTrailRequests] = useState<ExpertTrailRequest[]>([]);
+  const [createdTrails, setCreatedTrails] = useState<ExpertTrail[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTrailRequests, setLoadingTrailRequests] = useState(true);
+  const [loadingTrails, setLoadingTrails] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [requestForEvent, setRequestForEvent] = useState<ExpertTrailRequest | null>(
     null
   );
+  const [hidingTrailId, setHidingTrailId] = useState<string | null>(null);
+  const [unhidingTrailId, setUnhidingTrailId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
     city: '',
@@ -81,26 +96,30 @@ export default function ExpertProfilePage() {
           return;
         }
 
-        const [eventsRes, requestsRes] = await Promise.all([
+        const [eventsRes, requestsRes, trailsRes] = await Promise.all([
           fetch(`/api/experts/${currentUser.id}/events`),
           fetch('/api/experts/me/alerts'),
+          fetch('/api/experts/me/trails'),
         ]);
         const eventsData = await eventsRes.json();
         const requestsData = await requestsRes.json();
+        const trailsData = await trailsRes.json();
         setEvents(eventsData.events || []);
         setTrailRequests(requestsData.requests || []);
+        setCreatedTrails(trailsData.trails || []);
       } catch (error) {
         console.error('Error loading expert profile', error);
       } finally {
         setLoadingEvents(false);
         setLoadingTrailRequests(false);
+        setLoadingTrails(false);
       }
     };
 
     fetchEventsAndRequests();
   }, [currentUser]);
 
-  if (loadingUser || loadingEvents || loadingTrailRequests) {
+  if (loadingUser || loadingEvents || loadingTrailRequests || loadingTrails) {
     return <div className="text-gray-600">Loading profile...</div>;
   }
 
@@ -421,6 +440,120 @@ export default function ExpertProfilePage() {
                 </button>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          Trails You Created
+        </h2>
+        {createdTrails.length === 0 ? (
+          <p className="text-sm text-gray-600">
+            You have not created any trails yet.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-3 py-2">Trail</th>
+                  <th className="px-3 py-2">Location</th>
+                  <th className="px-3 py-2">Sport</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {createdTrails.map((trail) => (
+                  <tr key={trail.id} className="border-t border-gray-200">
+                    <td className="px-3 py-3">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/trails/${trail.id}`)}
+                        className="text-sm font-semibold text-gray-900 hover:text-green-700"
+                      >
+                        {trail.name}
+                      </button>
+                    </td>
+                    <td className="px-3 py-3 text-xs text-gray-600">
+                      {trail.location || '—'}
+                    </td>
+                    <td className="px-3 py-3 text-xs text-gray-600">
+                      {trail.sport_type ? getSportLabel(trail.sport_type) : '—'}
+                    </td>
+                    <td className="px-3 py-3 text-xs text-gray-600">
+                      {trail.is_hidden ? 'Hidden' : 'Visible'}
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      {!trail.is_hidden && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const confirmed = window.confirm(
+                              `Hide trail \"${trail.name}\"? It will be hidden from the public list.`
+                            );
+                            if (!confirmed) return;
+                            try {
+                              setHidingTrailId(trail.id);
+                              await hideTrail(trail.id);
+                              setCreatedTrails((prev) =>
+                                prev.map((item) =>
+                                  item.id === trail.id
+                                    ? { ...item, is_hidden: true }
+                                    : item
+                                )
+                              );
+                            } catch (error) {
+                              alert(error instanceof Error ? error.message : 'Failed to hide trail');
+                            } finally {
+                              setHidingTrailId(null);
+                            }
+                          }}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                          disabled={hidingTrailId === trail.id}
+                        >
+                          {hidingTrailId === trail.id ? 'Hiding...' : 'Hide'}
+                        </button>
+                      )}
+                      {trail.is_hidden && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              setUnhidingTrailId(trail.id);
+                              await unhideTrail(trail.id);
+                              setCreatedTrails((prev) =>
+                                prev.map((item) =>
+                                  item.id === trail.id
+                                    ? { ...item, is_hidden: false }
+                                    : item
+                                )
+                              );
+                            } catch (error) {
+                              alert(error instanceof Error ? error.message : 'Failed to unhide trail');
+                            } finally {
+                              setUnhidingTrailId(null);
+                            }
+                          }}
+                          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                          disabled={unhidingTrailId === trail.id}
+                        >
+                          {unhidingTrailId === trail.id ? 'Unhiding...' : 'Unhide'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/trails/create?trailId=${trail.id}`)}
+                        className="ml-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

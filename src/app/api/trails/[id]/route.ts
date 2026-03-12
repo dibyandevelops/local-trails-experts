@@ -82,9 +82,6 @@ export async function PATCH(
 
     // Handle hide/unhide action using is_hidden column
     if (body.action === 'hide' || body.action === 'unhide') {
-      if (body.action === 'unhide' && !isAdmin) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
       const isHidden = body.action === 'hide';
       const result = await pool.query(
         `UPDATE trails SET is_hidden = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
