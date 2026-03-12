@@ -238,7 +238,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         <div className="flex min-h-[56px] items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold leading-none">
             {icon}
-            <span className="pt-0.5">Local Guides</span>
+            <span className="pt-0.5">Local Trails & Guides</span>
           </Link>
           <button
             type="button"

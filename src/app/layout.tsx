@@ -11,13 +11,13 @@ import './globals.css';
 import MainContent from '@/components/main-content';
 
 export const metadata: Metadata = {
-  title: 'Local Guides - Find trails and Join Events',
+  title: 'Local Trails & Guides - Find trails and Join Events',
   description: 'Find trails and join events',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Local Guides',
+    title: 'Local Trails & Guides',
   },
   icons: {
     icon: '/icons/icon.svg',

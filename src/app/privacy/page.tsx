@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-3">
         <h2 className="text-lg font-semibold text-gray-900">Overview</h2>
         <p className="text-sm text-gray-700">
-          Local Guides collects the minimum information needed to operate the
+          Local Trails & Guides collects the minimum information needed to operate the
           platform, such as your account details, contact information, and
           preferences. We only use your data to provide core features like
           events, trails, and verified expert services.
@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
         <h2 className="text-lg font-semibold text-gray-900">Strava Compliance</h2>
         <p className="text-sm text-gray-700">
           If you choose to connect Strava, we access Strava data only with your
-          explicit permission and only to power features inside Local Guides.
+          explicit permission and only to power features inside Local Trails & Guides.
           Strava data is visible only to the connected user and is not shared
           with other users. You can disconnect Strava at any time from your
           profile.

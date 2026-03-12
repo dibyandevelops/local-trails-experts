@@ -78,7 +78,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           />
         ) : (
-          <TrailImagePlaceholder className="h-40 w-full" label="Local Guides" />
+          <TrailImagePlaceholder className="h-40 w-full" label="Local Trails & Guides" />
         )}
         {trail.onViewMap && (
           <button

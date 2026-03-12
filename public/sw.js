@@ -66,11 +66,11 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { notification: { title: 'Local Guides', body: event.data.text() } };
+    payload = { notification: { title: 'Local Trails & Guides', body: event.data.text() } };
   }
 
   const title =
-    payload?.notification?.title || payload?.data?.title || 'Local Guides';
+    payload?.notification?.title || payload?.data?.title || 'Local Trails & Guides';
   const body =
     payload?.notification?.body ||
     payload?.data?.body ||

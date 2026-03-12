@@ -48,7 +48,7 @@ export default function Footer() {
             Trails, events, and local experts for outdoor sports.
           </p>
           <p className="text-xs text-gray-500 dark:text-slate-400">
-            © {year} {brand}. All rights reserved. {brand} and Local Guides are
+            © {year} {brand}. All rights reserved. {brand} and Local Trails & Guides are
             trademarks or registered trademarks of their respective owners.
           </p>
         </div>

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const title =
-      String(body?.title || '').trim() || 'Local Guides Notification';
+      String(body?.title || '').trim() || 'Local Trails & Guides Notification';
     const message =
       String(body?.message || '').trim() ||
       'Push notifications are now enabled on this device.';
