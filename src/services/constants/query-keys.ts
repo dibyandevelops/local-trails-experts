@@ -88,5 +88,6 @@ export const QUERY_KEYS = {
       ['admin', 'expert-applications', status || 'all'] as const,
     pendingTrails: ['admin', 'pending-trails'] as const,
     trailRequests: ['admin', 'trail-requests'] as const,
+    users: (role?: string) => ['admin', 'users', role || 'all'] as const,
   },
 } as const;

@@ -52,6 +52,17 @@ export type TrailInterestRequest = {
   created_at: string;
 };
 
+export type AdminUser = {
+  id: string;
+  name: string | null;
+  email: string;
+  role: 'expert' | 'participant' | 'admin';
+  city: string | null;
+  sports: string[] | null;
+  phone: string | null;
+  created_at: string;
+};
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
     const apiError = error.response?.data as { error?: string } | undefined;
@@ -141,5 +152,28 @@ export async function fetchAdminTrailRequests() {
     return data.requests || [];
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to fetch trail requests'));
+  }
+}
+
+export async function fetchAdminUsers(role: 'expert' | 'participant') {
+  try {
+    const { data } = await apiClient.get<{ users: AdminUser[] }>(
+      '/api/admin/users',
+      { params: { role } }
+    );
+    return data.users || [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to fetch users'));
+  }
+}
+
+export async function deleteAdminUser(userId: string) {
+  try {
+    const { data } = await apiClient.delete<{ success?: boolean }>(
+      `/api/admin/users/${userId}`
+    );
+    return data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to delete user'));
   }
 }
