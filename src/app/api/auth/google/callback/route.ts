@@ -5,6 +5,7 @@ import { getAuthFromRequest, setAuthCookie, signAuthToken } from '@/lib/auth';
 const STATE_COOKIE = 'mtb_google_oauth_state';
 const NEXT_COOKIE = 'mtb_google_oauth_next';
 const MODE_COOKIE = 'mtb_google_oauth_mode';
+const ROLE_COOKIE = 'mtb_google_oauth_role';
 
 type GoogleUserInfo = {
   sub?: string;
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
   const expectedState = request.cookies.get(STATE_COOKIE)?.value;
   const next = request.cookies.get(NEXT_COOKIE)?.value || '/trails';
   const mode = request.cookies.get(MODE_COOKIE)?.value === 'connect' ? 'connect' : 'login';
+  const role = request.cookies.get(ROLE_COOKIE)?.value === 'expert' ? 'expert' : 'participant';
 
   if (!code || !state || !expectedState || state !== expectedState) {
     const res = NextResponse.redirect(
@@ -40,6 +42,7 @@ export async function GET(request: NextRequest) {
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+    res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
     return res;
   }
 
@@ -63,6 +66,7 @@ export async function GET(request: NextRequest) {
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+    res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
     return res;
   }
 
@@ -75,6 +79,7 @@ export async function GET(request: NextRequest) {
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+    res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
     return res;
   }
 
@@ -90,6 +95,7 @@ export async function GET(request: NextRequest) {
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+    res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
     return res;
   }
 
@@ -110,13 +116,17 @@ export async function GET(request: NextRequest) {
 
   if (mode === 'connect') {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'participant') {
+    if (!auth || auth.role !== role) {
       const res = NextResponse.redirect(
-        new URL('/?login=1&role=participant&message=Please sign in to connect Google.', baseUrl)
+        new URL(
+          `/?login=1&role=${role}&message=Please sign in to connect Google.`,
+          baseUrl
+        )
       );
       res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
       res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
       res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+      res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
       return res;
     }
 
@@ -125,13 +135,17 @@ export async function GET(request: NextRequest) {
       [auth.sub]
     );
     const meRow = me.rows[0];
-    if (!meRow || meRow.role !== 'participant') {
+    if (!meRow || meRow.role !== role) {
       const res = NextResponse.redirect(
-        new URL('/?login=1&role=participant&message=Please sign in to connect Google.', baseUrl)
+        new URL(
+          `/?login=1&role=${role}&message=Please sign in to connect Google.`,
+          baseUrl
+        )
       );
       res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
       res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
       res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+      res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
       return res;
     }
 
@@ -139,7 +153,7 @@ export async function GET(request: NextRequest) {
       const res = NextResponse.redirect(
         new URL(
           `/?login=1&message=${encodeURIComponent(
-            'Google email must match your participant account email to connect.'
+            `Google email must match your ${role} account email to connect.`
           )}`,
           baseUrl
         )
@@ -147,6 +161,7 @@ export async function GET(request: NextRequest) {
       res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
       res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
       res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+      res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
       return res;
     }
 
@@ -166,6 +181,7 @@ export async function GET(request: NextRequest) {
       res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
       res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
       res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+      res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
       return res;
     }
 
@@ -174,26 +190,29 @@ export async function GET(request: NextRequest) {
       [sub, auth.sub]
     );
 
+    const successPath = role === 'expert' ? '/experts/me' : '/participants/me';
     const res = NextResponse.redirect(
-      new URL('/participants/me?message=google_connected', baseUrl)
+      new URL(`${successPath}?message=google_connected`, baseUrl)
     );
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+    res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
     return res;
   }
 
-  // LOGIN mode: only allow if a participant account exists AND it's connected to Google.
+  // LOGIN mode: only allow if the account exists for the role and it's connected to Google.
   const existing = await pool.query(
     'SELECT id, role, email, google_sub FROM users WHERE email = $1 AND role = $2 LIMIT 1',
-    [email, 'participant']
+    [email, role]
   );
 
   if (!existing.rows[0]) {
+    const registerPath = role === 'expert' ? '/experts/join' : '/register';
     const res = NextResponse.redirect(
       new URL(
-        `/register?message=${encodeURIComponent(
-          'No participant account found for this Google email. Please register first.'
+        `${registerPath}?message=${encodeURIComponent(
+          `No ${role} account found for this Google email. Please register first.`
         )}`,
         baseUrl
       )
@@ -201,14 +220,15 @@ export async function GET(request: NextRequest) {
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+    res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
     return res;
   }
 
   if (!existing.rows[0].google_sub) {
     const res = NextResponse.redirect(
       new URL(
-        `/?login=1&role=participant&message=${encodeURIComponent(
-          'Google login is not enabled for this account yet. Sign in with password and connect Google in your profile.'
+        `/?login=1&role=${role}&message=${encodeURIComponent(
+          `Google login is not enabled for this account yet. Sign in with password and connect Google in your profile.`
         )}`,
         baseUrl
       )
@@ -216,14 +236,15 @@ export async function GET(request: NextRequest) {
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+    res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
     return res;
   }
 
   if (existing.rows[0].google_sub !== sub) {
     const res = NextResponse.redirect(
       new URL(
-        `/?login=1&role=participant&message=${encodeURIComponent(
-          'This Google account does not match the one connected to your participant profile.'
+        `/?login=1&role=${role}&message=${encodeURIComponent(
+          `This Google account does not match the one connected to your ${role} profile.`
         )}`,
         baseUrl
       )
@@ -231,12 +252,13 @@ export async function GET(request: NextRequest) {
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+    res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
     return res;
   }
 
   const userId = existing.rows[0].id as string;
 
-  const token = signAuthToken({ sub: userId, role: 'participant', email });
+  const token = signAuthToken({ sub: userId, role, email });
   await pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [userId]);
 
   const res = NextResponse.redirect(new URL(next, baseUrl));
@@ -244,5 +266,6 @@ export async function GET(request: NextRequest) {
   res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
   res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
   res.cookies.set(MODE_COOKIE, '', { maxAge: 0, path: '/' });
+  res.cookies.set(ROLE_COOKIE, '', { maxAge: 0, path: '/' });
   return res;
 }

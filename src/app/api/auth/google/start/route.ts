@@ -5,6 +5,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 const STATE_COOKIE = 'mtb_google_oauth_state';
 const NEXT_COOKIE = 'mtb_google_oauth_next';
 const MODE_COOKIE = 'mtb_google_oauth_mode';
+const ROLE_COOKIE = 'mtb_google_oauth_role';
 
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -18,12 +19,17 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const next = url.searchParams.get('next') || '/trails';
   const mode = url.searchParams.get('mode') === 'connect' ? 'connect' : 'login';
+  const roleParam = url.searchParams.get('role');
+  const role = roleParam === 'expert' ? 'expert' : 'participant';
 
   if (mode === 'connect') {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'participant') {
+    if (!auth || auth.role !== role) {
       return NextResponse.redirect(
-        new URL('/?login=1&role=participant&message=Please sign in as a participant to connect Google.', baseUrl)
+        new URL(
+          `/?login=1&role=${role}&message=Please sign in as a ${role} to connect Google.`,
+          baseUrl
+        )
       );
     }
   }
@@ -56,6 +62,13 @@ export async function GET(request: NextRequest) {
     path: '/',
   });
   res.cookies.set(MODE_COOKIE, mode, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 10,
+    path: '/',
+  });
+  res.cookies.set(ROLE_COOKIE, role, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
