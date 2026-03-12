@@ -50,7 +50,7 @@ const icon = (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
     role="img"
-    aria-label="LOCAL GUIDES"
+    aria-label="LOCAL TRAILS GUIDES"
     className="h-9 w-9 shrink-0"
   >
     <defs>
@@ -71,9 +71,10 @@ const icon = (
     <path d="M488 428L436 382L386 408L330 350L282 376L226 320L172 348L118 292L56 320" fill="none" stroke="#fff" strokeOpacity=".24" strokeWidth="13" strokeLinecap="round" />
     <path d="M258 28L276 82L232 126L294 170L248 216L312 262L266 306L330 352L286 410L338 484" fill="none" stroke="#fff" strokeOpacity=".19" strokeWidth="12" strokeLinecap="round" />
 
-    <g fill="#f0fdf4" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="800" letterSpacing="1.4">
-      <text x="52" y="214" fontSize="100">LOCAL</text>
-      <text x="52" y="330" fontSize="100">GUIDES</text>
+    <g fill="#f0fdf4" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="800" letterSpacing="1.2">
+      <text x="52" y="190" fontSize="82">LOCAL</text>
+      <text x="52" y="270" fontSize="82">TRAILS</text>
+      <text x="52" y="360" fontSize="98">GUIDES</text>
     </g>
 
     <circle cx="428" cy="186" r="44" fill="#22c55e" />
