@@ -12,6 +12,7 @@ import {
 } from '@/services/experts/experts.service';
 import { getSportLabel } from '@/services/constants/sports';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -20,6 +21,11 @@ interface ExpertDetail extends User {
 export default function ExpertDetailPage() {
   const params = useParams<{ id: string }>();
   const expertId = params?.id;
+  const { data: currentUser } = useCurrentUser();
+  const canViewStrava =
+    Boolean(currentUser?.id) &&
+    currentUser?.role === 'expert' &&
+    currentUser?.id === expertId;
 
   const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
     queryKey: ['expert-detail', expertId || ''],
@@ -41,7 +47,7 @@ export default function ExpertDetailPage() {
   const { data: strava } = useQuery({
     queryKey: QUERY_KEYS.experts.strava(expertId || ''),
     queryFn: ({ signal }) => fetchExpertStravaSummary(expertId || '', signal),
-    enabled: !!expertId,
+    enabled: !!expertId && canViewStrava,
   });
 
   if (loading) {
@@ -136,7 +142,7 @@ export default function ExpertDetailPage() {
             <p className="text-lg font-semibold text-gray-900">{sports.length}</p>
           </div>
         </div>
-        {strava?.connected && (
+        {canViewStrava && strava?.connected && (
           <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-3 py-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">
@@ -159,6 +165,19 @@ export default function ExpertDetailPage() {
                 <p className="text-[11px] text-orange-700">YTD Km</p>
                 <p className="text-base font-semibold text-orange-900">{ytdDistanceKm}</p>
               </div>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-orange-700">
+              {strava?.profile?.id && (
+                <a
+                  href={`https://www.strava.com/athletes/${strava.profile.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-orange-700 underline decoration-orange-400"
+                >
+                  View on Strava
+                </a>
+              )}
+              <span className="uppercase tracking-wide">Powered by Strava</span>
             </div>
           </div>
         )}

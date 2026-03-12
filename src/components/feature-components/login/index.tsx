@@ -239,7 +239,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             href={`${ApiPath.StravaAuthorize}?mode=login`}
             className="inline-flex w-full items-center justify-center rounded-lg border border-orange-300 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-900 transition-colors hover:bg-orange-100 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-200 dark:hover:bg-orange-900/50"
           >
-            Continue With Strava (Experts)
+            Connect with Strava (Experts)
           </Link>
         )}
         {!embedded && role === 'participant' && (

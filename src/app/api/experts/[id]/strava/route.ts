@@ -95,6 +95,13 @@ export async function GET(request: NextRequest, { params }: Params) {
       }
     }
 
+    if (!isSelf) {
+      return NextResponse.json(
+        { connected: false, profile: null, stats: null, syncedAt: null },
+        { status: 200 }
+      );
+    }
+
     return NextResponse.json(
       {
         connected,

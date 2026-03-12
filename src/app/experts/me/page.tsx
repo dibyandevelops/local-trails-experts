@@ -128,7 +128,7 @@ export default function ExpertProfilePage() {
               href={`${ApiPath.StravaAuthorize}?mode=connect`}
               className="inline-flex items-center rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 hover:bg-orange-100"
             >
-              Connect Strava
+              Connect with Strava
             </Link>
           )}
           {stravaSummary?.syncedAt && (
@@ -137,6 +137,21 @@ export default function ExpertProfilePage() {
             </span>
           )}
         </div>
+        {stravaSummary?.connected && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 text-[11px] text-orange-700">
+            {stravaSummary?.profile?.id && (
+              <a
+                href={`https://www.strava.com/athletes/${stravaSummary.profile.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-orange-700 underline decoration-orange-400"
+              >
+                View on Strava
+              </a>
+            )}
+            <span className="uppercase tracking-wide">Powered by Strava</span>
+          </div>
+        )}
         {user.is_verified_expert && (
           <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold mb-4">
             Verified Expert

@@ -107,6 +107,11 @@ export default function Footer() {
                 Find experts
               </Link>
             </li>
+            <li>
+              <Link className="hover:underline" href="/privacy">
+                Privacy policy
+              </Link>
+            </li>
           </ul>
           <p className="text-xs text-gray-500 dark:text-slate-400">
             Want something like this for your community or destination? Use the
@@ -117,4 +122,3 @@ export default function Footer() {
     </footer>
   );
 }
-
