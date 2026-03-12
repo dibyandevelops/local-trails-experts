@@ -15,35 +15,37 @@ export default function CreateTrailPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-4xl font-bold mb-6 text-green-800">
+      <h1 className="text-4xl font-bold mb-6 text-green-800 dark:text-green-200">
         {isEditMode ? 'Edit Trail' : 'Create Trail'}
       </h1>
 
       {loadingUser ? (
-        <p className="text-gray-600">Loading user...</p>
+        <p className="text-gray-600 dark:text-gray-300">Loading user...</p>
       ) : !user ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-200">
           Unable to load user session. Please login again.
         </div>
       ) : (
-        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {!isEditMode && user?.role === 'expert' && (
-            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
               Expert-submitted trails require admin approval before they appear in event trail options.
             </p>
           )}
 
           {isEditMode ? (
-            user.role === 'admin' && trailId ? (
-              <TrailEditForm trailId={trailId} />
+            user.role === 'admin' || user.role === 'expert' ? (
+              trailId ? (
+                <TrailEditForm trailId={trailId} />
+              ) : null
             ) : (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-                Only admins can edit trails.
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-200">
+                Only admins or the trail owner can edit trails.
               </div>
             )
           ) : (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Add up to 5 trails per submission. Fill each section and click &quot;Add another trail&quot; to include more, then submit.
               </p>
               <MultiTrailSubmissionForm

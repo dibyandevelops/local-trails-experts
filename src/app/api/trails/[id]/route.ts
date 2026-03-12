@@ -60,15 +60,31 @@ export async function PATCH(
 ) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = params;
     const body = await request.json() as Partial<Trail> & { action?: 'hide' | 'unhide' | 'delete' };
 
+    const existing = await pool.query('SELECT * FROM trails WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+    }
+
+    const trail = existing.rows[0];
+    const isAdmin = auth.role === 'admin';
+    const isOwnerExpert = auth.role === 'expert' && trail.submitted_by_user_id === auth.sub;
+
+    if (!isAdmin && !isOwnerExpert) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Handle hide/unhide action using is_hidden column
     if (body.action === 'hide' || body.action === 'unhide') {
+      if (body.action === 'unhide' && !isAdmin) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       const isHidden = body.action === 'hide';
       const result = await pool.query(
         `UPDATE trails SET is_hidden = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
@@ -84,6 +100,9 @@ export async function PATCH(
 
     // Handle delete action
     if (body.action === 'delete') {
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       const result = await pool.query(
         'DELETE FROM trails WHERE id = $1 RETURNING id',
         [id]
@@ -102,19 +121,6 @@ export async function PATCH(
       'safety_labels'
     );
 
-    if (hasSafetyLabelsField && auth.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Only admins can update safety labels' },
-        { status: 403 }
-      );
-    }
-
-    const existing = await pool.query('SELECT * FROM trails WHERE id = $1', [id]);
-    if (existing.rows.length === 0) {
-      return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
-    }
-
-    const trail = existing.rows[0];
     const result = await pool.query(
       `
       UPDATE trails
@@ -149,10 +155,8 @@ export async function PATCH(
         body.estimated_time_hours ?? trail.estimated_time_hours,
         body.image_url ?? trail.image_url,
         body.trail_images ?? trail.trail_images ?? [],
-        auth.role === 'admin'
-          ? hasSafetyLabelsField
-            ? normalizeSafetyLabels(body.safety_labels)
-            : trail.safety_labels ?? []
+        hasSafetyLabelsField
+          ? normalizeSafetyLabels(body.safety_labels)
           : trail.safety_labels ?? [],
         id,
       ]
@@ -168,32 +172,9 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = params;
-    const result = await pool.query(
-      'DELETE FROM trails WHERE id = $1 RETURNING id',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error('Error deleting trail:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete trail' },
-      { status: 500 }
-    );
-  }
+export async function DELETE() {
+  return NextResponse.json(
+    { error: 'Delete is not supported. Use PATCH action=hide or action=delete.' },
+    { status: 405 }
+  );
 }

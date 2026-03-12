@@ -149,9 +149,9 @@ export async function updateTrail(trailId: string, payload: Partial<Trail>) {
 
 export async function deleteTrail(trailId: string) {
   try {
-    const { data } = await apiClient.delete<{ success: boolean }>(
+    const { data } = await apiClient.patch<{ success: boolean }>(
       `${ApiPath.Trails}/${trailId}`,
-      { data: { action: 'delete' } }
+      { action: 'delete' }
     );
     return data;
   } catch (error) {

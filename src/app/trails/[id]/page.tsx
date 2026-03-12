@@ -18,7 +18,7 @@ import { Trail, RouteData, User, SportType } from '@/types';
 import {
   getSafetyLabelText,
   TRAIL_SAFETY_OPTIONS,
-  TrailSafetyLabel,
+  type TrailSafetyLabel,
 } from '@/lib/trail-safety';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
@@ -28,6 +28,7 @@ import { fetchVerifiedExperts } from '@/services/events/events.service';
 import {
   deleteTrail,
   fetchTrailById,
+  hideTrail,
   requestTrail,
   updateTrail,
   uploadTrailRoute,
@@ -144,6 +145,15 @@ const TrailPage: React.FunctionComponent = () => {
     },
   });
 
+  const hideTrailMutation = useMutation({
+    mutationFn: () => hideTrail(trailId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
+      setAdminMessage('Trail hidden.');
+    },
+  });
+
+
   const requestTrailMutation = useMutation({
     mutationFn: () =>
       requestTrail(trailId, {
@@ -199,6 +209,9 @@ const TrailPage: React.FunctionComponent = () => {
   };
 
   const isAdmin = currentUser?.role === 'admin';
+  const isOwnerExpert =
+    currentUser?.role === 'expert' && trail?.submitted_by_user_id === currentUser?.id;
+  const canManageTrail = isAdmin || isOwnerExpert;
   const canUploadRoute = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canRequestTrail = Boolean(currentUser);
 
@@ -211,7 +224,7 @@ const TrailPage: React.FunctionComponent = () => {
   };
 
   const handleSaveSafetyLabels = async () => {
-    if (!isAdmin || !trail) return;
+    if (!canManageTrail || !trail) return;
     setAdminMessage(null);
     try {
       await updateTrailMutation.mutateAsync({ safety_labels: safetyDraft });
@@ -224,15 +237,21 @@ const TrailPage: React.FunctionComponent = () => {
   };
 
   const handleDeleteTrail = async () => {
-    if (!isAdmin || !trail) return;
+    if (!canManageTrail || !trail) return;
     const confirmed = window.confirm(
-      `Delete trail \"${trail.name}\"? This action cannot be undone.`
+      isAdmin
+        ? `Delete trail \"${trail.name}\"? This action cannot be undone.`
+        : `Hide trail \"${trail.name}\"? It will no longer appear in public listings.`
     );
     if (!confirmed) return;
 
     setAdminMessage(null);
     try {
-      await deleteTrailMutation.mutateAsync();
+      if (isAdmin) {
+        await deleteTrailMutation.mutateAsync();
+      } else {
+        await hideTrailMutation.mutateAsync();
+      }
     } catch (err) {
       setAdminMessage(err instanceof Error ? err.message : 'Failed to delete trail');
     }
@@ -626,11 +645,13 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         )}
 
-        {isAdmin && (
+        {canManageTrail && (
           <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <h2 className="mb-2 text-base font-semibold text-gray-900">Admin Trail Controls</h2>
+            <h2 className="mb-2 text-base font-semibold text-gray-900">
+              Safety Labels
+            </h2>
             <p className="mb-3 text-sm text-gray-600">
-              Add safety labels or remove this trail.
+              Update safety labels and manage this trail.
             </p>
             <div className="mb-3 flex flex-wrap gap-2">
               {TRAIL_SAFETY_OPTIONS.map((option) => {
@@ -640,9 +661,11 @@ const TrailPage: React.FunctionComponent = () => {
                     key={option.value}
                     type="button"
                     onClick={() => toggleSafetyLabel(option.value)}
-                    className={`rounded-full border px-3 py-1 text-sm ${selected
-                      ? 'border-amber-600 bg-amber-500 text-white'
-                      : 'border-gray-300 bg-white text-gray-700 hover:border-amber-400'}`}
+                    className={`rounded-full border px-3 py-1 text-sm ${
+                      selected
+                        ? 'border-amber-600 bg-amber-500 text-white'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-amber-400'
+                    }`}
                   >
                     {option.label}
                   </button>
@@ -685,10 +708,12 @@ const TrailPage: React.FunctionComponent = () => {
               <button
                 type="button"
                 onClick={handleDeleteTrail}
-                disabled={deleteTrailMutation.isPending}
+                disabled={deleteTrailMutation.isPending || hideTrailMutation.isPending}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {deleteTrailMutation.isPending ? 'Deleting...' : 'Delete Trail'}
+                {deleteTrailMutation.isPending || hideTrailMutation.isPending
+                  ? 'Deleting...'
+                  : 'Delete Trail'}
               </button>
             </div>
             {adminMessage && (
@@ -696,6 +721,7 @@ const TrailPage: React.FunctionComponent = () => {
             )}
           </div>
         )}
+
       </div>
 
       {hasRoute ? (
