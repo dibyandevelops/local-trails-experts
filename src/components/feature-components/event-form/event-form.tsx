@@ -1050,16 +1050,10 @@ export default function EventForm({
             {currentUser?.role && (
               <TrailSubmissionForm
                 userRole={currentUser.role}
-                submitLabel="Submit Trail for Approval"
+                submitLabel="Create Trail"
                 compact
                 onSuccess={(data) => {
-                  if (data.requiresApproval) {
-                    setRequestMessage(
-                      'Trail submitted for admin approval. Please refresh trails in a moment.'
-                    );
-                  } else {
                     setRequestMessage('Trail created and available now. Refresh and select it.');
-                  }
                 }}
               />
             )}
