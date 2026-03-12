@@ -115,6 +115,7 @@ export interface CreateEventInput {
   price_npr?: number;
   qr_image_url?: string;
   host_user_id?: string | null;
+  trail_request_id?: string;
 }
 
 export interface JoinEventInput {

@@ -638,8 +638,12 @@ export default function ExpertProfilePage() {
                   requestedByName={requestForEvent.requester_name || 'Participant'}
                   requestedByEmail={requestForEvent.requester_email}
                   requestedDate={requestForEvent.preferred_date || ''}
+                  requestedTrailRequestId={requestForEvent.id}
                   onCompleted={() => {
                     setCreateEventOpen(false);
+                    setTrailRequests((prev) =>
+                      prev.filter((request) => request.id !== requestForEvent.id)
+                    );
                     setRequestForEvent(null);
                   }}
                   onCancel={() => {

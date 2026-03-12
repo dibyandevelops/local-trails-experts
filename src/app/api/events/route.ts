@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
       price_npr = 0,
       qr_image_url,
       host_user_id,
+      trail_request_id,
     } = body;
 
     if (auth.role === 'expert') {
@@ -222,6 +223,22 @@ export async function POST(request: NextRequest) {
     ]);
 
     const event: Event = result.rows[0];
+
+    if (trail_request_id) {
+      if (auth.role === 'admin') {
+        await pool.query('DELETE FROM trail_interest_requests WHERE id = $1', [
+          trail_request_id,
+        ]);
+      } else {
+        await pool.query(
+          `
+          DELETE FROM trail_interest_requests
+          WHERE id = $1 AND assigned_expert_user_id = $2
+        `,
+          [trail_request_id, auth.sub]
+        );
+      }
+    }
 
     return NextResponse.json({ event }, { status: 201 });
   } catch (error) {

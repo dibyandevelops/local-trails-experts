@@ -110,6 +110,7 @@ type EventFormProps = {
   requestedByName?: string;
   requestedByEmail?: string;
   requestedDate?: string;
+  requestedTrailRequestId?: string;
   lockEventDate?: boolean;
   onCompleted?: (eventId: string) => void;
   onCancel?: () => void;
@@ -127,6 +128,7 @@ export default function EventForm({
   requestedByName = '',
   requestedByEmail = '',
   requestedDate = '',
+  requestedTrailRequestId,
   lockEventDate = false,
   onCompleted,
   onCancel,
@@ -548,6 +550,7 @@ export default function EventForm({
         price_npr: values.is_paid_event ? values.price_npr ?? 0 : 0,
         qr_image_url: values.qr_image_url || undefined,
         host_user_id: values.host_user_id || undefined,
+        trail_request_id: requestedTrailRequestId || undefined,
       };
 
       if (isEditMode && editEventId) {
