@@ -228,10 +228,18 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         </button>
         {role === 'participant' && (
           <Link
-            href={`/api/auth/google/start?mode=login&next=${encodeURIComponent(next || '/trails')}`}
+            href={`/api/auth/google/start?mode=login&role=participant&next=${encodeURIComponent(next || '/trails')}`}
             className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
           >
             Continue with Google (Participants)
+          </Link>
+        )}
+        {role === 'expert' && (
+          <Link
+            href={`/api/auth/google/start?mode=login&role=expert&next=${encodeURIComponent(next || '/experts/me')}`}
+            className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+          >
+            Continue with Google (Experts)
           </Link>
         )}
         {role === 'expert' && (
