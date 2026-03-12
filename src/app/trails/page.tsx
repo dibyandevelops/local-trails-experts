@@ -758,8 +758,8 @@ function TrailsPageContent() {
 
   return (
     <div>
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-green-800 sm:text-3xl md:text-4xl">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-green-800 sm:text-3xl md:text-4xl dark:text-green-200">
           Search Trails
         </h1>
         <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -797,6 +797,69 @@ function TrailsPageContent() {
             </button>
           )}
         </div>
+      </div>
+
+      <div className="mb-6 grid gap-3 md:grid-cols-2">
+        {(user?.role !== 'expert') && (
+          <div className="group rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-200">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                  <path
+                    d="M12 3l4 7-4 11-4-11 4-7z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
+                For Participants
+              </p>
+            </div>
+            <p>
+              Discover local trails with safety tags, distance, and difficulty. Request a
+              guided outing from verified experts when you&apos;re ready.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push('/events')}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+            >
+              Explore events
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        )}
+        {(user?.role !== 'participant') && (
+          <div className="group rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                  <path
+                    d="M4 12h16M12 4v16"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
+                For Experts
+              </p>
+            </div>
+            <p>
+              Publish your best trails, manage safety labels, and showcase routes that help
+              your community discover guided experiences.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push('/trails/create')}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+            >
+              Create a trail
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSearch} className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6">
