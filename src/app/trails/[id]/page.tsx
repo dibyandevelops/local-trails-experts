@@ -141,6 +141,9 @@ const TrailPage: React.FunctionComponent = () => {
     mutationFn: () => deleteTrail(trailId),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
+      queryClient.invalidateQueries({ queryKey: ['trails'] });
+      queryClient.invalidateQueries({ queryKey: ['trails-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['trails-infinite'] });
       router.push('/trails');
     },
   });
@@ -149,6 +152,9 @@ const TrailPage: React.FunctionComponent = () => {
     mutationFn: () => hideTrail(trailId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
+      queryClient.invalidateQueries({ queryKey: ['trails'] });
+      queryClient.invalidateQueries({ queryKey: ['trails-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['trails-infinite'] });
       setAdminMessage('Trail hidden.');
     },
   });
