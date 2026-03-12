@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import type { UserRole } from '@/types';
 import { loginUser } from '@/services/auth/auth.service';
@@ -37,11 +37,13 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   { initialRole = 'participant', embedded = false, onLoggedIn, next = null },
 ) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [role, setRole] = React.useState<UserRole>(initialRole);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [notice, setNotice] = React.useState<string | null>(null);
   const errorRef = React.useRef<HTMLParagraphElement | null>(null);
 
   React.useEffect(() => {
@@ -53,6 +55,11 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
       errorRef.current?.focus();
     }
   }, [error]);
+
+  React.useEffect(() => {
+    const message = searchParams?.get('message');
+    setNotice(message ? decodeURIComponent(message) : null);
+  }, [searchParams]);
 
   const loginMutation = useMutation({
     mutationFn: loginUser,
@@ -112,6 +119,15 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
         noValidate
       >
+        {notice && !error && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
+          >
+            {notice}
+          </div>
+        )}
         <fieldset>
           <legend className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
             Role
