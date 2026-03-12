@@ -22,8 +22,8 @@ function getEmailConfig() {
     smtpUser: (process.env.SMTP_USER || defaultMailbox).trim(),
     // Gmail app passwords are often copied with spaces; strip whitespace.
     smtpPass: rawPass.replace(/\s+/g, ''),
-    // Temporary safety routing: all outgoing mail lands in one inbox.
-    overrideTo: (process.env.EMAIL_OVERRIDE_TO || defaultMailbox).trim(),
+    // Optional safety routing: if set, all outgoing mail lands in one inbox.
+    overrideTo: (process.env.EMAIL_OVERRIDE_TO || '').trim(),
   };
 }
 
