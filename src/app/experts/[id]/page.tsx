@@ -51,16 +51,20 @@ export default function ExpertDetailPage() {
   });
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-600">Loading...</div>;
+    return (
+      <div className="text-center py-12 text-gray-600 dark:text-slate-300">
+        Loading...
+      </div>
+    );
   }
 
   if (!expert) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600 mb-4">Expert not found.</p>
+        <p className="text-gray-600 dark:text-slate-300 mb-4">Expert not found.</p>
         <Link
           href="/experts"
-          className="inline-flex px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800"
+          className="inline-flex px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
         >
           Back to experts
         </Link>
@@ -82,35 +86,44 @@ export default function ExpertDetailPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <section className="overflow-hidden rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-emerald-100 p-6 shadow-sm">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">
+      <section className="overflow-hidden rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-emerald-100 p-6 shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/60 dark:to-emerald-900/40">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-emerald-200">
           Expert Showcase
         </p>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="mb-1 text-xs text-gray-600">
-              <Link href="/experts" className="underline hover:text-green-700">
+            <p className="mb-1 text-xs text-gray-600 dark:text-slate-300">
+              <Link
+                href="/experts"
+                className="underline hover:text-green-700 dark:hover:text-emerald-200"
+              >
                 All experts
               </Link>{' '}
               / Profile
             </p>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {expert.name || 'Local Expert'}
             </h1>
-            {expert.city && <p className="mt-1 text-sm text-gray-700">{expert.city}</p>}
+            {expert.city && (
+              <p className="mt-1 text-sm text-gray-700 dark:text-slate-200">
+                {expert.city}
+              </p>
+            )}
             {expert.bio && (
-              <p className="mt-3 max-w-2xl text-sm text-gray-700">{expert.bio}</p>
+              <p className="mt-3 max-w-2xl text-sm text-gray-700 dark:text-slate-200">
+                {expert.bio}
+              </p>
             )}
           </div>
           <div className="flex flex-col items-start gap-2 md:items-end">
             {expert.is_verified_expert && (
-              <span className="inline-flex items-center rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white">
+              <span className="inline-flex items-center rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white dark:bg-emerald-400 dark:text-emerald-950">
                 Verified Expert
               </span>
             )}
             <Link
               href={`/events?expert=${expert.id}`}
-              className="rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800"
+              className="rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
             >
               View All Events
             </Link>
@@ -121,7 +134,7 @@ export default function ExpertDetailPage() {
             {sports.map((sport) => (
               <span
                 key={sport}
-                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm"
+                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100"
               >
                 {getSportLabel(sport)}
               </span>
@@ -129,50 +142,74 @@ export default function ExpertDetailPage() {
           </div>
         )}
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
-          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500">Total Events</p>
-            <p className="text-lg font-semibold text-gray-900">{expert.events.length}</p>
+          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
+              Total Events
+            </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              {expert.events.length}
+            </p>
           </div>
-          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500">Upcoming</p>
-            <p className="text-lg font-semibold text-gray-900">{upcomingEvents.length}</p>
+          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
+              Upcoming
+            </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              {upcomingEvents.length}
+            </p>
           </div>
-          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500">Sports</p>
-            <p className="text-lg font-semibold text-gray-900">{sports.length}</p>
+          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
+              Sports
+            </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              {sports.length}
+            </p>
           </div>
         </div>
         {canViewStrava && strava?.connected && (
-          <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-3 py-3">
+          <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-3 py-3 dark:border-orange-900/70 dark:bg-orange-950/40">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">
+              <p className="text-xs font-semibold uppercase tracking-wide text-orange-700 dark:text-orange-200">
                 Strava Activity
               </p>
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-800">
+              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-800 dark:bg-orange-900/60 dark:text-orange-100">
                 Connected
               </span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <p className="text-[11px] text-orange-700">Lifetime Rides</p>
-                <p className="text-base font-semibold text-orange-900">{lifetimeRideCount}</p>
+                <p className="text-[11px] text-orange-700 dark:text-orange-200">
+                  Lifetime Rides
+                </p>
+                <p className="text-base font-semibold text-orange-900 dark:text-orange-50">
+                  {lifetimeRideCount}
+                </p>
               </div>
               <div>
-                <p className="text-[11px] text-orange-700">Lifetime Km</p>
-                <p className="text-base font-semibold text-orange-900">{lifetimeDistanceKm}</p>
+                <p className="text-[11px] text-orange-700 dark:text-orange-200">
+                  Lifetime Km
+                </p>
+                <p className="text-base font-semibold text-orange-900 dark:text-orange-50">
+                  {lifetimeDistanceKm}
+                </p>
               </div>
               <div>
-                <p className="text-[11px] text-orange-700">YTD Km</p>
-                <p className="text-base font-semibold text-orange-900">{ytdDistanceKm}</p>
+                <p className="text-[11px] text-orange-700 dark:text-orange-200">
+                  YTD Km
+                </p>
+                <p className="text-base font-semibold text-orange-900 dark:text-orange-50">
+                  {ytdDistanceKm}
+                </p>
               </div>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-orange-700">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-orange-700 dark:text-orange-200">
               {strava?.profile?.id && (
                 <a
                   href={`https://www.strava.com/athletes/${strava.profile.id}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-semibold text-orange-700 underline decoration-orange-400"
+                  className="font-semibold text-orange-700 underline decoration-orange-400 dark:text-orange-100 dark:decoration-orange-300"
                 >
                   View on Strava
                 </a>
@@ -184,11 +221,11 @@ export default function ExpertDetailPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-3 text-gray-900">
+        <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">
           Upcoming events with {expert.name || 'this expert'}
         </h2>
         {upcomingEvents.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             No upcoming events listed yet. Check back soon or browse other
             events.
           </p>
@@ -197,30 +234,30 @@ export default function ExpertDetailPage() {
             {upcomingEvents.map((event) => (
               <div
                 key={event.id}
-                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 dark:border-slate-700 dark:bg-slate-900"
               >
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                     {event.title}
                   </h3>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
                     {format(new Date(event.event_date), 'PPP p')}
                     {event.city ? ` • ${event.city}` : ''}
                   </p>
                   {event.sport_type && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       {getSportLabel(event.sport_type)}
                     </p>
                   )}
                   {event.meeting_point && (
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-600 mt-1 dark:text-slate-300">
                       Meeting point: {event.meeting_point}
                     </p>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   {event.price_npr > 0 && (
-                    <p className="text-xs font-semibold text-gray-900">
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">
                       NPR {event.price_npr}
                     </p>
                   )}
@@ -228,7 +265,7 @@ export default function ExpertDetailPage() {
                     href={`/events?city=${encodeURIComponent(
                       event.city || ''
                     )}&sport=${encodeURIComponent(event.sport_type || '')}`}
-                    className="inline-flex px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800"
+                    className="inline-flex px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
                   >
                     View in events
                   </Link>
@@ -240,21 +277,29 @@ export default function ExpertDetailPage() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mb-3 text-gray-900">
+        <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">
           All events by this expert
         </h2>
         {expert.events.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             No events listed yet for this expert.
           </p>
         ) : (
-          <ul className="space-y-2 text-sm text-gray-700">
+          <ul className="space-y-2 text-sm text-gray-700 dark:text-slate-200">
             {expert.events.map((event) => (
               <li key={event.id}>
                 <span className="font-medium">{event.title}</span>
-                {event.city && <span className="text-gray-500"> • {event.city}</span>}
+                {event.city && (
+                  <span className="text-gray-500 dark:text-slate-400">
+                    {' '}
+                    • {event.city}
+                  </span>
+                )}
                 {event.sport_type && (
-                  <span className="text-gray-500"> • {getSportLabel(event.sport_type)}</span>
+                  <span className="text-gray-500 dark:text-slate-400">
+                    {' '}
+                    • {getSportLabel(event.sport_type)}
+                  </span>
                 )}
               </li>
             ))}
