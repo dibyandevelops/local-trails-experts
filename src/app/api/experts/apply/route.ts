@@ -29,26 +29,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const existingApp = await pool.query(
+      `
+      SELECT id, status
+      FROM expert_applications
+      WHERE email = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    if (existingApp.rows[0]?.status === 'pending') {
+      return NextResponse.json(
+        { error: 'Your expert application is already pending review.' },
+        { status: 409 }
+      );
+    }
+
     const existingUser = await pool.query(
-      'SELECT id, password_hash FROM users WHERE email = $1 LIMIT 1',
+      'SELECT id, password_hash, role, is_verified_expert FROM users WHERE email = $1 LIMIT 1',
       [email]
     );
 
     if (existingUser.rows.length > 0) {
-      // Check if user already has expert role
-      const existingUserData = await pool.query(
-        'SELECT role FROM users WHERE email = $1 LIMIT 1',
-        [email]
-      );
-
-      if (existingUserData.rows[0]?.role === 'expert') {
+      const userRow = existingUser.rows[0];
+      if (userRow.role === 'expert' && userRow.is_verified_expert) {
         return NextResponse.json(
-          { error: 'You are already registered as an expert. Please log in.' },
+          { error: 'You are already verified as an expert. Please log in.' },
           { status: 409 }
         );
       }
 
-      // Upgrade existing user to expert
+      const existingPhoneUser = await pool.query(
+        'SELECT id FROM users WHERE phone = $1 AND email <> $2 LIMIT 1',
+        [normalizedPhone, email]
+      );
+      if (existingPhoneUser.rows.length > 0) {
+        return NextResponse.json(
+          { error: 'Phone number is already registered. Please use another number.' },
+          { status: 409 }
+        );
+      }
+
       const sportsJson = Array.isArray(sports) && sports.length > 0
         ? JSON.stringify(sports)
         : null;
@@ -57,7 +80,7 @@ export async function POST(request: NextRequest) {
         `
         UPDATE users
         SET role = 'expert',
-            is_verified_expert = TRUE,
+            is_verified_expert = FALSE,
             bio = COALESCE($2, bio),
             city = COALESCE($3, city),
             sports = COALESCE($4::jsonb, sports),
@@ -65,7 +88,7 @@ export async function POST(request: NextRequest) {
         WHERE id = $1
       `,
         [
-          existingUser.rows[0].id,
+          userRow.id,
           credentials,
           city || null,
           sportsJson,
@@ -73,24 +96,48 @@ export async function POST(request: NextRequest) {
         ]
       );
 
-      const upgradeEmail = buildBrandedEmail({
-        subject: 'You are now a Verified Expert',
+      if (existingApp.rows[0]?.id) {
+        await pool.query(
+          `
+          UPDATE expert_applications
+          SET name = $1,
+              city = $2,
+              sports = $3::jsonb,
+              credentials = $4,
+              status = 'pending',
+              reviewed_at = NULL
+          WHERE id = $5
+          `,
+          [name, city || null, sportsJson, credentials, existingApp.rows[0].id]
+        );
+      } else {
+        await pool.query(
+          `
+          INSERT INTO expert_applications (name, email, city, sports, credentials, status)
+          VALUES ($1, $2, $3, $4::jsonb, $5, 'pending')
+          `,
+          [name, email, city || null, sportsJson, credentials]
+        );
+      }
+
+      const pendingEmail = buildBrandedEmail({
+        subject: 'Expert application received',
         appUrl: getAppUrl(),
-        headline: 'Verified expert access',
-        subhead: 'Your account has been upgraded.',
+        headline: 'Application submitted',
+        subhead: 'We will review your credentials shortly.',
         greetingName: name,
-        bodyHtml: 'You can now log in and start hosting events.',
-        bodyText: 'You can now log in and start hosting events.',
+        bodyHtml: 'Your expert application has been received and is pending admin review.',
+        bodyText: 'Your expert application has been received and is pending admin review.',
       });
       await sendEmailSafe({
         to: email,
-        ...upgradeEmail,
-        dedupeKey: `expert-upgrade:${email}`,
+        ...pendingEmail,
+        dedupeKey: `expert-application:pending:${email}`,
       });
 
       return NextResponse.json(
         {
-          message: 'Your account has been upgraded to expert. You can now log in.',
+          message: 'Your expert application has been submitted and is pending review.',
         },
         { status: 200 }
       );
@@ -116,10 +163,10 @@ export async function POST(request: NextRequest) {
     // Hash the user-provided password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create user directly with expert role (auto-approved)
+    // Create user with expert role (pending verification)
     const query = `
       INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert, phone)
-      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, FALSE, $8)
       RETURNING id, name, email, role, created_at
     `;
 
@@ -136,25 +183,33 @@ export async function POST(request: NextRequest) {
 
     const user = result.rows[0];
 
+    await pool.query(
+      `
+      INSERT INTO expert_applications (name, email, city, sports, credentials, status)
+      VALUES ($1, $2, $3, $4::jsonb, $5, 'pending')
+      `,
+      [name, email, city || null, sportsJson, credentials]
+    );
+
     const welcomeExpertEmail = buildBrandedEmail({
-      subject: 'Welcome as a Verified Expert',
+      subject: 'Expert application received',
       appUrl: getAppUrl(),
-      headline: 'Welcome to Local Guides',
-      subhead: 'Your expert account is ready.',
+      headline: 'Application submitted',
+      subhead: 'We will review your credentials shortly.',
       greetingName: name,
-      bodyHtml: 'You can now log in and start hosting events.',
-      bodyText: 'You can now log in and start hosting events.',
+      bodyHtml: 'Your expert application has been received and is pending admin review.',
+      bodyText: 'Your expert application has been received and is pending admin review.',
     });
     await sendEmailSafe({
       to: email,
       ...welcomeExpertEmail,
-      dedupeKey: `expert-welcome:${email}`,
+      dedupeKey: `expert-application:pending:${email}`,
     });
 
     return NextResponse.json(
       {
         user,
-        message: 'Expert account created successfully. You can now log in.',
+        message: 'Your expert application has been submitted and is pending review.',
       },
       { status: 201 }
     );
