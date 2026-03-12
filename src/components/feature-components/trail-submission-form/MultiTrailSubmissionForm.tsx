@@ -4,7 +4,11 @@ import { ChangeEventHandler, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import type { Difficulty, SportType, UserRole } from '@/types';
-import { TRAIL_SAFETY_OPTIONS, TrailSafetyLabel } from '@/lib/trail-safety';
+import {
+  DEFAULT_TRAIL_SAFETY_LABELS,
+  TRAIL_SAFETY_OPTIONS,
+  TrailSafetyLabel,
+} from '@/lib/trail-safety';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
 import { apiClient } from '@/services/api/client';
 import { ApiPath } from '@/services/api/paths';
@@ -24,7 +28,7 @@ type TrailCreateForm = {
   safety_labels: TrailSafetyLabel[];
 };
 
-const INITIAL_FORM: TrailCreateForm = {
+const createInitialForm = (): TrailCreateForm => ({
   name: '',
   description: '',
   difficulty: 'easy',
@@ -34,8 +38,8 @@ const INITIAL_FORM: TrailCreateForm = {
   elevation_gain_m: '',
   estimated_time_hours: '',
   image_url: '',
-  safety_labels: [],
-};
+  safety_labels: [...DEFAULT_TRAIL_SAFETY_LABELS],
+});
 
 type TrailFiles = {
   gpxFile: File | null;
@@ -74,7 +78,7 @@ export default function MultiTrailSubmissionForm({
   const isAdmin = userRole === 'admin';
 
   const { register, control, handleSubmit, setValue, watch, reset } = useForm<{ trails: TrailCreateForm[] }>({
-    defaultValues: { trails: [INITIAL_FORM] },
+    defaultValues: { trails: [createInitialForm()] },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'trails' });
@@ -99,7 +103,7 @@ export default function MultiTrailSubmissionForm({
 
   const addTrail = () => {
     if (!canAddMore) return;
-    append(INITIAL_FORM);
+    append(createInitialForm());
     setTrailFiles((prev) => [...prev, { gpxFile: null, trailImages: [] }]);
   };
 
@@ -198,7 +202,7 @@ export default function MultiTrailSubmissionForm({
         payload.append('image_url', (form.image_url || '').trim());
         payload.append('trail_images', JSON.stringify(files.trailImages || []));
         payload.append('gpx_file', files.gpxFile as File);
-        if (isAdmin && form.safety_labels?.length) {
+        if (form.safety_labels?.length) {
           payload.append('safety_labels', JSON.stringify(form.safety_labels));
         }
         const { data } = await apiClient.post<{ trail: { id: string }; requiresApproval?: boolean }>(
@@ -226,7 +230,7 @@ export default function MultiTrailSubmissionForm({
           onSuccess({ trail: { id: first.id }, requiresApproval: !isAdmin });
         }
       }
-      reset({ trails: [INITIAL_FORM] });
+      reset({ trails: [createInitialForm()] });
       setTrailFiles([{ gpxFile: null, trailImages: [] }]);
       return;
     }
@@ -238,17 +242,17 @@ export default function MultiTrailSubmissionForm({
   };
 
   const inputClass =
-    'w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500';
+    'w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400';
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+        <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900/60 dark:bg-green-950/40 dark:text-green-200">
           {notice}
         </div>
       )}
@@ -256,15 +260,17 @@ export default function MultiTrailSubmissionForm({
       {fields.map((field, index) => (
         <section
           key={field.id}
-          className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-4"
+          className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-4 dark:border-slate-800 dark:bg-slate-950/60"
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Trail {index + 1}</h3>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
+              Trail {index + 1}
+            </h3>
             {fields.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeTrail(index)}
-                className="text-sm text-red-600 hover:text-red-800"
+                className="text-sm text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
               >
                 Remove this trail
               </button>
@@ -272,20 +278,29 @@ export default function MultiTrailSubmissionForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">GPX File</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              GPX File
+            </label>
             <input
               type="file"
               accept=".gpx"
               onChange={handleGpxChange(index)}
               className={inputClass}
             />
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Uploading a GPX file will auto-fill other fields.
+            </p>
             {parsingGpxIndex === index && (
-              <p className="text-xs text-green-700 mt-1">Parsing GPX...</p>
+              <p className="text-xs text-green-700 mt-1 dark:text-green-300">
+                Parsing GPX...
+              </p>
             )}
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Trail Name</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              Trail Name
+            </label>
             <input
               {...register(`trails.${index}.name`, { required: true })}
               className={inputClass}
@@ -294,7 +309,9 @@ export default function MultiTrailSubmissionForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              Description
+            </label>
             <textarea
               {...register(`trails.${index}.description`)}
               rows={3}
@@ -305,7 +322,9 @@ export default function MultiTrailSubmissionForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Difficulty</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                Difficulty
+              </label>
               <select {...register(`trails.${index}.difficulty`)} className={inputClass}>
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
@@ -313,7 +332,9 @@ export default function MultiTrailSubmissionForm({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Sport Type</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                Sport Type
+              </label>
               <select {...register(`trails.${index}.sport_type`)} className={inputClass}>
                 {TRAIL_SPORTS.map((s) => (
                   <option key={s.value} value={s.value}>
@@ -325,7 +346,9 @@ export default function MultiTrailSubmissionForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Location</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              Location
+            </label>
             <input
               {...register(`trails.${index}.location`, { required: true })}
               className={inputClass}
@@ -334,7 +357,9 @@ export default function MultiTrailSubmissionForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Trail Pictures</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              Trail Pictures
+            </label>
             <input
               type="file"
               accept="image/*"
@@ -343,7 +368,7 @@ export default function MultiTrailSubmissionForm({
               className={inputClass}
             />
             {(trailFiles[index]?.trailImages?.length ?? 0) > 0 && (
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-gray-600 mt-1 dark:text-slate-400">
                 {trailFiles[index].trailImages.length} image(s) selected
               </p>
             )}
@@ -351,7 +376,9 @@ export default function MultiTrailSubmissionForm({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Distance (km)</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                Distance (km)
+              </label>
               <input
                 type="number"
                 step="any"
@@ -361,7 +388,9 @@ export default function MultiTrailSubmissionForm({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Elevation Gain (m)</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                Elevation Gain (m)
+              </label>
               <input
                 type="number"
                 step="any"
@@ -370,7 +399,9 @@ export default function MultiTrailSubmissionForm({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Estimated Time (hours)</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                Estimated Time (hours)
+              </label>
               <input
                 type="number"
                 step="any"
@@ -382,7 +413,9 @@ export default function MultiTrailSubmissionForm({
 
           {isAdmin && (
             <div>
-              <p className="mb-2 text-sm font-medium">Safety Labels (Admin)</p>
+              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-200">
+                Safety Labels (Admin)
+              </p>
               <div className="flex flex-wrap gap-2">
                 {TRAIL_SAFETY_OPTIONS.map((option) => {
                   const selected = (values[index]?.safety_labels || []).includes(option.value);
@@ -394,7 +427,7 @@ export default function MultiTrailSubmissionForm({
                       className={`rounded-full border px-3 py-1 text-sm ${
                         selected
                           ? 'border-green-600 bg-green-600 text-white'
-                          : 'border-gray-300 bg-white text-gray-700'
+                          : 'border-gray-300 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100'
                       }`}
                     >
                       {option.label}
@@ -411,13 +444,13 @@ export default function MultiTrailSubmissionForm({
         <button
           type="button"
           onClick={addTrail}
-          className="w-full rounded-lg border-2 border-dashed border-green-500 py-3 text-sm font-medium text-green-700 hover:bg-green-50"
+          className="w-full rounded-lg border-2 border-dashed border-green-500 py-3 text-sm font-medium text-green-700 hover:bg-green-50 dark:text-green-200 dark:hover:bg-green-950/40"
         >
           Add another trail
         </button>
       )}
       {!canAddMore && (
-        <p className="text-sm text-gray-500 text-center">
+        <p className="text-sm text-gray-500 text-center dark:text-slate-400">
           Maximum {MAX_TRAILS} trails per submission. Submit to create these, then you can add more.
         </p>
       )}

@@ -1,11 +1,20 @@
 export const TRAIL_SAFETY_OPTIONS = [
   { value: 'helmet_required', label: 'Helmet Required' },
   { value: 'carry_water', label: 'Carry Water' },
+  { value: 'first_aid_kit', label: 'Carry First Aid Kit' },
+  { value: 'lights_required', label: 'Lights Required' },
+  { value: 'tire_repair', label: 'Carry Tire Repair Kit' },
+  { value: 'no_littering', label: 'No Littering' },
   { value: 'technical_section', label: 'Technical Section' },
   { value: 'steep_descent', label: 'Steep Descent' },
   { value: 'wildlife_area', label: 'Wildlife Area' },
   { value: 'weather_exposed', label: 'Weather Exposed' },
 ] as const;
+
+export const DEFAULT_TRAIL_SAFETY_LABELS: TrailSafetyLabel[] = [
+  'helmet_required',
+  'carry_water',
+];
 
 export type TrailSafetyLabel = (typeof TRAIL_SAFETY_OPTIONS)[number]['value'];
 
