@@ -89,9 +89,24 @@ export default function ExpertDetailPage() {
               </Link>{' '}
               / Profile
             </p>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {expert.name || 'Local Expert'}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                {expert.name || 'Local Expert'}
+              </h1>
+              {expert.is_verified_expert && (
+                <span className="inline-flex items-center rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white dark:bg-emerald-400 dark:text-emerald-950">
+                  Verified Expert
+                </span>
+              )}
+              {strava?.connected && stravaProfileId && (
+                <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 shadow-sm dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100">
+                  Strava Verified{' '}
+                  <span className="ml-1 text-[10px] font-medium text-orange-700/80 dark:text-orange-200/80">
+                    (Powered by Strava)
+                  </span>
+                </span>
+              )}
+            </div>
             {expert.city && (
               <p className="mt-1 text-sm text-gray-700 dark:text-slate-200">
                 {expert.city}
@@ -104,27 +119,24 @@ export default function ExpertDetailPage() {
             )}
           </div>
           <div className="flex flex-col items-start gap-2 md:items-end">
-            {expert.is_verified_expert && (
-              <span className="inline-flex items-center rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white dark:bg-emerald-400 dark:text-emerald-950">
-                Verified Expert
-              </span>
-            )}
-            {strava?.connected && stravaProfileId && (
-              <a
-                href={`https://www.strava.com/athletes/${stravaProfileId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 shadow-sm transition hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100 dark:hover:bg-orange-900/60"
+            <div className="flex flex-wrap items-center gap-2">
+              {strava?.connected && stravaProfileId && (
+                <a
+                  href={`https://www.strava.com/athletes/${stravaProfileId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 shadow-sm transition hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100 dark:hover:bg-orange-900/60"
+                >
+                  Check on Strava
+                </a>
+              )}
+              <Link
+                href={`/events?expert=${expert.id}`}
+                className="rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
               >
-                Strava Verified
-              </a>
-            )}
-            <Link
-              href={`/events?expert=${expert.id}`}
-              className="rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
-            >
-              View All Events
-            </Link>
+                View All Events
+              </Link>
+            </div>
           </div>
         </div>
         {sports.length > 0 && (
