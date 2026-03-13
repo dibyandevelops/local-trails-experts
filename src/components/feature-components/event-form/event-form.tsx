@@ -29,7 +29,6 @@ import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
 type EventFormValues = {
   title: string;
   description: string;
-  itinerary: string;
   custom_trail_text: string;
   trail_id: string;
   event_date: string;
@@ -80,7 +79,6 @@ function normalizeDateOnly(value: string) {
 const defaultValues: EventFormValues = {
   title: '',
   description: '',
-  itinerary: '',
   custom_trail_text: '',
   trail_id: '',
   event_date: '',
@@ -145,11 +143,12 @@ export default function EventForm({
   const loadingUser = initialUser === undefined ? loadingQueriedUser : false;
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [lastAutoTitle, setLastAutoTitle] = useState('');
-  const [lastAutoItinerary, setLastAutoItinerary] = useState('');
+  const [lastAutoDescription, setLastAutoDescription] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
   const [sportChangeMessage, setSportChangeMessage] = useState('');
   const [showTrailRequestDialog, setShowTrailRequestDialog] = useState(false);
   const previousSportRef = useRef<SportType | null>(null);
+  const skipSportClearRef = useRef(false);
   const prefillAppliedRef = useRef(false);
   const requesterPrefillAppliedRef = useRef(false);
   const requesterKeyRef = useRef('');
@@ -229,7 +228,6 @@ export default function EventForm({
     reset({
       title: editEvent.title || '',
       description: editEvent.description || '',
-      itinerary: '',
       custom_trail_text: '',
       trail_id: editEvent.trail_id || '',
       event_date: editEvent.event_date
@@ -322,17 +320,21 @@ export default function EventForm({
       return;
     }
     if (previousSport === selectedSport) return;
+    if (skipSportClearRef.current) {
+      skipSportClearRef.current = false;
+      previousSportRef.current = selectedSport;
+      return;
+    }
 
     // Keep organizer + host + date context, clear event-detail fields that become stale.
     setValue('trail_id', '');
     setValue('title', '');
     setValue('description', '');
-    setValue('itinerary', '');
     setValue('custom_trail_text', '');
     setValue('difficulty', undefined);
     setValue('meeting_point', '');
     setLastAutoTitle('');
-    setLastAutoItinerary('');
+    setLastAutoDescription('');
     setSportChangeMessage('Sport changed. Trail/event-specific fields were cleared.');
     previousSportRef.current = selectedSport;
   }, [selectedSport, setValue]);
@@ -426,47 +428,18 @@ export default function EventForm({
       setLastAutoTitle(nextAutoTitle);
     }
 
-    const detailParts: string[] = [];
-    if (selectedTrail.distance_km) {
-      detailParts.push(`Distance: ${selectedTrail.distance_km} km`);
-    }
-    if (selectedTrail.elevation_gain_m) {
-      detailParts.push(`Elevation gain: ${selectedTrail.elevation_gain_m} m`);
-    }
-    if (selectedTrail.estimated_time_hours) {
-      detailParts.push(`Estimated time: ${selectedTrail.estimated_time_hours} hours`);
-    }
     if (selectedTrail.difficulty) {
-      detailParts.push(`Difficulty: ${selectedTrail.difficulty}`);
       setValue('difficulty', selectedTrail.difficulty);
     }
-    if (selectedTrail.location) {
-      detailParts.push(`Location: ${selectedTrail.location}`);
+    const trailDescription = (selectedTrail.description || '').trim();
+    if (trailDescription) {
+      const currentDescription = (getValues('description') || '').trim();
+      if (!currentDescription || currentDescription === lastAutoDescription) {
+        setValue('description', trailDescription);
+        setLastAutoDescription(trailDescription);
+      }
     }
 
-    const detailsText = detailParts.length > 0 ? `\n\n${detailParts.join(' • ')}` : '';
-    const baseDescription = selectedTrail.description || getValues('description') || '';
-    setValue('description', `${baseDescription}${detailsText}`.trim());
-
-    const nextAutoItinerary = [
-      `Start: ${selectedTrail.location || 'Trailhead'}`,
-      selectedTrail.distance_km ? `Distance: ${selectedTrail.distance_km} km` : '',
-      selectedTrail.elevation_gain_m
-        ? `Elevation gain: ${selectedTrail.elevation_gain_m} m`
-        : '',
-      selectedTrail.estimated_time_hours
-        ? `Estimated duration: ${selectedTrail.estimated_time_hours} hrs`
-        : '',
-      'Plan: warm-up, regroup at midpoint, finish together at endpoint.',
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    const currentItinerary = (getValues('itinerary') || '').trim();
-    if (!currentItinerary || currentItinerary === lastAutoItinerary) {
-      setValue('itinerary', nextAutoItinerary);
-      setLastAutoItinerary(nextAutoItinerary);
-    }
   };
 
   useEffect(() => {
@@ -530,10 +503,6 @@ export default function EventForm({
       if (values.description.trim()) {
         descriptionParts.push(values.description.trim());
       }
-      if (values.sport_type !== 'training' && values.itinerary.trim()) {
-        descriptionParts.push(`Itinerary:\n${values.itinerary.trim()}`);
-      }
-
       const payload: CreateEventInput = {
         title: values.title,
         description: descriptionParts.join('\n\n') || undefined,
@@ -634,6 +603,41 @@ export default function EventForm({
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white border border-gray-200 rounded-lg shadow-md p-6 space-y-6"
         >
+          {currentUser?.role === 'admin' && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Select an approved host first to unlock sport-specific fields.
+            </div>
+          )}
+
+          {currentUser?.role === 'admin' && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Approved Expert Host</label>
+              <select
+                {...register('host_user_id')}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setValue('host_user_id', selectedId, { shouldDirty: true });
+                  const expert = experts.find((item) => item.id === selectedId);
+                  setValue('organizer_name', expert?.name || '', { shouldDirty: true });
+                  setValue('organizer_email', expert?.email || '', { shouldDirty: true });
+                  if (Array.isArray(expert?.sports) && expert.sports.length > 0) {
+                    skipSportClearRef.current = true;
+                    setValue('sport_type', expert.sports[0] as SportType, { shouldDirty: true });
+                  }
+                }}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="">Select an approved expert</option>
+                {experts.map((expert) => (
+                  <option key={expert.id} value={expert.id}>
+                    {expert.name || 'Expert'} ({expert.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {!lockTrailAndSport ? (
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -653,6 +657,7 @@ export default function EventForm({
                       type="radio"
                       value={sport.value}
                       {...register('sport_type', { required: true })}
+                      disabled={currentUser?.role === 'admin' && !selectedHostId}
                     />
                     {getSportLabel(sport.value) ?? sport.label}
                   </label>
@@ -661,6 +666,11 @@ export default function EventForm({
               {expertSports.length > 0 && (
                 <p className="mt-1 text-xs text-gray-500">
                   Showing sports available for the selected host.
+                </p>
+              )}
+              {currentUser?.role === 'admin' && !selectedHostId && (
+                <p className="mt-1 text-xs text-amber-700">
+                  Select an approved host to unlock sport options.
                 </p>
               )}
             </div>
@@ -697,7 +707,7 @@ export default function EventForm({
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  Tip: Selecting a trail auto-fills title, description, itinerary, and difficulty.
+                  Tip: Selecting a trail auto-fills title, description, and difficulty.
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   Showing trails for {getSportLabel((selectedSport || 'mtb') as SportType) || 'selected sport'}.
@@ -785,18 +795,6 @@ export default function EventForm({
           </div>
 
 
-          {selectedSport !== 'training' && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Itinerary</label>
-              <textarea
-                {...register('itinerary')}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Add route plan, stops, breakpoints, and timing"
-              />
-            </div>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -882,6 +880,9 @@ export default function EventForm({
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="e.g., Trailhead parking lot"
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Use a Google Maps-friendly location name so participants can navigate easily.
+            </p>
           </div>
 
           <div>
@@ -947,34 +948,6 @@ export default function EventForm({
               />
             )}
           </div> */}
-
-          {currentUser?.role === 'admin' && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Approved Expert Host</label>
-              <select
-                {...register('host_user_id')}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  setValue('host_user_id', selectedId);
-                  const expert = experts.find((item) => item.id === selectedId);
-                  setValue('organizer_name', expert?.name || '');
-                  setValue('organizer_email', expert?.email || '');
-                  if (Array.isArray(expert?.sports) && expert.sports.length > 0) {
-                    setValue('sport_type', expert.sports[0] as SportType);
-                  }
-                }}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Select an approved expert</option>
-                {experts.map((expert) => (
-                  <option key={expert.id} value={expert.id}>
-                    {expert.name || 'Expert'} ({expert.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

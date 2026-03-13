@@ -7,6 +7,9 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel } from '@/services/constants/sports';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { cancelEvent } from '@/services/events/events.service';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -16,6 +19,18 @@ export default function EventDetailPage() {
   const { data: user = null } = useCurrentUser();
   const [booking, setBooking] = useState<(Booking & { payment_status?: string | null }) | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => cancelEvent(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() });
+      if (eventId) {
+        await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.byId(eventId) });
+      }
+      router.push('/events');
+    },
+  });
 
   useEffect(() => {
     if (!eventId) return;
@@ -72,106 +87,177 @@ export default function EventDetailPage() {
     );
   }
 
+  const canCancel =
+    user?.role === 'admin' || (user?.role === 'expert' && user?.id === event.host_user_id);
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <Link href="/events" className="text-xs text-green-700 hover:underline">
-        ← Back to events
-      </Link>
-      <h1 className="text-3xl font-bold text-gray-900 mt-2">{event.title}</h1>
-      <p className="text-sm text-gray-600 mt-1">
-        {format(new Date(event.event_date), 'PPP p')}
-        {event.city ? ` • ${event.city}` : ''}
-      </p>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {event.host_user_id && (
-          <button
-            type="button"
-            onClick={() => router.push(`/experts/${event.host_user_id}`)}
-            className="inline-flex items-center rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
-          >
-            View Expert Profile
-          </button>
-        )}
-        {event.trail?.id && (
-          <button
-            type="button"
-            onClick={() => router.push(`/trails/${event.trail?.id}`)}
-            className="inline-flex items-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
-          >
-            Open Trail Map
-          </button>
-        )}
-      </div>
-
-      <div className="mt-6 space-y-3 text-sm text-gray-700">
-        {event.description && <p>{event.description}</p>}
-        {event.meeting_point && (
-          <p>
-            <span className="font-semibold">Meeting point:</span>{' '}
-            {event.meeting_point}
-          </p>
-        )}
-        {event.sport_type && (
-          <p>
-            <span className="font-semibold">Sport:</span> {getSportLabel(event.sport_type)}
-          </p>
-        )}
-        {event.required_expertise && (
-          <p>
-            <span className="font-semibold">Required expertise:</span>{' '}
-            {event.required_expertise}
-          </p>
-        )}
-        {event.organizer_name && (
-          <p>
-            <span className="font-semibold">Organizer:</span>{' '}
-            {event.organizer_name}
-          </p>
-        )}
-        {event.organizer_email && (
-          <p>
-            <span className="font-semibold">Organizer email:</span>{' '}
-            {event.organizer_email}
-          </p>
-        )}
-      </div>
-
-      <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">Payment</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          Price per spot: NPR {event.price_npr || 0}
-        </p>
-        {user?.role === 'participant' && (
-          <div className="mt-3">
-            <span
-              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                booking?.payment_status === 'paid'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}
-            >
-              {booking?.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
-            </span>
-          </div>
-        )}
-        {/* <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
-          <p className="text-sm font-medium text-gray-700">QR Payment Placeholder</p>
-          <p className="text-xs text-gray-500 mt-1">
-            Scan QR to pay. Payment confirmation integration will be enabled next.
-          </p>
-          {event.qr_image_url ? (
-            <img
-              src={event.qr_image_url}
-              alt="Event QR payment"
-              className="mt-3 h-40 w-40 rounded border border-gray-200 bg-white object-contain"
-            />
-          ) : (
-            <div className="mt-3 h-40 w-40 rounded border border-gray-200 bg-white grid place-items-center text-xs text-gray-400">
-              No QR uploaded
+    <div className="mx-auto max-w-5xl space-y-6">
+      <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/40 p-6 shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/60 dark:via-slate-950/70 dark:to-emerald-900/40">
+        <Link
+          href="/events"
+          className="text-xs font-semibold uppercase tracking-wide text-emerald-700 hover:underline dark:text-emerald-200"
+        >
+          ← Back to events
+        </Link>
+        <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {event.title}
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+              {format(new Date(event.event_date), 'PPP p')}
+              {event.city ? ` • ${event.city}` : ''}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {event.sport_type && (
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
+                  {getSportLabel(event.sport_type)}
+                </span>
+              )}
+              {event.difficulty && (
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
+                  {event.difficulty}
+                </span>
+              )}
+              {event.required_expertise && (
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 shadow-sm dark:bg-emerald-900/60 dark:text-emerald-100">
+                  {event.required_expertise}
+                </span>
+              )}
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900 shadow-sm dark:bg-amber-900/60 dark:text-amber-100">
+                {event.price_npr && event.price_npr > 0
+                  ? `NPR ${event.price_npr}`
+                  : 'Free'}
+              </span>
             </div>
-          )}
-        </div> */}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {event.host_user_id && (
+              <button
+                type="button"
+                onClick={() => router.push(`/experts/${event.host_user_id}`)}
+                className="inline-flex items-center rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+              >
+                View Expert Profile
+              </button>
+            )}
+            {event.trail?.id && (
+              <button
+                type="button"
+                onClick={() => router.push(`/trails/${event.trail?.id}`)}
+                className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+              >
+                Open Trail Map
+              </button>
+            )}
+            {canCancel && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!eventId) return;
+                  const confirmed = window.confirm('Cancel this event? This action cannot be undone.');
+                  if (!confirmed) return;
+                  cancelMutation.mutate(eventId);
+                }}
+                disabled={cancelMutation.isPending}
+                className="inline-flex items-center rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+              >
+                {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Event'}
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Event Overview
+          </h2>
+          <div className="mt-3 space-y-3 text-sm text-gray-700 dark:text-slate-200">
+            {event.description ? (
+              <p className="leading-relaxed">{event.description}</p>
+            ) : (
+              <p className="text-gray-500 dark:text-slate-400">
+                No description added yet. Reach out to the organizer for more details.
+              </p>
+            )}
+            {event.trail && (
+              <div className="flex flex-wrap gap-2">
+                {event.trail.distance_km && (
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-900 dark:bg-blue-900/60 dark:text-blue-100">
+                    Distance: {event.trail.distance_km} km
+                  </span>
+                )}
+                {event.trail.elevation_gain_m && (
+                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-900 dark:bg-purple-900/60 dark:text-purple-100">
+                    Elevation gain: {event.trail.elevation_gain_m} m
+                  </span>
+                )}
+                {event.trail.estimated_time_hours && (
+                  <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-900 dark:bg-orange-900/60 dark:text-orange-100">
+                    Estimated time: {event.trail.estimated_time_hours} h
+                  </span>
+                )}
+              </div>
+            )}
+            {event.meeting_point && (
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    <span className="font-semibold">Meeting point:</span> {event.meeting_point}
+                  </span>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                      event.meeting_point
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                  >
+                    Open in Google Maps
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+              Organizer
+            </h3>
+            <div className="mt-3 space-y-2 text-sm text-gray-700 dark:text-slate-200">
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {event.organizer_name || 'Local Trails & Experts'}
+              </p>
+              {event.organizer_email && <p>{event.organizer_email}</p>}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+              Payment
+            </h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+              Price per spot: NPR {event.price_npr || 0}
+            </p>
+            {user?.role === 'participant' && (
+              <div className="mt-3">
+                <span
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                    booking?.payment_status === 'paid'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100'
+                      : 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100'
+                  }`}
+                >
+                  {booking?.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </section>
     </div>
   );

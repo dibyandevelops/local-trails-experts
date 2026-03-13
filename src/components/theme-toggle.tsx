@@ -38,18 +38,23 @@ export default function ThemeToggle({
   const setTheme = useUiStore((state: UiState) => state.setTheme);
 
   useEffect(() => {
-    const nextTheme: ThemeMode = document.documentElement.classList.contains('dark')
-      ? 'dark'
-      : 'light';
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    const nextTheme: ThemeMode =
+      stored === 'dark' || stored === 'light' ? stored : getSystemTheme();
     setTheme(nextTheme);
+    applyTheme(nextTheme);
     setMounted(true);
-  }, []);
+  }, [setTheme]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    applyTheme(theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme, mounted]);
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
-    localStorage.setItem(THEME_STORAGE_KEY, next);
-    applyTheme(next);
   };
 
   return (

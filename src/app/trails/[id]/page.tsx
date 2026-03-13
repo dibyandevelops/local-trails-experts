@@ -69,9 +69,9 @@ const TrailPage: React.FunctionComponent = () => {
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
-    if (typeof window === 'undefined') return 'satellite';
+    if (typeof window === 'undefined') return 'map';
     const saved = window.localStorage.getItem('mtb_map_style_mode');
-    return saved === 'map' || saved === 'satellite' ? saved : 'satellite';
+    return saved === 'map' || saved === 'satellite' ? saved : 'map';
   });
   const mapStyle = getMapStyle(mapStyleMode);
 
@@ -311,7 +311,7 @@ const TrailPage: React.FunctionComponent = () => {
       const curr = routeData.coordinates[i];
       const dx = curr.longitude - prev.longitude;
       const dy = curr.latitude - prev.latitude;
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
       features.push({
         type: 'Feature',
         geometry: {
@@ -612,30 +612,30 @@ const TrailPage: React.FunctionComponent = () => {
           )}
           {routeData?.totalDistance ? (
             <span className="rounded-lg bg-blue-100 px-3 py-2 text-center text-sm text-blue-800">
-              {routeData.totalDistance.toFixed(2)} km
+              Distance: {routeData.totalDistance.toFixed(2)} km
             </span>
           ) : trail.distance_km ? (
             <span className="rounded-lg bg-blue-100 px-3 py-2 text-center text-sm text-blue-800">
-              {trail.distance_km} km
+              Distance: {trail.distance_km} km
             </span>
           ) : null}
           {routeData?.elevationGain ? (
             <span className="rounded-lg bg-purple-100 px-3 py-2 text-center text-sm text-purple-800">
-              +{routeData.elevationGain.toFixed(0)} m ↑
+              Elevation gain: +{routeData.elevationGain.toFixed(0)} m ↑
             </span>
           ) : trail.elevation_gain_m ? (
             <span className="rounded-lg bg-purple-100 px-3 py-2 text-center text-sm text-purple-800">
-              {trail.elevation_gain_m} m elevation
+              Elevation gain: {trail.elevation_gain_m} m
             </span>
           ) : null}
           {routeData?.elevationLoss ? (
             <span className="rounded-lg bg-red-100 px-3 py-2 text-center text-sm text-red-800">
-              -{routeData.elevationLoss.toFixed(0)} m ↓
+              Elevation loss: -{routeData.elevationLoss.toFixed(0)} m ↓
             </span>
           ) : null}
           {trail.estimated_time_hours && (
             <span className="rounded-lg bg-orange-100 px-3 py-2 text-center text-sm text-orange-800">
-              ~{trail.estimated_time_hours} hours
+              Estimated time: ~{trail.estimated_time_hours} hours
             </span>
           )}
         </div>
@@ -817,8 +817,8 @@ const TrailPage: React.FunctionComponent = () => {
                   id="route-arrows-layer"
                   type="symbol"
                   layout={{
-                    'text-field': '➤',
-                    'text-size': 17,
+                    'text-field': '›',
+                    'text-size': 22,
                     'text-rotation-alignment': 'map',
                     'text-rotate': ['get', 'angle'],
                     'text-allow-overlap': true,

@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchTrailsPaginated, requestTrail, deleteTrail, hideTrail, unhideTrail } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
-import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
+import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
 import { getSafetyLabelText } from '@/lib/trail-safety';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -337,7 +337,7 @@ function TrailsPageContent() {
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
-  const [sport, setSport] = useState(DEFAULT_TRAIL_SPORT);
+  const [sport, setSport] = useState('');
   const [viewMode, setViewMode] = useState<TrailsViewMode>('grid');
   const [mapTrail, setMapTrail] = useState<Trail | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
@@ -565,9 +565,9 @@ function TrailsPageContent() {
   const isInitialLoading = isLoading && trails.length === 0;
   const isRefreshingResults = isFetching && !isFetchingNextPage && trails.length > 0;
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
-    if (typeof window === 'undefined') return 'satellite';
+    if (typeof window === 'undefined') return 'map';
     const saved = window.localStorage.getItem('mtb_map_style_mode');
-    return saved === 'map' || saved === 'satellite' ? saved : 'satellite';
+    return saved === 'map' || saved === 'satellite' ? saved : 'map';
   });
   const mapStyle = getMapStyle(mapStyleMode);
   useEffect(() => {
@@ -632,7 +632,7 @@ function TrailsPageContent() {
       const curr = routeData.coordinates[i];
       const dx = curr.longitude - prev.longitude;
       const dy = curr.latitude - prev.latitude;
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [curr.longitude, curr.latitude] },
@@ -697,7 +697,7 @@ function TrailsPageContent() {
     if (search) params.set('search', search);
     if (difficulty) params.set('difficulty', difficulty);
     if (location) params.set('location', location);
-    if (sport && sport !== DEFAULT_TRAIL_SPORT) params.set('sport', sport);
+    if (sport) params.set('sport', sport);
     if (createEventOpen && createEventTrailId) {
       params.set('createEventTrail', createEventTrailId);
       params.set('createEventSport', createEventSport || 'mtb');
@@ -767,12 +767,12 @@ function TrailsPageContent() {
     setLocation(locationInput);
   };
 
-  const hasActiveFilters = Boolean(search || difficulty || location || sport !== DEFAULT_TRAIL_SPORT);
+  const hasActiveFilters = Boolean(search || difficulty || location || sport);
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-green-800 sm:text-3xl md:text-4xl dark:text-green-200">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Search Trails
         </h1>
         <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -917,6 +917,7 @@ function TrailsPageContent() {
               onChange={(e) => setSport(e.target.value as typeof sport)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
+              <option value="">All trail categories</option>
               {TRAIL_SPORTS.map((sportOption) => (
                 <option key={sportOption.value} value={sportOption.value}>
                   {sportOption.label}
@@ -960,10 +961,10 @@ function TrailsPageContent() {
                 Location: {location} ×
               </button>
             )}
-            {sport !== DEFAULT_TRAIL_SPORT && (
+            {sport && (
               <button
                 type="button"
-                onClick={() => setSport(DEFAULT_TRAIL_SPORT)}
+                onClick={() => setSport('')}
                 className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800"
               >
                 Sport: {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport} ×
@@ -986,7 +987,7 @@ function TrailsPageContent() {
               setDifficulty('');
               setLocationInput('');
               setLocation('');
-              setSport(DEFAULT_TRAIL_SPORT);
+              setSport('');
             }}
             className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto"
           >
@@ -1021,7 +1022,7 @@ function TrailsPageContent() {
                 setDifficulty('');
                 setLocationInput('');
                 setLocation('');
-                setSport(DEFAULT_TRAIL_SPORT);
+                setSport('');
               }}
               className="mt-4 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
@@ -1205,8 +1206,8 @@ function TrailsPageContent() {
                       id="modal-route-arrows-layer"
                       type="symbol"
                       layout={{
-                        'text-field': '➤',
-                        'text-size': 17,
+                        'text-field': '›',
+                        'text-size': 22,
                         'text-rotation-alignment': 'map',
                         'text-rotate': ['get', 'angle'],
                         'text-allow-overlap': true,

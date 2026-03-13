@@ -19,7 +19,7 @@ import {
 import { fetchMyParticipantEvents } from '@/services/participants/participants.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { useUiStore } from '@/stores/ui.store';
-import { SPORT_OPTIONS } from '@/services/constants/sports';
+import { getSportLabel, SPORT_OPTIONS } from '@/services/constants/sports';
 
 const EMPTY_EVENTS: Event[] = [];
 
@@ -515,6 +515,18 @@ export default function EventsPageClient() {
                     {joinTarget.meeting_point}
                   </p>
                 )}
+                {joinTarget.meeting_point && (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                      joinTarget.meeting_point
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                  >
+                    Open in Google Maps
+                  </a>
+                )}
                 {joinTarget.difficulty && (
                   <p>
                     <span className="font-semibold">Difficulty:</span>{' '}
@@ -602,31 +614,34 @@ function EventCard({
   return (
     <Link
       href={`/events/${event.id}`}
-      className="block bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      className="block rounded-2xl border border-emerald-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-emerald-900/60 dark:bg-slate-950/60"
     >
       <div className="p-4 sm:p-6">
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h3 className="mb-2 text-lg font-bold text-gray-900 sm:text-xl">{event.title}</h3>
-            <p className="text-xs text-gray-500 sm:text-sm">
+            <h3 className="mb-2 text-lg font-bold text-gray-900 sm:text-xl dark:text-white">
+              {event.title}
+            </h3>
+            <p className="text-xs text-gray-500 sm:text-sm dark:text-slate-400">
+              {event.city ? `${event.city} • ` : ''}
               {format(new Date(event.event_date), 'PPP p')}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
             {hasJoined && (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100">
                 You’re in
               </span>
             )}
             <span
-              className={`px-3 py-1 rounded-full text-sm font-semibold ${
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
                 event.required_expertise === 'beginner'
-                  ? 'bg-blue-100 text-blue-800'
+                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-100'
                   : event.required_expertise === 'intermediate'
-                  ? 'bg-green-100 text-green-800'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100'
                   : event.required_expertise === 'advanced'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-red-100 text-red-800'
+                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-100'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-100'
               }`}
             >
               {event.required_expertise}
@@ -634,12 +649,39 @@ function EventCard({
           </div>
         </div>
 
+        <div className="mb-4 flex flex-wrap gap-2">
+          {event.sport_type && (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+              Sport: {getSportLabel(event.sport_type)}
+            </span>
+          )}
+          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+            {event.price_npr && event.price_npr > 0 ? `NPR ${event.price_npr}` : 'Free'}
+          </span>
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
+            Date: {format(new Date(event.event_date), 'PPP')}
+          </span>
+          {event.difficulty && (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
+              Difficulty: {event.difficulty}
+            </span>
+          )}
+          {event.meeting_point && (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
+              Meeting: {event.meeting_point}
+            </span>
+          )}
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
+            Slots: {event.current_participants} / {event.max_participants}
+          </span>
+        </div>
+
         {descriptionSections.length > 0 && (
           <div className="mb-4 space-y-2">
             {descriptionSections.slice(0, 3).map((section, index) => (
               <p
                 key={`${event.id}-desc-${index}`}
-                className="text-gray-700 whitespace-pre-line text-sm leading-6"
+                className="text-gray-700 whitespace-pre-line text-sm leading-6 dark:text-slate-200"
               >
                 {section}
               </p>
@@ -647,30 +689,35 @@ function EventCard({
           </div>
         )}
 
-        <div className="mb-4 text-sm font-semibold text-gray-900">
-          {event.price_npr && event.price_npr > 0
-            ? `Price: NPR ${event.price_npr}`
-            : 'Price: Free'}
-        </div>
-
         {event.trail && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-4">
-            <p className="font-semibold text-gray-900 mb-1">Trail: {event.trail.name}</p>
-            <p className="text-sm text-gray-600">{event.trail.location}</p>
-            {event.trail.distance_km && (
-              <p className="text-sm text-gray-600">
-                {event.trail.distance_km} km • {event.trail.elevation_gain_m}m elevation
-              </p>
-            )}
+          <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+            <p className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
+              Trail: {event.trail.name}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              {event.trail.location}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {event.trail.distance_km && (
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-900 dark:bg-blue-900/60 dark:text-blue-100">
+                  Distance: {event.trail.distance_km} km
+                </span>
+              )}
+              {event.trail.elevation_gain_m && (
+                <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-900 dark:bg-purple-900/60 dark:text-purple-100">
+                  Elevation: {event.trail.elevation_gain_m} m
+                </span>
+              )}
+              {event.trail.estimated_time_hours && (
+                <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-900 dark:bg-orange-900/60 dark:text-orange-100">
+                  Time: {event.trail.estimated_time_hours} h
+                </span>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="space-y-2 mb-4 text-sm text-gray-600">
-          {event.meeting_point && (
-            <p>
-              <span className="font-semibold">Meeting Point:</span> {event.meeting_point}
-            </p>
-          )}
+        <div className="mb-4 grid gap-2 text-sm text-gray-600 dark:text-slate-300 sm:grid-cols-2">
           {event.organizer_name && (
             <p>
               <span className="font-semibold">Expert:</span> {event.organizer_name}
@@ -681,9 +728,6 @@ function EventCard({
               <span className="font-semibold">Expert Phone:</span> {event.organizer_phone}
             </p>
           )}
-          <p>
-            <span className="font-semibold">Participants:</span> {event.current_participants} / {event.max_participants}
-          </p>
         </div>
 
         <div
@@ -696,7 +740,7 @@ function EventCard({
           {canEdit ? (
             <button
               onClick={onEdit}
-              className="w-full py-2 px-4 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700"
+              className="w-full rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700"
             >
               Edit Event
             </button>
@@ -704,10 +748,10 @@ function EventCard({
             <button
               onClick={onJoin}
               disabled={!canJoin}
-              className={`w-full py-2 px-4 rounded-lg font-semibold transition-colors ${
+              className={`w-full rounded-lg px-4 py-2 font-semibold transition-colors ${
                 canJoin
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  : 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-slate-700 dark:text-slate-400'
               }`}
             >
               {hasJoined ? 'Joined' : canJoin ? 'Join Event' : 'Event Full'}
@@ -716,7 +760,7 @@ function EventCard({
           {hasJoined && (
             <button
               onClick={onLeave}
-              className="w-full py-2 px-4 rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900/60"
             >
               Leave Event
             </button>
@@ -724,7 +768,7 @@ function EventCard({
           {isAdminOrExpert && (
             <button
               onClick={onCancel}
-              className="w-full py-2 px-4 rounded-lg border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50"
+              className="w-full rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
             >
               Cancel Event
             </button>
