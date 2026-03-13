@@ -1,6 +1,7 @@
 
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 import Navbar from '@/components/navigation/navbar';
 import Footer from '@/components/navigation/footer';
@@ -56,6 +57,7 @@ export default async function RootLayout({
         />
       </head>
       <body>
+        <SpeedInsights />
         <Analytics />
         <PWARegister />
         <MainContent>
