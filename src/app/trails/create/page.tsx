@@ -15,7 +15,7 @@ export default function CreateTrailPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+      <h1 className="text-3xl font-bold mb-6 text-green-800 dark:text-green-200">
         {isEditMode ? 'Edit Trail' : 'Create Trail'}
       </h1>
 

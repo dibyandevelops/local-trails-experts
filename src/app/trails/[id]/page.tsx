@@ -302,30 +302,6 @@ const TrailPage: React.FunctionComponent = () => {
     };
   };
 
-  const getArrowGeoJSON = (routeData: RouteData) => {
-    if (!routeData?.coordinates?.length) return null;
-    const step = Math.max(12, Math.floor(routeData.coordinates.length / 40));
-    const features = [];
-    for (let i = step; i < routeData.coordinates.length; i += step) {
-      const prev = routeData.coordinates[i - 1];
-      const curr = routeData.coordinates[i];
-      const dx = curr.longitude - prev.longitude;
-      const dy = curr.latitude - prev.latitude;
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
-      features.push({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [curr.longitude, curr.latitude],
-        },
-        properties: { angle },
-      });
-    }
-    return {
-      type: 'FeatureCollection',
-      features,
-    };
-  };
 
   const getInitialZoom = (bounds: {
     minLat: number;
@@ -435,7 +411,6 @@ const TrailPage: React.FunctionComponent = () => {
   const routeData = trail.route_data as RouteData | null;
   const mapBounds = hasRoute && routeData ? getMapBounds(routeData) : null;
   const routeGeoJSON = hasRoute && routeData ? getRouteGeoJSON(routeData) : null;
-  const arrowGeoJSON = hasRoute && routeData ? getArrowGeoJSON(routeData) : null;
   const trailImages = [trail.image_url, ...(trail.trail_images || [])]
     .filter((image): image is string => Boolean(image))
     .filter((image, index, arr) => arr.indexOf(image) === index);
@@ -776,18 +751,18 @@ const TrailPage: React.FunctionComponent = () => {
                   id="route-line-glow"
                   type="line"
                   paint={{
-                    'line-color': '#0ea5e9',
-                    'line-width': 9,
-                    'line-opacity': 0.28,
-                    'line-blur': 0.8,
+                    'line-color': '#10b981',
+                    'line-width': 10,
+                    'line-opacity': 0.25,
+                    'line-blur': 1.2,
                   }}
                 />
                 <Layer
                   id="route-line-casing"
                   type="line"
                   paint={{
-                    'line-color': '#082f49',
-                    'line-width': 6,
+                    'line-color': '#064e3b',
+                    'line-width': 6.5,
                     'line-opacity': 0.9,
                   }}
                 />
@@ -795,42 +770,44 @@ const TrailPage: React.FunctionComponent = () => {
                   id="route-line-core"
                   type="line"
                   paint={{
-                    'line-color': '#22d3ee',
-                    'line-width': 4,
-                    'line-opacity': 0.95,
+                    'line-color': '#34d399',
+                    'line-width': 4.5,
+                    'line-opacity': 0.98,
                   }}
                 />
                 <Layer
                   id="route-line-highlight"
                   type="line"
                   paint={{
-                    'line-color': '#facc15',
-                    'line-width': 1.3,
-                    'line-opacity': 0.85,
+                    'line-color': '#ecfeff',
+                    'line-width': 1.1,
+                    'line-opacity': 0.9,
                   }}
                 />
               </Source>
             )}
-            {arrowGeoJSON && (
-              <Source id="route-arrows" type="geojson" data={arrowGeoJSON as any}>
-                <Layer
-                  id="route-arrows-layer"
-                  type="symbol"
-                  layout={{
-                    'text-field': '›',
-                    'text-size': 22,
-                    'text-rotation-alignment': 'map',
-                    'text-rotate': ['get', 'angle'],
-                    'text-allow-overlap': true,
-                    'text-ignore-placement': true,
-                  }}
-                  paint={{
-                    'text-color': '#f59e0b',
-                    'text-halo-color': '#0f172a',
-                    'text-halo-width': 1.2,
-                  }}
-                />
-              </Source>
+            {routeGeoJSON && (
+              <Layer
+                id="route-arrows-layer"
+                type="symbol"
+                source="route"
+                layout={{
+                  'symbol-placement': 'line',
+                  'symbol-spacing': 120,
+                  'text-field': '›',
+                  'text-size': 28,
+                  'text-rotation-alignment': 'map',
+                  'text-keep-upright': false,
+                  'text-offset': [0, 0],
+                  'text-allow-overlap': true,
+                  'text-ignore-placement': true,
+                }}
+                paint={{
+                  'text-color': '#16a34a',
+                  'text-halo-color': '#0f172a',
+                  'text-halo-width': 1.2,
+                }}
+              />
             )}
             {hasRoute && routeData && routeData.coordinates.length > 0 && (
               <>

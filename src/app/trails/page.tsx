@@ -623,24 +623,6 @@ function TrailsPageContent() {
     },
   });
 
-  const getArrowGeoJSON = (routeData: RouteData) => {
-    if (!routeData?.coordinates?.length) return null;
-    const step = Math.max(12, Math.floor(routeData.coordinates.length / 40));
-    const features = [];
-    for (let i = step; i < routeData.coordinates.length; i += step) {
-      const prev = routeData.coordinates[i - 1];
-      const curr = routeData.coordinates[i];
-      const dx = curr.longitude - prev.longitude;
-      const dy = curr.latitude - prev.latitude;
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [curr.longitude, curr.latitude] },
-        properties: { angle },
-      });
-    }
-    return { type: 'FeatureCollection', features };
-  };
 
   useEffect(() => {
     if (didRestoreScroll.current) return;
@@ -772,7 +754,7 @@ function TrailsPageContent() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
           Search Trails
         </h1>
         <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -1180,47 +1162,45 @@ function TrailsPageContent() {
                     id="modal-route-glow"
                     type="line"
                     paint={{
-                      'line-color': '#0ea5e9',
-                      'line-width': 9,
-                      'line-opacity': 0.28,
-                      'line-blur': 0.8,
+                      'line-color': '#10b981',
+                      'line-width': 10,
+                      'line-opacity': 0.25,
+                      'line-blur': 1.2,
                     }}
                   />
                   <Layer
                     id="modal-route-core"
                     type="line"
                     paint={{
-                      'line-color': '#22d3ee',
-                      'line-width': 4,
-                      'line-opacity': 0.95,
+                      'line-color': '#34d399',
+                      'line-width': 4.5,
+                      'line-opacity': 0.98,
                     }}
                   />
                 </Source>
-                {getArrowGeoJSON(mapTrail.route_data as RouteData) && (
-                  <Source
-                    id="modal-route-arrows"
-                    type="geojson"
-                    data={getArrowGeoJSON(mapTrail.route_data as RouteData) as any}
-                  >
-                    <Layer
-                      id="modal-route-arrows-layer"
-                      type="symbol"
-                      layout={{
-                        'text-field': '›',
-                        'text-size': 22,
-                        'text-rotation-alignment': 'map',
-                        'text-rotate': ['get', 'angle'],
-                        'text-allow-overlap': true,
-                        'text-ignore-placement': true,
-                      }}
-                      paint={{
-                        'text-color': '#f59e0b',
-                        'text-halo-color': '#0f172a',
-                        'text-halo-width': 1.2,
-                      }}
-                    />
-                  </Source>
-                )}
+                {mapTrail?.route_data?.coordinates?.length ? (
+                  <Layer
+                    id="modal-route-arrows-layer"
+                    type="symbol"
+                    source="modal-route"
+                    layout={{
+                      'symbol-placement': 'line',
+                      'symbol-spacing': 120,
+                      'text-field': '›',
+                      'text-size': 28,
+                      'text-rotation-alignment': 'map',
+                      'text-keep-upright': false,
+                      'text-offset': [0, 0],
+                      'text-allow-overlap': true,
+                      'text-ignore-placement': true,
+                    }}
+                    paint={{
+                      'text-color': '#16a34a',
+                      'text-halo-color': '#0f172a',
+                      'text-halo-width': 1.2,
+                    }}
+                  />
+                ) : null}
                 <Marker
                   longitude={(mapTrail.route_data as RouteData).coordinates[0].longitude}
                   latitude={(mapTrail.route_data as RouteData).coordinates[0].latitude}

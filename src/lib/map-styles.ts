@@ -64,4 +64,3 @@ export function getMapStyle(mode: MapStyleMode) {
   }
   return buildEsriSatelliteWithPlacesOverlayStyle();
 }
-
