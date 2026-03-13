@@ -1,5 +1,6 @@
 
 import type { Metadata, Viewport } from 'next';
+import { Analytics } from "@vercel/analytics/next"
 
 import Navbar from '@/components/navigation/navbar';
 import Footer from '@/components/navigation/footer';
@@ -55,6 +56,7 @@ export default async function RootLayout({
         />
       </head>
       <body>
+        <Analytics />
         <PWARegister />
         <MainContent>
           <PushNotificationPrompt />
