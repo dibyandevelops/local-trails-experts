@@ -97,6 +97,12 @@ export default function TrailSubmissionForm({
     [values, isAdmin]
   );
 
+  const canGenerateDescription =
+    Boolean(parsedPayload.name) &&
+    Boolean(parsedPayload.location) &&
+    Boolean(parsedPayload.sport_type) &&
+    Boolean(parsedPayload.difficulty);
+
   const parseGpxMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -118,6 +124,49 @@ export default function TrailSubmissionForm({
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return data as { trail: { id: string }; requiresApproval?: boolean };
+    },
+  });
+
+  const generateDescriptionMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: values.name,
+        location: values.location,
+        sport_type: values.sport_type,
+        difficulty: values.difficulty,
+        distance_km: values.distance_km,
+        elevation_gain_m: values.elevation_gain_m,
+        estimated_time_hours: values.estimated_time_hours,
+      };
+      const delays = [700, 1400, 2200];
+      for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+        try {
+          const { data } = await apiClient.post('/api/ai/trail-description', payload);
+          return data as { description?: string; source?: string };
+        } catch (err) {
+          const status = (err as any)?.response?.status;
+          if (status === 429 && attempt < delays.length) {
+            await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+            continue;
+          }
+          throw err;
+        }
+      }
+      return { description: '' };
+    },
+    onSuccess: (data) => {
+      if (data?.description) {
+        setValue('description', data.description, { shouldDirty: true });
+      } else {
+        setError('AI did not return a description.');
+      }
+    },
+    onError: (err: any) => {
+      if (err?.response?.status === 429) {
+        setError('AI rate limit hit. Please wait a moment and try again.');
+        return;
+      }
+      setError('Failed to generate description.');
     },
   });
 
@@ -280,9 +329,19 @@ export default function TrailSubmissionForm({
       </div>
 
       <div>
-        <label htmlFor="trail-description" className="mb-1 block text-sm font-medium text-gray-700">
-          Description
-        </label>
+        <div className="mb-1 flex items-center justify-between">
+          <label htmlFor="trail-description" className="block text-sm font-medium text-gray-700">
+            Description
+          </label>
+          <button
+            type="button"
+            onClick={() => generateDescriptionMutation.mutate()}
+            disabled={!canGenerateDescription || generateDescriptionMutation.isPending}
+            className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {generateDescriptionMutation.isPending ? 'Generating...' : 'Generate with AI'}
+          </button>
+        </div>
         <textarea
           id="trail-description"
           rows={3}
@@ -290,6 +349,11 @@ export default function TrailSubmissionForm({
           className={inputClass}
           placeholder="Trail description"
         />
+        {!canGenerateDescription && (
+          <p className="mt-1 text-xs text-gray-500">
+            Fill in trail name, location, sport type, and difficulty to enable AI.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

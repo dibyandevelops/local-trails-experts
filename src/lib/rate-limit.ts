@@ -41,10 +41,12 @@ export async function rateLimit(
   if (ratelimit) {
     const result = await ratelimit.limit(key);
     if (!result.success) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
+      const response = NextResponse.json(
+        { error: 'Too many requests. Please try again later.', source: 'app' },
         { status: 429 }
       );
+      response.headers.set('x-rate-limit-source', 'app');
+      return response;
     }
     return null;
   }
@@ -56,10 +58,12 @@ export async function rateLimit(
     return null;
   }
   if (existing.count >= limit) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
+    const response = NextResponse.json(
+      { error: 'Too many requests. Please try again later.', source: 'app' },
       { status: 429 }
     );
+    response.headers.set('x-rate-limit-source', 'app');
+    return response;
   }
   existing.count += 1;
   inMemoryStore.set(key, existing);

@@ -71,6 +71,7 @@ export default function MultiTrailSubmissionForm({
 }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [parsingGpxIndex, setParsingGpxIndex] = useState<number | null>(null);
+  const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [trailFiles, setTrailFiles] = useState<TrailFiles[]>([{ gpxFile: null, trailImages: [] }]);
@@ -168,6 +169,59 @@ export default function MultiTrailSubmissionForm({
       ? selected.filter((l) => l !== value)
       : [...selected, value];
     setValue(`trails.${index}.safety_labels`, next, { shouldDirty: true });
+  };
+
+  const handleGenerateDescription = async (index: number) => {
+    const current = values[index];
+    if (!current) return;
+    if (!current.name?.trim() || !current.location?.trim() || !current.sport_type || !current.difficulty) {
+      setError('Fill in trail name, location, sport type, and difficulty before generating.');
+      return;
+    }
+    setError(null);
+    setGeneratingIndex(index);
+    try {
+      const payload = {
+        name: current.name,
+        location: current.location,
+        sport_type: current.sport_type,
+        difficulty: current.difficulty,
+        distance_km: current.distance_km,
+        elevation_gain_m: current.elevation_gain_m,
+        estimated_time_hours: current.estimated_time_hours,
+      };
+      const delays = [700, 1400, 2200];
+      let data: { description?: string } | null = null;
+      for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+        try {
+          const result = await apiClient.post<{ description?: string }>(
+            '/api/ai/trail-description',
+            payload
+          );
+          data = result.data;
+          break;
+        } catch (err: any) {
+          if (err?.response?.status === 429 && attempt < delays.length) {
+            await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+            continue;
+          }
+          throw err;
+        }
+      }
+      if (data?.description) {
+        setValue(`trails.${index}.description`, data.description, { shouldDirty: true });
+      } else {
+        setError('AI did not return a description.');
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 429) {
+        setError('AI rate limit hit. Please wait a moment and try again.');
+        return;
+      }
+      setError('Failed to generate description.');
+    } finally {
+      setGeneratingIndex(null);
+    }
   };
 
   const onSubmit = async (formData: { trails: TrailCreateForm[] }) => {
@@ -309,15 +363,39 @@ export default function MultiTrailSubmissionForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-              Description
-            </label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">
+                Description
+              </label>
+              <button
+                type="button"
+                onClick={() => handleGenerateDescription(index)}
+                disabled={
+                  generatingIndex === index ||
+                  !values[index]?.name?.trim() ||
+                  !values[index]?.location?.trim() ||
+                  !values[index]?.sport_type ||
+                  !values[index]?.difficulty
+                }
+                className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {generatingIndex === index ? 'Generating...' : 'Generate with AI'}
+              </button>
+            </div>
             <textarea
               {...register(`trails.${index}.description`)}
               rows={3}
               className={inputClass}
               placeholder="Trail description"
             />
+            {(!values[index]?.name?.trim() ||
+              !values[index]?.location?.trim() ||
+              !values[index]?.sport_type ||
+              !values[index]?.difficulty) && (
+              <p className="mt-1 text-xs text-gray-500">
+                Fill in trail name, location, sport type, and difficulty to enable AI.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
