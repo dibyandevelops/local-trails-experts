@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     console.log(prompt, 'prompt')
     const client = new GoogleGenAI({ apiKey });
     const result = await client.models.generateContent({
-      model: 'gemini-3.1-flash-lite-preview',
+      model: 'gemini-2.5-flash-lite',
       contents: prompt,
       config: {
         temperature: 0.6,
