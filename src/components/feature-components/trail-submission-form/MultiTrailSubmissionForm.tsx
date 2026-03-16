@@ -72,6 +72,8 @@ export default function MultiTrailSubmissionForm({
   const [submitting, setSubmitting] = useState(false);
   const [parsingGpxIndex, setParsingGpxIndex] = useState<number | null>(null);
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
+  const [draggingGpxIndex, setDraggingGpxIndex] = useState<number | null>(null);
+  const [draggingImagesIndex, setDraggingImagesIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [trailFiles, setTrailFiles] = useState<TrailFiles[]>([{ gpxFile: null, trailImages: [] }]);
@@ -122,8 +124,7 @@ export default function MultiTrailSubmissionForm({
     });
   };
 
-  const handleGpxChange = (index: number): ChangeEventHandler<HTMLInputElement> => async (event) => {
-    const file = event.target.files?.[0] || null;
+  const processGpxFile = async (index: number, file: File | null) => {
     setTrailFile(index, () => ({ gpxFile: file, trailImages: trailFiles[index]?.trailImages ?? [] }));
     setError(null);
     setValue(`trails.${index}.distance_km`, '');
@@ -145,8 +146,20 @@ export default function MultiTrailSubmissionForm({
     }
   };
 
-  const handleTrailImagesChange = (index: number): ChangeEventHandler<HTMLInputElement> => async (event) => {
-    const files = Array.from(event.target.files || []);
+  const handleGpxChange = (index: number): ChangeEventHandler<HTMLInputElement> => async (event) => {
+    const file = event.target.files?.[0] || null;
+    await processGpxFile(index, file);
+  };
+
+  const getGpxFileFromDrop = (items: FileList | null) => {
+    if (!items || items.length === 0) return null;
+    const file = items[0];
+    if (!file) return null;
+    const isGpx = file.name.toLowerCase().endsWith('.gpx');
+    return isGpx ? file : null;
+  };
+
+  const processTrailImages = async (index: number, files: File[]) => {
     if (files.length === 0) {
       setTrailFile(index, (p) => ({ ...p, trailImages: [] }));
       return;
@@ -161,6 +174,16 @@ export default function MultiTrailSubmissionForm({
     } catch {
       setError('Failed to process trail images');
     }
+  };
+
+  const handleTrailImagesChange = (index: number): ChangeEventHandler<HTMLInputElement> => async (event) => {
+    const files = Array.from(event.target.files || []);
+    await processTrailImages(index, files);
+  };
+
+  const getImageFilesFromDrop = (items: FileList | null) => {
+    if (!items || items.length === 0) return [];
+    return Array.from(items).filter((file) => file.type.startsWith('image/'));
   };
 
   const toggleSafetyLabel = (index: number, value: TrailSafetyLabel) => {
@@ -331,7 +354,26 @@ export default function MultiTrailSubmissionForm({
             )}
           </div>
 
-          <div>
+          <div
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDraggingGpxIndex(index);
+            }}
+            onDragLeave={() => setDraggingGpxIndex(null)}
+            onDrop={async (event) => {
+              event.preventDefault();
+              setDraggingGpxIndex(null);
+              const file = getGpxFileFromDrop(event.dataTransfer.files);
+              if (!file) {
+                setError('Please drop a valid .gpx file.');
+                return;
+              }
+              await processGpxFile(index, file);
+            }}
+            className={`rounded-lg border-2 border-dashed px-3 py-3 ${
+              draggingGpxIndex === index ? 'border-green-500 bg-green-50' : 'border-gray-200'
+            }`}
+          >
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
               GPX File
             </label>
@@ -342,7 +384,7 @@ export default function MultiTrailSubmissionForm({
               className={inputClass}
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              Uploading a GPX file will auto-fill other fields.
+              Drag & drop a GPX file here or click to upload. It will auto-fill other fields.
             </p>
             {parsingGpxIndex === index && (
               <p className="text-xs text-green-700 mt-1 dark:text-green-300">
@@ -434,7 +476,26 @@ export default function MultiTrailSubmissionForm({
             />
           </div>
 
-          <div>
+          <div
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDraggingImagesIndex(index);
+            }}
+            onDragLeave={() => setDraggingImagesIndex(null)}
+            onDrop={async (event) => {
+              event.preventDefault();
+              setDraggingImagesIndex(null);
+              const files = getImageFilesFromDrop(event.dataTransfer.files);
+              if (files.length === 0) {
+                setError('Please drop image files only.');
+                return;
+              }
+              await processTrailImages(index, files);
+            }}
+            className={`rounded-lg border-2 border-dashed px-3 py-3 ${
+              draggingImagesIndex === index ? 'border-green-500 bg-green-50' : 'border-gray-200'
+            }`}
+          >
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
               Trail Pictures
             </label>
@@ -445,6 +506,9 @@ export default function MultiTrailSubmissionForm({
               onChange={handleTrailImagesChange(index)}
               className={inputClass}
             />
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Drag & drop images here or click to upload.
+            </p>
             {(trailFiles[index]?.trailImages?.length ?? 0) > 0 && (
               <p className="text-xs text-gray-600 mt-1 dark:text-slate-400">
                 {trailFiles[index].trailImages.length} image(s) selected

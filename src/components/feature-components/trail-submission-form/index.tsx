@@ -66,6 +66,8 @@ export default function TrailSubmissionForm({
   const [notice, setNotice] = useState<string | null>(null);
   const [gpxFile, setGpxFile] = useState<File | null>(null);
   const [trailImages, setTrailImages] = useState<string[]>([]);
+  const [isDraggingGpx, setIsDraggingGpx] = useState(false);
+  const [isDraggingImages, setIsDraggingImages] = useState(false);
 
   const isAdmin = userRole === 'admin';
 
@@ -181,8 +183,7 @@ export default function TrailSubmissionForm({
     );
   };
 
-  const handleGpxChange: ChangeEventHandler<HTMLInputElement> = async (event) => {
-    const file = event.target.files?.[0] || null;
+  const processGpxFile = async (file: File | null) => {
     setGpxFile(file);
     setError(null);
     setNotice(null);
@@ -211,10 +212,27 @@ export default function TrailSubmissionForm({
     }
   };
 
+  const handleGpxChange: ChangeEventHandler<HTMLInputElement> = async (event) => {
+    const file = event.target.files?.[0] || null;
+    await processGpxFile(file);
+  };
+
+  const getGpxFileFromDrop = (items: FileList | null) => {
+    if (!items || items.length === 0) return null;
+    const file = items[0];
+    if (!file) return null;
+    const isGpx = file.name.toLowerCase().endsWith('.gpx');
+    return isGpx ? file : null;
+  };
+
   const handleTrailImagesChange: ChangeEventHandler<HTMLInputElement> = async (
     event
   ) => {
     const files = Array.from(event.target.files || []);
+    await processTrailImages(files);
+  };
+
+  const processTrailImages = async (files: File[]) => {
     if (files.length === 0) {
       setTrailImages([]);
       return;
@@ -229,6 +247,11 @@ export default function TrailSubmissionForm({
     } catch {
       setError('Failed to process trail images');
     }
+  };
+
+  const getImageFilesFromDrop = (items: FileList | null) => {
+    if (!items || items.length === 0) return [];
+    return Array.from(items).filter((file) => file.type.startsWith('image/'));
   };
 
   const onSubmit: SubmitHandler<TrailCreateForm> = async () => {
@@ -301,7 +324,26 @@ export default function TrailSubmissionForm({
         </div>
       )}
 
-      <div>
+      <div
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDraggingGpx(true);
+        }}
+        onDragLeave={() => setIsDraggingGpx(false)}
+        onDrop={async (event) => {
+          event.preventDefault();
+          setIsDraggingGpx(false);
+          const file = getGpxFileFromDrop(event.dataTransfer.files);
+          if (!file) {
+            setError('Please drop a valid .gpx file.');
+            return;
+          }
+          await processGpxFile(file);
+        }}
+        className={`rounded-lg border-2 border-dashed px-3 py-3 ${
+          isDraggingGpx ? 'border-green-500 bg-green-50' : 'border-gray-200'
+        }`}
+      >
         <label htmlFor="trail-gpx" className="mb-1 block text-sm font-medium text-gray-700">
           GPX File
         </label>
@@ -313,6 +355,9 @@ export default function TrailSubmissionForm({
           onChange={handleGpxChange}
           className={inputClass}
         />
+        <p className="mt-1 text-xs text-gray-500">
+          Drag & drop a GPX file here or click to upload.
+        </p>
         {parsingGpx && <p className="text-xs text-green-700 mt-1">Parsing GPX...</p>}
       </div>
 
@@ -393,7 +438,26 @@ export default function TrailSubmissionForm({
         />
       </div>
 
-      <div>
+      <div
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDraggingImages(true);
+        }}
+        onDragLeave={() => setIsDraggingImages(false)}
+        onDrop={async (event) => {
+          event.preventDefault();
+          setIsDraggingImages(false);
+          const files = getImageFilesFromDrop(event.dataTransfer.files);
+          if (files.length === 0) {
+            setError('Please drop image files only.');
+            return;
+          }
+          await processTrailImages(files);
+        }}
+        className={`rounded-lg border-2 border-dashed px-3 py-3 ${
+          isDraggingImages ? 'border-green-500 bg-green-50' : 'border-gray-200'
+        }`}
+      >
         <label htmlFor="trail-pictures" className="mb-1 block text-sm font-medium text-gray-700">
           Trail Pictures
         </label>
@@ -405,6 +469,9 @@ export default function TrailSubmissionForm({
           onChange={handleTrailImagesChange}
           className={inputClass}
         />
+        <p className="mt-1 text-xs text-gray-500">
+          Drag & drop images here or click to upload.
+        </p>
         {trailImages.length > 0 && (
           <p className="text-xs text-gray-600 mt-1">{trailImages.length} image(s) selected</p>
         )}

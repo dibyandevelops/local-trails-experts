@@ -12,6 +12,7 @@ import {
 } from '@/services/experts/experts.service';
 import { getSportLabel } from '@/services/constants/sports';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -20,6 +21,7 @@ interface ExpertDetail extends User {
 export default function ExpertDetailPage() {
   const params = useParams<{ id: string }>();
   const expertId = params?.id;
+  const { data: currentUser } = useCurrentUser();
 
   const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
     queryKey: ['expert-detail', expertId || ''],
@@ -98,7 +100,7 @@ export default function ExpertDetailPage() {
                   Verified Expert
                 </span>
               )}
-              {strava?.connected && stravaProfileId && (
+              {strava?.connected && stravaProfileId && currentUser?.id === expertId && (
                 <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 shadow-sm dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100">
                   Strava Verified{' '}
                   <span className="ml-1 text-[10px] font-medium text-orange-700/80 dark:text-orange-200/80">
@@ -119,8 +121,8 @@ export default function ExpertDetailPage() {
             )}
           </div>
           <div className="flex flex-col items-start gap-2 md:items-end">
-            <div className="flex flex-wrap items-center gap-2">
-              {strava?.connected && stravaProfileId && (
+          <div className="flex flex-wrap items-center gap-2">
+              {strava?.connected && stravaProfileId && currentUser?.id === expertId && (
                 <a
                   href={`https://www.strava.com/athletes/${stravaProfileId}`}
                   target="_blank"
