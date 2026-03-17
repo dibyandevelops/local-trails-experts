@@ -96,11 +96,11 @@ export async function POST(request: NextRequest) {
     });
     const fromBase =
       (process.env.RESEND_FROM || process.env.EMAIL_FROM || '').trim() ||
-      'Local Trails & Experts <onboarding@resend.dev>';
+      'LocoXperts <onboarding@resend.dev>';
     const from =
       fromBase.includes('<') && fromBase.includes('>')
-        ? fromBase.replace(/^[^<]+/, `${name} via Local Trails & Experts `)
-        : `${name} via Local Trails & Experts <${fromBase}>`;
+        ? fromBase.replace(/^[^<]+/, `${name} via LocoXperts `)
+        : `${name} via LocoXperts <${fromBase}>`;
 
     await sendEmailSafe({
       to: email,

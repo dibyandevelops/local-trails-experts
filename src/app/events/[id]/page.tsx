@@ -230,7 +230,7 @@ export default function EventDetailPage() {
             </h3>
             <div className="mt-3 space-y-2 text-sm text-gray-700 dark:text-slate-200">
               <p className="font-semibold text-gray-900 dark:text-white">
-                {event.organizer_name || 'Local Trails & Experts'}
+                {event.organizer_name || 'LocoXperts'}
               </p>
               {event.organizer_email && <p>{event.organizer_email}</p>}
             </div>

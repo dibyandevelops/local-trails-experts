@@ -104,7 +104,7 @@ export default function PushNotificationPrompt() {
       });
 
       onMessage(messaging, (payload) => {
-        const title = payload.notification?.title || 'Local Trails & Experts';
+        const title = payload.notification?.title || 'LocoXperts';
         const body = payload.notification?.body || 'You have a new notification.';
         if (document.visibilityState === 'visible') {
           // Keep it simple for foreground messages.

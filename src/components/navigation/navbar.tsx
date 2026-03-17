@@ -17,34 +17,44 @@ type NavItem = {
   showFor?: Array<'anonymous' | 'admin' | 'expert' | 'participant'>;
 };
 
-const navItems: NavItem[] = [
-  { label: 'Search Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-  { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-  { label: 'Experts', href: '/experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+const navGroups: { label: string; items: NavItem[] }[] = [
   {
-    label: 'Create Event',
-    href: '/events/create',
-    showFor: ['expert', 'admin'],
+    label: 'Explore',
+    items: [
+      { label: 'Search Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Experts', href: '/experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+    ],
   },
   {
-    label: 'Organize Trainings',
-    href: '/events/trainings/create',
-    showFor: ['expert', 'admin'],
-  },
-  {
-    label: 'Create Trail',
-    href: '/trails/create',
-    showFor: ['admin'],
-  },
-  {
-    label: 'Admin',
-    href: '/admin',
-    showFor: ['admin'],
-  },
-  {
-    label: 'Join Experts',
-    href: '/experts/join',
-    showFor: ['anonymous', 'participant'],
+    label: 'For Experts',
+    items: [
+      {
+        label: 'Create Event',
+        href: '/events/create',
+        showFor: ['expert', 'admin'],
+      },
+      {
+        label: 'Organize Trainings',
+        href: '/events/trainings/create',
+        showFor: ['expert', 'admin'],
+      },
+      {
+        label: 'Create Trail',
+        href: '/trails/create',
+        showFor: ['admin'],
+      },
+      {
+        label: 'Admin',
+        href: '/admin',
+        showFor: ['admin'],
+      },
+      {
+        label: 'Join Experts',
+        href: '/experts/join',
+        showFor: ['anonymous', 'participant'],
+      },
+    ],
   },
 ];
 const icon = (
@@ -52,7 +62,7 @@ const icon = (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
     role="img"
-    aria-label="LOCAL TRAILS EXPERTS"
+    aria-label="LOCOXPERTS"
     className="h-10 w-10 shrink-0"
   >
     <defs>
@@ -74,9 +84,8 @@ const icon = (
     <path d="M258 28L276 82L232 126L294 170L248 216L312 262L266 306L330 352L286 410L338 484" fill="none" stroke="#fff" strokeOpacity=".19" strokeWidth="12" strokeLinecap="round" />
 
     <g fill="#f0fdf4" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="800" letterSpacing="1.2">
-      <text x="52" y="190" fontSize="82">LOCAL</text>
-      <text x="52" y="270" fontSize="82">TRAILS</text>
-      <text x="52" y="360" fontSize="98">EXPERTS</text>
+      <text x="52" y="220" fontSize="96">LOCO</text>
+      <text x="52" y="330" fontSize="96">XPERTS</text>
     </g>
 
     <circle cx="428" cy="186" r="44" fill="#22c55e" />
@@ -221,8 +230,8 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     return item.requiresRole.includes(user.role);
   };
 
-  const hasExactVisibleNavMatch = navItems.some(
-    (item) => canSeeItem(item) && item.href === pathname
+  const hasExactVisibleNavMatch = navGroups.some((group) =>
+    group.items.some((item) => canSeeItem(item) && item.href === pathname)
   );
   const isNavItemActive = (href: string) => {
     if (pathname === href) return true;
@@ -241,7 +250,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         <div className="flex min-h-[56px] items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-3 text-2xl font-bold leading-none">
             {icon}
-            <span>Local Trails & Experts</span>
+            <span>LocoXperts</span>
           </Link>
           <button
             type="button"
@@ -253,21 +262,44 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           </button>
 
           <div className="hidden md:flex items-center gap-6">
-            {navItems.map((item) =>
-              canSeeItem(item) ? (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`inline-flex h-9 max-w-[150px] items-center truncate whitespace-nowrap rounded-md px-2 py-1 transition-colors ${
-                    isNavItemActive(item.href)
-                      ? 'bg-green-700 text-white'
-                      : 'hover:text-green-200'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ) : null
-            )}
+            {navGroups.map((group) => {
+              const visibleItems = group.items.filter(canSeeItem);
+              if (visibleItems.length === 0) return null;
+              const groupActive = visibleItems.some((item) => isNavItemActive(item.href));
+              return (
+                <div key={group.label} className="relative group">
+                  <button
+                    type="button"
+                    className={`inline-flex h-9 items-center gap-1 rounded-md px-2 py-1 text-sm font-semibold transition-colors ${
+                      groupActive ? 'bg-green-700 text-white' : 'hover:text-green-200'
+                    }`}
+                    aria-haspopup="menu"
+                    aria-label={`${group.label} menu`}
+                  >
+                    <span className="truncate max-w-[140px]">{group.label}</span>
+                    <span className="text-xs">▾</span>
+                  </button>
+                  <div
+                    className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-green-700/60 bg-green-900/95 p-2 text-sm text-white opacity-0 shadow-lg transition group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
+                    role="menu"
+                  >
+                    {visibleItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`block rounded-md px-3 py-2 text-sm font-semibold transition ${
+                          isNavItemActive(item.href)
+                            ? 'bg-green-700 text-white'
+                            : 'hover:bg-green-700'
+                        }`}
+                      >
+                        <span className="block truncate">{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
             {!loadingUser && !user && (
               <Link
                 href="/register"
@@ -353,22 +385,31 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
         {mobileOpen && (
           <div className="md:hidden mt-4 flex flex-col gap-2 border-t border-green-700 pt-3">
-            {navItems.map((item) =>
-              canSeeItem(item) ? (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`truncate whitespace-nowrap px-2 py-2 rounded text-sm font-semibold transition-colors ${
-                    isNavItemActive(item.href)
-                      ? 'bg-green-700 text-white'
-                      : 'hover:bg-green-700'
-                  }`}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ) : null
-            )}
+            {navGroups.map((group) => {
+              const visibleItems = group.items.filter(canSeeItem);
+              if (visibleItems.length === 0) return null;
+              return (
+                <div key={group.label} className="space-y-1">
+                  <p className="px-2 pt-2 text-xs font-semibold uppercase tracking-wide text-green-200">
+                    {group.label}
+                  </p>
+                  {visibleItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`truncate whitespace-nowrap px-2 py-2 rounded text-sm font-semibold transition-colors ${
+                        isNavItemActive(item.href)
+                          ? 'bg-green-700 text-white'
+                          : 'hover:bg-green-700'
+                      }`}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              );
+            })}
             {!loadingUser && !user && (
               <Link
                 href="/register"

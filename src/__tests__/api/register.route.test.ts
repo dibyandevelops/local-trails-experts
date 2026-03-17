@@ -69,13 +69,13 @@ describe('POST /api/register', () => {
     expect(sendEmailSafe).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'dibyan@example.com',
-        subject: 'Welcome to Local Trails & Experts',
+        subject: 'Welcome to LocoXperts',
         replyTo: 'dibyan@example.com',
       })
     );
     const emailPayload = vi.mocked(sendEmailSafe).mock.calls[0][0];
     expect(emailPayload.html).toContain('Join events');
     expect(emailPayload.text).toContain('Search trails');
-    expect(emailPayload.from).toContain('via Local Trails & Experts');
+    expect(emailPayload.from).toContain('via LocoXperts');
   });
 });

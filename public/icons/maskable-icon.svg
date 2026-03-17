@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LOCAL GUIDES">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LOCOXPERTS">
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0%" stop-color="#14532d"/>
@@ -19,8 +19,8 @@
   <path d="M256 46L272 92L234 126L288 164L250 204L304 244L266 286L320 326L282 378L330 466" fill="none" stroke="#fff" stroke-opacity=".19" stroke-width="11" stroke-linecap="round"/>
 
   <g fill="#f0fdf4" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="800" letter-spacing="1.2">
-    <text x="76" y="228" font-size="86">LOCAL</text>
-    <text x="76" y="320" font-size="86">GUIDES</text>
+    <text x="76" y="236" font-size="92">LOCO</text>
+    <text x="76" y="330" font-size="92">XPERTS</text>
   </g>
 
   <circle cx="418" cy="202" r="38" fill="#22c55e"/>

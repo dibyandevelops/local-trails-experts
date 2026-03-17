@@ -13,13 +13,13 @@ import './globals.css';
 import MainContent from '@/components/main-content';
 
 export const metadata: Metadata = {
-  title: 'Local Trails & Experts - Find trails and Join Events',
+  title: 'LocoXperts - Find trails and Join Events',
   description: 'Find trails and join events',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Local Trails & Experts',
+    title: 'LocoXperts',
   },
   icons: {
     icon: '/icons/icon.svg',

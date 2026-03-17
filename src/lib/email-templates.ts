@@ -57,7 +57,7 @@ export function buildBrandedEmail({
     `Manage your profile: ${profileUrl}`,
     '',
     'See you on the trails,',
-    'Local Trails & Experts',
+    'LocoXperts',
   ]
     .filter((line) => line !== '')
     .join('\n');
@@ -80,7 +80,7 @@ export function buildBrandedEmail({
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
         <tr>
           <td style="padding:24px 28px;background:linear-gradient(135deg,#0f766e,#16a34a);color:#ffffff;">
-            <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.9;">Local Trails & Experts</div>
+            <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.9;">LocoXperts</div>
             <div style="font-size:24px;font-weight:700;margin-top:6px;">${headline}</div>
             ${
               subhead
@@ -121,13 +121,13 @@ export function buildBrandedEmail({
 
 export function buildWelcomeEmail({ name, appUrl }: WelcomeEmailInput) {
   return buildBrandedEmail({
-    subject: 'Welcome to Local Trails & Experts',
+    subject: 'Welcome to LocoXperts',
     appUrl,
     headline: `Welcome, ${name}.`,
     subhead: 'Your account is ready. Let’s plan your next ride.',
     greetingName: name,
     bodyHtml:
       'Discover curated trails, join local events, and ride with trusted guides in your area.',
-    bodyText: 'Welcome to Local Trails & Experts. Your account is ready!',
+    bodyText: 'Welcome to LocoXperts. Your account is ready!',
   });
 }

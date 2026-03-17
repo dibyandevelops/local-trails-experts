@@ -47,7 +47,7 @@ function shouldDedupeSend(key: string): boolean {
 
 function parseFrom(from: string) {
   const match = from.match(/^(.*)<(.+)>$/);
-  const name = match?.[1]?.trim().replace(/^"|"$/g, '') || 'Local Trails & Experts';
+  const name = match?.[1]?.trim().replace(/^"|"$/g, '') || 'LocoXperts';
   const email = match?.[2]?.trim() || from.trim();
   return { name, email };
 }
@@ -86,7 +86,7 @@ export async function sendEmail(input: SendEmailInput) {
       (effectiveFrom.includes('<')
         ? effectiveFrom
         : `${fromSender.name} <${fromSender.email}>`) ||
-      'Local Trails & Experts <onboarding@resend.dev>';
+      'LocoXperts <onboarding@resend.dev>';
 
     const { Resend } = await import('resend');
     const resend = new Resend(resendApiKey);

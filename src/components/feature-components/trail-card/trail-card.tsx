@@ -80,7 +80,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
         ) : (
           <TrailImagePlaceholder
             className="h-40 w-full"
-            label="Local Trails & Experts"
+            label="LocoXperts"
           />
         )}
         {trail.onViewMap && (

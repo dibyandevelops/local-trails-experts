@@ -94,7 +94,7 @@ export default function PendingTrailsPanel() {
                 <p className="text-xs text-gray-500">
                   Submitted by{' '}
                   <span className="font-semibold text-gray-700">
-                    {(trail.submitted_by_name || '').trim() || 'LocalMTBGroup'}
+                    {(trail.submitted_by_name || '').trim() || 'LocoXperts'}
                   </span>
                   {trail.submitted_by_email ? ` (${trail.submitted_by_email})` : ''}
                 </p>

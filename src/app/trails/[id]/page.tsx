@@ -485,7 +485,7 @@ const TrailPage: React.FunctionComponent = () => {
               Added by{' '}
               <span className="font-semibold text-gray-700">
                 {(trail.submitted_by_name || trail.expert_name || trail.created_by || '').trim() ||
-                  'LocalMTBGroup'}
+                  'LocoXperts'}
               </span>
               {trail.submitted_by_email ? ` (${trail.submitted_by_email})` : ''}
             </p>

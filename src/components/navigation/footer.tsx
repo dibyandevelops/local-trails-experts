@@ -10,31 +10,31 @@ function buildMailto(params: { to: string; subject: string; body: string }) {
 
 export default function Footer() {
   const year = new Date().getFullYear();
-  const brand = 'LocalMTBGroup';
+  const brand = 'LocoXperts';
   const contactEmail = 'dibyan.softwaredev@gmail.com';
 
   const contactHref = buildMailto({
     to: contactEmail,
-    subject: 'LocalMTBGroup — Contact',
-    body: `Hi LocalMTBGroup team,\n\n`,
+    subject: 'LocoXperts — Contact',
+    body: `Hi LocoXperts team,\n\n`,
   });
 
   const marketingHref = buildMailto({
     to: contactEmail,
-    subject: 'LocalMTBGroup — Marketing inquiry',
-    body: `Hi LocalMTBGroup team,\n\nI'm interested in marketing opportunities.\n\n`,
+    subject: 'LocoXperts — Marketing inquiry',
+    body: `Hi LocoXperts team,\n\nI'm interested in marketing opportunities.\n\n`,
   });
 
   const featureHref = buildMailto({
     to: contactEmail,
-    subject: 'LocalMTBGroup — Feature request',
-    body: `Hi LocalMTBGroup team,\n\nFeature request:\n- \n\nWhy it helps:\n- \n\n`,
+    subject: 'LocoXperts — Feature request',
+    body: `Hi LocoXperts team,\n\nFeature request:\n- \n\nWhy it helps:\n- \n\n`,
   });
 
   const collaborateHref = buildMailto({
     to: contactEmail,
-    subject: 'LocalMTBGroup — Custom events / group collaboration',
-    body: `Hi LocalMTBGroup team,\n\nWe’d like to request a custom event for a large group.\n\nDetails:\n- Group size:\n- Dates:\n- City/region:\n- Sport (MTB/hiking/trail running/etc.):\n- Goals (training/tour/team building):\n- Budget range (optional):\n\n`,
+    subject: 'LocoXperts — Custom events / group collaboration',
+    body: `Hi LocoXperts team,\n\nWe’d like to request a custom event for a large group.\n\nDetails:\n- Group size:\n- Dates:\n- City/region:\n- Sport (MTB/hiking/trail running/etc.):\n- Goals (training/tour/team building):\n- Budget range (optional):\n\n`,
   });
 
   return (
@@ -48,7 +48,7 @@ export default function Footer() {
             Trails, events, and local experts for outdoor sports.
           </p>
           <p className="text-xs text-gray-500 dark:text-slate-400">
-            © {year} {brand}. All rights reserved. {brand} and Local Trails & Experts are
+            © {year} {brand}. All rights reserved. {brand} and LocoXperts are
             trademarks or registered trademarks of their respective owners.
           </p>
         </div>
