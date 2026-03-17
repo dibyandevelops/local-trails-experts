@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { sendEmailSafe } from '@/lib/email';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
+const ADMIN_APPROVAL_EMAIL = 'dibyan.softwaredev@gmail.com';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       bodyText: `Our admin team needs additional verification details for your expert application:\n\n${message.trim()}\n\nPlease reply with the requested information.`,
     });
     await sendEmailSafe({
-      to: application.email,
+      to: ADMIN_APPROVAL_EMAIL,
       ...verificationEmail,
       dedupeKey: `expert-application:verification:${application.id}:${application.email}:${message.trim().slice(0, 120)}`,
     });

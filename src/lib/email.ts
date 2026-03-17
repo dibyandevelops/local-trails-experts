@@ -9,13 +9,13 @@ type SendEmailInput = {
 };
 
 function getEmailConfig() {
-  const defaultMailbox = 'dibyan.softwaredev@gmail.com';
+  const defaultMailbox = 'admin@locoexperts.com';
   const rawPass =
     process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '';
   return {
     from: (process.env.EMAIL_FROM || defaultMailbox).trim(),
     resendApiKey: (process.env.RESEND_API_KEY || '').trim(),
-    resendFrom: (process.env.RESEND_FROM || '').trim(),
+    resendFrom: (process.env.RESEND_FROM || defaultMailbox).trim(),
     smtpHost: (process.env.SMTP_HOST || 'smtp.gmail.com').trim(),
     smtpPort: Number(process.env.SMTP_PORT || '465'),
     smtpSecure: (process.env.SMTP_SECURE || 'true') === 'true',

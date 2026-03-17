@@ -5,6 +5,7 @@ import { createTempPassword, getAuthFromRequest } from '@/lib/auth';
 import type { UserRole } from '@/types';
 import { sendEmailSafe } from '@/lib/email';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
+const ADMIN_APPROVAL_EMAIL = 'dibyan.softwaredev@gmail.com';
 
 type ExpertApplicationStatus = 'pending' | 'approved' | 'rejected';
 
@@ -196,7 +197,7 @@ export async function PATCH(request: NextRequest) {
           bodyText: `Your expert application has been approved. ${passwordNote}`,
         });
         await sendEmailSafe({
-          to: application.email,
+          to: ADMIN_APPROVAL_EMAIL,
           ...approvalEmail,
           dedupeKey: `expert-application:approved:${application.id}:${application.email}`,
         });
@@ -215,7 +216,7 @@ export async function PATCH(request: NextRequest) {
             'Your expert application is currently not approved. You can submit updated credentials and apply again.',
         });
         await sendEmailSafe({
-          to: application.email,
+          to: ADMIN_APPROVAL_EMAIL,
           ...rejectedEmail,
           dedupeKey: `expert-application:rejected:${application.id}:${application.email}`,
         });
