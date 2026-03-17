@@ -21,7 +21,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'Explore',
     items: [
-      { label: 'Search Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Experts', href: '/experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
     ],
@@ -42,20 +41,19 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       {
         label: 'Create Trail',
         href: '/trails/create',
-        showFor: ['admin'],
+        showFor: ['admin', 'expert'],
       },
       {
         label: 'Admin',
         href: '/admin',
         showFor: ['admin'],
       },
-      {
-        label: 'Join Experts',
-        href: '/experts/join',
-        showFor: ['anonymous', 'participant'],
-      },
     ],
   },
+];
+const navItems: NavItem[] = [
+  { label: 'Search Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  { label: 'For Experts', href: '/experts/join', showFor: ['anonymous', 'participant'] },
 ];
 const icon = (
   <svg
@@ -230,9 +228,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     return item.requiresRole.includes(user.role);
   };
 
-  const hasExactVisibleNavMatch = navGroups.some((group) =>
-    group.items.some((item) => canSeeItem(item) && item.href === pathname)
-  );
+  const hasExactVisibleNavMatch =
+    navGroups.some((group) => group.items.some((item) => canSeeItem(item) && item.href === pathname)) ||
+    navItems.some((item) => canSeeItem(item) && item.href === pathname);
   const isNavItemActive = (href: string) => {
     if (pathname === href) return true;
     if (hasExactVisibleNavMatch) return false;
@@ -262,6 +260,19 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           </button>
 
           <div className="hidden md:flex items-center gap-6">
+            {navItems.map((item) =>
+              canSeeItem(item) ? (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`inline-flex h-9 items-center rounded-md px-2 py-1 text-sm font-semibold transition-colors ${
+                    isNavItemActive(item.href) ? 'bg-green-700 text-white' : 'hover:text-green-200'
+                  }`}
+                >
+                  <span className="truncate max-w-[140px]">{item.label}</span>
+                </Link>
+              ) : null
+            )}
             {navGroups.map((group) => {
               const visibleItems = group.items.filter(canSeeItem);
               if (visibleItems.length === 0) return null;
@@ -280,7 +291,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     <span className="text-xs">▾</span>
                   </button>
                   <div
-                    className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-green-700/60 bg-green-900/95 p-2 text-sm text-white opacity-0 shadow-lg transition group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
+                    className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-green-700/60 bg-green-900/95 p-2 text-sm text-white opacity-0 shadow-lg transition group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:pointer-events-auto hover:opacity-100"
                     role="menu"
                   >
                     {visibleItems.map((item) => (
@@ -305,7 +316,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 href="/register"
                 className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/25"
               >
-                Join Experts
+                Join Adventure
               </Link>
             )}
             <ThemeToggle className="inline-flex h-9 items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
@@ -385,38 +396,29 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
         {mobileOpen && (
           <div className="md:hidden mt-4 flex flex-col gap-2 border-t border-green-700 pt-3">
-            {navGroups.map((group) => {
-              const visibleItems = group.items.filter(canSeeItem);
-              if (visibleItems.length === 0) return null;
-              return (
-                <div key={group.label} className="space-y-1">
-                  <p className="px-2 pt-2 text-xs font-semibold uppercase tracking-wide text-green-200">
-                    {group.label}
-                  </p>
-                  {visibleItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`truncate whitespace-nowrap px-2 py-2 rounded text-sm font-semibold transition-colors ${
-                        isNavItemActive(item.href)
-                          ? 'bg-green-700 text-white'
-                          : 'hover:bg-green-700'
-                      }`}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              );
-            })}
+            {[...navItems, ...navGroups.flatMap((group) => group.items)].map((item) =>
+              canSeeItem(item) ? (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`truncate whitespace-nowrap px-2 py-2 rounded text-sm font-semibold transition-colors ${
+                    isNavItemActive(item.href)
+                      ? 'bg-green-700 text-white'
+                      : 'hover:bg-green-700'
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ) : null
+            )}
             {!loadingUser && !user && (
               <Link
                 href="/register"
                 className="inline-flex items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-50"
                 onClick={() => setMobileOpen(false)}
               >
-                Join Experts
+                Join Adventure
               </Link>
             )}
             <ThemeToggle className="inline-flex items-center gap-2 rounded border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
