@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
         u.city,
         u.sports,
         u.is_verified_expert,
+        u.profile_photo_url,
         u.created_at,
         u.updated_at,
         COALESCE(
@@ -84,6 +85,7 @@ export async function GET(request: NextRequest) {
         city: row.city,
         sports: row.sports,
         is_verified_expert: row.is_verified_expert,
+        profile_photo_url: row.profile_photo_url,
         created_at: row.created_at,
         updated_at: row.updated_at,
       };

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const body = await request.json();
-    const { name, email, city, sports, credentials, phone, password } = body;
+    const { name, email, city, sports, credentials, phone, password, profile_photo_url } = body;
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
 
     if (!name || !email || !credentials || !normalizedPhone) {
@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
             bio = COALESCE($2, bio),
             city = COALESCE($3, city),
             sports = COALESCE($4::jsonb, sports),
-            phone = COALESCE($5, phone)
+            phone = COALESCE($5, phone),
+            profile_photo_url = COALESCE($6, profile_photo_url)
         WHERE id = $1
       `,
         [
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
           city || null,
           sportsJson,
           normalizedPhone,
+          profile_photo_url || null,
         ]
       );
 
@@ -104,19 +106,20 @@ export async function POST(request: NextRequest) {
               city = $2,
               sports = $3::jsonb,
               credentials = $4,
+              profile_photo_url = $5,
               status = 'pending',
               reviewed_at = NULL
-          WHERE id = $5
+          WHERE id = $6
           `,
-          [name, city || null, sportsJson, credentials, existingApp.rows[0].id]
+          [name, city || null, sportsJson, credentials, profile_photo_url || null, existingApp.rows[0].id]
         );
       } else {
         await pool.query(
           `
-          INSERT INTO expert_applications (name, email, city, sports, credentials, status)
-          VALUES ($1, $2, $3, $4::jsonb, $5, 'pending')
+          INSERT INTO expert_applications (name, email, city, sports, credentials, profile_photo_url, status)
+          VALUES ($1, $2, $3, $4::jsonb, $5, $6, 'pending')
           `,
-          [name, email, city || null, sportsJson, credentials]
+          [name, email, city || null, sportsJson, credentials, profile_photo_url || null]
         );
       }
 
@@ -165,8 +168,8 @@ export async function POST(request: NextRequest) {
 
     // Create user with expert role (pending verification)
     const query = `
-      INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert, phone)
-      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, FALSE, $8)
+      INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert, phone, profile_photo_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, FALSE, $8, $9)
       RETURNING id, name, email, role, created_at
     `;
 
@@ -179,16 +182,17 @@ export async function POST(request: NextRequest) {
       city || null,
       sportsJson,
       normalizedPhone,
+      profile_photo_url || null,
     ]);
 
     const user = result.rows[0];
 
     await pool.query(
       `
-      INSERT INTO expert_applications (name, email, city, sports, credentials, status)
-      VALUES ($1, $2, $3, $4::jsonb, $5, 'pending')
+      INSERT INTO expert_applications (name, email, city, sports, credentials, profile_photo_url, status)
+      VALUES ($1, $2, $3, $4::jsonb, $5, $6, 'pending')
       `,
-      [name, email, city || null, sportsJson, credentials]
+      [name, email, city || null, sportsJson, credentials, profile_photo_url || null]
     );
 
     const welcomeExpertEmail = buildBrandedEmail({

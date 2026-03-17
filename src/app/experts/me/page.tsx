@@ -14,6 +14,7 @@ import { fetchExpertStravaSummary } from '@/services/experts/experts.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { ApiPath } from '@/services/api/paths';
 import { hideTrail, unhideTrail } from '@/services/trails/trails.service';
+import { resizeImageToDataUrl } from '@/lib/image';
 
 type ExpertTrailRequest = {
   id: string;
@@ -64,7 +65,16 @@ export default function ExpertProfilePage() {
     bio: '',
     sports: '',
     phone: '',
+    profilePhotoUrl: '',
   });
+  const initials =
+    editForm.name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase() || 'EX';
 
   const sportOptions: { value: SportType; label: string }[] = TRAIL_SPORTS;
   const { data: stravaSummary } = useQuery({
@@ -84,6 +94,7 @@ export default function ExpertProfilePage() {
           ? currentUser.sports.join(', ')
           : '',
         phone: currentUser.phone || '',
+        profilePhotoUrl: currentUser.profile_photo_url || '',
       });
     }
   }, [currentUser]);
@@ -259,6 +270,7 @@ export default function ExpertProfilePage() {
                   bio: editForm.bio,
                   sports: selectedSports,
                   phone: editForm.phone,
+                  profile_photo_url: editForm.profilePhotoUrl || null,
                 }),
               });
               const data = await response.json();
@@ -276,6 +288,43 @@ export default function ExpertProfilePage() {
           }}
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
+          <div className="md:col-span-2 flex items-center gap-4">
+            <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+              {editForm.profilePhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={editForm.profilePhotoUrl}
+                  alt="Expert profile"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
+                  {initials}
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Profile photo
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const dataUrl = await resizeImageToDataUrl(file);
+                    setEditForm({ ...editForm, profilePhotoUrl: dataUrl });
+                  } catch (error) {
+                    console.error(error);
+                    setMessage('Unable to load profile photo.');
+                  }
+                }}
+                className="block w-full text-sm text-gray-700"
+              />
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Name

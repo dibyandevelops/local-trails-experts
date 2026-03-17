@@ -131,17 +131,41 @@ function ExpertCard({
     : [];
 
   const upcomingEvents = (expert.events || []).slice(0, 3);
+  const initials =
+    (expert.name || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase() || 'EX';
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col h-full hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            {expert.name || 'Local Expert'}
-          </h2>
-          {expert.city && (
-            <p className="text-xs text-gray-500">{expert.city}</p>
-          )}
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700">
+            {expert.profile_photo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={expert.profile_photo_url}
+                alt={expert.name || 'Expert'}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                {initials}
+              </div>
+            )}
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {expert.name || 'Local Expert'}
+            </h2>
+            {expert.city && (
+              <p className="text-xs text-gray-500">{expert.city}</p>
+            )}
+          </div>
         </div>
         {expert.is_verified_expert && (
           <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-[11px] font-semibold">

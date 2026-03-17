@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(
       `
-      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, created_at, updated_at
+      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, profile_photo_url, created_at, updated_at
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -47,12 +47,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, city, bio, sports, phone } = body as {
+    const { name, city, bio, sports, phone, profile_photo_url } = body as {
       name?: string;
       city?: string;
       bio?: string;
       sports?: string[];
       phone?: string;
+      profile_photo_url?: string;
     };
 
     const sportsJson =
@@ -84,9 +85,10 @@ export async function PATCH(request: NextRequest) {
           bio = $3,
           sports = $4::jsonb,
           phone = $5,
+          profile_photo_url = $6,
           updated_at = NOW()
-      WHERE id = $6
-      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, created_at, updated_at
+      WHERE id = $7
+      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, profile_photo_url, created_at, updated_at
     `,
       [
         name || null,
@@ -94,6 +96,7 @@ export async function PATCH(request: NextRequest) {
         bio || null,
         sportsJson,
         normalizedPhone || null,
+        profile_photo_url || null,
         auth.sub,
       ]
     );

@@ -73,6 +73,14 @@ export default function ExpertDetailPage() {
   );
   const sports = Array.isArray(expert.sports) ? expert.sports : [];
   const stravaProfileId = strava?.profile?.id;
+  const initials =
+    (expert.name || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase() || 'EX';
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -91,7 +99,21 @@ export default function ExpertDetailPage() {
               </Link>{' '}
               / Profile
             </p>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="h-12 w-12 overflow-hidden rounded-full border border-white/60 bg-white/80 text-gray-700 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
+                {expert.profile_photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={expert.profile_photo_url}
+                    alt={expert.name || 'Expert'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                    {initials}
+                  </div>
+                )}
+              </div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 {expert.name || 'Local Expert'}
               </h1>

@@ -137,6 +137,7 @@ export interface User {
   phone?: string | null;
   phone_verified_at?: string | null;
   google_sub?: string | null;
+  profile_photo_url?: string | null;
   created_at: string;
   updated_at: string;
   last_login_at?: string | null;

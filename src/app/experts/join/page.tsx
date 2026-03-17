@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
 import { loginUser } from '@/services/auth/auth.service';
+import { resizeImageToDataUrl } from '@/lib/image';
 
 export default function ExpertJoinPage() {
   const router = useRouter();
@@ -14,8 +15,18 @@ export default function ExpertJoinPage() {
   const [password, setPassword] = useState('');
   const [selectedSports, setSelectedSports] = useState<string[]>(['mtb']);
   const [credentials, setCredentials] = useState('');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string>('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const initials =
+    name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase() || 'EX';
 
   const toggleSport = (value: string) => {
     setSelectedSports((prev) =>
@@ -44,6 +55,7 @@ export default function ExpertJoinPage() {
           password,
           sports: selectedSports,
           credentials,
+          profile_photo_url: profilePhotoUrl || null,
         }),
       });
 
@@ -147,6 +159,45 @@ export default function ExpertJoinPage() {
           activities. This helps us keep the community safe and high-quality.
         </p>
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+              {profilePhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profilePhotoUrl} alt="Profile preview" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
+                  {initials}
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Profile photo (optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  setUploadingPhoto(true);
+                  try {
+                    const dataUrl = await resizeImageToDataUrl(file);
+                    setProfilePhotoUrl(dataUrl);
+                  } catch (error) {
+                    console.error(error);
+                    setErrorMessage('Unable to load profile photo. Try a smaller image.');
+                  } finally {
+                    setUploadingPhoto(false);
+                  }
+                }}
+                className="block w-full text-sm text-gray-700"
+              />
+              {uploadingPhoto && (
+                <p className="text-xs text-gray-500 mt-1">Processing photo...</p>
+              )}
+            </div>
+          </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
