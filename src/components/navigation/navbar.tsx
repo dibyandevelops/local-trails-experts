@@ -18,31 +18,33 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: 'Search Trails', href: '/trails' },
-  { label: 'Events', href: '/events' },
+  { label: 'Search Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  { label: 'Experts', href: '/experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   {
     label: 'Create Event',
     href: '/events/create',
-    requiresAuth: true,
-    requiresRole: ['admin', 'expert'],
-  },
-  {
-    label: 'Create Trail',
-    href: '/trails/create',
-    requiresAuth: true,
-    requiresRole: ['admin', 'expert'],
+    showFor: ['expert', 'admin'],
   },
   {
     label: 'Organize Trainings',
     href: '/events/trainings/create',
-    requiresAuth: true,
-    requiresRole: ['admin', 'expert'],
+    showFor: ['expert', 'admin'],
   },
-  { label: 'Experts', href: '/experts' },
   {
-    label: 'For Experts',
+    label: 'Create Trail',
+    href: '/trails/create',
+    showFor: ['admin'],
+  },
+  {
+    label: 'Admin',
+    href: '/admin',
+    showFor: ['admin'],
+  },
+  {
+    label: 'Join Experts',
     href: '/experts/join',
-    showFor: ['anonymous', 'admin'],
+    showFor: ['anonymous', 'participant'],
   },
 ];
 const icon = (
@@ -256,7 +258,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-md px-2 py-1 transition-colors ${
+                  className={`inline-flex h-9 max-w-[150px] items-center truncate whitespace-nowrap rounded-md px-2 py-1 transition-colors ${
                     isNavItemActive(item.href)
                       ? 'bg-green-700 text-white'
                       : 'hover:text-green-200'
@@ -269,22 +271,20 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             {!loadingUser && !user && (
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/25"
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/25"
               >
                 Join Experts
               </Link>
             )}
-            <ThemeToggle className="inline-flex items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
+            <ThemeToggle className="inline-flex h-9 items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-green-600 bg-green-700 hover:bg-green-600"
+                className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-green-600 bg-green-700 hover:bg-green-600 self-center leading-none shrink-0"
                 aria-label="View expert alerts"
                 title="View trail request alerts"
               >
-                <span className="text-sm" aria-hidden="true">
-                  🔔
-                </span>
+                <span className="text-sm" aria-hidden="true">🔔</span>
                 {(alertsData?.unreadCount || 0) > 0 && (
                   <span className="absolute -right-1 -top-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-green-900">
                     {alertsData?.unreadCount}
@@ -302,7 +302,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setLoginNext(null);
                   setLoginOpen(true);
                 }}
-                className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-white text-green-800 text-sm font-semibold hover:bg-green-100"
+                className="inline-flex h-9 items-center justify-center px-3 py-1.5 rounded-lg bg-white text-green-800 text-sm font-semibold hover:bg-green-100"
               >
                 Login
               </button>
@@ -313,10 +313,19 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="ml-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-700 text-sm font-semibold uppercase border border-green-600 hover:bg-green-600"
+                  className="ml-2 inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-green-700 text-sm font-semibold uppercase border border-green-600 hover:bg-green-600 self-center leading-none shrink-0 align-middle"
                   aria-label="User menu"
                 >
-                  {initial}
+                  {user.profile_photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={user.profile_photo_url}
+                      alt={user.name || 'User profile'}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    initial
+                  )}
                 </button>
 
                 {menuOpen && (
@@ -349,7 +358,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-2 py-2 rounded transition-colors ${
+                  className={`truncate whitespace-nowrap px-2 py-2 rounded text-sm font-semibold transition-colors ${
                     isNavItemActive(item.href)
                       ? 'bg-green-700 text-white'
                       : 'hover:bg-green-700'
