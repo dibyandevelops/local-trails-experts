@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { sendEmailSafe } from '@/lib/email';
+import { sendPushToUserIds } from '@/lib/push';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(
@@ -119,17 +120,7 @@ export async function POST(
       ]
     );
 
-    const recipientsRes = await pool.query(
-      `
-      SELECT email
-      FROM users
-      WHERE role IN ('admin', 'expert') AND email IS NOT NULL
-      `
-    );
-    const recipients: string[] = recipientsRes.rows
-      .map((row) => row.email)
-      .filter(Boolean);
-    const uniqueRecipients = Array.from(new Set([...recipients, expert.email]));
+    const uniqueRecipients = Array.from(new Set([expert.email]));
 
     const requestEmail = buildBrandedEmail({
       subject: `Trail request: ${trail.name}`,
@@ -150,6 +141,12 @@ export async function POST(
         })
       )
     );
+
+    await sendPushToUserIds([expertUserId], {
+      title: 'New trail request',
+      body: `${user.name || 'Participant'} requested ${trail.name}.`,
+      url: `/experts/me#trail-requests`,
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

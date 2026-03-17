@@ -34,7 +34,8 @@ export async function POST(
         title,
         event_date,
         organizer_name,
-        organizer_email
+        organizer_email,
+        host_user_id
       FROM events
       WHERE id = $1`,
       [eventId]
@@ -54,6 +55,7 @@ export async function POST(
       event_date,
       organizer_name,
       organizer_email,
+      host_user_id,
     } = eventCheck.rows[0];
 
     if (current_participants >= max_participants) {
@@ -113,7 +115,19 @@ export async function POST(
       dedupeKey: `event-join:participant:${eventId}:${participant_email}`,
     });
 
-    if (organizer_email && organizer_email !== participant_email) {
+    let hostEmail: string | null = null;
+    if (host_user_id) {
+      const hostRes = await pool.query(
+        'SELECT email FROM users WHERE id = $1 LIMIT 1',
+        [host_user_id]
+      );
+      hostEmail = hostRes.rows[0]?.email || null;
+    }
+    const organizerTargets = Array.from(
+      new Set([organizer_email, hostEmail].filter(Boolean))
+    ).filter((email) => email !== participant_email);
+
+    if (organizerTargets.length > 0) {
       const organizerEmailPayload = buildBrandedEmail({
         subject: `New participant joined: ${title}`,
         appUrl: getAppUrl(),
@@ -122,11 +136,15 @@ export async function POST(
         bodyHtml: `${participant_name} (${participant_email}) joined your event <strong>${title}</strong>.`,
         bodyText: `${participant_name} (${participant_email}) joined your event "${title}".`,
       });
-      await sendEmailSafe({
-        to: organizer_email,
-        ...organizerEmailPayload,
-        dedupeKey: `event-join:organizer:${eventId}:${organizer_email}:${participant_email}`,
-      });
+      await Promise.all(
+        organizerTargets.map((to) =>
+          sendEmailSafe({
+            to,
+            ...organizerEmailPayload,
+            dedupeKey: `event-join:organizer:${eventId}:${to}:${participant_email}`,
+          })
+        )
+      );
     }
 
     const usersResult = await pool.query(
@@ -135,17 +153,19 @@ export async function POST(
         FROM users
         WHERE email = ANY($1::text[])
       `,
-      [[participant_email, organizer_email].filter(Boolean)]
+      [[participant_email, organizer_email, hostEmail].filter(Boolean)]
     );
 
     const participantUserIds = usersResult.rows
       .filter((row) => row.email === participant_email)
       .map((row) => row.id as string);
-    const organizerUserIds = organizer_email
-      ? usersResult.rows
-          .filter((row) => row.email === organizer_email)
+    const organizerUserIds = Array.from(
+      new Set(
+        usersResult.rows
+          .filter((row) => row.email === organizer_email || row.email === hostEmail)
           .map((row) => row.id as string)
-      : [];
+      )
+    );
 
     await Promise.allSettled([
       sendPushToUserIds(participantUserIds, {
