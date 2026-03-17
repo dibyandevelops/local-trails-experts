@@ -5,7 +5,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { fetchTrailsPaginated, requestTrail, deleteTrail, hideTrail, unhideTrail } from '@/services/trails/trails.service';
+import { fetchTrailsPaginated, requestTrail, deleteTrail, hideTrail, unhideTrail, fetchTrailById } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
@@ -339,7 +339,8 @@ function TrailsPageContent() {
   const [location, setLocation] = useState('');
   const [sport, setSport] = useState('');
   const [viewMode, setViewMode] = useState<TrailsViewMode>('grid');
-  const [mapTrail, setMapTrail] = useState<Trail | null>(null);
+  const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
+  const [mapTrailId, setMapTrailId] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
   const [createEventTrailId, setCreateEventTrailId] = useState('');
   const [createEventSport, setCreateEventSport] = useState('');
@@ -366,6 +367,12 @@ function TrailsPageContent() {
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
   });
   const queryClient = useQueryClient();
+  const { data: mapTrailDetail, isLoading: loadingMapTrail } = useQuery({
+    queryKey: QUERY_KEYS.trails.byId(mapTrailId),
+    queryFn: ({ signal }) => fetchTrailById(mapTrailId as string, signal),
+    enabled: Boolean(mapTrailId) && mapOpen,
+  });
+  const mapTrail = mapTrailDetail || mapTrailSummary;
 
   const loadParticipantRequests = async () => {
     if (!user || user.role !== 'participant') return;
@@ -1030,7 +1037,8 @@ function TrailsPageContent() {
             hidingTrailId={hidingTrailId}
             unhidingTrailId={unhidingTrailId}
             onViewMap={(trail) => {
-              setMapTrail(trail);
+              setMapTrailSummary(trail);
+              setMapTrailId(trail.id);
               setMapOpen(true);
             }}
             onRequestTrail={(trail) => {
@@ -1087,7 +1095,10 @@ function TrailsPageContent() {
         open={mapOpen}
         onOpenChange={(open) => {
           setMapOpen(open);
-          if (!open) setMapTrail(null);
+          if (!open) {
+            setMapTrailSummary(null);
+            setMapTrailId(null);
+          }
         }}
       >
         <Dialog.Portal>
@@ -1101,10 +1112,14 @@ function TrailsPageContent() {
                 Close
               </Dialog.Close>
             </div>
-            {mapTrail?.route_data?.coordinates?.length ? (
+            {loadingMapTrail ? (
+              <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
+                Loading trail route...
+              </div>
+            ) : mapTrailDetail?.route_data?.coordinates?.length ? (
               <Map
                 initialViewState={(() => {
-                  const routeData = mapTrail.route_data as RouteData;
+                  const routeData = mapTrailDetail.route_data as RouteData;
                   const bounds = getMapBounds(routeData);
                   if (bounds) {
                     return {
@@ -1114,8 +1129,8 @@ function TrailsPageContent() {
                     };
                   }
                   return {
-                    longitude: mapTrail.longitude || 0,
-                    latitude: mapTrail.latitude || 0,
+                    longitude: mapTrailDetail.longitude || 0,
+                    latitude: mapTrailDetail.latitude || 0,
                     zoom: 12,
                   };
                 })()}
@@ -1156,7 +1171,7 @@ function TrailsPageContent() {
                 <Source
                   id="modal-route"
                   type="geojson"
-                  data={getRouteGeoJSON(mapTrail.route_data as RouteData) as any}
+                  data={getRouteGeoJSON(mapTrailDetail.route_data as RouteData) as any}
                 >
                   <Layer
                     id="modal-route-glow"
@@ -1178,7 +1193,7 @@ function TrailsPageContent() {
                     }}
                   />
                 </Source>
-                {mapTrail?.route_data?.coordinates?.length ? (
+                {mapTrailDetail?.route_data?.coordinates?.length ? (
                   <Layer
                     id="modal-route-arrows-layer"
                     type="symbol"
@@ -1202,8 +1217,8 @@ function TrailsPageContent() {
                   />
                 ) : null}
                 <Marker
-                  longitude={(mapTrail.route_data as RouteData).coordinates[0].longitude}
-                  latitude={(mapTrail.route_data as RouteData).coordinates[0].latitude}
+                  longitude={(mapTrailDetail.route_data as RouteData).coordinates[0].longitude}
+                  latitude={(mapTrailDetail.route_data as RouteData).coordinates[0].latitude}
                   anchor="bottom"
                 >
                   <div className="rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
@@ -1212,13 +1227,13 @@ function TrailsPageContent() {
                 </Marker>
                 <Marker
                   longitude={
-                    (mapTrail.route_data as RouteData).coordinates[
-                      (mapTrail.route_data as RouteData).coordinates.length - 1
+                    (mapTrailDetail.route_data as RouteData).coordinates[
+                      (mapTrailDetail.route_data as RouteData).coordinates.length - 1
                     ].longitude
                   }
                   latitude={
-                    (mapTrail.route_data as RouteData).coordinates[
-                      (mapTrail.route_data as RouteData).coordinates.length - 1
+                    (mapTrailDetail.route_data as RouteData).coordinates[
+                      (mapTrailDetail.route_data as RouteData).coordinates.length - 1
                     ].latitude
                   }
                   anchor="bottom"

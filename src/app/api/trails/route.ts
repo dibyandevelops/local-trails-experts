@@ -70,7 +70,28 @@ export async function GET(request: NextRequest) {
     }
 
     const listQuery = `
-      SELECT t.*, u.name as created_by
+      SELECT
+        t.id,
+        t.name,
+        t.description,
+        t.difficulty,
+        t.sport_type,
+        t.location,
+        t.safety_labels,
+        NULL::double precision AS latitude,
+        NULL::double precision AS longitude,
+        t.distance_km,
+        t.elevation_gain_m,
+        t.estimated_time_hours,
+        t.image_url,
+        t.trail_images,
+        NULL::jsonb AS route_data,
+        t.created_at,
+        t.updated_at,
+        t.submitted_by_user_id,
+        t.status,
+        t.is_hidden,
+        u.name as created_by
       FROM trails t
       LEFT JOIN users u ON t.submitted_by_user_id = u.id
       ${whereClause}
@@ -253,12 +274,7 @@ export async function POST(request: NextRequest) {
 
     // Send notification email for pending trails
     if (trailStatus === 'pending') {
-      const adminsResult = await pool.query(
-        `SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL`
-      );
-      const adminEmails = adminsResult.rows
-        .map((row) => row.email)
-        .filter(Boolean);
+      const adminEmails = ['dibyan.softwaredev@gmail.com'];
       const { sendEmailSafe } = await import('@/lib/email');
       const approvalEmail = buildBrandedEmail({
         subject: `Trail approval needed (${sport_type})`,
