@@ -315,7 +315,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       <DropdownMenu.Content
                         sideOffset={8}
                         align="start"
-                        className="z-30 w-52 rounded-lg border border-green-700/60 bg-green-900/95 p-2 text-sm text-white shadow-lg"
+                        className="z-30 flex w-52 flex-col gap-1 rounded-lg border border-green-700/60 bg-green-900/95 p-2 text-sm text-white shadow-lg"
                         onPointerEnter={() => {
                           if (hoverCloseTimeout.current) {
                             clearTimeout(hoverCloseTimeout.current);
