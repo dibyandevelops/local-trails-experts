@@ -63,6 +63,9 @@ export default function ExpertProfilePage() {
   const [hidingTrailId, setHidingTrailId] = useState<string | null>(null);
   const [unhidingTrailId, setUnhidingTrailId] = useState<string | null>(null);
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
+  const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
+  const [participantsEventTitle, setParticipantsEventTitle] = useState('');
+  const [participantsList, setParticipantsList] = useState<EventParticipant[]>([]);
   const [editForm, setEditForm] = useState({
     name: '',
     city: '',
@@ -547,20 +550,22 @@ export default function ExpertProfilePage() {
                         {participants.length === 0 ? (
                           <span className="text-gray-400">No participants yet</span>
                         ) : (
-                          <ul className="space-y-1">
-                            {participants.map((participant) => (
-                              <li key={participant.id}>
-                                <span className="font-semibold text-gray-700">
-                                  {participant.participant_name}
-                                </span>
-                                <span className="text-gray-500">
-                                  {participant.participant_email
-                                    ? ` (${participant.participant_email})`
-                                    : ''}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                              {participants.length} joined
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setParticipantsEventTitle(event.title);
+                                setParticipantsList(participants);
+                                setParticipantsModalOpen(true);
+                              }}
+                              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                            >
+                              View list
+                            </button>
+                          </div>
                         )}
                       </td>
                       <td className="px-3 py-3 text-right">
@@ -746,6 +751,60 @@ export default function ExpertProfilePage() {
                 Select a request to create event.
               </div>
             )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={participantsModalOpen} onOpenChange={setParticipantsModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <Dialog.Title className="text-sm font-semibold text-gray-900">
+                Participants · {participantsEventTitle}
+              </Dialog.Title>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+                Close
+              </Dialog.Close>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto p-4">
+              {participantsList.length === 0 ? (
+                <p className="text-sm text-gray-600">No participants yet.</p>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="text-xs uppercase text-gray-500">
+                    <tr>
+                      <th className="px-3 py-2">Name</th>
+                      <th className="px-3 py-2">Email</th>
+                      <th className="px-3 py-2">Phone</th>
+                      <th className="px-3 py-2">Experience</th>
+                      <th className="px-3 py-2">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {participantsList.map((participant) => (
+                      <tr key={participant.id} className="border-t border-gray-200">
+                        <td className="px-3 py-2 text-sm font-semibold text-gray-900">
+                          {participant.participant_name}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-600">
+                          {participant.participant_email}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-600">
+                          {participant.phone || '—'}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-600">
+                          {participant.expertise_level}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-600">
+                          {format(new Date(participant.joined_at), 'PP')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
