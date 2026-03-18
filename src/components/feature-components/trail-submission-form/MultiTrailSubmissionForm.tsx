@@ -79,6 +79,7 @@ export default function MultiTrailSubmissionForm({
   const [trailFiles, setTrailFiles] = useState<TrailFiles[]>([{ gpxFile: null, trailImages: [] }]);
 
   const isAdmin = userRole === 'admin';
+  const canEditSafetyLabels = userRole === 'admin' || userRole === 'expert';
 
   const { register, control, handleSubmit, setValue, watch, reset } = useForm<{ trails: TrailCreateForm[] }>({
     defaultValues: { trails: [createInitialForm()] },
@@ -298,8 +299,8 @@ export default function MultiTrailSubmissionForm({
     if (failed.length === 0) {
       setNotice(
         succeeded.length === 1
-          ? (isAdmin ? 'Trail created successfully.' : 'Trail submitted. Waiting for admin approval.')
-          : `${succeeded.length} trails created successfully.`
+          ? 'Trail created successfully.'
+          : `${succeeded.length} trails created successfully.`,
       );
       if (succeeded.length > 0 && onSuccess) {
         const first = succeeded[0];
@@ -525,7 +526,6 @@ export default function MultiTrailSubmissionForm({
                 type="number"
                 step="any"
                 {...register(`trails.${index}.distance_km`)}
-                readOnly
                 className={inputClass}
               />
             </div>
@@ -553,10 +553,10 @@ export default function MultiTrailSubmissionForm({
             </div>
           </div>
 
-          {isAdmin && (
+          {canEditSafetyLabels && (
             <div>
               <p className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-200">
-                Safety Labels (Admin)
+                Safety Labels
               </p>
               <div className="flex flex-wrap gap-2">
                 {TRAIL_SAFETY_OPTIONS.map((option) => {
