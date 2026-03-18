@@ -94,7 +94,7 @@ describe('LoginComponent', () => {
 
     // Fill in the login form with admin credentials
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'dibyan.softwaredev@gmail.com' },
+      target: { value: process.env.NEXT_PUBLIC_ADMIN_EMAIL },
     });
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: '1MicroPassword' },
@@ -108,7 +108,7 @@ describe('LoginComponent', () => {
     await waitFor(() => {
       expect(loginUserMock).toHaveBeenCalled();
       expect(loginUserMock.mock.calls[0][0]).toEqual({
-        email: 'dibyan.softwaredev@gmail.com',
+        email: process.env.NEXT_PUBLIC_ADMIN_EMAIL,
         role: 'admin',
         password: '1MicroPassword',
       });

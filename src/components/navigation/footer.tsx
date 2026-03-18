@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-function buildMailto(params: { to: string; subject: string; body: string }) {
+function buildMailto(params: { to?: string; subject: string; body: string }) {
   const subject = encodeURIComponent(params.subject);
   const body = encodeURIComponent(params.body);
   return `mailto:${params.to}?subject=${subject}&body=${body}`;
@@ -11,7 +11,7 @@ function buildMailto(params: { to: string; subject: string; body: string }) {
 export default function Footer() {
   const year = new Date().getFullYear();
   const brand = 'LocoXperts';
-  const contactEmail = 'dibyan.softwaredev@gmail.com';
+  const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   const contactHref = buildMailto({
     to: contactEmail,

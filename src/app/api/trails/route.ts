@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
 
     // Send notification email for pending trails
     if (trailStatus === 'pending') {
-      const adminEmails = ['dibyan.softwaredev@gmail.com'];
+      const adminEmails = [process.env.NEXT_PUBLIC_ADMIN_EMAIL];
       const { sendEmailSafe } = await import('@/lib/email');
       const approvalEmail = buildBrandedEmail({
         subject: `Trail approval needed (${sport_type})`,
@@ -286,7 +286,7 @@ export async function POST(request: NextRequest) {
       });
       const dedupeKey = `trail-approval:${name}:${sport_type}:${submitterEmail || 'anonymous'}`;
       await Promise.all(
-        adminEmails.map((to: string) =>
+        adminEmails.map((to: string = '') =>
           sendEmailSafe({
             to,
             ...approvalEmail,

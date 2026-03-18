@@ -37,7 +37,7 @@ export default function PrivacyPolicyPage() {
         <h2 className="text-lg font-semibold text-gray-900">Contact</h2>
         <p className="text-sm text-gray-700">
           If you have any questions about this policy, please contact us at
-          dibyan.softwaredev@gmail.com.
+          {process.env.NEXT_PUBLIC_ADMIN_EMAIL}.
         </p>
       </section>
     </div>

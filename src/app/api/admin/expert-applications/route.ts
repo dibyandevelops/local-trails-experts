@@ -5,7 +5,8 @@ import { createTempPassword, getAuthFromRequest } from '@/lib/auth';
 import type { UserRole } from '@/types';
 import { sendEmailSafe } from '@/lib/email';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
-const ADMIN_APPROVAL_EMAIL = 'dibyan.softwaredev@gmail.com';
+
+const ADMIN_APPROVAL_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || ''
 
 type ExpertApplicationStatus = 'pending' | 'approved' | 'rejected';
 

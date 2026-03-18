@@ -3,7 +3,8 @@ import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { sendEmailSafe } from '@/lib/email';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
-const ADMIN_APPROVAL_EMAIL = 'dibyan.softwaredev@gmail.com';
+
+const ADMIN_APPROVAL_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || ''
 
 export async function POST(request: NextRequest) {
   try {

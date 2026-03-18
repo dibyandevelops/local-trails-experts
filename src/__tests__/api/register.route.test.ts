@@ -45,15 +45,15 @@ describe('POST /api/register', () => {
       .mockResolvedValueOnce({ rows: [] } as never) // email check
       .mockResolvedValueOnce({ rows: [] } as never) // phone check
       .mockResolvedValueOnce({
-        rows: [{ id: 'user-1', email: 'dibyan@example.com', role: 'participant' }],
+        rows: [{ id: 'user-1', email: 'sonam@example.com', role: 'participant' }],
       } as never); // insert
 
     const request = new NextRequest('http://localhost/api/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        name: 'Dibyan',
-        email: 'dibyan@example.com',
+        name: 'sonam',
+        email: 'sonam@example.com',
         password: 'Password1',
         phone: '+9779800000000',
         sports: ['mtb'],
@@ -64,13 +64,13 @@ describe('POST /api/register', () => {
     const body = await response.json();
 
     expect(response.status).toBe(201);
-    expect(body.user.email).toBe('dibyan@example.com');
+    expect(body.user.email).toBe('sonam@example.com');
     expect(setAuthCookie).toHaveBeenCalledTimes(1);
     expect(sendEmailSafe).toHaveBeenCalledWith(
       expect.objectContaining({
-        to: 'dibyan@example.com',
+        to: 'sonam@example.com',
         subject: 'Welcome to LocoXperts',
-        replyTo: 'dibyan@example.com',
+        replyTo: 'sonam@example.com',
       })
     );
     const emailPayload = vi.mocked(sendEmailSafe).mock.calls[0][0];
