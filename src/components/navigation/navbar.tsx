@@ -8,6 +8,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User, UserRole } from '@/types';
 import LoginModal from '@/components/auth/login-modal';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 type NavItem = {
   label: string;
@@ -42,18 +43,13 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         label: 'Create Trail',
         href: '/trails/create',
         showFor: ['admin', 'expert'],
-      },
-      {
-        label: 'Admin',
-        href: '/admin',
-        showFor: ['admin'],
-      },
+      }
     ],
   },
 ];
 const navItems: NavItem[] = [
   { label: 'Search Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-  { label: 'For Experts', href: '/experts/join', showFor: ['anonymous', 'participant'] },
+  { label: 'For Experts', href: '/experts/join', showFor: ['anonymous'] },
 ];
 const icon = (
   <svg
@@ -121,11 +117,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const [loginInitialRole, setLoginInitialRole] = useState<UserRole | undefined>(undefined);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const [loginNext, setLoginNext] = useState<string | null>(null);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const hoverCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMobileOpen(false);
     setMenuOpen(false);
+    setOpenGroup(null);
+    if (hoverCloseTimeout.current) {
+      clearTimeout(hoverCloseTimeout.current);
+      hoverCloseTimeout.current = null;
+    }
   }, [pathname]);
 
   useEffect(() => {
@@ -278,36 +281,70 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               if (visibleItems.length === 0) return null;
               const groupActive = visibleItems.some((item) => isNavItemActive(item.href));
               return (
-                <div key={group.label} className="relative group">
-                  <button
-                    type="button"
-                    className={`inline-flex h-9 items-center gap-1 rounded-md px-2 py-1 text-sm font-semibold transition-colors ${
-                      groupActive ? 'bg-green-700 text-white' : 'hover:text-green-200'
-                    }`}
-                    aria-haspopup="menu"
-                    aria-label={`${group.label} menu`}
+                <div key={group.label} className="relative">
+                  <DropdownMenu.Root
+                    modal={false}
+                    open={openGroup === group.label}
+                    onOpenChange={(open) => setOpenGroup(open ? group.label : null)}
                   >
-                    <span className="truncate max-w-[140px]">{group.label}</span>
-                    <span className="text-xs">▾</span>
-                  </button>
-                  <div
-                    className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-green-700/60 bg-green-900/95 p-2 text-sm text-white opacity-0 shadow-lg transition group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:pointer-events-auto hover:opacity-100"
-                    role="menu"
-                  >
-                    {visibleItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`block rounded-md px-3 py-2 text-sm font-semibold transition ${
-                          isNavItemActive(item.href)
-                            ? 'bg-green-700 text-white'
-                            : 'hover:bg-green-700'
+                    <DropdownMenu.Trigger asChild>
+                      <button
+                        type="button"
+                        className={`inline-flex h-9 items-center gap-1 rounded-md px-2 py-1 text-sm font-semibold transition-colors ${
+                          groupActive ? 'bg-green-700 text-white' : 'hover:text-green-200'
                         }`}
+                        aria-label={`${group.label} menu`}
+                        onPointerMove={() => {
+                          if (hoverCloseTimeout.current) {
+                            clearTimeout(hoverCloseTimeout.current);
+                            hoverCloseTimeout.current = null;
+                          }
+                          setOpenGroup(group.label);
+                        }}
+                        onPointerLeave={() => {
+                          hoverCloseTimeout.current = setTimeout(() => {
+                            setOpenGroup((current) => (current === group.label ? null : current));
+                          }, 120);
+                        }}
                       >
-                        <span className="block truncate">{item.label}</span>
-                      </Link>
-                    ))}
-                  </div>
+                        <span className="truncate max-w-[140px]">{group.label}</span>
+                        <span className="text-xs">▾</span>
+                      </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.Content
+                        sideOffset={8}
+                        align="start"
+                        className="z-30 w-52 rounded-lg border border-green-700/60 bg-green-900/95 p-2 text-sm text-white shadow-lg"
+                        onPointerEnter={() => {
+                          if (hoverCloseTimeout.current) {
+                            clearTimeout(hoverCloseTimeout.current);
+                            hoverCloseTimeout.current = null;
+                          }
+                        }}
+                        onPointerLeave={() => {
+                          hoverCloseTimeout.current = setTimeout(() => {
+                            setOpenGroup((current) => (current === group.label ? null : current));
+                          }, 120);
+                        }}
+                      >
+                        {visibleItems.map((item) => (
+                          <DropdownMenu.Item asChild key={item.href}>
+                            <Link
+                              href={item.href}
+                              className={`block rounded-md px-3 py-2 text-sm font-semibold outline-none transition ${
+                                isNavItemActive(item.href)
+                                  ? 'bg-green-700 text-white'
+                                  : 'hover:bg-green-700 data-[highlighted]:bg-green-700'
+                              }`}
+                            >
+                              <span className="block truncate">{item.label}</span>
+                            </Link>
+                          </DropdownMenu.Item>
+                        ))}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Root>
                 </div>
               );
             })}
