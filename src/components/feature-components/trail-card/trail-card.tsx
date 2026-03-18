@@ -83,20 +83,32 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             label="LocoXperts"
           />
         )}
-        {trail.onViewMap && (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              trail.onViewMap?.();
-            }}
-            className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-semibold text-white hover:bg-black/70"
-            aria-label={`View map for ${trail.name}`}
-            title="Open this trail route in a quick map modal"
-          >
-            Map
-          </button>
+        {(trail.sport_type || trail.distance_km != null || trail.difficulty) && (
+          <div className="absolute right-2 top-2 flex flex-wrap items-center justify-end gap-1.5">
+            {trail.sport_type && (
+              <span className="rounded-md bg-emerald-600/90 px-2 py-1 text-[11px] font-semibold text-white">
+                {getSportLabel(trail.sport_type)}
+              </span>
+            )}
+            {trail.distance_km != null && (
+              <span className="rounded-md bg-slate-900/70 px-2 py-1 text-[11px] font-semibold text-white">
+                {trail.distance_km} km
+              </span>
+            )}
+            {trail.difficulty && (
+              <span
+                className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                  trail.difficulty === 'easy'
+                    ? 'bg-green-600/90 text-white'
+                    : trail.difficulty === 'medium'
+                      ? 'bg-yellow-500/90 text-white'
+                      : 'bg-red-600/90 text-white'
+                }`}
+              >
+                {trail.difficulty}
+              </span>
+            )}
+          </div>
         )}
         {hasMultipleImages && (
           <>
@@ -151,18 +163,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-bold text-gray-900">{trail.name}</h3>
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-              trail.difficulty === 'easy'
-                ? 'bg-green-100 text-green-800'
-                : trail.difficulty === 'medium'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-red-100 text-red-800'
-            }`}
-            title="Trail difficulty level"
-          >
-            {trail.difficulty}
-          </span>
         </div>
         <p className="mb-2 text-sm text-gray-600">{trail.location}</p>
 
@@ -171,22 +171,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             Created by: {trail.expert_name || trail.created_by}
           </p>
         )}
-        <div className='mb-2 flex flex-wrap items-center gap-2'>
-          {trail.sport_type && (
-            <div className="mb-2">
-              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                Sport: {getSportLabel(trail.sport_type)}
-              </span>
-            </div>
-          )}
-          {trail.distance_km != null && (
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
-              <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                {trail.distance_km} km
-              </span>
-            </div>
-          )}
-        </div>
+        <div className='mb-2 flex flex-wrap items-center gap-2' />
         {trail.description && (
           <p className="mb-3 line-clamp-2 text-sm text-gray-700">
             {trail.description}
