@@ -35,6 +35,7 @@ import {
 } from '@/services/trails/trails.service';
 import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
+import { resizeImageToDataUrl } from '@/lib/image';
 // import {
 //   XAxis,
 //   YAxis,
@@ -54,6 +55,8 @@ const TrailPage: React.FunctionComponent = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoUploadMessage, setPhotoUploadMessage] = useState<string | null>(null);
   const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false);
   const [pendingGpxFile, setPendingGpxFile] = useState<File | null>(null);
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
@@ -219,6 +222,7 @@ const TrailPage: React.FunctionComponent = () => {
     currentUser?.role === 'expert' && trail?.submitted_by_user_id === currentUser?.id;
   const canManageTrail = isAdmin || isOwnerExpert;
   const canUploadRoute = currentUser?.role === 'admin';
+  const canUploadPhotos = canManageTrail;
   const canRequestTrail = currentUser?.role === 'participant';
 
   const toggleSafetyLabel = (value: TrailSafetyLabel) => {
@@ -260,6 +264,35 @@ const TrailPage: React.FunctionComponent = () => {
       }
     } catch (err) {
       setAdminMessage(err instanceof Error ? err.message : 'Failed to delete trail');
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canUploadPhotos || !trail) return;
+    const files = Array.from(event.target.files ?? []).filter((file) =>
+      file.type.startsWith('image/')
+    );
+    if (files.length === 0) return;
+    setPhotoUploadMessage(null);
+    setPhotoUploading(true);
+    try {
+      const newImages = await Promise.all(files.map((file) => resizeImageToDataUrl(file)));
+      const merged = [...trailImages, ...newImages].filter(Boolean);
+      const unique = merged.filter((image, index, arr) => arr.indexOf(image) === index);
+      await updateTrailMutation.mutateAsync({
+        image_url: unique[0] || null,
+        trail_images: unique,
+      });
+      setPhotoUploadMessage('Trail photos updated.');
+      if (event.target) {
+        event.target.value = '';
+      }
+    } catch (error) {
+      setPhotoUploadMessage(
+        error instanceof Error ? error.message : 'Failed to upload trail photos'
+      );
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -516,14 +549,17 @@ const TrailPage: React.FunctionComponent = () => {
               View Trail Photos
             </button>
           )}
-          {hasRoute && routeData && (
-            <button
-              type="button"
-              onClick={() => downloadGpx(trail.name, routeData)}
-              className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto"
-            >
-              Download GPX
-            </button>
+          {canUploadPhotos && (
+            <label className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-center text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              {photoUploading ? 'Uploading Photos...' : 'Upload Trail Photos'}
+            </label>
           )}
           {currentUser?.role === 'admin' && (
             <button
@@ -568,6 +604,9 @@ const TrailPage: React.FunctionComponent = () => {
             <span className="text-sm text-green-600">Route uploaded successfully.</span>
           )}
           {uploadError && <span className="text-sm text-red-600">{uploadError}</span>}
+          {photoUploadMessage && (
+            <span className="text-sm text-gray-600">{photoUploadMessage}</span>
+          )}
           {actionMessage && <span className="text-sm text-gray-600">{actionMessage}</span>}
           {requestMessage && <span className="text-sm text-gray-600">{requestMessage}</span>}
         </div>
@@ -904,13 +943,7 @@ const TrailPage: React.FunctionComponent = () => {
           </button>
         )}
         {hasRoute && routeData && (
-          <button
-            type="button"
-            onClick={() => downloadGpx(trail.name, routeData)}
-            className="flex-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
-          >
-            GPX
-          </button>
+          null
         )}
         <button
           type="button"
