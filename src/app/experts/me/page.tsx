@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Event, User, SportType } from '@/types';
+import type { Event, EventParticipant, User, SportType } from '@/types';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -40,11 +40,15 @@ type ExpertTrail = {
   is_hidden: boolean;
 };
 
+type ExpertEventWithParticipants = Event & {
+  participants?: EventParticipant[];
+};
+
 export default function ExpertProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [user, setUser] = useState<User | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<ExpertEventWithParticipants[]>([]);
   const [trailRequests, setTrailRequests] = useState<ExpertTrailRequest[]>([]);
   const [createdTrails, setCreatedTrails] = useState<ExpertTrail[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
@@ -505,38 +509,74 @@ export default function ExpertProfilePage() {
             You have not created any events yet.
           </p>
         ) : (
-          <div className="space-y-3">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-              >
-                <div>
-                  <Link
-                    href={`/events/${event.id}`}
-                    className="text-sm font-semibold text-gray-900 hover:text-green-700"
-                  >
-                    {event.title}
-                  </Link>
-                  <p className="text-xs text-gray-500">
-                    {format(new Date(event.event_date), 'PPP p')}
-                    {event.city ? ` • ${event.city}` : ''}
-                  </p>
-                  {event.sport_type && (
-                    <p className="text-xs text-gray-500">
-                      Sport: {getSportLabel(event.sport_type)}
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => router.push(`/events/${event.id}`)}
-                  className="text-xs font-semibold text-green-700 hover:text-green-800"
-                >
-                  View event
-                </button>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-left text-sm">
+              <thead className="text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-3 py-2">Event</th>
+                  <th className="px-3 py-2">Date</th>
+                  <th className="px-3 py-2">Participants</th>
+                  <th className="px-3 py-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.map((event) => {
+                  const participants = event.participants || [];
+                  return (
+                    <tr key={event.id} className="border-t border-gray-200 align-top">
+                      <td className="px-3 py-3">
+                        <Link
+                          href={`/events/${event.id}`}
+                          className="text-sm font-semibold text-gray-900 hover:text-green-700"
+                        >
+                          {event.title}
+                        </Link>
+                        <div className="text-xs text-gray-500">
+                          {event.city ? event.city : '—'}
+                        </div>
+                        {event.sport_type && (
+                          <div className="text-xs text-gray-500">
+                            {getSportLabel(event.sport_type)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-xs text-gray-600">
+                        {format(new Date(event.event_date), 'PPP p')}
+                      </td>
+                      <td className="px-3 py-3 text-xs text-gray-600">
+                        {participants.length === 0 ? (
+                          <span className="text-gray-400">No participants yet</span>
+                        ) : (
+                          <ul className="space-y-1">
+                            {participants.map((participant) => (
+                              <li key={participant.id}>
+                                <span className="font-semibold text-gray-700">
+                                  {participant.participant_name}
+                                </span>
+                                <span className="text-gray-500">
+                                  {participant.participant_email
+                                    ? ` (${participant.participant_email})`
+                                    : ''}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/events/${event.id}`)}
+                          className="text-xs font-semibold text-green-700 hover:text-green-800"
+                        >
+                          View event
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
