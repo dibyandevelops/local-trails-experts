@@ -11,7 +11,7 @@ type Props = {
 export default function TrailImagePlaceholder({
   className = '',
   compact = false,
-  label = 'LocoXperts',
+  label,
 }: Props) {
   return (
     <div
@@ -70,7 +70,7 @@ export default function TrailImagePlaceholder({
         />
       </div>
 
-      {!compact && (
+      {!compact && label && (
         <div className="absolute bottom-2 left-2 rounded-full bg-black/35 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
           {label}
         </div>
@@ -78,4 +78,3 @@ export default function TrailImagePlaceholder({
     </div>
   );
 }
-

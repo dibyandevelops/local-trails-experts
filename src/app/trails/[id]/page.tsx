@@ -11,6 +11,7 @@ import Map, {
   NavigationControl,
   ScaleControl,
   Source,
+  type MapRef,
 } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -64,9 +65,15 @@ const MapSection = React.memo(function MapSection({
   mapStyleMode,
   onStyleModeChange,
 }: MapSectionProps) {
+  const mapRef = React.useRef<MapRef | null>(null);
   return hasRoute ? (
     <div className="mb-6 h-[360px] w-full overflow-hidden rounded-xl border border-white/20 bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)] sm:h-[460px] lg:h-[600px]">
-      <Map initialViewState={mapCenter} style={{ width: '100%', height: '100%' }} mapStyle={mapStyle}>
+      <Map
+        ref={mapRef}
+        initialViewState={mapCenter}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle={mapStyle}
+      >
         <div className="absolute left-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
           <button
             type="button"
@@ -139,29 +146,29 @@ const MapSection = React.memo(function MapSection({
             />
           </Source>
         )}
-        {routeGeoJSON && (
-          <Layer
-            id="route-arrows-layer"
-            type="symbol"
-            source="route"
-            layout={{
-              'symbol-placement': 'line',
-              'symbol-spacing': 120,
-              'text-field': '›',
-              'text-size': 28,
-              'text-rotation-alignment': 'map',
-              'text-keep-upright': false,
-              'text-offset': [0, 0],
-              'text-allow-overlap': true,
-              'text-ignore-placement': true,
-            }}
-            paint={{
-              'text-color': '#16a34a',
-              'text-halo-color': '#0f172a',
-              'text-halo-width': 1.2,
-            }}
-          />
-        )}
+            {routeGeoJSON && (
+              <Layer
+                id="route-arrows-layer"
+                type="symbol"
+                source="route"
+                layout={{
+                  'symbol-placement': 'line',
+                  'symbol-spacing': 120,
+                  'text-field': '›',
+                  'text-size': 24,
+                  'text-rotation-alignment': 'map',
+                  'text-keep-upright': false,
+                  'text-offset': [0, 0],
+                  'text-allow-overlap': true,
+                  'text-ignore-placement': true,
+                }}
+                paint={{
+                  'text-color': '#16a34a',
+                  'text-halo-color': '#ffffff',
+                  'text-halo-width': 1.6,
+                }}
+              />
+            )}
         {hasRoute && routeData && routeData.coordinates.length > 0 && (
           <>
             <Marker
