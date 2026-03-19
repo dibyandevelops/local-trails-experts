@@ -22,8 +22,6 @@ function getEmailConfig() {
     smtpUser: (process.env.SMTP_USER || defaultMailbox).trim(),
     // Gmail app passwords are often copied with spaces; strip whitespace.
     smtpPass: rawPass.replace(/\s+/g, ''),
-    // Optional safety routing: if set, all outgoing mail lands in one inbox.
-    overrideTo: (process.env.EMAIL_OVERRIDE_TO || '').trim(),
   };
 }
 
@@ -62,20 +60,14 @@ export async function sendEmail(input: SendEmailInput) {
     smtpSecure,
     smtpUser,
     smtpPass,
-    overrideTo,
   } = getEmailConfig();
 
   const effectiveFrom = (input.from || from).trim();
   const fromSender = parseFrom(effectiveFrom);
-  const targetTo = overrideTo || input.to;
+  const targetTo = input.to;
 
-  if (overrideTo) {
-    const dedupeKey =
-      input.dedupeKey ||
-      `${overrideTo}|${input.subject}|${(input.text || '').slice(0, 200)}`;
-    if (shouldDedupeSend(dedupeKey)) {
-      return { sent: false as const, skipped: true as const, deduped: true as const };
-    }
+  if (input.dedupeKey && shouldDedupeSend(input.dedupeKey)) {
+    return { sent: false as const, skipped: true as const, deduped: true as const };
   }
 
   // Prefer Resend when configured (more reliable than consumer SMTP).
