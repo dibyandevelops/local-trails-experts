@@ -34,6 +34,11 @@ export async function GET(request: NextRequest) {
         city,
         sports,
         credentials,
+        verification_years_experience,
+        verification_certifications,
+        verification_guiding_history,
+        verification_safety_training,
+        verification_links,
         status,
         created_at,
         reviewed_at
@@ -82,6 +87,7 @@ export async function PATCH(request: NextRequest) {
 
     const client = await pool.connect();
     let tempPassword: string | null = null;
+    let expertUserId: string | null = null;
 
     try {
       await client.query('BEGIN');
@@ -93,7 +99,9 @@ export async function PATCH(request: NextRequest) {
             reviewed_at = NOW(),
             reviewed_by_admin_id = $3
         WHERE id = $2
-        RETURNING id, name, email, city, sports, credentials, status, reviewed_at, phone, phone_verified_at
+        RETURNING id, name, email, city, sports, credentials,
+                  verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+                  status, reviewed_at, phone, phone_verified_at
       `,
         [status, id, auth.sub]
       );
@@ -138,10 +146,14 @@ export async function PATCH(request: NextRequest) {
             ? JSON.stringify(application.sports)
             : null;
 
-          await client.query(
+          const createdUser = await client.query(
             `
-            INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert, phone, phone_verified_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE, $8, $9)
+            INSERT INTO users (
+              name, email, password_hash, role, bio, city, sports, is_verified_expert, phone, phone_verified_at,
+              verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE, $8, $9, $10, $11, $12, $13, $14)
+            RETURNING id
           `,
             [
               application.name,
@@ -153,8 +165,14 @@ export async function PATCH(request: NextRequest) {
               sportsJson,
               application.phone || null,
               application.phone_verified_at || null,
+              application.verification_years_experience || null,
+              application.verification_certifications || null,
+              application.verification_guiding_history || null,
+              application.verification_safety_training || null,
+              application.verification_links || null,
             ]
           );
+          expertUserId = createdUser.rows[0]?.id ?? null;
         } else {
           await client.query(
             `
@@ -164,7 +182,12 @@ export async function PATCH(request: NextRequest) {
                 city = COALESCE($2, city),
                 sports = COALESCE($3::jsonb, sports),
                 phone = COALESCE($4, phone),
-                phone_verified_at = COALESCE($5, phone_verified_at)
+                phone_verified_at = COALESCE($5, phone_verified_at),
+                verification_years_experience = COALESCE($6, verification_years_experience),
+                verification_certifications = COALESCE($7, verification_certifications),
+                verification_guiding_history = COALESCE($8, verification_guiding_history),
+                verification_safety_training = COALESCE($9, verification_safety_training),
+                verification_links = COALESCE($10, verification_links)
             WHERE id = $1
           `,
             [
@@ -175,7 +198,24 @@ export async function PATCH(request: NextRequest) {
                 : null,
               application.phone || null,
               application.phone_verified_at || null,
+              application.verification_years_experience || null,
+              application.verification_certifications || null,
+              application.verification_guiding_history || null,
+              application.verification_safety_training || null,
+              application.verification_links || null,
             ]
+          );
+          expertUserId = existingUser.rows[0].id;
+        }
+
+        if (expertUserId) {
+          await client.query(
+            `
+            UPDATE trails
+            SET is_hidden = FALSE
+            WHERE submitted_by_user_id = $1 AND is_hidden = TRUE
+          `,
+            [expertUserId]
           );
         }
       }

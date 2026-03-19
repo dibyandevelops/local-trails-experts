@@ -12,7 +12,21 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const body = await request.json();
-    const { name, email, city, sports, credentials, phone, password, profile_photo_url } = body;
+    const {
+      name,
+      email,
+      city,
+      sports,
+      credentials,
+      phone,
+      password,
+      profile_photo_url,
+      verification_years_experience,
+      verification_certifications,
+      verification_guiding_history,
+      verification_safety_training,
+      verification_links,
+    } = body;
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
 
     if (!name || !email || !credentials || !normalizedPhone) {
@@ -85,7 +99,12 @@ export async function POST(request: NextRequest) {
             city = COALESCE($3, city),
             sports = COALESCE($4::jsonb, sports),
             phone = COALESCE($5, phone),
-            profile_photo_url = COALESCE($6, profile_photo_url)
+            profile_photo_url = COALESCE($6, profile_photo_url),
+            verification_years_experience = COALESCE($7, verification_years_experience),
+            verification_certifications = COALESCE($8, verification_certifications),
+            verification_guiding_history = COALESCE($9, verification_guiding_history),
+            verification_safety_training = COALESCE($10, verification_safety_training),
+            verification_links = COALESCE($11, verification_links)
         WHERE id = $1
       `,
         [
@@ -95,6 +114,11 @@ export async function POST(request: NextRequest) {
           sportsJson,
           normalizedPhone,
           profile_photo_url || null,
+          verification_years_experience || null,
+          verification_certifications || null,
+          verification_guiding_history || null,
+          verification_safety_training || null,
+          verification_links || null,
         ]
       );
 
@@ -107,19 +131,52 @@ export async function POST(request: NextRequest) {
               sports = $3::jsonb,
               credentials = $4,
               profile_photo_url = $5,
+              verification_years_experience = $6,
+              verification_certifications = $7,
+              verification_guiding_history = $8,
+              verification_safety_training = $9,
+              verification_links = $10,
               status = 'pending',
               reviewed_at = NULL
-          WHERE id = $6
+          WHERE id = $11
           `,
-          [name, city || null, sportsJson, credentials, profile_photo_url || null, existingApp.rows[0].id]
+          [
+            name,
+            city || null,
+            sportsJson,
+            credentials,
+            profile_photo_url || null,
+            verification_years_experience || null,
+            verification_certifications || null,
+            verification_guiding_history || null,
+            verification_safety_training || null,
+            verification_links || null,
+            existingApp.rows[0].id,
+          ]
         );
       } else {
         await pool.query(
           `
-          INSERT INTO expert_applications (name, email, city, sports, credentials, profile_photo_url, status)
-          VALUES ($1, $2, $3, $4::jsonb, $5, $6, 'pending')
+          INSERT INTO expert_applications (
+            name, email, city, sports, credentials, profile_photo_url,
+            verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+            status
+          )
+          VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, 'pending')
           `,
-          [name, email, city || null, sportsJson, credentials, profile_photo_url || null]
+          [
+            name,
+            email,
+            city || null,
+            sportsJson,
+            credentials,
+            profile_photo_url || null,
+            verification_years_experience || null,
+            verification_certifications || null,
+            verification_guiding_history || null,
+            verification_safety_training || null,
+            verification_links || null,
+          ]
         );
       }
 
@@ -168,8 +225,11 @@ export async function POST(request: NextRequest) {
 
     // Create user with expert role (pending verification)
     const query = `
-      INSERT INTO users (name, email, password_hash, role, bio, city, sports, is_verified_expert, phone, profile_photo_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, FALSE, $8, $9)
+      INSERT INTO users (
+        name, email, password_hash, role, bio, city, sports, is_verified_expert, phone, profile_photo_url,
+        verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, FALSE, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, name, email, role, created_at
     `;
 
@@ -183,16 +243,37 @@ export async function POST(request: NextRequest) {
       sportsJson,
       normalizedPhone,
       profile_photo_url || null,
+      verification_years_experience || null,
+      verification_certifications || null,
+      verification_guiding_history || null,
+      verification_safety_training || null,
+      verification_links || null,
     ]);
 
     const user = result.rows[0];
 
     await pool.query(
       `
-      INSERT INTO expert_applications (name, email, city, sports, credentials, profile_photo_url, status)
-      VALUES ($1, $2, $3, $4::jsonb, $5, $6, 'pending')
+      INSERT INTO expert_applications (
+        name, email, city, sports, credentials, profile_photo_url,
+        verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+        status
+      )
+      VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, 'pending')
       `,
-      [name, email, city || null, sportsJson, credentials, profile_photo_url || null]
+      [
+        name,
+        email,
+        city || null,
+        sportsJson,
+        credentials,
+        profile_photo_url || null,
+        verification_years_experience || null,
+        verification_certifications || null,
+        verification_guiding_history || null,
+        verification_safety_training || null,
+        verification_links || null,
+      ]
     );
 
     const welcomeExpertEmail = buildBrandedEmail({

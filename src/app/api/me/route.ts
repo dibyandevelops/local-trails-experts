@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(
       `
-      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, profile_photo_url, created_at, updated_at
+      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, profile_photo_url,
+             verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+             created_at, updated_at
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -47,13 +49,30 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, city, bio, sports, phone, profile_photo_url } = body as {
+    const {
+      name,
+      city,
+      bio,
+      sports,
+      phone,
+      profile_photo_url,
+      verification_years_experience,
+      verification_certifications,
+      verification_guiding_history,
+      verification_safety_training,
+      verification_links,
+    } = body as {
       name?: string;
       city?: string;
       bio?: string;
       sports?: string[];
       phone?: string;
       profile_photo_url?: string;
+      verification_years_experience?: string;
+      verification_certifications?: string;
+      verification_guiding_history?: string;
+      verification_safety_training?: string;
+      verification_links?: string;
     };
 
     const sportsJson =
@@ -86,9 +105,16 @@ export async function PATCH(request: NextRequest) {
           sports = $4::jsonb,
           phone = $5,
           profile_photo_url = $6,
+          verification_years_experience = $7,
+          verification_certifications = $8,
+          verification_guiding_history = $9,
+          verification_safety_training = $10,
+          verification_links = $11,
           updated_at = NOW()
-      WHERE id = $7
-      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, profile_photo_url, created_at, updated_at
+      WHERE id = $12
+      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, profile_photo_url,
+                verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+                created_at, updated_at
     `,
       [
         name || null,
@@ -97,6 +123,11 @@ export async function PATCH(request: NextRequest) {
         sportsJson,
         normalizedPhone || null,
         profile_photo_url || null,
+        verification_years_experience || null,
+        verification_certifications || null,
+        verification_guiding_history || null,
+        verification_safety_training || null,
+        verification_links || null,
         auth.sub,
       ]
     );

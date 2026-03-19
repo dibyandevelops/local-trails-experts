@@ -51,6 +51,11 @@ export async function GET(request: NextRequest) {
         u.sports,
         u.is_verified_expert,
         u.profile_photo_url,
+        u.verification_years_experience,
+        u.verification_certifications,
+        u.verification_guiding_history,
+        u.verification_safety_training,
+        u.verification_links,
         u.created_at,
         u.updated_at,
         COALESCE(
@@ -86,6 +91,11 @@ export async function GET(request: NextRequest) {
         sports: row.sports,
         is_verified_expert: row.is_verified_expert,
         profile_photo_url: row.profile_photo_url,
+        verification_years_experience: row.verification_years_experience,
+        verification_certifications: row.verification_certifications,
+        verification_guiding_history: row.verification_guiding_history,
+        verification_safety_training: row.verification_safety_training,
+        verification_links: row.verification_links,
         created_at: row.created_at,
         updated_at: row.updated_at,
       };

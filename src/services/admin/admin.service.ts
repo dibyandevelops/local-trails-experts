@@ -10,6 +10,11 @@ export type ExpertApplication = {
   city: string | null;
   sports: string[] | null;
   credentials: string;
+  verification_years_experience?: string | null;
+  verification_certifications?: string | null;
+  verification_guiding_history?: string | null;
+  verification_safety_training?: string | null;
+  verification_links?: string | null;
   status: ExpertApplicationStatus;
   created_at: string;
   reviewed_at: string | null;
@@ -60,6 +65,11 @@ export type AdminUser = {
   city: string | null;
   sports: string[] | null;
   phone: string | null;
+  verification_years_experience?: string | null;
+  verification_certifications?: string | null;
+  verification_guiding_history?: string | null;
+  verification_safety_training?: string | null;
+  verification_links?: string | null;
   created_at: string;
 };
 

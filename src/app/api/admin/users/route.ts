@@ -21,7 +21,20 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(
       `
-      SELECT id, name, email, role, city, sports, phone, created_at
+      SELECT
+        id,
+        name,
+        email,
+        role,
+        city,
+        sports,
+        phone,
+        verification_years_experience,
+        verification_certifications,
+        verification_guiding_history,
+        verification_safety_training,
+        verification_links,
+        created_at
       FROM users
       WHERE role = $1
       ORDER BY created_at DESC

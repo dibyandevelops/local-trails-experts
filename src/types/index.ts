@@ -138,6 +138,11 @@ export interface User {
   phone_verified_at?: string | null;
   google_sub?: string | null;
   profile_photo_url?: string | null;
+  verification_years_experience?: string | null;
+  verification_certifications?: string | null;
+  verification_guiding_history?: string | null;
+  verification_safety_training?: string | null;
+  verification_links?: string | null;
   created_at: string;
   updated_at: string;
   last_login_at?: string | null;
