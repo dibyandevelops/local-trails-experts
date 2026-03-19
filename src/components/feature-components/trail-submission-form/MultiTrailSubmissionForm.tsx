@@ -3,6 +3,7 @@
 import { ChangeEventHandler, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
+import axios from 'axios';
 import type { Difficulty, SportType, UserRole } from '@/types';
 import {
   DEFAULT_TRAIL_SAFETY_LABELS,
@@ -290,7 +291,16 @@ export default function MultiTrailSubmissionForm({
         );
         results.push({ index, ok: true, id: data.trail?.id });
       } catch (e) {
-        results.push({ index, ok: false, err: e instanceof Error ? e.message : 'Failed to create trail' });
+        let errorMessage = 'Failed to create trail';
+        if (axios.isAxiosError(e)) {
+          errorMessage =
+            (e.response?.data as { error?: string } | undefined)?.error ||
+            e.message ||
+            errorMessage;
+        } else if (e instanceof Error) {
+          errorMessage = e.message;
+        }
+        results.push({ index, ok: false, err: errorMessage });
       }
     }
     setSubmitting(false);

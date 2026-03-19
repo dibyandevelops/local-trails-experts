@@ -211,6 +211,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const nameCheck = await pool.query(
+      'SELECT id FROM trails WHERE LOWER(name) = LOWER($1) LIMIT 1',
+      [name]
+    );
+    if (nameCheck.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'Trail name already exists. Please choose another name.' },
+        { status: 409 }
+      );
+    }
+
     const isAdmin = auth?.role === 'admin';
     const isExpert = auth?.role === 'expert';
 

@@ -80,6 +80,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    if (body.name && body.name.trim()) {
+      const nameCheck = await pool.query(
+        'SELECT id FROM trails WHERE LOWER(name) = LOWER($1) AND id <> $2 LIMIT 1',
+        [body.name.trim(), id]
+      );
+      if (nameCheck.rows.length > 0) {
+        return NextResponse.json(
+          { error: 'Trail name already exists. Please choose another name.' },
+          { status: 409 }
+        );
+      }
+    }
+
     // Handle hide/unhide action using is_hidden column
     if (body.action === 'hide' || body.action === 'unhide') {
       const isHidden = body.action === 'hide';

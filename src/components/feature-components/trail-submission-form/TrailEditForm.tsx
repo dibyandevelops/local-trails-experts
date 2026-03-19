@@ -102,6 +102,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       await queryClient.invalidateQueries({ queryKey: ['trails'] });
       await queryClient.invalidateQueries({ queryKey: ['trails-paginated'] });
       await queryClient.invalidateQueries({ queryKey: ['trails-infinite'] });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.pendingTrails });
 
       // Return to the page the admin came from (pending list, trail details, etc.).
       if (typeof window !== 'undefined' && window.history.length > 1) {
