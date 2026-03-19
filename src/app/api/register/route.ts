@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
     const { subject, text, html } = buildWelcomeEmail({
       name,
       appUrl: getAppUrl(),
+      role: 'participant',
     });
     const fromBase =
       (process.env.RESEND_FROM || process.env.EMAIL_FROM || '').trim() ||

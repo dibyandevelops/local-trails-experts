@@ -6,8 +6,6 @@ import type { UserRole } from '@/types';
 import { sendEmailSafe } from '@/lib/email';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
-const ADMIN_APPROVAL_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || ''
-
 type ExpertApplicationStatus = 'pending' | 'approved' | 'rejected';
 
 export async function GET(request: NextRequest) {
@@ -196,9 +194,15 @@ export async function PATCH(request: NextRequest) {
           greetingName: application.name,
           bodyHtml: `Your expert application has been approved.<br/>${passwordNote}`,
           bodyText: `Your expert application has been approved. ${passwordNote}`,
+          profilePath: '/experts/me',
+          ctas: [
+            { label: 'View expert profile', href: `${getAppUrl()}/experts/me`, variant: 'primary' },
+            { label: 'Create an event', href: `${getAppUrl()}/events/create`, variant: 'secondary' },
+            { label: 'Create a trail', href: `${getAppUrl()}/trails/create`, variant: 'secondary' },
+          ],
         });
         await sendEmailSafe({
-          to: ADMIN_APPROVAL_EMAIL,
+          to: application.email,
           ...approvalEmail,
           dedupeKey: `expert-application:approved:${application.id}:${application.email}`,
         });
@@ -215,9 +219,13 @@ export async function PATCH(request: NextRequest) {
             'Your expert application is currently not approved. You can submit updated credentials and apply again.',
           bodyText:
             'Your expert application is currently not approved. You can submit updated credentials and apply again.',
+          ctas: [
+            { label: 'Reapply as expert', href: `${getAppUrl()}/experts/join`, variant: 'primary' },
+            { label: 'Browse trails', href: `${getAppUrl()}/trails`, variant: 'secondary' },
+          ],
         });
         await sendEmailSafe({
-          to: ADMIN_APPROVAL_EMAIL,
+          to: application.email,
           ...rejectedEmail,
           dedupeKey: `expert-application:rejected:${application.id}:${application.email}`,
         });

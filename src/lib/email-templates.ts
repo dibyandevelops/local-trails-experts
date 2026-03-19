@@ -13,11 +13,13 @@ type BrandedEmailInput = {
   bodyHtml?: string;
   bodyText?: string;
   ctas?: Cta[];
+  profilePath?: string;
 };
 
 type WelcomeEmailInput = {
   name: string;
   appUrl: string;
+  role?: 'participant' | 'expert';
 };
 
 export function getAppUrl() {
@@ -35,11 +37,12 @@ export function buildBrandedEmail({
   bodyHtml,
   bodyText,
   ctas,
+  profilePath = '/participants/me',
 }: BrandedEmailInput) {
   const baseUrl = appUrl.trim().replace(/\/$/, '');
   const eventsUrl = `${baseUrl}/events`;
   const trailsUrl = `${baseUrl}/trails`;
-  const profileUrl = `${baseUrl}/participants/me`;
+  const profileUrl = `${baseUrl}${profilePath.startsWith('/') ? profilePath : `/${profilePath}`}`;
   const defaultCtas: Cta[] = [
     { label: 'Join events', href: eventsUrl, variant: 'primary' },
     { label: 'Search trails', href: trailsUrl, variant: 'secondary' },
@@ -119,7 +122,21 @@ export function buildBrandedEmail({
   return { subject, text, html };
 }
 
-export function buildWelcomeEmail({ name, appUrl }: WelcomeEmailInput) {
+export function buildWelcomeEmail({ name, appUrl, role }: WelcomeEmailInput) {
+  const baseUrl = appUrl.trim().replace(/\/$/, '');
+  const isExpert = role === 'expert';
+  const ctas: Cta[] = isExpert
+    ? [
+        { label: 'View expert profile', href: `${baseUrl}/experts/me`, variant: 'primary' },
+        { label: 'Create an event', href: `${baseUrl}/events/create`, variant: 'secondary' },
+        { label: 'Explore trails', href: `${baseUrl}/trails`, variant: 'secondary' },
+      ]
+    : [
+        { label: 'Join events', href: `${baseUrl}/events`, variant: 'primary' },
+        { label: 'Search trails', href: `${baseUrl}/trails`, variant: 'secondary' },
+        { label: 'Find experts', href: `${baseUrl}/experts`, variant: 'secondary' },
+      ];
+
   return buildBrandedEmail({
     subject: 'Welcome to LocoXperts',
     appUrl,
@@ -129,5 +146,7 @@ export function buildWelcomeEmail({ name, appUrl }: WelcomeEmailInput) {
     bodyHtml:
       'Discover curated trails, join local events, and ride with trusted guides in your area.',
     bodyText: 'Welcome to LocoXperts. Your account is ready!',
+    ctas,
+    profilePath: isExpert ? '/experts/me' : '/participants/me',
   });
 }
