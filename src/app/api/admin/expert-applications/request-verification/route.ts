@@ -42,13 +42,13 @@ export async function POST(request: NextRequest) {
       greetingName: application.name,
       bodyHtml: `Our admin team needs additional verification details for your expert application:<br/><br/>${message
         .trim()
-        .replace(/\n/g, '<br/>')}<br/><br/>Please update your expert bio with key details (years of experience, certifications, guiding history, safety training/first-aid, portfolio links). You can also reply with any supporting documents.`,
-      bodyText: `Our admin team needs additional verification details for your expert application:\n\n${message.trim()}\n\nPlease update your expert bio with key details (years of experience, certifications, guiding history, safety training/first-aid, portfolio links). You can also reply with any supporting documents.`,
-      profilePath: '/experts/me?focus=bio',
+        .replace(/\n/g, '<br/>')}<br/><br/>Please update your <strong>Verification Details</strong> section (years of experience, certifications, guiding history, safety training/first-aid, portfolio links). You can also reply with any supporting documents.`,
+      bodyText: `Our admin team needs additional verification details for your expert application:\n\n${message.trim()}\n\nPlease update your Verification Details section (years of experience, certifications, guiding history, safety training/first-aid, portfolio links). You can also reply with any supporting documents.`,
+      profilePath: '/experts/me',
       ctas: [
         {
-          label: 'Update expert bio',
-          href: `${getAppUrl()}/experts/me?focus=bio`,
+          label: 'Update verification details',
+          href: `${getAppUrl()}/experts/me`,
           variant: 'primary',
         },
         {
