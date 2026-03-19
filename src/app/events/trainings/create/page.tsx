@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { createEvent, fetchVerifiedExperts } from '@/services/events/events.service';
+import { createEvent } from '@/services/events/events.service';
+import { fetchExperts } from '@/services/experts/experts.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { CreateEventInput, ExpertiseLevel, SportType, User } from '@/types';
 
@@ -60,8 +61,8 @@ export default function CreateTrainingPage() {
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
 
   const { data: experts = [] } = useQuery<User[]>({
-    queryKey: QUERY_KEYS.experts.verified,
-    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+    queryKey: QUERY_KEYS.experts.list(),
+    queryFn: ({ signal }) => fetchExperts({}, signal),
     enabled: currentUser?.role === 'admin',
   });
 
@@ -72,6 +73,8 @@ export default function CreateTrainingPage() {
 
   const selectedHostId = watch('host_user_id');
   const isPaidEvent = watch('is_paid_event');
+  const isExpertUnverified =
+    currentUser?.role === 'expert' && !currentUser?.is_verified_expert;
 
   useEffect(() => {
     if (!getValues('event_date')) {
@@ -89,6 +92,7 @@ export default function CreateTrainingPage() {
   const selectedExpert = selectedHostId
     ? experts.find((expert) => expert.id === selectedHostId)
     : undefined;
+  const selectedHostIsVerified = selectedExpert?.is_verified_expert ?? false;
 
   useEffect(() => {
     if (currentUser?.role !== 'admin') return;
@@ -102,8 +106,16 @@ export default function CreateTrainingPage() {
 
   const onSubmit: SubmitHandler<TrainingFormValues> = async (values) => {
     try {
+      if (isExpertUnverified) {
+        alert('Your expert profile is pending verification. You cannot create trainings yet.');
+        return;
+      }
       if (currentUser?.role === 'admin' && !values.host_user_id) {
         alert('Please select an approved expert host.');
+        return;
+      }
+      if (currentUser?.role === 'admin' && values.host_user_id && !selectedHostIsVerified) {
+        alert('Selected expert is not verified yet. Please choose a verified host.');
         return;
       }
       if (values.is_paid_event && (!values.price_npr || values.price_npr <= 0)) {
@@ -160,6 +172,12 @@ export default function CreateTrainingPage() {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-md"
         >
+          {isExpertUnverified && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Your expert profile is pending verification. Trainings are disabled until
+              an admin approves your profile.
+            </div>
+          )}
           {currentUser.role === 'admin' && (
             <div>
               <label className="mb-2 block text-sm font-medium">Approved Expert Host</label>
@@ -177,11 +195,21 @@ export default function CreateTrainingPage() {
               >
                 <option value="">Select expert host</option>
                 {experts.map((expert) => (
-                  <option key={expert.id} value={expert.id}>
+                  <option
+                    key={expert.id}
+                    value={expert.id}
+                    disabled={!expert.is_verified_expert}
+                  >
                     {expert.name || 'Expert'} ({expert.email})
+                    {!expert.is_verified_expert ? ' — Pending verification' : ''}
                   </option>
                 ))}
               </select>
+              {selectedHostId && !selectedHostIsVerified && (
+                <p className="mt-2 text-xs text-amber-700">
+                  This expert is pending verification and cannot host trainings yet.
+                </p>
+              )}
             </div>
           )}
 
@@ -316,7 +344,13 @@ export default function CreateTrainingPage() {
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={
+                createMutation.isPending ||
+                isExpertUnverified ||
+                (currentUser?.role === 'admin' &&
+                  Boolean(selectedHostId) &&
+                  !selectedHostIsVerified)
+              }
               className="flex-1 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-60"
             >
               {createMutation.isPending ? 'Creating...' : 'Create Training'}

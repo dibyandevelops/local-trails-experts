@@ -256,18 +256,21 @@ export async function POST(request: NextRequest) {
     // Get submitter info if authenticated
     let submitter = null;
     let submitterEmail = null;
+    let submitterVerified = false;
     if (auth?.sub) {
       const submitterResult = await pool.query(
-        'SELECT name, email FROM users WHERE id = $1 LIMIT 1',
+        'SELECT name, email, is_verified_expert FROM users WHERE id = $1 LIMIT 1',
         [auth.sub]
       );
       submitter = submitterResult.rows[0];
       submitterEmail = submitter?.email;
+      submitterVerified = Boolean(submitter?.is_verified_expert);
     }
 
-    // Auto-approve trails created by admins or experts
+    // Auto-approve trails created by admins or experts (unverified experts are hidden first)
     const shouldAutoApprove = isAdmin || isExpert;
     const trailStatus = shouldAutoApprove ? 'approved' : 'pending';
+    const isHidden = isExpert && !submitterVerified;
 
     const result = await pool.query(
       `
@@ -299,7 +302,7 @@ export async function POST(request: NextRequest) {
         auth?.sub || null,
         isAdmin && auth?.sub ? auth.sub : null,
         isAdmin && auth?.sub ? new Date() : null,
-        false, // is_hidden default
+        isHidden,
       ]
     );
 

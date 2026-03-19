@@ -166,10 +166,32 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (auth.role === 'expert') {
+      const verifiedResult = await pool.query(
+        'SELECT is_verified_expert FROM users WHERE id = $1 LIMIT 1',
+        [auth.sub]
+      );
+      if (!verifiedResult.rows[0]?.is_verified_expert) {
+        return NextResponse.json(
+          { error: 'Expert verification is pending. Events cannot be created yet.' },
+          { status: 403 }
+        );
+      }
       // Experts can only create events for themselves
       if (host_user_id && host_user_id !== auth.sub) {
         return NextResponse.json(
           { error: 'Experts can only create events for themselves.' },
+          { status: 403 }
+        );
+      }
+    }
+    if (auth.role === 'admin' && host_user_id) {
+      const hostResult = await pool.query(
+        'SELECT is_verified_expert FROM users WHERE id = $1 LIMIT 1',
+        [host_user_id]
+      );
+      if (!hostResult.rows[0]?.is_verified_expert) {
+        return NextResponse.json(
+          { error: 'Selected expert host is not verified yet.' },
           { status: 403 }
         );
       }

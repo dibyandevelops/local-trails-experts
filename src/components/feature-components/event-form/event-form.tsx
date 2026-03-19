@@ -16,12 +16,8 @@ import {
 } from '@/types';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { fetchTrailById, fetchTrailsPaginated } from '@/services/trails/trails.service';
-import {
-  createEvent,
-  fetchEventById,
-  fetchVerifiedExperts,
-  updateEvent,
-} from '@/services/events/events.service';
+import { createEvent, fetchEventById, updateEvent } from '@/services/events/events.service';
+import { fetchExperts } from '@/services/experts/experts.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import TrailSubmissionForm from '@/components/feature-components/trail-submission-form';
 import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
@@ -205,8 +201,8 @@ export default function EventForm({
   });
 
   const { data: experts = [] } = useQuery<User[]>({
-    queryKey: QUERY_KEYS.experts.verified,
-    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+    queryKey: QUERY_KEYS.experts.list(),
+    queryFn: ({ signal }) => fetchExperts({}, signal),
     enabled: currentUser?.role === 'admin',
   });
 
@@ -282,6 +278,9 @@ export default function EventForm({
   const selectedExpert = selectedHostId
     ? experts.find((expert) => expert.id === selectedHostId)
     : undefined;
+  const selectedHostIsVerified = selectedExpert?.is_verified_expert ?? false;
+  const isExpertUnverified =
+    currentUser?.role === 'expert' && !currentUser?.is_verified_expert;
   const effectiveUser = (
     currentUser?.role === 'expert' ? currentUser : selectedExpert
   ) as User | undefined;
@@ -486,8 +485,16 @@ export default function EventForm({
 
   const onSubmit: SubmitHandler<EventFormValues> = async (values) => {
     try {
+      if (isExpertUnverified) {
+        alert('Your expert profile is pending verification. You cannot create events yet.');
+        return;
+      }
       if (currentUser?.role === 'admin' && !values.host_user_id) {
         alert('Please select an approved expert host before creating an event.');
+        return;
+      }
+      if (currentUser?.role === 'admin' && values.host_user_id && !selectedHostIsVerified) {
+        alert('Selected expert is not verified yet. Please choose a verified host.');
         return;
       }
 
@@ -603,6 +610,12 @@ export default function EventForm({
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white border border-gray-200 rounded-lg shadow-md p-6 space-y-6"
         >
+          {isExpertUnverified && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Your expert profile is pending verification. You can create trails, but
+              events and trainings are disabled until an admin approves your profile.
+            </div>
+          )}
           {currentUser?.role === 'admin' && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               Select an approved host first to unlock sport-specific fields.
@@ -628,13 +641,23 @@ export default function EventForm({
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="">Select an approved expert</option>
+                <option value="">Select an expert host</option>
                 {experts.map((expert) => (
-                  <option key={expert.id} value={expert.id}>
+                  <option
+                    key={expert.id}
+                    value={expert.id}
+                    disabled={!expert.is_verified_expert}
+                  >
                     {expert.name || 'Expert'} ({expert.email})
+                    {!expert.is_verified_expert ? ' — Pending verification' : ''}
                   </option>
                 ))}
               </select>
+              {selectedHostId && !selectedHostIsVerified && (
+                <p className="mt-2 text-xs text-amber-700">
+                  This expert is pending verification and cannot host events yet.
+                </p>
+              )}
             </div>
           )}
 
@@ -976,7 +999,13 @@ export default function EventForm({
           <div className="flex gap-4 pt-4">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={Boolean(
+                isSubmitting ||
+                isExpertUnverified ||
+                (currentUser?.role === 'admin' &&
+                  selectedHostId &&
+                  !selectedHostIsVerified)
+              )}
               className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {isSubmitting
