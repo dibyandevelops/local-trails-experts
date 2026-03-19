@@ -167,9 +167,13 @@ function ExpertCard({
             )}
           </div>
         </div>
-        {expert.is_verified_expert && (
+        {expert.is_verified_expert ? (
           <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-[11px] font-semibold">
             Verified Expert
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold">
+            Pending Verification
           </span>
         )}
       </div>

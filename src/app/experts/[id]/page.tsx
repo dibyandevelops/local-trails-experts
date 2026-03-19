@@ -117,9 +117,13 @@ export default function ExpertDetailPage() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 {expert.name || 'Local Expert'}
               </h1>
-              {expert.is_verified_expert && (
+              {expert.is_verified_expert ? (
                 <span className="inline-flex items-center rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white dark:bg-emerald-400 dark:text-emerald-950">
                   Verified Expert
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">
+                  Pending Verification
                 </span>
               )}
               {strava?.connected && stravaProfileId && currentUser?.id === expertId && (
