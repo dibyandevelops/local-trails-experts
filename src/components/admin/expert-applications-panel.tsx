@@ -8,12 +8,19 @@ import {
 } from '@/services/admin/admin.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { getSportLabel } from '@/services/constants/sports';
+import * as Dialog from '@radix-ui/react-dialog';
 
 const statusOptions = ['all', 'pending', 'approved', 'rejected'] as const;
 
 export default function ExpertApplicationsPanel() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<(typeof statusOptions)[number]>('pending');
+  const [verificationOpen, setVerificationOpen] = useState(false);
+  const [activeApplication, setActiveApplication] = useState<ExpertApplication | null>(null);
+  const [verificationNotice, setVerificationNotice] = useState<string | null>(null);
+  const [verificationMessage, setVerificationMessage] = useState(
+    `Hi there,\n\nThanks for applying to be a verified expert on LocoXperts. To move forward, please share the following:\n\n1) Links to your certifications/licenses (if any)\n2) Recent guiding/coaching references\n3) Your preferred trails and typical group size\n4) Any safety plan or emergency protocol you follow\n\nOnce we receive this, we’ll review within 2 business days.\n\nThanks,\nLocoXperts Team`
+  );
 
   const {
     data: applications = [],
@@ -42,16 +49,20 @@ export default function ExpertApplicationsPanel() {
       sendAdminVerificationRequest(id, message),
   });
 
-  const handleRequestVerification = async (app: ExpertApplication) => {
-    const message = window.prompt(
-      `Request additional verification from ${app.name || app.email}:`
-    );
-    if (!message?.trim()) return;
+  const handleRequestVerification = async () => {
+    if (!activeApplication) return;
+    if (!verificationMessage.trim()) return;
     try {
-      await verificationMutation.mutateAsync({ id: app.id, message: message.trim() });
-      alert('Verification request sent.');
+      await verificationMutation.mutateAsync({
+        id: activeApplication.id,
+        message: verificationMessage.trim(),
+      });
+      setVerificationNotice('Verification request sent.');
+      setVerificationOpen(false);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to send request.');
+      setVerificationNotice(
+        error instanceof Error ? error.message : 'Failed to send request.'
+      );
     }
   };
 
@@ -88,6 +99,11 @@ export default function ExpertApplicationsPanel() {
       </div>
 
       <div className="mt-4">
+        {verificationNotice && (
+          <p className="mb-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+            {verificationNotice}
+          </p>
+        )}
         {isLoading ? (
           <p className="text-sm text-gray-600">Loading applications...</p>
         ) : applications.length === 0 ? (
@@ -140,7 +156,10 @@ export default function ExpertApplicationsPanel() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleRequestVerification(app)}
+                          onClick={() => {
+                            setActiveApplication(app);
+                            setVerificationOpen(true);
+                          }}
                           className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
                         >
                           Request verification
@@ -165,6 +184,48 @@ export default function ExpertApplicationsPanel() {
           </div>
         )}
       </div>
+
+      <Dialog.Root
+        open={verificationOpen}
+        onOpenChange={(open) => {
+          setVerificationOpen(open);
+          if (!open) {
+            setActiveApplication(null);
+            setVerificationNotice(null);
+          }
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl">
+            <Dialog.Title className="text-sm font-semibold text-gray-900">
+              Request additional verification
+            </Dialog.Title>
+            <p className="mt-1 text-xs text-gray-500">
+              Send a clear request to {activeApplication?.name || activeApplication?.email}.
+            </p>
+            <textarea
+              value={verificationMessage}
+              onChange={(event) => setVerificationMessage(event.target.value)}
+              rows={10}
+              className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </Dialog.Close>
+              <button
+                type="button"
+                onClick={handleRequestVerification}
+                disabled={verificationMutation.isPending}
+                className="rounded-lg bg-green-700 px-4 py-2 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+              >
+                {verificationMutation.isPending ? 'Sending...' : 'Send request'}
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </section>
   );
 }
