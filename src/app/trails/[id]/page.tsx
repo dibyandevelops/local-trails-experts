@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Map, {
@@ -36,15 +36,161 @@ import {
 import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
-// import {
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   ResponsiveContainer,
-//   Area,
-//   AreaChart,
-// } from 'recharts';
+
+type GeoJSON = {
+  type: string;
+  geometry: {
+    type: string;
+    coordinates: number[][];
+  };
+} | null;
+type MapSectionProps = {
+  hasRoute: boolean;
+  routeGeoJSON: GeoJSON;
+  routeData: RouteData | null;
+  mapCenter: { longitude: number; latitude: number; zoom: number };
+  mapStyle: string;
+  mapStyleMode: MapStyleMode;
+  onStyleModeChange: (mode: MapStyleMode) => void;
+};
+
+const MapSection = React.memo(function MapSection({
+  hasRoute,
+  routeGeoJSON,
+  routeData,
+  mapCenter,
+  mapStyle,
+  mapStyleMode,
+  onStyleModeChange,
+}: MapSectionProps) {
+  return hasRoute ? (
+    <div className="mb-6 h-[360px] w-full overflow-hidden rounded-xl border border-white/20 bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)] sm:h-[460px] lg:h-[600px]">
+      <Map initialViewState={mapCenter} style={{ width: '100%', height: '100%' }} mapStyle={mapStyle}>
+        <div className="absolute left-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
+          <button
+            type="button"
+            aria-pressed={mapStyleMode === 'satellite'}
+            onClick={() => onStyleModeChange('satellite')}
+            className={`px-3 py-2 text-xs font-semibold transition ${
+              mapStyleMode === 'satellite'
+                ? 'bg-white/15 text-white'
+                : 'text-white/80 hover:bg-white/10'
+            }`}
+            title="Satellite imagery with places/labels"
+          >
+            Satellite
+          </button>
+          <button
+            type="button"
+            aria-pressed={mapStyleMode === 'map'}
+            onClick={() => onStyleModeChange('map')}
+            className={`px-3 py-2 text-xs font-semibold transition ${
+              mapStyleMode === 'map'
+                ? 'bg-white/15 text-white'
+                : 'text-white/80 hover:bg-white/10'
+            }`}
+            title="Simple map view with places"
+          >
+            Map
+          </button>
+        </div>
+        <NavigationControl position="top-right" showCompass showZoom />
+        <FullscreenControl position="top-right" />
+        <ScaleControl position="bottom-left" unit="metric" />
+        {routeGeoJSON && (
+          <Source id="route" type="geojson" data={routeGeoJSON as any}>
+            <Layer
+              id="route-line-glow"
+              type="line"
+              paint={{
+                'line-color': '#10b981',
+                'line-width': 10,
+                'line-opacity': 0.25,
+                'line-blur': 1.2,
+              }}
+            />
+            <Layer
+              id="route-line-casing"
+              type="line"
+              paint={{
+                'line-color': '#064e3b',
+                'line-width': 6.5,
+                'line-opacity': 0.9,
+              }}
+            />
+            <Layer
+              id="route-line-core"
+              type="line"
+              paint={{
+                'line-color': '#34d399',
+                'line-width': 4.5,
+                'line-opacity': 0.98,
+              }}
+            />
+            <Layer
+              id="route-line-highlight"
+              type="line"
+              paint={{
+                'line-color': '#ecfeff',
+                'line-width': 1.1,
+                'line-opacity': 0.9,
+              }}
+            />
+          </Source>
+        )}
+        {routeGeoJSON && (
+          <Layer
+            id="route-arrows-layer"
+            type="symbol"
+            source="route"
+            layout={{
+              'symbol-placement': 'line',
+              'symbol-spacing': 120,
+              'text-field': '›',
+              'text-size': 28,
+              'text-rotation-alignment': 'map',
+              'text-keep-upright': false,
+              'text-offset': [0, 0],
+              'text-allow-overlap': true,
+              'text-ignore-placement': true,
+            }}
+            paint={{
+              'text-color': '#16a34a',
+              'text-halo-color': '#0f172a',
+              'text-halo-width': 1.2,
+            }}
+          />
+        )}
+        {hasRoute && routeData && routeData.coordinates.length > 0 && (
+          <>
+            <Marker
+              longitude={routeData.coordinates[0].longitude}
+              latitude={routeData.coordinates[0].latitude}
+              anchor="bottom"
+            >
+              <div className="rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
+                Start
+              </div>
+            </Marker>
+            <Marker
+              longitude={routeData.coordinates[routeData.coordinates.length - 1].longitude}
+              latitude={routeData.coordinates[routeData.coordinates.length - 1].latitude}
+              anchor="bottom"
+            >
+              <div className="rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white">
+                End
+              </div>
+            </Marker>
+          </>
+        )}
+      </Map>
+    </div>
+  ) : (
+    <div className="mb-6 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+      <p className="text-gray-600">No GPX route has been uploaded for this trail yet.</p>
+    </div>
+  );
+});
 
 const TrailPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -76,7 +222,7 @@ const TrailPage: React.FunctionComponent = () => {
     const saved = window.localStorage.getItem('mtb_map_style_mode');
     return saved === 'map' || saved === 'satellite' ? saved : 'map';
   });
-  const mapStyle = getMapStyle(mapStyleMode);
+  const mapStyle = useMemo(() => getMapStyle(mapStyleMode), [mapStyleMode]);
 
   useEffect(() => {
     try {
@@ -85,6 +231,60 @@ const TrailPage: React.FunctionComponent = () => {
       // ignore
     }
   }, [mapStyleMode]);
+
+  const {
+    data: trail,
+    isLoading: loading,
+    error,
+  } = useQuery<Trail>({
+    queryKey: QUERY_KEYS.trails.byId(trailId),
+    queryFn: ({ signal }) => fetchTrailById(trailId, signal),
+    enabled: Boolean(trailId),
+  });
+
+  const { data: experts = [] } = useQuery<User[]>({
+    queryKey: QUERY_KEYS.experts.verified,
+    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+  });
+
+  const hasLocation = trail?.latitude != null && trail?.longitude != null;
+  const routeData = (trail?.route_data as RouteData | null) ?? null;
+  const hasRoute = useMemo(
+    () => Boolean(routeData && routeData.coordinates && routeData.coordinates.length > 0),
+    [routeData]
+  );
+  const mapBounds = useMemo(
+    () => (hasRoute && routeData ? getMapBounds(routeData) : null),
+    [hasRoute, routeData]
+  );
+  const routeGeoJSON = useMemo(
+    () => (hasRoute && routeData ? getRouteGeoJSON(routeData) : null),
+    [hasRoute, routeData]
+  );
+  const trailImages = useMemo(
+    () =>
+      [trail?.image_url, ...(trail?.trail_images || [])]
+        .filter((image): image is string => Boolean(image))
+        .filter((image, index, arr) => arr.indexOf(image) === index),
+    [trail?.image_url, trail?.trail_images]
+  );
+  const mapCenter = useMemo(() => {
+    if (mapBounds) {
+      return {
+        longitude: mapBounds.centerLon,
+        latitude: mapBounds.centerLat,
+        zoom: getInitialZoom(mapBounds),
+      };
+    }
+    if (hasLocation && trail?.longitude != null && trail?.latitude != null) {
+      return {
+        longitude: trail.longitude,
+        latitude: trail.latitude,
+        zoom: 14,
+      };
+    }
+    return { longitude: 0, latitude: 0, zoom: 2 };
+  }, [mapBounds, hasLocation, trail?.latitude, trail?.longitude]);
 
   useEffect(() => {
     if (!galleryModalOpen) return;
@@ -104,22 +304,7 @@ const TrailPage: React.FunctionComponent = () => {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [galleryModalOpen]);
-
-  const {
-    data: trail,
-    isLoading: loading,
-    error,
-  } = useQuery<Trail>({
-    queryKey: QUERY_KEYS.trails.byId(trailId),
-    queryFn: ({ signal }) => fetchTrailById(trailId, signal),
-    enabled: Boolean(trailId),
-  });
-
-  const { data: experts = [] } = useQuery<User[]>({
-    queryKey: QUERY_KEYS.experts.verified,
-    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
-  });
+  }, [galleryModalOpen, trailImages.length]);
 
   useEffect(() => {
     if (!trail) return;
@@ -297,7 +482,7 @@ const TrailPage: React.FunctionComponent = () => {
   };
 
   // Calculate map bounds from route coordinates
-  const getMapBounds = (routeData: RouteData) => {
+  function getMapBounds(routeData: RouteData) {
     if (!routeData || !routeData.coordinates || routeData.coordinates.length === 0) {
       return null;
     }
@@ -318,10 +503,10 @@ const TrailPage: React.FunctionComponent = () => {
       centerLat: (minLat + maxLat) / 2,
       centerLon: (minLon + maxLon) / 2,
     };
-  };
+  }
 
   // Convert route coordinates to GeoJSON LineString
-  const getRouteGeoJSON = (routeData: RouteData) => {
+  function getRouteGeoJSON(routeData: RouteData) {
     if (!routeData || !routeData.coordinates) {
       return null;
     }
@@ -333,15 +518,15 @@ const TrailPage: React.FunctionComponent = () => {
         coordinates: routeData.coordinates.map((c) => [c.longitude, c.latitude]),
       },
     };
-  };
+  }
 
 
-  const getInitialZoom = (bounds: {
+  function getInitialZoom(bounds: {
     minLat: number;
     maxLat: number;
     minLon: number;
     maxLon: number;
-  }) => {
+  }) {
     const latSpan = Math.abs(bounds.maxLat - bounds.minLat);
     const lonSpan = Math.abs(bounds.maxLon - bounds.minLon);
     const maxSpan = Math.max(latSpan, lonSpan);
@@ -353,7 +538,7 @@ const TrailPage: React.FunctionComponent = () => {
     if (maxSpan < 0.25) return 11;
     if (maxSpan < 0.6) return 10;
     return 9;
-  };
+  }
 
   const downloadGpx = (trailName: string, data: RouteData) => {
     const esc = (value: string) =>
@@ -439,31 +624,7 @@ const TrailPage: React.FunctionComponent = () => {
     );
   }
 
-  const hasLocation = trail.latitude !== null && trail.longitude !== null;
-  const hasRoute = trail.route_data && trail.route_data.coordinates && trail.route_data.coordinates.length > 0;
-  const routeData = trail.route_data as RouteData | null;
-  const mapBounds = hasRoute && routeData ? getMapBounds(routeData) : null;
-  const routeGeoJSON = hasRoute && routeData ? getRouteGeoJSON(routeData) : null;
-  const trailImages = [trail.image_url, ...(trail.trail_images || [])]
-    .filter((image): image is string => Boolean(image))
-    .filter((image, index, arr) => arr.indexOf(image) === index);
   // const elevationData = hasRoute && routeData ? getElevationData(routeData) : [];
-
-  // Determine map center and zoom
-  let mapCenter = { longitude: 0, latitude: 0, zoom: 2 };
-  if (mapBounds) {
-    mapCenter = {
-      longitude: mapBounds.centerLon,
-      latitude: mapBounds.centerLat,
-      zoom: getInitialZoom(mapBounds),
-    };
-  } else if (hasLocation) {
-    mapCenter = {
-      longitude: trail.longitude!,
-      latitude: trail.latitude!,
-      zoom: 14,
-    };
-  }
 
   const copyTrailLink = async () => {
     try {
@@ -746,139 +907,15 @@ const TrailPage: React.FunctionComponent = () => {
 
       </div>
 
-      {hasRoute ? (
-        <div className="mb-6 h-[360px] w-full overflow-hidden rounded-xl border border-white/20 bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)] sm:h-[460px] lg:h-[600px]">
-          <Map
-            initialViewState={mapCenter}
-            style={{ width: '100%', height: '100%' }}
-            mapStyle={mapStyle}
-          >
-            <div className="absolute left-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
-              <button
-                type="button"
-                aria-pressed={mapStyleMode === 'satellite'}
-                onClick={() => setMapStyleMode('satellite')}
-                className={`px-3 py-2 text-xs font-semibold transition ${
-                  mapStyleMode === 'satellite'
-                    ? 'bg-white/15 text-white'
-                    : 'text-white/80 hover:bg-white/10'
-                }`}
-                title="Satellite imagery with places/labels"
-              >
-                Satellite
-              </button>
-              <button
-                type="button"
-                aria-pressed={mapStyleMode === 'map'}
-                onClick={() => setMapStyleMode('map')}
-                className={`px-3 py-2 text-xs font-semibold transition ${
-                  mapStyleMode === 'map'
-                    ? 'bg-white/15 text-white'
-                    : 'text-white/80 hover:bg-white/10'
-                }`}
-                title="Simple map view with places"
-              >
-                Map
-              </button>
-            </div>
-            <NavigationControl position="top-right" showCompass showZoom />
-            <FullscreenControl position="top-right" />
-            <ScaleControl position="bottom-left" unit="metric" />
-            {routeGeoJSON && (
-              <Source id="route" type="geojson" data={routeGeoJSON as any}>
-                <Layer
-                  id="route-line-glow"
-                  type="line"
-                  paint={{
-                    'line-color': '#10b981',
-                    'line-width': 10,
-                    'line-opacity': 0.25,
-                    'line-blur': 1.2,
-                  }}
-                />
-                <Layer
-                  id="route-line-casing"
-                  type="line"
-                  paint={{
-                    'line-color': '#064e3b',
-                    'line-width': 6.5,
-                    'line-opacity': 0.9,
-                  }}
-                />
-                <Layer
-                  id="route-line-core"
-                  type="line"
-                  paint={{
-                    'line-color': '#34d399',
-                    'line-width': 4.5,
-                    'line-opacity': 0.98,
-                  }}
-                />
-                <Layer
-                  id="route-line-highlight"
-                  type="line"
-                  paint={{
-                    'line-color': '#ecfeff',
-                    'line-width': 1.1,
-                    'line-opacity': 0.9,
-                  }}
-                />
-              </Source>
-            )}
-            {routeGeoJSON && (
-              <Layer
-                id="route-arrows-layer"
-                type="symbol"
-                source="route"
-                layout={{
-                  'symbol-placement': 'line',
-                  'symbol-spacing': 120,
-                  'text-field': '›',
-                  'text-size': 28,
-                  'text-rotation-alignment': 'map',
-                  'text-keep-upright': false,
-                  'text-offset': [0, 0],
-                  'text-allow-overlap': true,
-                  'text-ignore-placement': true,
-                }}
-                paint={{
-                  'text-color': '#16a34a',
-                  'text-halo-color': '#0f172a',
-                  'text-halo-width': 1.2,
-                }}
-              />
-            )}
-            {hasRoute && routeData && routeData.coordinates.length > 0 && (
-              <>
-                <Marker
-                  longitude={routeData.coordinates[0].longitude}
-                  latitude={routeData.coordinates[0].latitude}
-                  anchor="bottom"
-                >
-                  <div className="rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
-                    Start
-                  </div>
-                </Marker>
-                <Marker
-                  longitude={routeData.coordinates[routeData.coordinates.length - 1].longitude}
-                  latitude={routeData.coordinates[routeData.coordinates.length - 1].latitude}
-                  anchor="bottom"
-                >
-                  <div className="rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white">
-                    End
-                  </div>
-                </Marker>
-              </>
-            )}
-          </Map>
-        </div>
-      ) : (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-gray-600">
-            No GPX route has been uploaded for this trail yet.
-          </p>
-        </div>
-      )}
+      <MapSection
+        hasRoute={hasRoute}
+        routeGeoJSON={routeGeoJSON}
+        routeData={routeData}
+        mapCenter={mapCenter}
+        mapStyle={mapStyle}
+        mapStyleMode={mapStyleMode}
+        onStyleModeChange={setMapStyleMode}
+      />
 
       {trailImages.length > 0 && (
         <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -1203,69 +1240,6 @@ const TrailPage: React.FunctionComponent = () => {
         </Dialog.Portal>
       </Dialog.Root>
 
-      {/* {hasRoute && elevationData.length > 0 && (
-        <div className="mb-6 bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-green-800">Elevation Profile</h2>
-          <div style={{ width: '100%', height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={elevationData}>
-                <defs>
-                  <linearGradient id="elevationGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="distance"
-                  label={{ value: 'Distance (km)', position: 'insideBottom', offset: -5 }}
-                />
-                <YAxis
-                  label={{ value: 'Elevation (m)', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip
-                  formatter={(value: number | undefined) =>
-                    value !== undefined ? [`${value.toFixed(0)} m`, 'Elevation'] : ['', 'Elevation']
-                  }
-
-                  labelFormatter={(value) => `Distance: ${value.toFixed(2)} km`}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="elevation"
-                  stroke="#22c55e"
-                  strokeWidth={2}
-                  fill="url(#elevationGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          {routeData && (
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Min Elevation:</span>
-                <span className="ml-2 font-semibold">{routeData.minElevation.toFixed(0)} m</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Max Elevation:</span>
-                <span className="ml-2 font-semibold">{routeData.maxElevation.toFixed(0)} m</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Elevation Gain:</span>
-                <span className="ml-2 font-semibold text-green-600">
-                  +{routeData.elevationGain.toFixed(0)} m
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-600">Elevation Loss:</span>
-                <span className="ml-2 font-semibold text-red-600">
-                  -{routeData.elevationLoss.toFixed(0)} m
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      )} */}
     </div>
   );
 };
