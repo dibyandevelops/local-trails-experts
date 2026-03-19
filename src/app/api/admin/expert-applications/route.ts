@@ -28,23 +28,24 @@ export async function GET(request: NextRequest) {
 
     const query = `
       SELECT
-        id,
-        name,
-        email,
-        city,
-        sports,
-        credentials,
-        verification_years_experience,
-        verification_certifications,
-        verification_guiding_history,
-        verification_safety_training,
-        verification_links,
-        status,
-        created_at,
-        reviewed_at
-      FROM expert_applications
+        ea.id,
+        ea.name,
+        ea.email,
+        ea.city,
+        ea.sports,
+        ea.credentials,
+        COALESCE(ea.verification_years_experience, u.verification_years_experience) AS verification_years_experience,
+        COALESCE(ea.verification_certifications, u.verification_certifications) AS verification_certifications,
+        COALESCE(ea.verification_guiding_history, u.verification_guiding_history) AS verification_guiding_history,
+        COALESCE(ea.verification_safety_training, u.verification_safety_training) AS verification_safety_training,
+        COALESCE(ea.verification_links, u.verification_links) AS verification_links,
+        ea.status,
+        ea.created_at,
+        ea.reviewed_at
+      FROM expert_applications ea
+      LEFT JOIN users u ON u.email = ea.email
       ${whereClause}
-      ORDER BY created_at DESC
+      ORDER BY ea.created_at DESC
     `;
 
     const result = await pool.query(query, params);
