@@ -338,6 +338,10 @@ function TrailsPageContent() {
   const [locationInput, setLocationInput] = useState('');
   const [location, setLocation] = useState('');
   const [sport, setSport] = useState('');
+  const [distanceMinInput, setDistanceMinInput] = useState('');
+  const [distanceMaxInput, setDistanceMaxInput] = useState('');
+  const [distanceMin, setDistanceMin] = useState('');
+  const [distanceMax, setDistanceMax] = useState('');
   const [viewMode, setViewMode] = useState<TrailsViewMode>('grid');
   const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
   const [mapTrailId, setMapTrailId] = useState<string | null>(null);
@@ -358,6 +362,7 @@ function TrailsPageContent() {
   const [toastDescription, setToastDescription] = useState(
     'Your trail request has been submitted.'
   );
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const pageSize = 12;
 
@@ -404,6 +409,8 @@ function TrailsPageContent() {
       difficulty,
       location,
       sport,
+      distanceMin,
+      distanceMax,
       pageSize,
     }),
     queryFn: ({ signal, pageParam }) =>
@@ -413,6 +420,8 @@ function TrailsPageContent() {
           difficulty,
           location,
           sport,
+          distanceMin,
+          distanceMax,
           page: Number(pageParam),
           pageSize,
         },
@@ -497,6 +506,8 @@ function TrailsPageContent() {
       difficulty,
       location,
       sport,
+      distanceMin,
+      distanceMax,
       pageSize,
     });
     const paginatedKey = QUERY_KEYS.trails.paginatedList({
@@ -504,6 +515,8 @@ function TrailsPageContent() {
       difficulty,
       location,
       sport,
+      distanceMin,
+      distanceMax,
       page: 1,
       pageSize,
     });
@@ -512,6 +525,8 @@ function TrailsPageContent() {
       difficulty,
       location,
       sport,
+      distanceMin,
+      distanceMax,
     });
 
     if (trailId) {
@@ -690,6 +705,8 @@ function TrailsPageContent() {
     const urlDifficulty = (searchParams.get('difficulty') || '').trim() as Difficulty | '';
     const urlLocation = (searchParams.get('location') || '').trim();
     const urlSport = (searchParams.get('sport') || '').trim();
+    const urlDistanceMin = (searchParams.get('distanceMin') || '').trim();
+    const urlDistanceMax = (searchParams.get('distanceMax') || '').trim();
     const urlCreateTrail = (searchParams.get('createEventTrail') || '').trim();
     const urlCreateSport = (searchParams.get('createEventSport') || '').trim();
 
@@ -707,6 +724,14 @@ function TrailsPageContent() {
     if (urlSport && TRAIL_SPORTS.some((option) => option.value === urlSport)) {
       setSport(urlSport as typeof sport);
     }
+    if (urlDistanceMin) {
+      setDistanceMinInput(urlDistanceMin);
+      setDistanceMin(urlDistanceMin);
+    }
+    if (urlDistanceMax) {
+      setDistanceMaxInput(urlDistanceMax);
+      setDistanceMax(urlDistanceMax);
+    }
     if (urlCreateTrail) {
       setCreateEventTrailId(urlCreateTrail);
       setCreateEventSport(urlCreateSport || 'mtb');
@@ -722,6 +747,8 @@ function TrailsPageContent() {
     if (difficulty) params.set('difficulty', difficulty);
     if (location) params.set('location', location);
     if (sport) params.set('sport', sport);
+    if (distanceMin) params.set('distanceMin', distanceMin);
+    if (distanceMax) params.set('distanceMax', distanceMax);
     if (createEventOpen && createEventTrailId) {
       params.set('createEventTrail', createEventTrailId);
       params.set('createEventSport', createEventSport || 'mtb');
@@ -734,6 +761,8 @@ function TrailsPageContent() {
     difficulty,
     location,
     sport,
+    distanceMin,
+    distanceMax,
     createEventOpen,
     createEventTrailId,
     createEventSport,
@@ -785,13 +814,38 @@ function TrailsPageContent() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, trails.length]);
 
+  useEffect(() => {
+    if (!didInitFromUrl.current) return;
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setLocation(locationInput.trim());
+      setDistanceMin(distanceMinInput.trim());
+      setDistanceMax(distanceMaxInput.trim());
+    }, 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchInput, locationInput]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearch(searchInput);
-    setLocation(locationInput);
+    setSearch(searchInput.trim());
+    setLocation(locationInput.trim());
+    setDistanceMin(distanceMinInput.trim());
+    setDistanceMax(distanceMaxInput.trim());
   };
 
-  const hasActiveFilters = Boolean(search || difficulty || location || sport);
+  const isDesktop = () => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(min-width: 768px)').matches;
+  };
+
+  const hasActiveFilters = Boolean(
+    search || difficulty || location || sport || distanceMin || distanceMax
+  );
 
   return (
     <div>
@@ -900,13 +954,17 @@ function TrailsPageContent() {
       </div>
 
       <form onSubmit={handleSearch} className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
           <div>
             <label className="block text-sm font-medium mb-2">Search</label>
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
+              onBlur={() => {
+                if (!isDesktop()) return;
+                setSearch(searchInput.trim());
+              }}
               placeholder="Trail name, description, or location..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
@@ -930,6 +988,10 @@ function TrailsPageContent() {
               type="text"
               value={locationInput}
               onChange={(e) => setLocationInput(e.target.value)}
+              onBlur={() => {
+                if (!isDesktop()) return;
+                setLocation(locationInput.trim());
+              }}
               placeholder="City or region..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
@@ -948,6 +1010,36 @@ function TrailsPageContent() {
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Min distance (km)</label>
+            <input
+              type="number"
+              min="0"
+              value={distanceMinInput}
+              onChange={(e) => setDistanceMinInput(e.target.value)}
+              onBlur={() => {
+                if (!isDesktop()) return;
+                setDistanceMin(distanceMinInput.trim());
+              }}
+              placeholder="e.g. 10"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Max distance (km)</label>
+            <input
+              type="number"
+              min="0"
+              value={distanceMaxInput}
+              onChange={(e) => setDistanceMaxInput(e.target.value)}
+              onBlur={() => {
+                if (!isDesktop()) return;
+                setDistanceMax(distanceMaxInput.trim());
+              }}
+              placeholder="e.g. 40"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
           </div>
         </div>
         {hasActiveFilters && (
@@ -994,6 +1086,30 @@ function TrailsPageContent() {
                 Sport: {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport} ×
               </button>
             )}
+            {distanceMin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDistanceMin('');
+                  setDistanceMinInput('');
+                }}
+                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
+              >
+                Min distance: {distanceMin} km ×
+              </button>
+            )}
+            {distanceMax && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDistanceMax('');
+                  setDistanceMaxInput('');
+                }}
+                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
+              >
+                Max distance: {distanceMax} km ×
+              </button>
+            )}
           </div>
         )}
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -1012,6 +1128,10 @@ function TrailsPageContent() {
               setLocationInput('');
               setLocation('');
               setSport('');
+              setDistanceMin('');
+              setDistanceMinInput('');
+              setDistanceMax('');
+              setDistanceMaxInput('');
             }}
             className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto"
           >

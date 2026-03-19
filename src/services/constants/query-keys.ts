@@ -8,6 +8,8 @@ export const QUERY_KEYS = {
       difficulty?: string;
       location?: string;
       sport?: string;
+      distanceMin?: string;
+      distanceMax?: string;
     }) =>
       [
         'trails',
@@ -15,6 +17,8 @@ export const QUERY_KEYS = {
         filters?.difficulty || '',
         filters?.location || '',
         filters?.sport || '',
+        filters?.distanceMin || '',
+        filters?.distanceMax || '',
       ] as const,
     forEvents: ['trails-for-events'] as const,
     paginatedList: (filters?: {
@@ -22,6 +26,8 @@ export const QUERY_KEYS = {
       difficulty?: string;
       location?: string;
       sport?: string;
+      distanceMin?: string;
+      distanceMax?: string;
       page?: number;
       pageSize?: number;
     }) =>
@@ -31,6 +37,8 @@ export const QUERY_KEYS = {
         filters?.difficulty || '',
         filters?.location || '',
         filters?.sport || '',
+        filters?.distanceMin || '',
+        filters?.distanceMax || '',
         String(filters?.page || 1),
         String(filters?.pageSize || 12),
       ] as const,
@@ -39,6 +47,8 @@ export const QUERY_KEYS = {
       difficulty?: string;
       location?: string;
       sport?: string;
+      distanceMin?: string;
+      distanceMax?: string;
       pageSize?: number;
     }) =>
       [
@@ -47,6 +57,8 @@ export const QUERY_KEYS = {
         filters?.difficulty || '',
         filters?.location || '',
         filters?.sport || '',
+        filters?.distanceMin || '',
+        filters?.distanceMax || '',
         String(filters?.pageSize || 12),
       ] as const,
     byId: (id?: string | null) => ['trail', id || ''] as const,

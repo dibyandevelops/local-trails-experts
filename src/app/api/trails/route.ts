@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     const difficulty = searchParams.get('difficulty');
     const location = searchParams.get('location');
     const sport = searchParams.get('sport');
+    const distanceMinRaw = searchParams.get('distanceMin');
+    const distanceMaxRaw = searchParams.get('distanceMax');
     const status = searchParams.get('status');
     const page = Math.max(1, Number(searchParams.get('page') || '1') || 1);
     const pageSizeRaw = Number(searchParams.get('pageSize') || '12') || 12;
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
     let paramIndex = 1;
 
     if (search) {
-      whereClause += ` AND (name ILIKE $${paramIndex} OR description ILIKE $${paramIndex} OR location ILIKE $${paramIndex})`;
+      whereClause += ` AND (t.name ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex} OR t.location ILIKE $${paramIndex})`;
       params.push(`%${search}%`);
       paramIndex++;
     }
@@ -53,6 +55,24 @@ export async function GET(request: NextRequest) {
       whereClause += ` AND sport_type = $${paramIndex}`;
       params.push(sport);
       paramIndex++;
+    }
+
+    if (distanceMinRaw) {
+      const min = Number(distanceMinRaw);
+      if (Number.isFinite(min)) {
+        whereClause += ` AND t.distance_km IS NOT NULL AND t.distance_km >= $${paramIndex}`;
+        params.push(min);
+        paramIndex++;
+      }
+    }
+
+    if (distanceMaxRaw) {
+      const max = Number(distanceMaxRaw);
+      if (Number.isFinite(max)) {
+        whereClause += ` AND t.distance_km IS NOT NULL AND t.distance_km <= $${paramIndex}`;
+        params.push(max);
+        paramIndex++;
+      }
     }
 
     if (auth?.role === 'admin' && status) {
