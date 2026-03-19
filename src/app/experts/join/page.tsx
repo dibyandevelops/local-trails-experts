@@ -77,12 +77,12 @@ export default function ExpertJoinPage() {
         // Dispatch auth changed event to update UI
         window.dispatchEvent(new Event('auth-changed'));
 
-        // Redirect to create event page
-        router.push('/events/create');
+        // Redirect to trails page
+        router.push('/trails');
       } catch (loginErr) {
         console.error('Auto-login failed after signup:', loginErr);
         // If auto-login fails, redirect to login page with a message
-        router.push('/?login=1&role=expert&message=signup-success&next=%2Fevents%2Fcreate');
+        router.push('/?login=1&role=expert&message=signup-success&next=%2Ftrails');
       }
     } catch (err) {
       console.error(err);
