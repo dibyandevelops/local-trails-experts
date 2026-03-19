@@ -65,7 +65,7 @@ export async function PATCH(
     }
 
     const { id } = params;
-    const body = await request.json() as Partial<Trail> & { action?: 'hide' | 'unhide' | 'delete' };
+    const body = await request.json() as Partial<Trail> & { action?: 'hide' | 'unhide' | 'delete' | 'remove_route' };
 
     const existing = await pool.query('SELECT * FROM trails WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
@@ -99,6 +99,31 @@ export async function PATCH(
       const result = await pool.query(
         `UPDATE trails SET is_hidden = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
         [isHidden, id]
+      );
+
+      if (result.rows.length === 0) {
+        return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ trail: result.rows[0], success: true }, { status: 200 });
+    }
+
+    if (body.action === 'remove_route') {
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const result = await pool.query(
+        `
+        UPDATE trails
+        SET route_data = NULL,
+            distance_km = NULL,
+            elevation_gain_m = NULL,
+            estimated_time_hours = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+        `,
+        [id]
       );
 
       if (result.rows.length === 0) {

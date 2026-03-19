@@ -30,6 +30,7 @@ import {
   fetchTrailById,
   hideTrail,
   requestTrail,
+  removeTrailRoute,
   updateTrail,
   uploadTrailRoute,
 } from '@/services/trails/trails.service';
@@ -322,6 +323,17 @@ const TrailPage: React.FunctionComponent = () => {
     mutationFn: (payload: Partial<Trail>) => updateTrail(trailId, payload),
     onSuccess: (updatedTrail) => {
       queryClient.setQueryData(QUERY_KEYS.trails.byId(trailId), updatedTrail);
+    },
+  });
+
+  const removeRouteMutation = useMutation({
+    mutationFn: () => removeTrailRoute(trailId),
+    onSuccess: (updatedTrail) => {
+      queryClient.setQueryData(QUERY_KEYS.trails.byId(trailId), updatedTrail);
+      setAdminMessage('GPX route removed.');
+    },
+    onError: (error) => {
+      setAdminMessage(error instanceof Error ? error.message : 'Failed to remove route.');
     },
   });
 
@@ -697,6 +709,20 @@ const TrailPage: React.FunctionComponent = () => {
               />
               {uploading ? 'Uploading...' : 'Upload GPX Route'}
             </label>
+          )}
+          {currentUser?.role === 'admin' && hasRoute && (
+            <button
+              type="button"
+              onClick={async () => {
+                const confirmed = window.confirm('Remove the GPX route for this trail?');
+                if (!confirmed) return;
+                await removeRouteMutation.mutateAsync();
+              }}
+              disabled={removeRouteMutation.isPending}
+              className="w-full rounded-lg border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 sm:w-auto disabled:opacity-60"
+            >
+              {removeRouteMutation.isPending ? 'Removing...' : 'Remove GPX Route'}
+            </button>
           )}
           {trailImages.length > 0 && (
             <button

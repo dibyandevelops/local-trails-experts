@@ -131,6 +131,22 @@ export async function uploadTrailRoute(trailId: string, file: File) {
   }
 }
 
+export async function removeTrailRoute(trailId: string) {
+  try {
+    const { data } = await apiClient.patch<{ trail: Trail }>(
+      `${ApiPath.Trails}/${trailId}`,
+      { action: 'remove_route' }
+    );
+    return data.trail;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to remove route');
+    }
+    throw new Error('Failed to remove route');
+  }
+}
+
 export async function updateTrail(trailId: string, payload: Partial<Trail>) {
   try {
     const { data } = await apiClient.patch<{ trail: Trail }>(
