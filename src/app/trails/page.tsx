@@ -492,9 +492,44 @@ function TrailsPageContent() {
   });
 
   const invalidateTrailsQueries = (trailId?: string) => {
-    queryClient.invalidateQueries({ queryKey: ['trails-infinite'] });
-    queryClient.invalidateQueries({ queryKey: ['trails-paginated'] });
-    queryClient.invalidateQueries({ queryKey: ['trails'] });
+    const infiniteKey = QUERY_KEYS.trails.infiniteList({
+      search,
+      difficulty,
+      location,
+      sport,
+      pageSize,
+    });
+    const paginatedKey = QUERY_KEYS.trails.paginatedList({
+      search,
+      difficulty,
+      location,
+      sport,
+      page: 1,
+      pageSize,
+    });
+    const listKey = QUERY_KEYS.trails.list({
+      search,
+      difficulty,
+      location,
+      sport,
+    });
+
+    if (trailId) {
+      queryClient.setQueryData(infiniteKey, (current: any) => {
+        if (!current?.pages) return current;
+        return {
+          ...current,
+          pages: current.pages.map((page: any) => ({
+            ...page,
+            trails: (page.trails || []).filter((trail: any) => trail.id !== trailId),
+          })),
+        };
+      });
+    }
+
+    queryClient.invalidateQueries({ queryKey: infiniteKey });
+    queryClient.invalidateQueries({ queryKey: paginatedKey });
+    queryClient.invalidateQueries({ queryKey: listKey });
     if (trailId) {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
     }
