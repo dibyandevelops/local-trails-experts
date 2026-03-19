@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Event, EventParticipant, User, SportType } from '@/types';
 import { format } from 'date-fns';
@@ -15,6 +15,7 @@ import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { ApiPath } from '@/services/api/paths';
 import { hideTrail, unhideTrail } from '@/services/trails/trails.service';
 import { resizeImageToDataUrl } from '@/lib/image';
+import VerificationDetailsForm from '@/components/feature-components/verification-details-form';
 
 type ExpertTrailRequest = {
   id: string;
@@ -66,6 +67,7 @@ export default function ExpertProfilePage() {
   const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
   const [participantsEventTitle, setParticipantsEventTitle] = useState('');
   const [participantsList, setParticipantsList] = useState<EventParticipant[]>([]);
+  const bioRef = useRef<HTMLTextAreaElement | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
     city: '',
@@ -73,6 +75,11 @@ export default function ExpertProfilePage() {
     sports: '',
     phone: '',
     profilePhotoUrl: '',
+    verificationYearsExperience: '',
+    verificationCertifications: '',
+    verificationGuidingHistory: '',
+    verificationSafetyTraining: '',
+    verificationLinks: '',
   });
   const initials =
     editForm.name
@@ -102,9 +109,29 @@ export default function ExpertProfilePage() {
           : '',
         phone: currentUser.phone || '',
         profilePhotoUrl: currentUser.profile_photo_url || '',
+        verificationYearsExperience: currentUser.verification_years_experience || '',
+        verificationCertifications: currentUser.verification_certifications || '',
+        verificationGuidingHistory: currentUser.verification_guiding_history || '',
+        verificationSafetyTraining: currentUser.verification_safety_training || '',
+        verificationLinks: currentUser.verification_links || '',
       });
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('focus') === 'bio') {
+        window.setTimeout(() => {
+          bioRef.current?.focus();
+          bioRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      }
+    } catch {
+      // ignore
+    }
+  }, [user]);
 
   useEffect(() => {
     try {
@@ -282,6 +309,15 @@ export default function ExpertProfilePage() {
                   sports: selectedSports,
                   phone: editForm.phone,
                   profile_photo_url: editForm.profilePhotoUrl || null,
+                  verification_years_experience:
+                    editForm.verificationYearsExperience || null,
+                  verification_certifications:
+                    editForm.verificationCertifications || null,
+                  verification_guiding_history:
+                    editForm.verificationGuidingHistory || null,
+                  verification_safety_training:
+                    editForm.verificationSafetyTraining || null,
+                  verification_links: editForm.verificationLinks || null,
                 }),
               });
               const data = await response.json();
@@ -367,11 +403,45 @@ export default function ExpertProfilePage() {
               Bio
             </label>
             <textarea
+              id="expert-bio"
               value={editForm.bio}
               onChange={(event) =>
                 setEditForm({ ...editForm, bio: event.target.value })
               }
+              ref={bioRef}
+              placeholder="Tell about yourself."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm min-h-[100px]"
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              Include years of experience, certifications, guiding history, safety
+              training/first-aid, and any portfolio or Strava links.
+            </p>
+          </div>
+          <div className="md:col-span-2">
+            <VerificationDetailsForm
+              values={{
+                yearsExperience: editForm.verificationYearsExperience,
+                certifications: editForm.verificationCertifications,
+                guidingHistory: editForm.verificationGuidingHistory,
+                safetyTraining: editForm.verificationSafetyTraining,
+                links: editForm.verificationLinks,
+              }}
+              onChange={(next) =>
+                setEditForm({
+                  ...editForm,
+                  verificationYearsExperience: next.yearsExperience,
+                  verificationCertifications: next.certifications,
+                  verificationGuidingHistory: next.guidingHistory,
+                  verificationSafetyTraining: next.safetyTraining,
+                  verificationLinks: next.links,
+                })
+              }
+              containerClassName="rounded-lg border border-gray-200 bg-white p-4"
+              labelClassName="block text-xs font-medium text-gray-700 mb-1"
+              inputClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              textareaClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              titleClassName="text-sm font-semibold text-gray-900"
+              descriptionClassName="mt-1 text-xs text-gray-500 mb-3"
             />
           </div>
           <div className="md:col-span-2">

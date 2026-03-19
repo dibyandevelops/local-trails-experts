@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { getSportLabel } from '@/services/constants/sports';
 import {
@@ -6,6 +8,9 @@ import {
   fetchAdminUsers,
   type AdminUser,
 } from '@/services/admin/admin.service';
+import VerificationDetailsContent, {
+  hasVerificationDetails,
+} from '@/components/ui/verification-details-content';
 
 type UsersPanelProps = {
   role: 'expert' | 'participant';
@@ -15,6 +20,8 @@ type UsersPanelProps = {
 
 export default function UsersPanel({ role, title, description }: UsersPanelProps) {
   const queryClient = useQueryClient();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [activeUser, setActiveUser] = useState<AdminUser | null>(null);
   const {
     data: users = [],
     isLoading,
@@ -73,6 +80,25 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                     Delete
                   </button>
                 </div>
+                {role === 'expert' &&
+                  hasVerificationDetails({
+                    yearsExperience: user.verification_years_experience,
+                    certifications: user.verification_certifications,
+                    guidingHistory: user.verification_guiding_history,
+                    safetyTraining: user.verification_safety_training,
+                    links: user.verification_links,
+                  }) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveUser(user);
+                        setDetailsOpen(true);
+                      }}
+                      className="mt-3 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      View verification
+                    </button>
+                  )}
                 <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600">
                   <div>
                     <p className="text-[11px] font-semibold uppercase text-gray-400">City</p>
@@ -109,6 +135,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                   <th className="px-3 py-2">Sports</th>
                   <th className="px-3 py-2">Phone</th>
                   <th className="px-3 py-2">Joined</th>
+                  {role === 'expert' && <th className="px-3 py-2">Verification</th>}
                   <th className="px-3 py-2 text-right">Action</th>
                 </tr>
               </thead>
@@ -133,6 +160,30 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                     <td className="px-3 py-3 text-xs text-gray-500">
                       {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
                     </td>
+                    {role === 'expert' && (
+                      <td className="px-3 py-3 text-xs text-gray-600">
+                        {hasVerificationDetails({
+                          yearsExperience: user.verification_years_experience,
+                          certifications: user.verification_certifications,
+                          guidingHistory: user.verification_guiding_history,
+                          safetyTraining: user.verification_safety_training,
+                          links: user.verification_links,
+                        }) ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveUser(user);
+                              setDetailsOpen(true);
+                            }}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          >
+                            View
+                          </button>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    )}
                     <td className="px-3 py-3 text-right">
                       <button
                         type="button"
@@ -150,6 +201,40 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
           </div>
         </>
       )}
+
+      <Dialog.Root
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setActiveUser(null);
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl">
+            <Dialog.Title className="text-sm font-semibold text-gray-900">
+              Expert verification details
+            </Dialog.Title>
+            <p className="mt-1 text-xs text-gray-500">
+              {activeUser?.name || activeUser?.email}
+            </p>
+            <div className="mt-4">
+              <VerificationDetailsContent
+                yearsExperience={activeUser?.verification_years_experience}
+                certifications={activeUser?.verification_certifications}
+                guidingHistory={activeUser?.verification_guiding_history}
+                safetyTraining={activeUser?.verification_safety_training}
+                links={activeUser?.verification_links}
+              />
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                Close
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </section>
   );
 }

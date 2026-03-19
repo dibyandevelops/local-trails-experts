@@ -13,6 +13,9 @@ import {
 import { getSportLabel } from '@/services/constants/sports';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import VerificationDetailsContent, {
+  hasVerificationDetails,
+} from '@/components/ui/verification-details-content';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -206,6 +209,32 @@ export default function ExpertDetailPage() {
           </div>
         </div>
       </section>
+
+      {hasVerificationDetails({
+        yearsExperience: expert.verification_years_experience,
+        certifications: expert.verification_certifications,
+        guidingHistory: expert.verification_guiding_history,
+        safetyTraining: expert.verification_safety_training,
+        links: expert.verification_links,
+      }) && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Verification Details
+          </h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+            Additional profile details shared by the expert.
+          </p>
+          <div className="mt-4">
+            <VerificationDetailsContent
+              yearsExperience={expert.verification_years_experience}
+              certifications={expert.verification_certifications}
+              guidingHistory={expert.verification_guiding_history}
+              safetyTraining={expert.verification_safety_training}
+              links={expert.verification_links}
+            />
+          </div>
+        </section>
+      )}
 
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">

@@ -9,6 +9,9 @@ import {
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { getSportLabel } from '@/services/constants/sports';
 import * as Dialog from '@radix-ui/react-dialog';
+import VerificationDetailsContent, {
+  hasVerificationDetails,
+} from '@/components/ui/verification-details-content';
 
 const statusOptions = ['all', 'pending', 'approved', 'rejected'] as const;
 
@@ -16,6 +19,7 @@ export default function ExpertApplicationsPanel() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<(typeof statusOptions)[number]>('pending');
   const [verificationOpen, setVerificationOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [activeApplication, setActiveApplication] = useState<ExpertApplication | null>(null);
   const [verificationNotice, setVerificationNotice] = useState<string | null>(null);
   const [verificationMessage, setVerificationMessage] = useState(
@@ -164,12 +168,42 @@ export default function ExpertApplicationsPanel() {
                         >
                           Request verification
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveApplication(app);
+                            setDetailsOpen(true);
+                          }}
+                          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          View details
+                        </button>
                       </>
                     )}
                     {app.status !== 'pending' && (
-                      <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
-                        {app.status}
-                      </span>
+                      <>
+                        <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
+                          {app.status}
+                        </span>
+                        {hasVerificationDetails({
+                          yearsExperience: app.verification_years_experience,
+                          certifications: app.verification_certifications,
+                          guidingHistory: app.verification_guiding_history,
+                          safetyTraining: app.verification_safety_training,
+                          links: app.verification_links,
+                        }) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveApplication(app);
+                              setDetailsOpen(true);
+                            }}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          >
+                            View details
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -222,6 +256,40 @@ export default function ExpertApplicationsPanel() {
               >
                 {verificationMutation.isPending ? 'Sending...' : 'Send request'}
               </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setActiveApplication(null);
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl">
+            <Dialog.Title className="text-sm font-semibold text-gray-900">
+              Verification details
+            </Dialog.Title>
+            <p className="mt-1 text-xs text-gray-500">
+              {activeApplication?.name || activeApplication?.email}
+            </p>
+            <div className="mt-4">
+              <VerificationDetailsContent
+                yearsExperience={activeApplication?.verification_years_experience}
+                certifications={activeApplication?.verification_certifications}
+                guidingHistory={activeApplication?.verification_guiding_history}
+                safetyTraining={activeApplication?.verification_safety_training}
+                links={activeApplication?.verification_links}
+              />
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                Close
+              </Dialog.Close>
             </div>
           </Dialog.Content>
         </Dialog.Portal>

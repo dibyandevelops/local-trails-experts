@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
 import { loginUser } from '@/services/auth/auth.service';
 import { resizeImageToDataUrl } from '@/lib/image';
+import VerificationDetailsForm, {
+  VerificationDetailsValues,
+} from '@/components/feature-components/verification-details-form';
 
 export default function ExpertJoinPage() {
   const router = useRouter();
@@ -15,6 +18,13 @@ export default function ExpertJoinPage() {
   const [password, setPassword] = useState('');
   const [selectedSports, setSelectedSports] = useState<string[]>(['mtb']);
   const [credentials, setCredentials] = useState('');
+  const [verificationDetails, setVerificationDetails] = useState<VerificationDetailsValues>({
+    yearsExperience: '',
+    certifications: '',
+    guidingHistory: '',
+    safetyTraining: '',
+    links: '',
+  });
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string>('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +65,11 @@ export default function ExpertJoinPage() {
           password,
           sports: selectedSports,
           credentials,
+          verification_years_experience: verificationDetails.yearsExperience,
+          verification_certifications: verificationDetails.certifications,
+          verification_guiding_history: verificationDetails.guidingHistory,
+          verification_safety_training: verificationDetails.safetyTraining,
+          verification_links: verificationDetails.links,
           profile_photo_url: profilePhotoUrl || null,
         }),
       });
@@ -301,7 +316,7 @@ export default function ExpertJoinPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Your credentials & experience <span className="text-red-500">*</span>
+              Bio <span className="text-red-500">*</span>
             </label>
             <textarea
               required
@@ -309,9 +324,14 @@ export default function ExpertJoinPage() {
               onChange={(e) => setCredentials(e.target.value)}
               rows={5}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Share guiding/teaching experience, certifications, races, previous groups you've led, links to social profiles, etc."
+              placeholder="Tell about yourself."
             />
           </div>
+
+          <VerificationDetailsForm
+            values={verificationDetails}
+            onChange={setVerificationDetails}
+          />
 
           {errorMessage && (
             <p className="text-sm text-red-600">{errorMessage}</p>
