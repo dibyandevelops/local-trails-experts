@@ -68,10 +68,9 @@ describe('GET /api/trails (paginated list)', () => {
     expect(body.trails).toEqual([]);
     expect(body.pagination.total).toBe(0);
 
-    const [listQuery, listParams] = vi.mocked(pool.query).mock.calls[0] as [
-      string,
-      unknown[],
-    ];
+    const listCall = vi.mocked(pool.query).mock.calls[0] || [];
+    const listQuery = String(listCall[0] || '');
+    const listParams = (listCall[1] as unknown[]) || [];
     expect(listQuery).toMatch(/status = 'approved'/i);
     expect(listQuery).toMatch(/is_hidden = FALSE/i);
     expect(Array.isArray(listParams)).toBe(true);
