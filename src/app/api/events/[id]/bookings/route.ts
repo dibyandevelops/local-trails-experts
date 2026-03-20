@@ -7,7 +7,7 @@ import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = getAuthFromRequest(request);
@@ -15,6 +15,7 @@ export async function GET(
       return NextResponse.json({ booking: null }, { status: 200 });
     }
 
+    const { id: eventId } = await params;
     const result = await pool.query(
       `
       SELECT
@@ -32,7 +33,7 @@ export async function GET(
       WHERE event_id = $1 AND user_id = $2
       LIMIT 1
       `,
-      [params.id, auth.sub]
+      [eventId, auth.sub]
     );
 
     return NextResponse.json({ booking: result.rows[0] || null }, { status: 200 });
@@ -44,7 +45,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const limited = await rateLimit(request, 'event-booking', 10, 60);
@@ -61,6 +62,7 @@ export async function POST(
       );
     }
 
+    const { id: eventId } = await params;
     const body = await request.json();
     const spots = Number(body.spots || 1);
 
@@ -90,7 +92,7 @@ export async function POST(
         WHERE id = $1
         LIMIT 1
         `,
-        [params.id]
+        [eventId]
       );
       const event = eventResult.rows[0];
       if (!event) {
@@ -100,7 +102,7 @@ export async function POST(
 
       const existing = await client.query(
         'SELECT id, status FROM bookings WHERE event_id = $1 AND user_id = $2 LIMIT 1',
-        [params.id, auth.sub]
+        [eventId, auth.sub]
       );
       if (existing.rows.length > 0 && existing.rows[0].status !== 'cancelled') {
         await client.query('ROLLBACK');
@@ -131,12 +133,12 @@ export async function POST(
         RETURNING id, event_id, user_id, spots, total_price_npr, status,
                   refund_npr, cancelled_at, cancellation_policy_snapshot, created_at
         `,
-        [params.id, auth.sub, spots, totalPrice, bookingStatus]
+        [eventId, auth.sub, spots, totalPrice, bookingStatus]
       );
 
       await client.query(
         'UPDATE events SET current_participants = current_participants + $2 WHERE id = $1',
-        [params.id, spots]
+        [eventId, spots]
       );
 
       let payment = null;
@@ -172,7 +174,7 @@ export async function POST(
       await sendEmailSafe({
         to: user.email,
         ...participantEmail,
-        dedupeKey: `booking:create:${params.id}:${user.email}:${bookingStatus}:${spots}`,
+        dedupeKey: `booking:create:${eventId}:${user.email}:${bookingStatus}:${spots}`,
       });
 
       if (event.organizer_email && event.organizer_email !== user.email) {
@@ -187,7 +189,7 @@ export async function POST(
         await sendEmailSafe({
           to: event.organizer_email,
           ...organizerEmailPayload,
-          dedupeKey: `booking:organizer:${params.id}:${event.organizer_email}:${user.email}:${spots}`,
+          dedupeKey: `booking:organizer:${eventId}:${event.organizer_email}:${user.email}:${spots}`,
         });
       }
 

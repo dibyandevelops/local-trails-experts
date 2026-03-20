@@ -3,8 +3,9 @@ import pool from '@/lib/db';
 import { AUTH_COOKIE_NAME, verifyAuthToken, type AuthTokenPayload } from '@/lib/auth';
 import type { User } from '@/types';
 
-export function getServerAuthPayload(): AuthTokenPayload | null {
-  const token = cookies().get(AUTH_COOKIE_NAME)?.value;
+export async function getServerAuthPayload(): Promise<AuthTokenPayload | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     return verifyAuthToken(token);
@@ -14,7 +15,7 @@ export function getServerAuthPayload(): AuthTokenPayload | null {
 }
 
 export async function getServerCurrentUser(): Promise<User | null> {
-  const auth = getServerAuthPayload();
+  const auth = await getServerAuthPayload();
   if (!auth) return null;
   const result = await pool.query(
     `

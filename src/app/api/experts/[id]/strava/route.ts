@@ -8,14 +8,14 @@ import {
 } from '@/lib/strava';
 
 type Params = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const expertId = params.id;
+    const { id: expertId } = await params;
     if (!expertId) {
       return NextResponse.json({ error: 'Expert id is required' }, { status: 400 });
     }

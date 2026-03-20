@@ -8,13 +8,13 @@ import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const limited = await rateLimit(request, 'event-join', 10, 60);
     if (limited) return limited;
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const body: JoinEventInput = await request.json();
 
     const { participant_name, participant_email, phone, expertise_level } = body;

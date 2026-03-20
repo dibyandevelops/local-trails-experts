@@ -6,10 +6,10 @@ import { normalizeSafetyLabels } from '@/lib/trail-safety';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const result = await pool.query(
       `
@@ -56,7 +56,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = getAuthFromRequest(request);
@@ -64,7 +64,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json() as Partial<Trail> & { action?: 'hide' | 'unhide' | 'delete' | 'remove_route' };
 
     const existing = await pool.query('SELECT * FROM trails WHERE id = $1', [id]);

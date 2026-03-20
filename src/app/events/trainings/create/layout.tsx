@@ -2,12 +2,12 @@ import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getServerAuthPayload } from '@/lib/auth-server';
 
-export default function CreateTrainingLayout({
+export default async function CreateTrainingLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const auth = getServerAuthPayload();
+  const auth = await getServerAuthPayload();
   if (!auth) {
     redirect(`/?login=1&next=${encodeURIComponent('/events/trainings/create')}`);
   }

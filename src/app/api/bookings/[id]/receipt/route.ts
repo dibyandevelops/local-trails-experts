@@ -4,7 +4,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = getAuthFromRequest(request);
@@ -12,6 +12,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id: bookingId } = await params;
     const result = await pool.query(
       `
       SELECT
@@ -48,7 +49,7 @@ export async function GET(
       WHERE b.id = $1
       LIMIT 1
       `,
-      [params.id]
+      [bookingId]
     );
 
     const receipt = result.rows[0];

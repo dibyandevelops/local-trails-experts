@@ -7,7 +7,7 @@ import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = getAuthFromRequest(request);
@@ -18,7 +18,7 @@ export async function POST(
       );
     }
 
-    const trailId = params.id;
+    const { id: trailId } = await params;
     const body = await request.json();
     const description = String(body?.description || '').trim();
     const expertUserId = String(body?.expert_user_id || '').trim();

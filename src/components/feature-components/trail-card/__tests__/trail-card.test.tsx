@@ -26,8 +26,8 @@ describe('TrailCard', () => {
 
     expect(screen.getByText('Forest Loop')).toBeInTheDocument();
     expect(screen.getByText('Kathmandu')).toBeInTheDocument();
-    expect(screen.getByText(/helmet required/i)).toBeInTheDocument();
-    expect(screen.getByText(/carry water/i)).toBeInTheDocument();
+    expect(screen.getByText(/12.3 km/i)).toBeInTheDocument();
+    expect(screen.getByText(/medium/i)).toBeInTheDocument();
   });
 
   it('triggers onClick when card is clicked', () => {
