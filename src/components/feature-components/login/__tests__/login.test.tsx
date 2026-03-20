@@ -17,6 +17,9 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: pushMock,
   }),
+  useSearchParams: () => ({
+    get: vi.fn(() => null),
+  }),
 }));
 
 // Mock the auth service while preserving other exports
@@ -30,6 +33,7 @@ vi.mock('@/services/auth/auth.service', async () => {
 
 // Get the mocked loginUser function for setting expectations
 const loginUserMock = vi.mocked(loginUser);
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'dibyan.softwaredev@gmail.com';
 
 // Helper function to render components with QueryClientProvider wrapper
 function renderWithQuery(ui: ReactElement) {
@@ -94,7 +98,7 @@ describe('LoginComponent', () => {
 
     // Fill in the login form with admin credentials
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: process.env.NEXT_PUBLIC_ADMIN_EMAIL },
+      target: { value: ADMIN_EMAIL },
     });
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: '1MicroPassword' },
@@ -108,7 +112,7 @@ describe('LoginComponent', () => {
     await waitFor(() => {
       expect(loginUserMock).toHaveBeenCalled();
       expect(loginUserMock.mock.calls[0][0]).toEqual({
-        email: process.env.NEXT_PUBLIC_ADMIN_EMAIL,
+        email: ADMIN_EMAIL,
         role: 'admin',
         password: '1MicroPassword',
       });

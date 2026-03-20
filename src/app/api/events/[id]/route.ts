@@ -5,10 +5,10 @@ import { getAuthFromRequest } from '@/lib/auth';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const result = await pool.query(
       `
       SELECT
@@ -108,7 +108,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = getAuthFromRequest(request);
@@ -116,7 +116,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const body = (await request.json()) as Partial<CreateEventInput>;
 
     const existing = await pool.query(

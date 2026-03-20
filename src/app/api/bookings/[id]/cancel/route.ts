@@ -7,9 +7,10 @@ import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: bookingId } = await params;
     const auth = getAuthFromRequest(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -39,7 +40,7 @@ export async function POST(
         WHERE b.id = $1
         LIMIT 1
         `,
-        [params.id]
+        [bookingId]
       );
 
       const booking = bookingResult.rows[0];
@@ -71,7 +72,7 @@ export async function POST(
         WHERE id = $1
         RETURNING *
         `,
-        [params.id, refundNpr, policy.note]
+        [bookingId, refundNpr, policy.note]
       );
 
       await client.query(
@@ -85,7 +86,7 @@ export async function POST(
         SET status = CASE WHEN $2 > 0 THEN 'paid' ELSE 'failed' END
         WHERE booking_id = $1 AND status = 'pending'
         `,
-        [params.id, refundNpr]
+        [bookingId, refundNpr]
       );
 
       await client.query('COMMIT');

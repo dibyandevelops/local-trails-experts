@@ -41,6 +41,7 @@ function makeFakeFormData(fields: Record<string, any>) {
 describe('POST /api/trails', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.ADMIN_EMAIL = 'admin@example.com';
     vi.mocked(parseGPX).mockResolvedValue({
       coordinates: [{ latitude: 27.7, longitude: 85.3, elevation: 1300 }],
       totalDistance: 12.3,
@@ -98,9 +99,14 @@ describe('POST /api/trails', () => {
       },
     });
 
-    vi.mocked(pool.query)
-      .mockResolvedValueOnce({ rows: [{ id: 'trail-1', name: 'Trail One' }] } as never)
-      .mockResolvedValueOnce({ rows: [{ email: 'admin@example.com' }] } as never);
+    vi.mocked(pool.query).mockImplementation(async (sql: any) => {
+      const query = String(sql);
+      if (query.includes('SELECT id FROM trails')) return { rows: [] } as never;
+      if (query.includes('INSERT INTO trails')) {
+        return { rows: [{ id: 'trail-1', name: 'Trail One' }] } as never;
+      }
+      return { rows: [] } as never;
+    });
 
     const request = makeMultipartRequest(formData);
     const response = await POST(request);
@@ -132,9 +138,19 @@ describe('POST /api/trails', () => {
       exp: 999999,
     } as any);
 
-    vi.mocked(pool.query)
-      .mockResolvedValueOnce({ rows: [{ name: 'Admin', email: 'admin@example.com' }] } as never)
-      .mockResolvedValueOnce({ rows: [{ id: 'trail-2', name: 'Trail Two' }] } as never);
+    vi.mocked(pool.query).mockImplementation(async (sql: any) => {
+      const query = String(sql);
+      if (query.includes('SELECT id FROM trails')) return { rows: [] } as never;
+      if (query.includes('FROM users WHERE id = $1')) {
+        return {
+          rows: [{ name: 'Admin', email: 'admin@example.com', is_verified_expert: true }],
+        } as never;
+      }
+      if (query.includes('INSERT INTO trails')) {
+        return { rows: [{ id: 'trail-2', name: 'Trail Two' }] } as never;
+      }
+      return { rows: [] } as never;
+    });
 
     const request = makeMultipartRequest(formData);
     const response = await POST(request);

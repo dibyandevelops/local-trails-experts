@@ -4,7 +4,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { requestId: string } }
+  { params }: { params: Promise<{ requestId: string }> }
 ) {
   try {
     const auth = getAuthFromRequest(request);
@@ -12,7 +12,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const requestId = params.requestId;
+    const { requestId } = await params;
     const body = await request.json();
     const expertUserId = String(body?.expert_user_id || '').trim();
     const preferredDateRaw = String(body?.preferred_date || '').trim();
@@ -80,7 +80,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { requestId: string } }
+  { params }: { params: Promise<{ requestId: string }> }
 ) {
   try {
     const auth = getAuthFromRequest(request);
@@ -88,7 +88,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const requestId = params.requestId;
+    const { requestId } = await params;
     const deleted = await pool.query(
       `
       DELETE FROM trail_interest_requests

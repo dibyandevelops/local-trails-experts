@@ -4,10 +4,10 @@ import { Event } from '@/types';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const hostId = params.id;
+    const { id: hostId } = await params;
 
     const query = `
       SELECT
@@ -83,4 +83,3 @@ export async function GET(
     );
   }
 }
-

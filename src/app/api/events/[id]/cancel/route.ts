@@ -5,7 +5,7 @@ import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const limited = await rateLimit(_request, 'event-cancel', 5, 60);
@@ -16,7 +16,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
