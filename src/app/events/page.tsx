@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
 import EventsPageClient from './events-client';
+import type { Metadata } from 'next';
+import { hasAnySearchParams, listingMetadata } from '@/lib/seo-listing';
 
 function EventsPageFallback() {
   return (
@@ -30,4 +32,17 @@ export default function EventsPage() {
       <EventsPageClient />
     </Suspense>
   );
+}
+
+export async function generateMetadata(props: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const resolved = props.searchParams ? await props.searchParams : {};
+  const hasFilters = hasAnySearchParams(resolved);
+  return listingMetadata({
+    title: 'Events',
+    description: 'Join upcoming outdoor events hosted by local experts.',
+    canonicalPath: '/events',
+    hasFilters,
+  });
 }
