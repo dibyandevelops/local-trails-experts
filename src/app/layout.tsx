@@ -8,22 +8,57 @@ import Footer from '@/components/navigation/footer';
 import PWARegister from '@/components/pwa-register';
 import PushNotificationPrompt from '@/components/push-notification-prompt';
 import { getServerCurrentUser } from '@/lib/auth-server';
+import {
+  absoluteUrl,
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  SITE_NAME,
+  getPublicAppUrl,
+} from '@/lib/seo';
 
 import './globals.css';
 import MainContent from '@/components/main-content';
 
 export const metadata: Metadata = {
-  title: 'LocoXperts - Find trails and Join Events',
-  description: 'Find trails and join events',
+  metadataBase: new URL(getPublicAppUrl()),
+  title: {
+    default: DEFAULT_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: {
+    canonical: '/',
+  },
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'LocoXperts',
+    title: SITE_NAME,
   },
   icons: {
     icon: '/icons/icon.svg',
     apple: '/icons/icon.svg',
+  },
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    url: '/',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [{ url: absoluteUrl('/icons/icon.svg') }],
+  },
+  twitter: {
+    card: 'summary',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [absoluteUrl('/icons/icon.svg')],
+  },
+  verification: {
+    google:
+      (process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+        process.env.GOOGLE_SITE_VERIFICATION ||
+        '').trim() || undefined,
   },
 };
 
