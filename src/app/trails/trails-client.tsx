@@ -755,7 +755,14 @@ function TrailsPageContent() {
     }
     const query = params.toString();
     const nextUrl = query ? `/trails?${query}` : '/trails';
-    router.replace(nextUrl, { scroll: false });
+    // Avoid redundant replaces; in production this can trigger a replace loop.
+    const currentUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : '';
+    if (currentUrl !== nextUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
   }, [
     search,
     difficulty,
@@ -828,7 +835,7 @@ function TrailsPageContent() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchInput, locationInput]);
+  }, [searchInput, locationInput, distanceMinInput, distanceMaxInput]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
