@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { STRAVA_ENABLED } from '@/lib/feature-flags';
 import {
   AUTH_HINT_COOKIE_NAME,
   createTempPassword,
@@ -16,6 +17,9 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
+    if (!STRAVA_ENABLED) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     const code = request.nextUrl.searchParams.get('code');
     const returnedState = request.nextUrl.searchParams.get('state') || '';
     const providerError = request.nextUrl.searchParams.get('error');

@@ -134,7 +134,10 @@ export async function GET(request: NextRequest) {
         t.submitted_by_user_id,
         t.status,
         t.is_hidden,
-        u.name as created_by
+        CASE
+          WHEN u.role = 'admin' THEN 'LocoMTBGroup'
+          ELSE u.name
+        END as created_by
       FROM trails t
       LEFT JOIN users u ON t.submitted_by_user_id = u.id
       ${whereClause}

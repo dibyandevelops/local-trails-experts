@@ -16,6 +16,7 @@ import { ApiPath } from '@/services/api/paths';
 import { hideTrail, unhideTrail } from '@/services/trails/trails.service';
 import { resizeImageToDataUrl } from '@/lib/image';
 import VerificationDetailsForm from '@/components/feature-components/verification-details-form';
+import { STRAVA_ENABLED } from '@/lib/feature-flags';
 
 type ExpertTrailRequest = {
   id: string;
@@ -94,7 +95,7 @@ export default function ExpertProfilePage() {
   const { data: stravaSummary } = useQuery({
     queryKey: QUERY_KEYS.experts.strava(currentUser?.id),
     queryFn: ({ signal }) => fetchExpertStravaSummary(currentUser?.id || '', signal),
-    enabled: !!currentUser?.id && currentUser.role === 'expert',
+    enabled: STRAVA_ENABLED && !!currentUser?.id && currentUser.role === 'expert',
   });
 
   useEffect(() => {
@@ -230,39 +231,43 @@ export default function ExpertProfilePage() {
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
           Edit Profile
         </h2>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          {stravaSummary?.connected ? (
-            <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
-              Strava Connected
-            </span>
-          ) : (
-            <Link
-              href={`${ApiPath.StravaAuthorize}?mode=connect`}
-              className="inline-flex items-center rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 hover:bg-orange-100"
-            >
-              Connect with Strava
-            </Link>
-          )}
-          {stravaSummary?.syncedAt && (
-            <span className="text-xs text-gray-500">
-              Last synced {format(new Date(stravaSummary.syncedAt), 'PPP p')}
-            </span>
-          )}
-        </div>
-        {stravaSummary?.connected && (
-          <div className="mb-4 flex flex-wrap items-center gap-3 text-[11px] text-orange-700">
-            {stravaSummary?.profile?.id && (
-              <a
-                href={`https://www.strava.com/athletes/${stravaSummary.profile.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-orange-700 underline decoration-orange-400"
-              >
-                View on Strava
-              </a>
+        {STRAVA_ENABLED && (
+          <>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {stravaSummary?.connected ? (
+                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
+                  Strava Connected
+                </span>
+              ) : (
+                <Link
+                  href={`${ApiPath.StravaAuthorize}?mode=connect`}
+                  className="inline-flex items-center rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 hover:bg-orange-100"
+                >
+                  Connect with Strava
+                </Link>
+              )}
+              {stravaSummary?.syncedAt && (
+                <span className="text-xs text-gray-500">
+                  Last synced {format(new Date(stravaSummary.syncedAt), 'PPP p')}
+                </span>
+              )}
+            </div>
+            {stravaSummary?.connected && (
+              <div className="mb-4 flex flex-wrap items-center gap-3 text-[11px] text-orange-700">
+                {stravaSummary?.profile?.id && (
+                  <a
+                    href={`https://www.strava.com/athletes/${stravaSummary.profile.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-orange-700 underline decoration-orange-400"
+                  >
+                    View on Strava
+                  </a>
+                )}
+                <span className="uppercase tracking-wide">Powered by Strava</span>
+              </div>
             )}
-            <span className="uppercase tracking-wide">Powered by Strava</span>
-          </div>
+          </>
         )}
         {user.is_verified_expert ? (
           <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold mb-4">

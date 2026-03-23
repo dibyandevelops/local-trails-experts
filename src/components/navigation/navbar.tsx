@@ -150,14 +150,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     }
 
     const errorParam = searchParams.get('error');
-    const errorMessage =
-      errorParam === 'strava_denied'
-        ? 'Strava authorization was cancelled.'
-        : errorParam === 'strava_expert_only'
-          ? 'Strava connect is available for experts only.'
-          : errorParam
-            ? 'Could not connect to Strava. Please try again.'
-            : null;
+    const errorMessage = errorParam ? 'Authentication failed. Please try again.' : null;
 
     const roleParam = searchParams.get('role');
     const initialRole: UserRole | undefined =

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { STRAVA_ENABLED } from '@/lib/feature-flags';
 import {
   fetchStravaAthlete,
   fetchStravaAthleteStats,
@@ -15,6 +16,9 @@ type Params = {
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
+    if (!STRAVA_ENABLED) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     const { id: expertId } = await params;
     if (!expertId) {
       return NextResponse.json({ error: 'Expert id is required' }, { status: 400 });

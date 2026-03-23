@@ -16,6 +16,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import VerificationDetailsContent, {
   hasVerificationDetails,
 } from '@/components/ui/verification-details-content';
+import { STRAVA_ENABLED } from '@/lib/feature-flags';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -46,7 +47,7 @@ export default function ExpertDetailPage() {
   const { data: strava } = useQuery({
     queryKey: QUERY_KEYS.experts.strava(expertId || ''),
     queryFn: ({ signal }) => fetchExpertStravaSummary(expertId || '', signal),
-    enabled: !!expertId,
+    enabled: STRAVA_ENABLED && !!expertId,
   });
 
   if (loading) {

@@ -2,9 +2,13 @@ import { randomBytes } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthFromRequest } from '@/lib/auth';
 import { buildStravaAuthorizeUrl, getStravaConfig } from '@/lib/strava';
+import { STRAVA_ENABLED } from '@/lib/feature-flags';
 
 export async function GET(request: NextRequest) {
   try {
+    if (!STRAVA_ENABLED) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     const auth = getAuthFromRequest(request);
     const modeParam = request.nextUrl.searchParams.get('mode');
     const mode: 'connect' | 'login' = modeParam === 'login' ? 'login' : 'connect';

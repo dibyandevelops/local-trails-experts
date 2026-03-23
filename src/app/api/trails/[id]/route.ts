@@ -15,7 +15,10 @@ export async function GET(
       `
         SELECT
           t.*,
-          u.name AS submitted_by_name,
+          CASE
+            WHEN u.role = 'admin' THEN 'LocoMTBGroup'
+            ELSE u.name
+          END AS submitted_by_name,
           u.email AS submitted_by_email
         FROM trails t
         LEFT JOIN users u ON u.id = t.submitted_by_user_id
