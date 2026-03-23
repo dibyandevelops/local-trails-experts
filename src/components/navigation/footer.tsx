@@ -93,6 +93,11 @@ export default function Footer() {
           </p>
           <ul className="space-y-1 text-sm">
             <li>
+              <Link className="hover:underline" href="/purpose">
+                Purpose
+              </Link>
+            </li>
+            <li>
               <Link className="hover:underline" href="/trails">
                 Explore trails
               </Link>
@@ -108,18 +113,18 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link className="hover:underline" href="/privacy">
-                Privacy policy
-              </Link>
-            </li>
-            <li>
-              <Link className="hover:underline" href="/kora-26">
-                Kora 26 cause
+              <Link className="hover:underline" href="/sponsors">
+                Sponsors
               </Link>
             </li>
             <li>
               <Link className="hover:underline" href="/safety">
                 Safety policy
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:underline" href="/privacy">
+                Privacy policy
               </Link>
             </li>
           </ul>
