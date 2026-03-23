@@ -112,6 +112,11 @@ export default function Footer() {
                 Privacy policy
               </Link>
             </li>
+            <li>
+              <Link className="hover:underline" href="/safety">
+                Safety policy
+              </Link>
+            </li>
           </ul>
           <p className="text-xs text-gray-500 dark:text-slate-400">
             Want something like this for your community or destination? Use the
