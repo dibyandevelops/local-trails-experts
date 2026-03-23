@@ -28,6 +28,7 @@ import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_VIEW_KEY = 'trails_view_mode';
+const TRAILS_LAST_URL_KEY = 'trails_last_url';
 
 type TrailsViewMode = 'grid' | 'list';
 type TrailSort =
@@ -101,12 +102,20 @@ function TrailGallery({
               role="button"
               tabIndex={0}
               onClick={() => {
+                sessionStorage.setItem(
+                  TRAILS_LAST_URL_KEY,
+                  `${window.location.pathname}${window.location.search}`
+                );
                 sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
                 router.push(`/trails/${trail.id}`);
               }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
+                  sessionStorage.setItem(
+                    TRAILS_LAST_URL_KEY,
+                    `${window.location.pathname}${window.location.search}`
+                  );
                   sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
                   router.push(`/trails/${trail.id}`);
                 }
@@ -249,6 +258,10 @@ function TrailGallery({
             ...trail,
             isRequested: trail.isRequested,
             onClick() {
+              sessionStorage.setItem(
+                TRAILS_LAST_URL_KEY,
+                `${window.location.pathname}${window.location.search}`
+              );
               sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
               router.push(`/trails/${trail.id}`);
             },

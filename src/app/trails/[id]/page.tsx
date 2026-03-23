@@ -39,6 +39,8 @@ import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 
+const TRAILS_LAST_URL_KEY = 'trails_last_url';
+
 type GeoJSON = {
   type: string;
   geometry: {
@@ -351,7 +353,8 @@ const TrailPage: React.FunctionComponent = () => {
       queryClient.invalidateQueries({ queryKey: ['trails'] });
       queryClient.invalidateQueries({ queryKey: ['trails-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['trails-infinite'] });
-      router.push('/trails');
+      const lastListUrl = sessionStorage.getItem(TRAILS_LAST_URL_KEY);
+      router.push(lastListUrl || '/trails', { scroll: false });
     },
   });
 
@@ -657,6 +660,11 @@ const TrailPage: React.FunctionComponent = () => {
   };
 
   const handleBackToTrails = () => {
+    const lastListUrl = sessionStorage.getItem(TRAILS_LAST_URL_KEY);
+    if (lastListUrl) {
+      router.push(lastListUrl, { scroll: false });
+      return;
+    }
     if (window.history.length > 1) {
       router.back();
       return;
