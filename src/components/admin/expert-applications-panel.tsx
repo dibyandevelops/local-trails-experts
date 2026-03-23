@@ -12,6 +12,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import VerificationDetailsContent, {
   hasVerificationDetails,
 } from '@/components/ui/verification-details-content';
+import DateText from '@/components/ui/date-text';
 
 const statusOptions = ['all', 'pending', 'approved', 'rejected'] as const;
 
@@ -211,7 +212,7 @@ export default function ExpertApplicationsPanel() {
                   {app.credentials}
                 </p>
                 <p className="mt-2 text-xs text-gray-500">
-                  Submitted {new Date(app.created_at).toLocaleDateString()}
+                  Submitted <DateText value={app.created_at} pattern="PPP" />
                 </p>
               </div>
             ))}

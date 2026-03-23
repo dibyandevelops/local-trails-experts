@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Event, EventParticipant, User, SportType } from '@/types';
-import { format } from 'date-fns';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
@@ -17,6 +16,7 @@ import { hideTrail, unhideTrail } from '@/services/trails/trails.service';
 import { resizeImageToDataUrl } from '@/lib/image';
 import VerificationDetailsForm from '@/components/feature-components/verification-details-form';
 import { STRAVA_ENABLED } from '@/lib/feature-flags';
+import DateText from '@/components/ui/date-text';
 
 type ExpertTrailRequest = {
   id: string;
@@ -248,7 +248,7 @@ export default function ExpertProfilePage() {
               )}
               {stravaSummary?.syncedAt && (
                 <span className="text-xs text-gray-500">
-                  Last synced {format(new Date(stravaSummary.syncedAt), 'PPP p')}
+                  Last synced <DateText value={stravaSummary.syncedAt} pattern="PPP p" />
                 </span>
               )}
             </div>
@@ -548,7 +548,7 @@ export default function ExpertProfilePage() {
                     </p>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Requested {format(new Date(request.created_at), 'PPP p')}
+                    Requested <DateText value={request.created_at} pattern="PPP p" />
                   </p>
                 </div>
                 <p className="mt-2 text-xs text-gray-600">
@@ -623,7 +623,7 @@ export default function ExpertProfilePage() {
                         )}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600">
-                        {format(new Date(event.event_date), 'PPP p')}
+                        <DateText value={event.event_date} pattern="PPP p" />
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600">
                         {participants.length === 0 ? (
@@ -876,7 +876,7 @@ export default function ExpertProfilePage() {
                           {participant.expertise_level}
                         </td>
                         <td className="px-3 py-2 text-xs text-gray-600">
-                          {format(new Date(participant.joined_at), 'PP')}
+                          <DateText value={participant.joined_at} pattern="PP" />
                         </td>
                       </tr>
                     ))}

@@ -11,6 +11,7 @@ import {
 import VerificationDetailsContent, {
   hasVerificationDetails,
 } from '@/components/ui/verification-details-content';
+import DateText from '@/components/ui/date-text';
 
 type UsersPanelProps = {
   role: 'expert' | 'participant';
@@ -119,7 +120,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                   <div>
                     <p className="text-[11px] font-semibold uppercase text-gray-400">Joined</p>
                     <p>
-                      {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
+                      <DateText value={user.created_at} pattern="PPP" />
                     </p>
                   </div>
                 </div>
@@ -158,7 +159,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                       {user.phone || '—'}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-500">
-                      {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
+                      <DateText value={user.created_at} pattern="PPP" />
                     </td>
                     {role === 'expert' && (
                       <td className="px-3 py-3 text-xs text-gray-600">

@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { User } from '@/types';
-import { format } from 'date-fns';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
 import { resizeImageToDataUrl } from '@/lib/image';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import DateText from '@/components/ui/date-text';
 
 type ParticipantEvent = {
   id: string;
@@ -445,7 +445,7 @@ export default function ParticipantProfilePage() {
                     </p>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Requested on {format(new Date(request.created_at), 'PPP p')}
+                    Requested on <DateText value={request.created_at} pattern="PPP p" />
                   </p>
                 </div>
                 {request.description && (
@@ -611,7 +611,7 @@ export default function ParticipantProfilePage() {
                     {event.title}
                   </Link>
                   <p className="text-xs text-gray-500">
-                    {format(new Date(event.event_date), 'PPP p')}
+                    <DateText value={event.event_date} pattern="PPP p" />
                     {event.city ? ` • ${event.city}` : ''}
                   </p>
                   {event.sport_type && (

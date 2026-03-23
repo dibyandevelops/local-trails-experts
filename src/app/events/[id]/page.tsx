@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { Booking, Event } from '@/types';
-import { format } from 'date-fns';
+import DateText from '@/components/ui/date-text';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel } from '@/services/constants/sports';
@@ -105,7 +105,7 @@ export default function EventDetailPage() {
               {event.title}
             </h1>
             <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-              {format(new Date(event.event_date), 'PPP p')}
+              <DateText value={event.event_date} pattern="PPP p" />
               {event.city ? ` • ${event.city}` : ''}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">

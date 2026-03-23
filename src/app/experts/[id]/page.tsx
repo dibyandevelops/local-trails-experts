@@ -3,7 +3,6 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Event, User } from '@/types';
-import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import {
   fetchExpertEvents,
@@ -17,6 +16,7 @@ import VerificationDetailsContent, {
   hasVerificationDetails,
 } from '@/components/ui/verification-details-content';
 import { STRAVA_ENABLED } from '@/lib/feature-flags';
+import DateText from '@/components/ui/date-text';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -258,7 +258,7 @@ export default function ExpertDetailPage() {
                     {event.title}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-slate-400">
-                    {format(new Date(event.event_date), 'PPP p')}
+                    <DateText value={event.event_date} pattern="PPP p" />
                     {event.city ? ` • ${event.city}` : ''}
                   </p>
                   {event.sport_type && (

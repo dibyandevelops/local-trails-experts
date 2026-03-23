@@ -3,9 +3,9 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Event, User } from '@/types';
-import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { fetchExpertEvents, fetchExperts } from '@/services/experts/experts.service';
+import DateText from '@/components/ui/date-text';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -91,7 +91,7 @@ export default function ExpertEventsPage() {
                   {event.title}
                 </h3>
                 <p className="text-xs text-gray-500">
-                  {format(new Date(event.event_date), 'PPP p')}
+                  <DateText value={event.event_date} pattern="PPP p" />
                   {event.city ? ` • ${event.city}` : ''}
                 </p>
                 {event.meeting_point && (

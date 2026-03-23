@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { Event, ExpertiseLevel, SportType, User } from '@/types';
-import { format } from 'date-fns';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Toast from '@radix-ui/react-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -20,6 +19,7 @@ import { fetchMyParticipantEvents } from '@/services/participants/participants.s
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { useUiStore } from '@/stores/ui.store';
 import { getSportLabel, SPORT_OPTIONS } from '@/services/constants/sports';
+import DateText from '@/components/ui/date-text';
 
 const EMPTY_EVENTS: Event[] = [];
 
@@ -482,7 +482,7 @@ export default function EventsPageClient() {
               <div className="mt-3 space-y-3 text-sm text-gray-700">
                 <p className="font-semibold text-gray-900">{joinTarget.title}</p>
                 <p>
-                  {format(new Date(joinTarget.event_date), 'PPP p')}
+                  <DateText value={joinTarget.event_date} pattern="PPP p" />
                   {joinTarget.city ? ` • ${joinTarget.city}` : ''}
                 </p>
                 <p>
@@ -624,7 +624,7 @@ function EventCard({
             </h3>
             <p className="text-xs text-gray-500 sm:text-sm dark:text-slate-400">
               {event.city ? `${event.city} • ` : ''}
-              {format(new Date(event.event_date), 'PPP p')}
+              <DateText value={event.event_date} pattern="PPP p" />
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -659,7 +659,7 @@ function EventCard({
             {event.price_npr && event.price_npr > 0 ? `NPR ${event.price_npr}` : 'Free'}
           </span>
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
-            Date: {format(new Date(event.event_date), 'PPP')}
+            Date: <DateText value={event.event_date} pattern="PPP" />
           </span>
           {event.difficulty && (
             <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
