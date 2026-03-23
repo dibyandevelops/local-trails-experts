@@ -113,6 +113,11 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link className="hover:underline" href="/kora-26">
+                Kora 26 cause
+              </Link>
+            </li>
+            <li>
               <Link className="hover:underline" href="/safety">
                 Safety policy
               </Link>
