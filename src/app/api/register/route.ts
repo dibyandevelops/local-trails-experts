@@ -12,13 +12,14 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const body = await request.json();
-    const { name, email, sports, password, phone, city } = body as {
+    const { name, email, sports, password, phone, city, profile_photo_url } = body as {
       name?: string;
       email?: string;
       sports?: string[];
       password?: string;
       phone?: string;
       city?: string;
+      profile_photo_url?: string;
     };
 
     if (!name || !email || !password || !phone) {
@@ -71,13 +72,24 @@ export async function POST(request: NextRequest) {
         ? JSON.stringify(sports)
         : null;
 
+    if (
+      typeof profile_photo_url === 'string' &&
+      profile_photo_url.startsWith('data:image/') &&
+      profile_photo_url.length > 350_000
+    ) {
+      return NextResponse.json(
+        { error: 'Profile photo is too large. Please upload a smaller image.' },
+        { status: 413 }
+      );
+    }
+
     const result = await pool.query(
       `
-      INSERT INTO users (name, email, password_hash, role, sports, phone, city)
-      VALUES ($1, $2, $3, 'participant', $4::jsonb, $5, $6)
+      INSERT INTO users (name, email, password_hash, role, sports, phone, city, profile_photo_url)
+      VALUES ($1, $2, $3, 'participant', $4::jsonb, $5, $6, $7)
       RETURNING id, email, role
     `,
-      [name, email, passwordHash, sportsJson, normalizedPhone, city || null]
+      [name, email, passwordHash, sportsJson, normalizedPhone, city || null, profile_photo_url || null]
     );
 
     const user = result.rows[0];

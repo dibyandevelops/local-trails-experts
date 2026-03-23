@@ -75,6 +75,17 @@ export async function PATCH(request: NextRequest) {
       verification_links?: string;
     };
 
+    if (
+      typeof profile_photo_url === 'string' &&
+      profile_photo_url.startsWith('data:image/') &&
+      profile_photo_url.length > 350_000
+    ) {
+      return NextResponse.json(
+        { error: 'Profile photo is too large. Please upload a smaller image.' },
+        { status: 413 }
+      );
+    }
+
     const sportsJson =
       Array.isArray(sports) && sports.length > 0
         ? JSON.stringify(sports)

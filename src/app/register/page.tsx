@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SportType } from '@/types';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
+import { resizeImageToDataUrl } from '@/lib/image';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function RegisterPage() {
     password: '',
     phone: '',
     city: '',
+    profilePhotoUrl: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +85,7 @@ export default function RegisterPage() {
             password: form.password,
             phone: form.phone.trim(),
             city: form.city.trim() || null,
+            profile_photo_url: form.profilePhotoUrl || null,
           }),
         });
 
@@ -100,6 +103,7 @@ export default function RegisterPage() {
         password: '',
         phone: '',
         city: '',
+        profilePhotoUrl: '',
       });
       router.push('/');
     } catch (err) {
@@ -113,19 +117,28 @@ export default function RegisterPage() {
     return <div className="max-w-lg mx-auto" />;
   }
 
+  const initials =
+    form.name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase() || 'P';
+
   return (
     <div className="max-w-lg mx-auto">
-      <h1 className="text-4xl font-bold mb-2 text-green-800">
+      <h1 className="text-4xl font-bold mb-2 text-green-800 dark:text-green-200">
         Join the Adventure! 🚵
       </h1>
-      <p className="text-sm text-gray-600 mb-6 max-w-2xl">
+      <p className="text-sm text-gray-600 mb-6 max-w-2xl dark:text-slate-300">
         Create your free account to unlock epic trails, connect with verified guides and coaches,
         save your favorite spots, and never miss an event. Your next great outdoor experience starts here!
       </p>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4"
+        className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4 dark:bg-slate-900 dark:border-slate-700"
       >
         {notice && (
           <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
@@ -134,7 +147,70 @@ export default function RegisterPage() {
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-200">
+              Profile photo (optional)
+            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-14 w-14 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  {form.profilePhotoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={form.profilePhotoUrl}
+                      alt="Profile preview"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                      {initials}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-slate-400">
+                  Adds personality to your account. We compress it for faster loading.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const dataUrl = await resizeImageToDataUrl(file, {
+                          maxDimension: 512,
+                          quality: 0.78,
+                        });
+                        if (dataUrl.length > 350_000) {
+                          setError('Profile photo is too large. Please choose a smaller image.');
+                          return;
+                        }
+                        setForm((prev) => ({ ...prev, profilePhotoUrl: dataUrl }));
+                      } catch (uploadError) {
+                        console.error(uploadError);
+                        setError('Unable to process the selected image.');
+                      }
+                    }}
+                  />
+                  Upload photo
+                </label>
+                {form.profilePhotoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, profilePhotoUrl: '' }))}
+                    className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/60"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
               Full name
             </label>
             <input
@@ -142,13 +218,13 @@ export default function RegisterPage() {
               autoComplete="name"
               value={form.name}
               onChange={(event) => setForm({ ...form, name: event.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="e.g., Deepa Shrestha"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
               Email
             </label>
             <input
@@ -158,13 +234,13 @@ export default function RegisterPage() {
               onChange={(event) =>
                 setForm({ ...form, email: event.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="you@example.com"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
               Phone number
             </label>
             <input
@@ -174,16 +250,16 @@ export default function RegisterPage() {
               onChange={(event) =>
                 setForm({ ...form, phone: event.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="+9779812345678"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1 dark:text-slate-400">
               Use international format (e.g., +977...).
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
               City
             </label>
             <input
@@ -193,21 +269,21 @@ export default function RegisterPage() {
               onChange={(event) =>
                 setForm({ ...form, city: event.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="e.g., Kathmandu"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
             Choose Your Sports 🎯
           </label>
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-600">
+              <p className="text-xs font-medium text-gray-600 dark:text-slate-300">
                 Pick your adventure style — you can always change these later!
               </p>
-              <p className="text-xs font-semibold text-gray-700">
+              <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">
                 {form.sports.length} selected
               </p>
             </div>
@@ -229,7 +305,7 @@ export default function RegisterPage() {
                   className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                     selected
                       ? 'bg-green-700 text-white border-green-700'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-green-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-green-600 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700 dark:hover:border-green-500'
                   }`}
                 >
                   {sport.label}
@@ -238,12 +314,12 @@ export default function RegisterPage() {
               })}
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-500 mt-2 dark:text-slate-400">
             Pick at least one sport.
           </p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
             Create a Strong Password 🔐
           </label>
           <input
@@ -253,27 +329,27 @@ export default function RegisterPage() {
             onChange={(event) =>
               setForm({ ...form, password: event.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
             placeholder="At least 8 characters with a number"
             required
           />
-          <div className="mt-2 text-xs text-gray-600 space-y-1">
-            <p className={passwordChecks.length ? 'text-green-700' : ''}>
+          <div className="mt-2 text-xs text-gray-600 space-y-1 dark:text-slate-300">
+            <p className={passwordChecks.length ? 'text-green-700 dark:text-green-300' : ''}>
               ✅ At least 8 characters
             </p>
-            <p className={passwordChecks.number ? 'text-green-700' : ''}>
+            <p className={passwordChecks.number ? 'text-green-700 dark:text-green-300' : ''}>
               ✅ Includes at least one number
             </p>
           </div>
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 dark:text-red-200 dark:bg-red-950/40 dark:border-red-900/40">
             {error}
           </p>
         )}
         {success && (
-          <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+          <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 dark:text-green-200 dark:bg-green-950/40 dark:border-green-900/40">
             {success}
           </p>
         )}
@@ -281,7 +357,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading || Boolean(validateForm())}
-          className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
+          className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
         >
           {loading ? 'Creating account...' : 'Start My Adventure! 🌟'}
         </button>

@@ -7,6 +7,9 @@ import type { User } from '@/types';
 import { format } from 'date-fns';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
+import { resizeImageToDataUrl } from '@/lib/image';
+import { useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 type ParticipantEvent = {
   id: string;
@@ -41,6 +44,7 @@ type ExpertOption = {
 export default function ParticipantProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<ParticipantEvent[]>([]);
   const [trailRequests, setTrailRequests] = useState<ParticipantTrailRequest[]>([]);
@@ -59,6 +63,7 @@ export default function ParticipantProfilePage() {
     bio: '',
     sports: '',
     phone: '',
+    profilePhotoUrl: '',
   });
 
   const sportOptions = TRAIL_SPORTS;
@@ -74,6 +79,7 @@ export default function ParticipantProfilePage() {
           ? currentUser.sports.join(', ')
           : '',
         phone: currentUser.phone || '',
+        profilePhotoUrl: currentUser.profile_photo_url || '',
       });
     }
   }, [currentUser]);
@@ -139,6 +145,15 @@ export default function ParticipantProfilePage() {
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
+
+  const initials =
+    editForm.name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase() || 'P';
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -211,6 +226,7 @@ export default function ParticipantProfilePage() {
                   bio: editForm.bio,
                   sports: selectedSports,
                   phone: editForm.phone,
+                  profile_photo_url: editForm.profilePhotoUrl || null,
                 }),
               });
               const data = await response.json();
@@ -218,6 +234,8 @@ export default function ParticipantProfilePage() {
                 throw new Error(data?.error || 'Failed to update profile');
               }
               setUser(data.user);
+              queryClient.setQueryData(QUERY_KEYS.auth.me, data.user);
+              window.dispatchEvent(new Event('auth-changed'));
               setMessage('Profile updated.');
             } catch (error) {
               console.error('Error updating profile', error);
@@ -228,6 +246,73 @@ export default function ParticipantProfilePage() {
           }}
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Profile photo
+            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-14 w-14 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700">
+                  {editForm.profilePhotoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={editForm.profilePhotoUrl}
+                      alt="Profile preview"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                      {initials}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Upload a clear photo. We compress it for faster loading.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const dataUrl = await resizeImageToDataUrl(file, {
+                          maxDimension: 512,
+                          quality: 0.78,
+                        });
+                        if (dataUrl.length > 350_000) {
+                          setMessage(
+                            'Profile photo is too large. Please choose a smaller image.'
+                          );
+                          return;
+                        }
+                        setEditForm({ ...editForm, profilePhotoUrl: dataUrl });
+                      } catch (uploadError) {
+                        console.error(uploadError);
+                        setMessage('Unable to process the selected image.');
+                      }
+                    }}
+                  />
+                  Upload photo
+                </label>
+                {editForm.profilePhotoUrl && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditForm({ ...editForm, profilePhotoUrl: '' })
+                    }
+                    className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Name

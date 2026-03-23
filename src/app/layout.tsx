@@ -85,8 +85,8 @@ export default async function RootLayout({
               (function() {
                 try {
                   var stored = localStorage.getItem('mtb_theme');
-                  var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var theme = (stored === 'dark' || stored === 'light') ? stored : (systemDark ? 'dark' : 'light');
+                  // Default to dark unless user explicitly chose light.
+                  var theme = (stored === 'dark' || stored === 'light') ? stored : 'dark';
                   if (theme === 'dark') document.documentElement.classList.add('dark');
                   document.documentElement.style.colorScheme = theme;
                 } catch (e) {}
