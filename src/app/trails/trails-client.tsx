@@ -30,6 +30,26 @@ const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_VIEW_KEY = 'trails_view_mode';
 
 type TrailsViewMode = 'grid' | 'list';
+type TrailSort =
+  | 'name_asc'
+  | 'name_desc'
+  | 'newest'
+  | 'distance_asc'
+  | 'distance_desc'
+  | 'elevation_desc';
+
+const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
+  { value: 'name_asc', label: 'Name (A–Z)' },
+  { value: 'name_desc', label: 'Name (Z–A)' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'distance_asc', label: 'Distance (low → high)' },
+  { value: 'distance_desc', label: 'Distance (high → low)' },
+  { value: 'elevation_desc', label: 'Elevation gain (high → low)' },
+];
+
+function isTrailSort(value: string): value is TrailSort {
+  return TRAIL_SORT_OPTIONS.some((option) => option.value === value);
+}
 
 function TrailGallery({
   trails,
@@ -342,6 +362,7 @@ function TrailsPageContent() {
   const [distanceMaxInput, setDistanceMaxInput] = useState('');
   const [distanceMin, setDistanceMin] = useState('');
   const [distanceMax, setDistanceMax] = useState('');
+  const [sort, setSort] = useState<TrailSort>('name_asc');
   const [viewMode, setViewMode] = useState<TrailsViewMode>('grid');
   const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
   const [mapTrailId, setMapTrailId] = useState<string | null>(null);
@@ -411,6 +432,7 @@ function TrailsPageContent() {
       sport,
       distanceMin,
       distanceMax,
+      sort,
       pageSize,
     }),
     queryFn: ({ signal, pageParam }) =>
@@ -422,6 +444,7 @@ function TrailsPageContent() {
           sport,
           distanceMin,
           distanceMax,
+          sort,
           page: Number(pageParam),
           pageSize,
         },
@@ -508,6 +531,7 @@ function TrailsPageContent() {
       sport,
       distanceMin,
       distanceMax,
+      sort,
       pageSize,
     });
     const paginatedKey = QUERY_KEYS.trails.paginatedList({
@@ -517,6 +541,7 @@ function TrailsPageContent() {
       sport,
       distanceMin,
       distanceMax,
+      sort,
       page: 1,
       pageSize,
     });
@@ -527,6 +552,7 @@ function TrailsPageContent() {
       sport,
       distanceMin,
       distanceMax,
+      sort,
     });
 
     if (trailId) {
@@ -707,6 +733,7 @@ function TrailsPageContent() {
     const urlSport = (searchParams.get('sport') || '').trim();
     const urlDistanceMin = (searchParams.get('distanceMin') || '').trim();
     const urlDistanceMax = (searchParams.get('distanceMax') || '').trim();
+    const urlSort = (searchParams.get('sort') || '').trim();
     const urlCreateTrail = (searchParams.get('createEventTrail') || '').trim();
     const urlCreateSport = (searchParams.get('createEventSport') || '').trim();
 
@@ -732,6 +759,9 @@ function TrailsPageContent() {
       setDistanceMaxInput(urlDistanceMax);
       setDistanceMax(urlDistanceMax);
     }
+    if (urlSort && isTrailSort(urlSort)) {
+      setSort(urlSort);
+    }
     if (urlCreateTrail) {
       setCreateEventTrailId(urlCreateTrail);
       setCreateEventSport(urlCreateSport || 'mtb');
@@ -749,6 +779,7 @@ function TrailsPageContent() {
     if (sport) params.set('sport', sport);
     if (distanceMin) params.set('distanceMin', distanceMin);
     if (distanceMax) params.set('distanceMax', distanceMax);
+    if (sort && sort !== 'name_asc') params.set('sort', sort);
     if (createEventOpen && createEventTrailId) {
       params.set('createEventTrail', createEventTrailId);
       params.set('createEventSport', createEventSport || 'mtb');
@@ -770,6 +801,7 @@ function TrailsPageContent() {
     sport,
     distanceMin,
     distanceMax,
+    sort,
     createEventOpen,
     createEventTrailId,
     createEventSport,
@@ -861,6 +893,21 @@ function TrailsPageContent() {
           Search Trails
         </h1>
         <div className="flex w-full items-center gap-2 sm:w-auto">
+          <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+            <span className="text-gray-500 dark:text-slate-400">Sort</span>
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value as TrailSort)}
+              className="bg-transparent text-xs font-semibold text-gray-800 focus:outline-none dark:text-slate-100"
+              aria-label="Sort trails"
+            >
+              {TRAIL_SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="inline-flex rounded-lg border border-gray-300 bg-white p-1">
             <button
               type="button"

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const difficulty = searchParams.get('difficulty');
     const location = searchParams.get('location');
     const sport = searchParams.get('sport');
+    const sort = (searchParams.get('sort') || '').trim();
     const distanceMinRaw = searchParams.get('distanceMin');
     const distanceMaxRaw = searchParams.get('distanceMax');
     const status = searchParams.get('status');
@@ -89,6 +90,25 @@ export async function GET(request: NextRequest) {
       whereClause += ` AND status = 'approved' AND is_hidden = FALSE`;
     }
 
+    const orderBy = (() => {
+      switch (sort) {
+        case 'name_desc':
+          return 't.name DESC';
+        case 'distance_asc':
+          return 't.distance_km ASC NULLS LAST, t.name ASC';
+        case 'distance_desc':
+          return 't.distance_km DESC NULLS LAST, t.name ASC';
+        case 'elevation_desc':
+          return 't.elevation_gain_m DESC NULLS LAST, t.name ASC';
+        case 'newest':
+          return 't.created_at DESC, t.name ASC';
+        case 'name_asc':
+        case '':
+        default:
+          return 't.name ASC';
+      }
+    })();
+
     const listQuery = `
       SELECT
         t.id,
@@ -115,7 +135,7 @@ export async function GET(request: NextRequest) {
       FROM trails t
       LEFT JOIN users u ON t.submitted_by_user_id = u.id
       ${whereClause}
-      ORDER BY t.name ASC
+      ORDER BY ${orderBy}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
     const listParams = [...params, pageSize, offset];

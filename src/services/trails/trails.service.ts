@@ -10,6 +10,7 @@ export type TrailFilters = {
   sport?: string;
   distanceMin?: string;
   distanceMax?: string;
+  sort?: string;
   page?: number;
   pageSize?: number;
 };
@@ -40,6 +41,7 @@ export async function fetchTrails(
     if (filters.sport?.trim()) params.sport = filters.sport.trim();
     if (filters.distanceMin?.trim()) params.distanceMin = filters.distanceMin.trim();
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
+    if (filters.sort?.trim()) params.sort = filters.sort.trim();
 
     const { data } = await apiClient.get<{ trails: Trail[] }>(ApiPath.Trails, {
       params,
@@ -71,6 +73,7 @@ export async function fetchTrailsPaginated(
     if (filters.sport?.trim()) params.sport = filters.sport.trim();
     if (filters.distanceMin?.trim()) params.distanceMin = filters.distanceMin.trim();
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
+    if (filters.sort?.trim()) params.sort = filters.sort.trim();
     params.page = filters.page || 1;
     params.pageSize = filters.pageSize || 12;
 
