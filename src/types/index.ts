@@ -7,7 +7,7 @@ export type SportType =
   | 'mtb'
   | 'downhill_mtb'
   | 'enduro_mtb'
-  | 'devotion_trail'
+  | 'devotion_trail_rides'
   | 'hiking'
   | 'trail_running'
   | 'training'
