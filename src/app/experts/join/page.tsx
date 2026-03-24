@@ -159,8 +159,8 @@ export default function ExpertJoinPage() {
           </div>
           <p className="mt-6 text-xs text-green-200">
             You can start with a simple application. We may contact you for
-            additional verification (certifications, references, or social
-            profiles) before granting the badge.
+            additional verification (references or links) before granting the
+            badge.
           </p>
         </div>
       </section>
@@ -328,9 +328,16 @@ export default function ExpertJoinPage() {
             />
           </div>
 
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+            Formal certificates are optional. If you don’t have certifications,
+            your real riding experience and local route knowledge around your
+            city is enough to apply professionally.
+          </div>
+
           <VerificationDetailsForm
             values={verificationDetails}
             onChange={setVerificationDetails}
+            hideCertifications
           />
 
           {errorMessage && (

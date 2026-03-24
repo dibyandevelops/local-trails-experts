@@ -11,6 +11,7 @@ export type VerificationDetailsValues = {
 type VerificationDetailsFormProps = {
   values: VerificationDetailsValues;
   onChange: (next: VerificationDetailsValues) => void;
+  hideCertifications?: boolean;
   containerClassName?: string;
   labelClassName?: string;
   inputClassName?: string;
@@ -22,6 +23,7 @@ type VerificationDetailsFormProps = {
 export default function VerificationDetailsForm({
   values,
   onChange,
+  hideCertifications = false,
   containerClassName = 'rounded-lg border border-gray-200 bg-gray-50 p-4',
   labelClassName = 'block text-sm font-medium text-gray-700 mb-1',
   inputClassName = 'w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent',
@@ -48,18 +50,23 @@ export default function VerificationDetailsForm({
             placeholder="e.g., 6 years guiding MTB and trail runs"
           />
         </div>
-        <div>
-          <label className={labelClassName}>Certifications</label>
-          <input
-            type="text"
-            value={values.certifications}
-            onChange={(event) =>
-              onChange({ ...values, certifications: event.target.value })
-            }
-            className={inputClassName}
-            placeholder="e.g., Wilderness First Aid, PMBI Level 1"
-          />
-        </div>
+        {!hideCertifications ? (
+          <div>
+            <label className={labelClassName}>Certifications</label>
+            <input
+              type="text"
+              value={values.certifications}
+              onChange={(event) =>
+                onChange({ ...values, certifications: event.target.value })
+              }
+              className={inputClassName}
+              placeholder="e.g., Wilderness First Aid, PMBI Level 1"
+            />
+          </div>
+        ) : (
+          // Certificates are optional; some flows hide this input for a simpler UX.
+          <div className="hidden" aria-hidden="true" />
+        )}
         <div className="md:col-span-2">
           <label className={labelClassName}>Guiding history</label>
           <textarea
