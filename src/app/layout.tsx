@@ -103,7 +103,7 @@ export default async function RootLayout({
           <PushNotificationPrompt />
           <Navbar initialUser={initialUser} />
           <main className="container mx-auto flex-grow px-4 py-8">{children}</main>
-          <Footer />
+          <Footer initialUser={initialUser} />
         </MainContent>
       </body>
     </html>

@@ -8,7 +8,14 @@ const schema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
   phone: z.string().trim().optional().default(''),
-  groupSize: z.coerce.number().int().min(1).max(500).optional(),
+  groupSize: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') return value;
+      const trimmed = value.trim();
+      return trimmed.length ? trimmed : undefined;
+    },
+    z.string().trim().min(1).max(200).optional()
+  ),
   preferredDate: z.string().trim().optional().default(''),
   trailId: z.string().trim().optional().default(''),
   trailName: z.string().trim().optional().default(''),
@@ -76,7 +83,7 @@ export async function POST(request: NextRequest) {
               <div style="font-size:14px;line-height:1.7;color:#374151;">
                 <p style="margin:0 0 12px 0;"><strong>From:</strong> ${escapeHtml(name)} (${escapeHtml(email)})</p>
                 ${phone ? `<p style="margin:0 0 12px 0;"><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ''}
-                ${typeof groupSize === 'number' ? `<p style="margin:0 0 12px 0;"><strong>Group size:</strong> ${groupSize}</p>` : ''}
+                ${groupSize ? `<p style="margin:0 0 12px 0;"><strong>Group size:</strong> ${escapeHtml(groupSize)}</p>` : ''}
                 ${preferredDate ? `<p style="margin:0 0 12px 0;"><strong>Preferred date:</strong> ${escapeHtml(preferredDate)}</p>` : ''}
                 ${trailId ? `<p style="margin:0 0 12px 0;"><strong>Trail ID:</strong> ${escapeHtml(trailId)}</p>` : ''}
                 <p style="margin:0 0 8px 0;"><strong>Request details:</strong></p>
@@ -102,7 +109,7 @@ export async function POST(request: NextRequest) {
       `Large group request\n\n` +
       `From: ${name} <${email}>\n` +
       (phone ? `Phone: ${phone}\n` : '') +
-      (typeof groupSize === 'number' ? `Group size: ${groupSize}\n` : '') +
+      (groupSize ? `Group size: ${groupSize}\n` : '') +
       (preferredDate ? `Preferred date: ${preferredDate}\n` : '') +
       (trailName ? `Trail: ${trailName}\n` : '') +
       (trailLocation ? `Location: ${trailLocation}\n` : '') +
@@ -115,7 +122,7 @@ export async function POST(request: NextRequest) {
       html,
       text,
       replyTo: email,
-      dedupeKey: `group:${email}:${trailId || trailName}:${preferredDate}:${message.slice(0, 120)}`,
+      dedupeKey: `group:${email}:${trailId || trailName}:${preferredDate}:${groupSize || ''}:${message.slice(0, 120)}`,
     });
 
     return NextResponse.json({ ok: true }, { status: 200 });
@@ -124,4 +131,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to send request' }, { status: 500 });
   }
 }
-

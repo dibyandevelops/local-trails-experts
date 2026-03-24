@@ -1631,8 +1631,7 @@ function TrailsPageContent() {
                   Organize a large group
                 </Dialog.Title>
                 <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                  Non-logged-in users can request help organizing a big outing.
-                  Choose a trail (optional) and share your group details.
+                  Request help organizing a big outing. Choose a trail (optional) and share your group details.
                 </p>
               </div>
               <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
@@ -1642,7 +1641,7 @@ function TrailsPageContent() {
 
             <div className="mt-5">
               <GroupRequestForm
-                initialUser={null}
+                initialUser={user}
                 initialTrail={
                   groupRequestTrail
                     ? {

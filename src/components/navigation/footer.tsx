@@ -1,6 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import * as Dialog from '@radix-ui/react-dialog';
+import type { User } from '@/types';
+import GroupRequestForm from '@/components/feature-components/group-request-form';
 
 function buildMailto(params: { to?: string; subject: string; body: string }) {
   const subject = encodeURIComponent(params.subject);
@@ -8,10 +12,11 @@ function buildMailto(params: { to?: string; subject: string; body: string }) {
   return `mailto:${params.to}?subject=${subject}&body=${body}`;
 }
 
-export default function Footer() {
+export default function Footer({ initialUser = null }: { initialUser?: User | null }) {
   const year = new Date().getFullYear();
   const brand = 'LocoXperts';
   const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const [groupRequestOpen, setGroupRequestOpen] = useState(false);
 
   const contactHref = buildMailto({
     to: contactEmail,
@@ -29,12 +34,6 @@ export default function Footer() {
     to: contactEmail,
     subject: 'LocoXperts — Feature request',
     body: `Hi LocoXperts team,\n\nFeature request:\n- \n\nWhy it helps:\n- \n\n`,
-  });
-
-  const collaborateHref = buildMailto({
-    to: contactEmail,
-    subject: 'LocoXperts — Custom events / group collaboration',
-    body: `Hi LocoXperts team,\n\nWe’d like to request a custom event for a large group.\n\nDetails:\n- Group size:\n- Dates:\n- City/region:\n- Sport (MTB/hiking/trail running/etc.):\n- Goals (training/tour/team building):\n- Budget range (optional):\n\n`,
   });
 
   return (
@@ -74,9 +73,13 @@ export default function Footer() {
               </a>
             </li>
             <li>
-              <a className="hover:underline" href={collaborateHref}>
+              <button
+                type="button"
+                className="text-left hover:underline"
+                onClick={() => setGroupRequestOpen(true)}
+              >
                 Custom events / collaborate (big groups)
-              </a>
+              </button>
             </li>
           </ul>
           <p className="text-xs text-gray-500 dark:text-slate-400">
@@ -144,6 +147,35 @@ export default function Footer() {
           </p>
         </div>
       </div>
+
+      <Dialog.Root open={groupRequestOpen} onOpenChange={setGroupRequestOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Organize a large group
+                </Dialog.Title>
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  Send your group details and preferred date — we’ll follow up to help you organize.
+                </p>
+              </div>
+              <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+                Close
+              </Dialog.Close>
+            </div>
+
+            <div className="mt-5">
+              <GroupRequestForm
+                initialUser={initialUser}
+                initialTrail={null}
+                onSent={() => setGroupRequestOpen(false)}
+              />
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </footer>
   );
 }

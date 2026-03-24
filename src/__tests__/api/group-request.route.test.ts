@@ -21,7 +21,7 @@ describe('POST /api/contact/group-request', () => {
         name: 'Rider',
         email: 'rider@example.com',
         phone: '9800000000',
-        groupSize: 24,
+        groupSize: '24 riders + 1 support vehicle',
         preferredDate: '2026-03-30',
         trailId: 'trail-1',
         trailName: 'Forest Loop',
@@ -54,4 +54,3 @@ describe('POST /api/contact/group-request', () => {
     expect(sendEmailSafe).not.toHaveBeenCalled();
   });
 });
-

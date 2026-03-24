@@ -10,7 +10,7 @@ type GroupRequestValues = {
   name: string;
   email: string;
   phone: string;
-  groupSize?: number;
+  groupSize?: string;
   preferredDate?: string;
   message: string;
 };
@@ -44,7 +44,7 @@ export default function GroupRequestForm({
       name: initialUser?.name || '',
       email: initialUser?.email || '',
       phone: initialUser?.phone || '',
-      groupSize: undefined,
+      groupSize: 'Example: 12 riders + 1 support vehicle (or 20–30 people)',
       preferredDate: '',
       message:
         'Hi LocoXperts team,\n\nWe’d like to organize a large group activity.\n\nDetails:\n- Group profile (beginner/intermediate/advanced):\n- Expected pace:\n- Logistics (transport / start time):\n- Any special request:\n\nThanks!\n',
@@ -222,13 +222,10 @@ export default function GroupRequestForm({
           <label className={labelClass} htmlFor="group-size">
             Group size (optional)
           </label>
-          <input
+          <textarea
             id="group-size"
-            className={inputClass}
-            type="number"
-            min={1}
-            max={500}
-            {...register('groupSize', { valueAsNumber: true })}
+            className={`${inputClass} min-h-[44px] resize-y leading-6`}
+            {...register('groupSize')}
           />
         </div>
         <div>
