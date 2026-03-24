@@ -242,6 +242,20 @@ const TrailPage: React.FunctionComponent = () => {
     }
   }, [mapStyleMode]);
 
+  useEffect(() => {
+    const closeTransientUi = () => {
+      setRequestModalOpen(false);
+      setGalleryModalOpen(false);
+      setCreateEventOpen(false);
+      setReplaceConfirmOpen(false);
+      setPendingGpxFile(null);
+      setAdminMessage(null);
+      setActionMessage(null);
+    };
+    window.addEventListener('pageshow', closeTransientUi);
+    return () => window.removeEventListener('pageshow', closeTransientUi);
+  }, []);
+
   const {
     data: trail,
     isLoading: loading,

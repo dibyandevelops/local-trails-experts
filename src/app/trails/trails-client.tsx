@@ -421,6 +421,29 @@ function TrailsPageContent() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const pageSize = 12;
 
+  useEffect(() => {
+    const closeTransientUi = () => {
+      setRequestOpen(false);
+      setGroupRequestOpen(false);
+      setMapOpen(false);
+      // Only reopen create-event if the URL explicitly asks for it.
+      try {
+        const url = new URL(window.location.href);
+        const createTrail = url.searchParams.get('createEventTrail');
+        if (!createTrail) {
+          setCreateEventOpen(false);
+          setCreateEventTrailId('');
+          setCreateEventSport('');
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener('pageshow', closeTransientUi);
+    return () => window.removeEventListener('pageshow', closeTransientUi);
+  }, []);
+
   const { data: user = null } = useCurrentUser();
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,

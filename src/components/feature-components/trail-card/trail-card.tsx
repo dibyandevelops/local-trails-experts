@@ -47,12 +47,12 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
         href={detailsHref}
         onClick={() => trail.onBeforeNavigate?.()}
         aria-label={`View details for ${trail.name}`}
-        className="absolute inset-0 z-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+        className="absolute inset-0 z-10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
       >
         <span className="sr-only">View details</span>
       </Link>
 
-      <div className="relative z-10">
+      <div className="relative z-0">
         <div className="relative">
         {hasImage ? (
           <Image
@@ -105,7 +105,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   prev === 0 ? images.length - 1 : prev - 1,
                 );
               }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
+              className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
               aria-label="Previous trail image"
             >
               ‹
@@ -118,12 +118,12 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   prev === images.length - 1 ? 0 : prev + 1,
                 );
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
+              className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
               aria-label="Next trail image"
             >
               ›
             </button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1">
+            <div className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2 flex items-center gap-1">
               {images.map((_, index) => (
                 <button
                   key={`${trail.id}-image-dot-${index}`}
@@ -169,7 +169,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           trail.onUnhide ||
           trail.onEdit) && (
           <div className="mt-4 border-t border-gray-200 pt-3">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="relative z-20 flex flex-wrap items-center gap-2">
               {trail.onGroupRequest && (
                 <button
                   type="button"
