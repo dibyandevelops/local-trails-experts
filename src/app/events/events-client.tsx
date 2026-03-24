@@ -206,7 +206,18 @@ export default function EventsPageClient() {
 
   const handleJoinEvent = (eventData: Event) => {
     if (!currentUser) {
-      router.push('/register');
+      const next =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : '/events';
+      window.dispatchEvent(
+        new CustomEvent('open-register', {
+          detail: {
+            message: 'Create a participant account to join events.',
+            next,
+          },
+        })
+      );
       return;
     }
     setJoinTarget(eventData);

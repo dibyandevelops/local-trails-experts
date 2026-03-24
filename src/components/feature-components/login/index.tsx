@@ -13,6 +13,7 @@ interface ILoginComponentProps {
   initialRole?: UserRole;
   embedded?: boolean;
   onLoggedIn?: () => void;
+  onOpenRegister?: () => void;
   next?: string | null;
 }
 
@@ -35,7 +36,7 @@ const roleMeta: Record<UserRole, { label: string; destination: string; hint: str
 };
 
 const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
-  { initialRole = 'participant', embedded = false, onLoggedIn, next = null },
+  { initialRole = 'participant', embedded = false, onLoggedIn, onOpenRegister, next = null },
 ) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -270,12 +271,22 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         {!embedded && role === 'participant' && (
           <p className="text-center text-xs text-gray-500 dark:text-gray-400">
             Don&apos;t have a participant account?{' '}
-            <Link
-              href="/register"
-              className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-            >
-              Join Adventure
-            </Link>
+            {onOpenRegister ? (
+              <button
+                type="button"
+                onClick={onOpenRegister}
+                className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+              >
+                Join Adventure
+              </button>
+            ) : (
+              <Link
+                href="/register"
+                className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+              >
+                Join Adventure
+              </Link>
+            )}
           </p>
         )}
       </form>

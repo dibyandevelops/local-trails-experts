@@ -10,9 +10,17 @@ type Props = {
   initialRole?: UserRole;
   message?: string | null;
   next?: string | null;
+  onOpenRegister?: () => void;
 };
 
-export default function LoginModal({ open, onOpenChange, initialRole, message, next = null }: Props) {
+export default function LoginModal({
+  open,
+  onOpenChange,
+  initialRole,
+  message,
+  next = null,
+  onOpenRegister,
+}: Props) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -49,6 +57,7 @@ export default function LoginModal({ open, onOpenChange, initialRole, message, n
             initialRole={initialRole}
             next={next}
             onLoggedIn={() => onOpenChange(false)}
+            onOpenRegister={onOpenRegister}
           />
         </Dialog.Content>
       </Dialog.Portal>

@@ -791,7 +791,18 @@ const TrailPage: React.FunctionComponent = () => {
                   return;
                 }
                 if (!currentUser) {
-                  router.push('/register');
+                  const next =
+                    typeof window !== 'undefined'
+                      ? `${window.location.pathname}${window.location.search}`
+                      : `/trails/${trail.id}`;
+                  window.dispatchEvent(
+                    new CustomEvent('open-register', {
+                      detail: {
+                        message: 'Create a participant account to request a trail activity.',
+                        next,
+                      },
+                    })
+                  );
                   return;
                 }
                 setRequestMessage(null);
@@ -1028,7 +1039,18 @@ const TrailPage: React.FunctionComponent = () => {
           onClick={() => {
             if (loadingCurrentUser) return;
             if (!currentUser) {
-              router.push('/register');
+              const next =
+                typeof window !== 'undefined'
+                  ? `${window.location.pathname}${window.location.search}`
+                  : `/trails/${trail.id}`;
+              window.dispatchEvent(
+                new CustomEvent('open-register', {
+                  detail: {
+                    message: 'Create a participant account to request a trail activity.',
+                    next,
+                  },
+                })
+              );
               return;
             }
             setRequestMessage(null);

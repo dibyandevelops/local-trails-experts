@@ -8,6 +8,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User, UserRole } from '@/types';
 import LoginModal from '@/components/auth/login-modal';
+import RegisterModal from '@/components/auth/register-modal';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 type NavItem = {
@@ -117,6 +118,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const [loginInitialRole, setLoginInitialRole] = useState<UserRole | undefined>(undefined);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const [loginNext, setLoginNext] = useState<string | null>(null);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerMessage, setRegisterMessage] = useState<string | null>(null);
+  const [registerNext, setRegisterNext] = useState<string | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const hoverCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -174,6 +178,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString(), user?.id]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      if (user) return;
+      const custom = event as CustomEvent<{ message?: string; next?: string }>;
+      setRegisterMessage(custom.detail?.message || null);
+      setRegisterNext(custom.detail?.next || null);
+      setRegisterOpen(true);
+    };
+    window.addEventListener('open-register', handler);
+    return () => window.removeEventListener('open-register', handler);
+  }, [user]);
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
@@ -342,12 +358,17 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               );
             })}
             {!loadingUser && !user && (
-              <Link
-                href="/register"
+              <button
+                type="button"
+                onClick={() => {
+                  setRegisterMessage(null);
+                  setRegisterNext(null);
+                  setRegisterOpen(true);
+                }}
                 className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/25"
               >
                 Join Adventure
-              </Link>
+              </button>
             )}
             <ThemeToggle className="inline-flex h-9 items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
             {!loadingUser && user?.role === 'expert' && (
@@ -443,13 +464,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               ) : null
             )}
             {!loadingUser && !user && (
-              <Link
-                href="/register"
+              <button
+                type="button"
                 className="inline-flex items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-50"
-                onClick={() => setMobileOpen(false)}
+                onClick={() => {
+                  setMobileOpen(false);
+                  setRegisterMessage(null);
+                  setRegisterNext(null);
+                  setRegisterOpen(true);
+                }}
               >
                 Join Adventure
-              </Link>
+              </button>
             )}
             <ThemeToggle className="inline-flex items-center gap-2 rounded border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
             {!loadingUser && user?.role === 'expert' && (
@@ -506,6 +532,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         initialRole={loginInitialRole}
         message={loginMessage}
         next={loginNext}
+        onOpenRegister={() => {
+          setLoginOpen(false);
+          setRegisterMessage(null);
+          setRegisterNext(null);
+          setRegisterOpen(true);
+        }}
+      />
+      <RegisterModal
+        open={registerOpen}
+        onOpenChange={setRegisterOpen}
+        notice={registerMessage}
+        next={registerNext || undefined}
       />
     </nav>
   );
