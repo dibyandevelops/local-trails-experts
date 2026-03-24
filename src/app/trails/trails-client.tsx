@@ -928,8 +928,8 @@ function TrailsPageContent() {
         <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
           Search Trails
         </h1>
-        <div className="flex w-full items-center gap-2 sm:w-auto">
-          <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
             <label
               htmlFor="trails-sort"
               className="text-gray-500 dark:text-slate-400"
@@ -950,7 +950,7 @@ function TrailsPageContent() {
             </select>
           </div>
           <div
-            className="inline-flex rounded-lg border border-gray-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
+            className="inline-flex shrink-0 rounded-lg border border-gray-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
             role="group"
             aria-label="View mode"
           >
@@ -1622,9 +1622,9 @@ function TrailsPageContent() {
           if (!open) setGroupRequestTrail(null);
         }}
       >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-950">
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">

@@ -131,7 +131,7 @@ export default function GroupRequestForm({
         <p id="group-trail-help" className="mt-1 text-xs text-gray-500 dark:text-slate-400">
           Search any trail on the platform and select one (optional).
         </p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2 max-h-44 overflow-y-auto pr-1 flex flex-wrap gap-2">
           {options.slice(0, 10).map((trail) => (
             <button
               key={trail.id}

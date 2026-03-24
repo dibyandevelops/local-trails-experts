@@ -151,7 +151,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
       <Dialog.Root open={groupRequestOpen} onOpenChange={setGroupRequestOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-950">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
