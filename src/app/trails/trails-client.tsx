@@ -671,7 +671,7 @@ function TrailsPageContent() {
   }));
   const isAdmin = user?.role === 'admin';
   const isParticipant = user?.role === 'participant';
-  const canGroupRequest = !user;
+  const canGroupRequest = true;
   const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
   const hidingTrailId = hideMutation.isPending ? hideMutation.variables : null;
   const unhidingTrailId = unhideMutation.isPending ? unhideMutation.variables : null;
@@ -988,6 +988,17 @@ function TrailsPageContent() {
               Create Trail
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              setGroupRequestTrail(null);
+              setGroupRequestOpen(true);
+            }}
+            className="w-full rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100 sm:w-auto"
+            title="Request help organizing a larger group activity"
+          >
+            Request large group
+          </button>
         </div>
       </div>
 
@@ -1312,7 +1323,7 @@ function TrailsPageContent() {
             trails={trails}
             viewMode={viewMode}
             canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
-            canRequestTrail={isParticipant}
+            canRequestTrail={Boolean(isParticipant || !user)}
             canGroupRequest={canGroupRequest}
             isAdmin={isAdmin}
             onEditTrail={(trail) => {
@@ -1330,8 +1341,6 @@ function TrailsPageContent() {
               setMapOpen(true);
             }}
             onGroupRequest={(trail) => {
-              // Public flow: allow non-auth users to request large group organizing help.
-              if (user) return;
               setGroupRequestTrail(trail);
               setGroupRequestOpen(true);
             }}
