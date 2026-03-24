@@ -26,6 +26,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
+import GroupRequestForm from '@/components/feature-components/group-request-form';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_VIEW_KEY = 'trails_view_mode';
@@ -57,10 +58,12 @@ function TrailGallery({
   trails,
   viewMode,
   onViewMap,
+  onGroupRequest,
   onRequestTrail,
   onCancelRequest,
   onCreateEvent,
   canRequestTrail,
+  canGroupRequest,
   canCreateEvent,
   isAdmin,
   onEditTrail,
@@ -74,10 +77,12 @@ function TrailGallery({
   trails: Array<Trail & { isRequested?: boolean }>;
   viewMode: TrailsViewMode;
   onViewMap: (trail: Trail) => void;
+  onGroupRequest?: (trail: Trail & { isRequested?: boolean }) => void;
   onRequestTrail?: (trail: Trail & { isRequested?: boolean }) => void;
   onCancelRequest?: (trail: Trail & { isRequested?: boolean }) => void;
   onCreateEvent: (trail: Trail) => void;
   canRequestTrail: boolean;
+  canGroupRequest: boolean;
   canCreateEvent: boolean;
   isAdmin: boolean;
   onEditTrail?: (trail: Trail) => void;
@@ -187,6 +192,19 @@ function TrailGallery({
                 >
                   Map
                 </button>
+                {canGroupRequest && onGroupRequest && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      onGroupRequest(trail);
+                    }}
+                    className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100"
+                    title="Request help organizing a large group outing"
+                  >
+                    Large group
+                  </button>
+                )}
                 {canRequestTrail && onRequestTrail && (
                   <button
                     type="button"
@@ -254,6 +272,13 @@ function TrailGallery({
             isRequested: trail.isRequested,
             detailsHref: `/trails/${trail.id}`,
             onBeforeNavigate: storeTrailsListState,
+            ...(canGroupRequest && onGroupRequest
+              ? {
+                  onGroupRequest() {
+                    onGroupRequest(trail);
+                  },
+                }
+              : {}),
             onViewMap() {
               onViewMap(trail);
             },
@@ -380,6 +405,8 @@ function TrailsPageContent() {
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [requestTrailItem, setRequestTrailItem] = useState<Trail | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [groupRequestTrail, setGroupRequestTrail] = useState<Trail | null>(null);
+  const [groupRequestOpen, setGroupRequestOpen] = useState(false);
   const [requestDescription, setRequestDescription] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
   const [selectedExpertId, setSelectedExpertId] = useState('');
@@ -644,6 +671,7 @@ function TrailsPageContent() {
   }));
   const isAdmin = user?.role === 'admin';
   const isParticipant = user?.role === 'participant';
+  const canGroupRequest = !user;
   const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
   const hidingTrailId = hideMutation.isPending ? hideMutation.variables : null;
   const unhidingTrailId = unhideMutation.isPending ? unhideMutation.variables : null;
@@ -1285,6 +1313,7 @@ function TrailsPageContent() {
             viewMode={viewMode}
             canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
             canRequestTrail={isParticipant}
+            canGroupRequest={canGroupRequest}
             isAdmin={isAdmin}
             onEditTrail={(trail) => {
               router.push(`/trails/create?trailId=${trail.id}`);
@@ -1299,6 +1328,12 @@ function TrailsPageContent() {
               setMapTrailSummary(trail);
               setMapTrailId(trail.id);
               setMapOpen(true);
+            }}
+            onGroupRequest={(trail) => {
+              // Public flow: allow non-auth users to request large group organizing help.
+              if (user) return;
+              setGroupRequestTrail(trail);
+              setGroupRequestOpen(true);
             }}
             onRequestTrail={(trail) => {
               if (!user) {
@@ -1567,6 +1602,56 @@ function TrailsPageContent() {
                 Select a trail to create event.
               </div>
             )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root
+        open={groupRequestOpen}
+        onOpenChange={(open) => {
+          setGroupRequestOpen(open);
+          if (!open) setGroupRequestTrail(null);
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Organize a large group
+                </Dialog.Title>
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  Non-logged-in users can request help organizing a big outing.
+                  Choose a trail (optional) and share your group details.
+                </p>
+              </div>
+              <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+                Close
+              </Dialog.Close>
+            </div>
+
+            <div className="mt-5">
+              <GroupRequestForm
+                initialUser={null}
+                initialTrail={
+                  groupRequestTrail
+                    ? {
+                        id: groupRequestTrail.id,
+                        name: groupRequestTrail.name,
+                        location: groupRequestTrail.location,
+                        sport_type: groupRequestTrail.sport_type,
+                      }
+                    : null
+                }
+                onSent={() => {
+                  setToastTitle('Request sent');
+                  setToastDescription('We received your large group request.');
+                  setToastOpen(true);
+                  setGroupRequestOpen(false);
+                }}
+              />
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

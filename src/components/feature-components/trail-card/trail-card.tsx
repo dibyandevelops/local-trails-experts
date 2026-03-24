@@ -10,6 +10,7 @@ import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 export type TrailCardProps = Trail & {
   detailsHref?: string;
   onBeforeNavigate?: () => void;
+  onGroupRequest?: () => void;
   hideLoading?: boolean;
   unhideLoading?: boolean;
   deleteLoading?: boolean;
@@ -159,6 +160,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           </p>
         )}
         {(trail.onViewMap ||
+          trail.onGroupRequest ||
           trail.onRequestTrail ||
           trail.onCreateEvent ||
           trail.onCancelRequest ||
@@ -168,6 +170,19 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           trail.onEdit) && (
           <div className="mt-4 border-t border-gray-200 pt-3">
             <div className="flex flex-wrap items-center gap-2">
+              {trail.onGroupRequest && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    trail.onGroupRequest?.();
+                  }}
+                  className="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100"
+                  title="Request help organizing a large group outing"
+                >
+                  Large group
+                </button>
+              )}
               {trail.onCreateEvent && (
                 <button
                   type="button"
