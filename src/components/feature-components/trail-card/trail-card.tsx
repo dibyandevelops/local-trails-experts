@@ -52,7 +52,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
         <span className="sr-only">View details</span>
       </Link>
 
-      <div className="relative z-0">
+      <div className="relative">
         <div className="relative">
         {hasImage ? (
           <Image
