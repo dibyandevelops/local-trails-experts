@@ -44,7 +44,7 @@ export default function GroupRequestForm({
       name: initialUser?.name || '',
       email: initialUser?.email || '',
       phone: initialUser?.phone || '',
-      groupSize: 'Example: 12 riders + 1 support vehicle (or 20–30 people)',
+      groupSize: '',
       preferredDate: '',
       message:
         'Hi LocoXperts team,\n\nWe’d like to organize a large group activity.\n\nDetails:\n- Group profile (beginner/intermediate/advanced):\n- Expected pace:\n- Logistics (transport / start time):\n- Any special request:\n\nThanks!\n',
@@ -222,10 +222,11 @@ export default function GroupRequestForm({
           <label className={labelClass} htmlFor="group-size">
             Group size (optional)
           </label>
-          <textarea
+          <input
             id="group-size"
-            className={`${inputClass} min-h-[44px] resize-y leading-6`}
+            className={`${inputClass} md:max-w-[240px]`}
             {...register('groupSize')}
+            placeholder="Example: 12 riders + 1 support vehicle (or 20–30 people)"
           />
         </div>
         <div>
@@ -267,7 +268,7 @@ export default function GroupRequestForm({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500 dark:text-slate-400">
-          This sends an email to the team mailbox configured in `NEXT_PUBLIC_ADMIN_EMAIL`.
+          We’ll follow up by email. Please include any details that help us plan safely.
         </p>
         <button
           type="submit"

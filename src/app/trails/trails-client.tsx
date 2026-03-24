@@ -29,7 +29,6 @@ import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 import GroupRequestForm from '@/components/feature-components/group-request-form';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
-const TRAILS_VIEW_KEY = 'trails_view_mode';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
 
 type TrailsViewMode = 'grid' | 'list';
@@ -396,7 +395,7 @@ function TrailsPageContent() {
   const [distanceMin, setDistanceMin] = useState('');
   const [distanceMax, setDistanceMax] = useState('');
   const [sort, setSort] = useState<TrailSort>('name_asc');
-  const [viewMode, setViewMode] = useState<TrailsViewMode>('grid');
+  const [viewMode] = useState<TrailsViewMode>('grid');
   const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
   const [mapTrailId, setMapTrailId] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
@@ -845,21 +844,6 @@ function TrailsPageContent() {
   ]);
 
   useEffect(() => {
-    const stored =
-      typeof window !== 'undefined'
-        ? (localStorage.getItem(TRAILS_VIEW_KEY) as TrailsViewMode | null)
-        : null;
-    if (stored === 'grid' || stored === 'list') {
-      setViewMode(stored);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(TRAILS_VIEW_KEY, viewMode);
-  }, [viewMode]);
-
-  useEffect(() => {
     if (!user || user.role !== 'participant') {
       setRequestedByTrailId({});
       return;
@@ -954,30 +938,9 @@ function TrailsPageContent() {
             role="group"
             aria-label="View mode"
           >
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              aria-pressed={viewMode === 'grid'}
-              className={`rounded px-3 py-1.5 text-xs font-semibold ${
-                viewMode === 'grid'
-                  ? 'bg-green-700 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Grid
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              aria-pressed={viewMode === 'list'}
-              className={`rounded px-3 py-1.5 text-xs font-semibold ${
-                viewMode === 'list'
-                  ? 'bg-green-700 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              List
-            </button>
+            <span className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-slate-200">
+              Grid view
+            </span>
           </div>
           {(user?.role === 'admin' || user?.role === 'expert') && (
             <button
