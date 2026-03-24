@@ -5,6 +5,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { fetchTrailsPaginated, requestTrail, deleteTrail, hideTrail, unhideTrail, fetchTrailById } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
@@ -88,6 +89,14 @@ function TrailGallery({
   unhidingTrailId?: string | null;
 }) {
   const router = useRouter();
+  const storeTrailsListState = () => {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem(
+      TRAILS_LAST_URL_KEY,
+      `${window.location.pathname}${window.location.search}`
+    );
+    sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
+  };
   if (viewMode === 'list') {
     return (
       <div className="space-y-3">
@@ -97,47 +106,37 @@ function TrailGallery({
             (Array.isArray(trail.trail_images) ? trail.trail_images[0] : null) ||
             null;
           return (
-            <div
+            <article
               key={trail.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                sessionStorage.setItem(
-                  TRAILS_LAST_URL_KEY,
-                  `${window.location.pathname}${window.location.search}`
-                );
-                sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
-                router.push(`/trails/${trail.id}`);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  sessionStorage.setItem(
-                    TRAILS_LAST_URL_KEY,
-                    `${window.location.pathname}${window.location.search}`
-                  );
-                  sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
-                  router.push(`/trails/${trail.id}`);
-                }
-              }}
-              className="flex w-full flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:bg-gray-50 sm:flex-row sm:items-center"
+              className="flex w-full flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:bg-gray-50 sm:flex-row sm:items-center dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+              aria-label={trail.name}
             >
-              {image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={image} alt={trail.name} className="h-20 w-24 rounded object-cover" />
-              ) : (
-                <TrailImagePlaceholder className="h-20 w-24 rounded" compact />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-base font-semibold text-gray-900">{trail.name}</p>
-                <p className="truncate text-sm text-gray-600">{trail.location}</p>
+              <Link
+                href={`/trails/${trail.id}`}
+                onClick={storeTrailsListState}
+                className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded"
+                aria-label={`View details for ${trail.name}`}
+              >
+                {image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={image} alt={trail.name} className="h-20 w-24 rounded object-cover" />
+                ) : (
+                  <TrailImagePlaceholder className="h-20 w-24 rounded" compact />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold text-gray-900 dark:text-white">
+                    {trail.name}
+                  </p>
+                  <p className="truncate text-sm text-gray-600 dark:text-slate-300">
+                    {trail.location}
+                  </p>
                 {/* Created by badge for list view */}
                 {(trail.created_by || trail.expert_name) && (
-                  <p className="mt-1 text-xs font-medium text-blue-600">
+                  <p className="mt-1 text-xs font-medium text-blue-600 dark:text-sky-300">
                     Created by: {trail.expert_name || trail.created_by}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                   {trail.distance_km ? `${trail.distance_km} km` : '—'} •{' '}
                   {trail.elevation_gain_m ? `${trail.elevation_gain_m}m` : '—'} •{' '}
                   {trail.estimated_time_hours ? `${trail.estimated_time_hours}h` : '—'} • {trail.difficulty}
@@ -161,14 +160,14 @@ function TrailGallery({
                     </span>
                   ))}
                 </div>
-              </div>
+                </div>
+              </Link>
               <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end sm:self-start">
                 {isAdmin && (
                   <button
                     type="button"
                     onClick={(event) => {
                       event.preventDefault();
-                      event.stopPropagation();
                       onEditTrail?.(trail);
                     }}
                     className="rounded-md border border-sky-300 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-800 hover:bg-sky-100"
@@ -181,7 +180,6 @@ function TrailGallery({
                   type="button"
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     onViewMap(trail);
                   }}
                   className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
@@ -194,7 +192,6 @@ function TrailGallery({
                     type="button"
                     onClick={(event) => {
                       event.preventDefault();
-                      event.stopPropagation();
                       if (!trail.isRequested) {
                         onRequestTrail(trail);
                       }
@@ -218,7 +215,6 @@ function TrailGallery({
                     type="button"
                     onClick={(event) => {
                       event.preventDefault();
-                      event.stopPropagation();
                       onCancelRequest(trail);
                     }}
                     className="rounded-md border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
@@ -232,7 +228,6 @@ function TrailGallery({
                     type="button"
                     onClick={(event) => {
                       event.preventDefault();
-                      event.stopPropagation();
                       onCreateEvent(trail);
                     }}
                     className="rounded-md border border-indigo-300 bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
@@ -242,7 +237,7 @@ function TrailGallery({
                   </button>
                 )}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
@@ -257,14 +252,8 @@ function TrailGallery({
           {...{
             ...trail,
             isRequested: trail.isRequested,
-            onClick() {
-              sessionStorage.setItem(
-                TRAILS_LAST_URL_KEY,
-                `${window.location.pathname}${window.location.search}`
-              );
-              sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
-              router.push(`/trails/${trail.id}`);
-            },
+            detailsHref: `/trails/${trail.id}`,
+            onBeforeNavigate: storeTrailsListState,
             onViewMap() {
               onViewMap(trail);
             },
@@ -313,7 +302,10 @@ function TrailGallery({
 
 function TrailsPageSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 animate-pulse">
+    <div
+      className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 animate-pulse"
+      aria-hidden="true"
+    >
       {Array.from({ length: 6 }).map((_, index) => (
         <div
           key={`trail-skeleton-${index}`}
@@ -338,7 +330,10 @@ function TrailsPageSkeleton() {
 
 function TrailsLoadMoreSkeleton() {
   return (
-    <div className="mt-4 grid animate-pulse grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div
+      className="mt-4 grid animate-pulse grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+      aria-hidden="true"
+    >
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={`trail-loadmore-skeleton-${index}`}
@@ -907,12 +902,17 @@ function TrailsPageContent() {
         </h1>
         <div className="flex w-full items-center gap-2 sm:w-auto">
           <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-            <span className="text-gray-500 dark:text-slate-400">Sort</span>
+            <label
+              htmlFor="trails-sort"
+              className="text-gray-500 dark:text-slate-400"
+            >
+              Sort
+            </label>
             <select
+              id="trails-sort"
               value={sort}
               onChange={(event) => setSort(event.target.value as TrailSort)}
               className="bg-transparent text-xs font-semibold text-gray-800 focus:outline-none dark:text-slate-100"
-              aria-label="Sort trails"
             >
               {TRAIL_SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -921,10 +921,15 @@ function TrailsPageContent() {
               ))}
             </select>
           </div>
-          <div className="inline-flex rounded-lg border border-gray-300 bg-white p-1">
+          <div
+            className="inline-flex rounded-lg border border-gray-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
+            role="group"
+            aria-label="View mode"
+          >
             <button
               type="button"
               onClick={() => setViewMode('grid')}
+              aria-pressed={viewMode === 'grid'}
               className={`rounded px-3 py-1.5 text-xs font-semibold ${
                 viewMode === 'grid'
                   ? 'bg-green-700 text-white'
@@ -936,6 +941,7 @@ function TrailsPageContent() {
             <button
               type="button"
               onClick={() => setViewMode('list')}
+              aria-pressed={viewMode === 'list'}
               className={`rounded px-3 py-1.5 text-xs font-semibold ${
                 viewMode === 'list'
                   ? 'bg-green-700 text-white'
@@ -1020,11 +1026,18 @@ function TrailsPageContent() {
         )}
       </div>
 
-      <form onSubmit={handleSearch} className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6">
+      <form
+        onSubmit={handleSearch}
+        className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6 dark:bg-slate-900/60"
+        aria-label="Trail filters"
+      >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Search</label>
+            <label htmlFor="trails-search" className="block text-sm font-medium mb-2">
+              Search
+            </label>
             <input
+              id="trails-search"
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -1037,8 +1050,11 @@ function TrailsPageContent() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Difficulty</label>
+            <label htmlFor="trails-difficulty" className="block text-sm font-medium mb-2">
+              Difficulty
+            </label>
             <select
+              id="trails-difficulty"
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value as Difficulty | '')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1050,8 +1066,11 @@ function TrailsPageContent() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Location</label>
+            <label htmlFor="trails-location" className="block text-sm font-medium mb-2">
+              Location
+            </label>
             <input
+              id="trails-location"
               type="text"
               value={locationInput}
               onChange={(e) => setLocationInput(e.target.value)}
@@ -1064,8 +1083,11 @@ function TrailsPageContent() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Trail Category</label>
+            <label htmlFor="trails-sport" className="block text-sm font-medium mb-2">
+              Trail Category
+            </label>
             <select
+              id="trails-sport"
               value={sport}
               onChange={(e) => setSport(e.target.value as typeof sport)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1079,8 +1101,11 @@ function TrailsPageContent() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Min distance (km)</label>
+            <label htmlFor="trails-distance-min" className="block text-sm font-medium mb-2">
+              Min distance (km)
+            </label>
             <input
+              id="trails-distance-min"
               type="number"
               min="0"
               value={distanceMinInput}
@@ -1094,8 +1119,11 @@ function TrailsPageContent() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Max distance (km)</label>
+            <label htmlFor="trails-distance-max" className="block text-sm font-medium mb-2">
+              Max distance (km)
+            </label>
             <input
+              id="trails-distance-max"
               type="number"
               min="0"
               value={distanceMaxInput}
@@ -1208,13 +1236,22 @@ function TrailsPageContent() {
       </form>
 
       {isRefreshingResults && (
-        <div className="mb-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600">
+        <div
+          className="mb-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600"
+          role="status"
+          aria-live="polite"
+        >
           Updating trails...
         </div>
       )}
 
       {isInitialLoading ? (
-        <TrailsPageSkeleton />
+        <>
+          <p className="sr-only" role="status" aria-live="polite">
+            Loading trails…
+          </p>
+          <TrailsPageSkeleton />
+        </>
       ) : error ? (
         <div className="text-center py-12">
           <p className="text-red-600">{(error as Error).message}</p>
@@ -1296,7 +1333,14 @@ function TrailsPageContent() {
             }}
           />
 
-          {isFetchingNextPage && <TrailsLoadMoreSkeleton />}
+          {isFetchingNextPage && (
+            <>
+              <p className="sr-only" role="status" aria-live="polite">
+                Loading more trails…
+              </p>
+              <TrailsLoadMoreSkeleton />
+            </>
+          )}
           {pagination && (
             <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3 sm:flex-row">
               <p className="text-sm text-gray-600">

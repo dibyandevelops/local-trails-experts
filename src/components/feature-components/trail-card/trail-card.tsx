@@ -2,46 +2,14 @@
 import * as React from 'react';
 import { Trail } from '@/types';
 import Image from 'next/image';
+import Link from 'next/link';
 import { getSafetyLabelText } from '@/lib/trail-safety';
 import { getSportLabel } from '@/services/constants/sports';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 
-const Card = ({
-  children,
-  onClick,
-  trailName,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  trailName?: string;
-}) => {
-  const isClickable = !!onClick;
-  return (
-    <div
-      className="group bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 text-left hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-green-400"
-      {...{
-        ...(isClickable
-          ? // added accessibility enhancements for clickable card
-            {
-              role: 'button',
-              tabIndex: 0,
-              onKeyDown: (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onClick();
-                }
-              },
-              onClick,
-              'aria-label': `Select ${trailName}`,
-            }
-          : {}),
-      }}
-    >
-      {children}
-    </div>
-  );
-};
 export type TrailCardProps = Trail & {
+  detailsHref?: string;
+  onBeforeNavigate?: () => void;
   hideLoading?: boolean;
   unhideLoading?: boolean;
   deleteLoading?: boolean;
@@ -52,6 +20,7 @@ export type TrailCardProps = Trail & {
 };
 
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
+  const detailsHref = trail.detailsHref || `/trails/${trail.id}`;
   const images = React.useMemo(() => {
     const list = [
       ...(Array.isArray(trail.trail_images) ? trail.trail_images : []),
@@ -69,8 +38,21 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   }, [trail.id, images.length]);
 
   return (
-    <Card key={trail.id} trailName={trail.name} onClick={trail.onClick}>
-      <div className="relative">
+    <article
+      className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-green-400 dark:border-slate-800 dark:bg-slate-900/60"
+      aria-label={trail.name}
+    >
+      <Link
+        href={detailsHref}
+        onClick={() => trail.onBeforeNavigate?.()}
+        aria-label={`View details for ${trail.name}`}
+        className="absolute inset-0 z-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+      >
+        <span className="sr-only">View details</span>
+      </Link>
+
+      <div className="relative z-10">
+        <div className="relative">
         {hasImage ? (
           <Image
             src={images[activeImageIndex]}
@@ -118,7 +100,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
               type="button"
               onClick={(event) => {
                 event.preventDefault();
-                event.stopPropagation();
                 setActiveImageIndex((prev) =>
                   prev === 0 ? images.length - 1 : prev - 1,
                 );
@@ -132,7 +113,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
               type="button"
               onClick={(event) => {
                 event.preventDefault();
-                event.stopPropagation();
                 setActiveImageIndex((prev) =>
                   prev === images.length - 1 ? 0 : prev + 1,
                 );
@@ -149,7 +129,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   type="button"
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     setActiveImageIndex(index);
                   }}
                   className={`h-1.5 w-1.5 rounded-full ${
@@ -161,8 +140,8 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             </div>
           </>
         )}
-      </div>
-      <div className="p-4">
+        </div>
+        <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-bold text-gray-900">{trail.name}</h3>
         </div>
@@ -194,7 +173,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   type="button"
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     trail.onCreateEvent?.();
                   }}
                   className="rounded-md border border-indigo-300 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
@@ -208,7 +186,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   type="button"
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     trail.onViewMap?.();
                   }}
                   className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
@@ -222,7 +199,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   type="button"
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     trail.onRequestTrail?.();
                   }}
                   className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${
@@ -244,7 +220,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   type="button"
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     trail.onCancelRequest?.();
                   }}
                   className="rounded-md border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
@@ -270,7 +245,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   }
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     trail.onEdit?.();
                   }}
                   className="rounded-md border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 hover:bg-sky-100 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -289,7 +263,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   }
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     trail.onUnhide?.();
                   }}
                   className="rounded-md border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800 hover:bg-green-100 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -308,7 +281,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   }
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     trail.onHide?.();
                   }}
                   className="rounded-md border border-yellow-300 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-800 hover:bg-yellow-100 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -327,7 +299,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   }
                   onClick={(event) => {
                     event.preventDefault();
-                    event.stopPropagation();
                     if (
                       confirm(
                         'Are you sure you want to delete this trail? This action cannot be undone.',
@@ -345,8 +316,9 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </Card>
+    </article>
   );
 };
 

@@ -31,11 +31,19 @@ describe('TrailCard', () => {
   });
 
   it('triggers onClick when card is clicked', () => {
-    const onClick = vi.fn();
-    render(<TrailCard {...baseTrail} onClick={onClick} />);
+    const onBeforeNavigate = vi.fn();
+    render(
+      <TrailCard
+        {...baseTrail}
+        detailsHref={`/trails/${baseTrail.id}`}
+        onBeforeNavigate={onBeforeNavigate}
+      />
+    );
 
-    fireEvent.click(screen.getByRole('button', { name: /select forest loop/i }));
+    fireEvent.click(
+      screen.getByRole('link', { name: /view details for forest loop/i })
+    );
 
-    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onBeforeNavigate).toHaveBeenCalledTimes(1);
   });
 });
