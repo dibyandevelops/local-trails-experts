@@ -178,7 +178,7 @@ export default function CollaborateForm({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500 dark:text-slate-400">
-          This sends an email to the team mailbox configured in `NEXT_PUBLIC_ADMIN_EMAIL`.
+          This sends an email to the team mailbox.
         </p>
         <button
           type="submit"
