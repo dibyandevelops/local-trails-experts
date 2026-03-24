@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trail, RouteData, User, SportType } from '@/types';
+import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { fetchTrailsPaginated, requestTrail, deleteTrail, hideTrail, unhideTrail, fetchTrailById } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
-import { getSportLabel } from '@/services/constants/sports';
+import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
 import { getSafetyLabelText } from '@/lib/trail-safety';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -386,8 +386,16 @@ function TrailsPageContent() {
   const didRestoreScroll = useRef(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
+  const [locationInput, setLocationInput] = useState('');
+  const [location, setLocation] = useState('');
+  const [sport, setSport] = useState('');
+  const [distanceMinInput, setDistanceMinInput] = useState('');
+  const [distanceMaxInput, setDistanceMaxInput] = useState('');
+  const [distanceMin, setDistanceMin] = useState('');
+  const [distanceMax, setDistanceMax] = useState('');
   const [sort, setSort] = useState<TrailSort>('name_asc');
-  const viewMode: TrailsViewMode = 'grid';
+  const [viewMode] = useState<TrailsViewMode>('grid');
   const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
   const [mapTrailId, setMapTrailId] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
@@ -453,6 +461,11 @@ function TrailsPageContent() {
   } = useInfiniteQuery({
     queryKey: QUERY_KEYS.trails.infiniteList({
       search,
+      difficulty,
+      location,
+      sport,
+      distanceMin,
+      distanceMax,
       sort,
       pageSize,
     }),
@@ -460,6 +473,11 @@ function TrailsPageContent() {
       fetchTrailsPaginated(
         {
           search,
+          difficulty,
+          location,
+          sport,
+          distanceMin,
+          distanceMax,
           sort,
           page: Number(pageParam),
           pageSize,
@@ -542,17 +560,32 @@ function TrailsPageContent() {
   const invalidateTrailsQueries = (trailId?: string) => {
     const infiniteKey = QUERY_KEYS.trails.infiniteList({
       search,
+      difficulty,
+      location,
+      sport,
+      distanceMin,
+      distanceMax,
       sort,
       pageSize,
     });
     const paginatedKey = QUERY_KEYS.trails.paginatedList({
       search,
+      difficulty,
+      location,
+      sport,
+      distanceMin,
+      distanceMax,
       sort,
       page: 1,
       pageSize,
     });
     const listKey = QUERY_KEYS.trails.list({
       search,
+      difficulty,
+      location,
+      sport,
+      distanceMin,
+      distanceMax,
       sort,
     });
 
@@ -730,6 +763,11 @@ function TrailsPageContent() {
   useEffect(() => {
     if (didInitFromUrl.current) return;
     const urlSearch = (searchParams.get('search') || '').trim();
+    const urlDifficulty = (searchParams.get('difficulty') || '').trim() as Difficulty | '';
+    const urlLocation = (searchParams.get('location') || '').trim();
+    const urlSport = (searchParams.get('sport') || '').trim();
+    const urlDistanceMin = (searchParams.get('distanceMin') || '').trim();
+    const urlDistanceMax = (searchParams.get('distanceMax') || '').trim();
     const urlSort = (searchParams.get('sort') || '').trim();
     const urlCreateTrail = (searchParams.get('createEventTrail') || '').trim();
     const urlCreateSport = (searchParams.get('createEventSport') || '').trim();
@@ -737,6 +775,24 @@ function TrailsPageContent() {
     if (urlSearch) {
       setSearchInput(urlSearch);
       setSearch(urlSearch);
+    }
+    if (urlDifficulty) {
+      setDifficulty(urlDifficulty);
+    }
+    if (urlLocation) {
+      setLocationInput(urlLocation);
+      setLocation(urlLocation);
+    }
+    if (urlSport && TRAIL_SPORTS.some((option) => option.value === urlSport)) {
+      setSport(urlSport as typeof sport);
+    }
+    if (urlDistanceMin) {
+      setDistanceMinInput(urlDistanceMin);
+      setDistanceMin(urlDistanceMin);
+    }
+    if (urlDistanceMax) {
+      setDistanceMaxInput(urlDistanceMax);
+      setDistanceMax(urlDistanceMax);
     }
     if (urlSort && isTrailSort(urlSort)) {
       setSort(urlSort);
@@ -753,6 +809,11 @@ function TrailsPageContent() {
     if (!didInitFromUrl.current) return;
     const params = new URLSearchParams();
     if (search) params.set('search', search);
+    if (difficulty) params.set('difficulty', difficulty);
+    if (location) params.set('location', location);
+    if (sport) params.set('sport', sport);
+    if (distanceMin) params.set('distanceMin', distanceMin);
+    if (distanceMax) params.set('distanceMax', distanceMax);
     if (sort && sort !== 'name_asc') params.set('sort', sort);
     if (createEventOpen && createEventTrailId) {
       params.set('createEventTrail', createEventTrailId);
@@ -770,6 +831,11 @@ function TrailsPageContent() {
     }
   }, [
     search,
+    difficulty,
+    location,
+    sport,
+    distanceMin,
+    distanceMax,
     sort,
     createEventOpen,
     createEventTrailId,
@@ -814,50 +880,57 @@ function TrailsPageContent() {
     }
     debounceRef.current = setTimeout(() => {
       setSearch(searchInput.trim());
+      setLocation(locationInput.trim());
+      setDistanceMin(distanceMinInput.trim());
+      setDistanceMax(distanceMaxInput.trim());
     }, 350);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchInput]);
+  }, [searchInput, locationInput, distanceMinInput, distanceMaxInput]);
 
-  const hasActiveSearch = Boolean(search);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearch(searchInput.trim());
+    setLocation(locationInput.trim());
+    setDistanceMin(distanceMinInput.trim());
+    setDistanceMax(distanceMaxInput.trim());
+  };
+
+  const isDesktop = () => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(min-width: 768px)').matches;
+  };
+
+  const hasActiveFilters = Boolean(
+    search || difficulty || location || sport || distanceMin || distanceMax
+  );
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            setSearch(searchInput.trim());
-          }}
-          className="w-full sm:w-[420px]"
-        >
-          <label htmlFor="trails-search" className="sr-only">
-            Search trails
-          </label>
-          <div className="relative">
+        <div className="w-full sm:max-w-md">
+          <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
+            Search Trails
+          </h1>
+          <div className="mt-3">
+            <label htmlFor="trails-search" className="sr-only">
+              Search trails
+            </label>
             <input
               id="trails-search"
+              type="text"
               value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search trails…"
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-semibold text-gray-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-emerald-400"
+              onChange={(e) => setSearchInput(e.target.value)}
+              onBlur={() => {
+                if (!isDesktop()) return;
+                setSearch(searchInput.trim());
+              }}
+              placeholder="Search by trail name, description, or location…"
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-emerald-400"
             />
-            {searchInput.trim().length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchInput('');
-                  setSearch('');
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
-                aria-label="Clear search"
-              >
-                Clear
-              </button>
-            )}
           </div>
-        </form>
+        </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
           <div className="flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
             <label
@@ -964,23 +1037,198 @@ function TrailsPageContent() {
           </div>
         )}
       </div>
-      {hasActiveSearch && (
-        <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200">
-          <span className="truncate">
-            Showing results for <span className="font-semibold">“{search}”</span>
-          </span>
+
+      <form
+        onSubmit={handleSearch}
+        className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6 dark:bg-slate-900/60"
+        aria-label="Trail filters"
+      >
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+          <div>
+            <label htmlFor="trails-difficulty" className="block text-sm font-medium mb-2">
+              Difficulty
+            </label>
+            <select
+              id="trails-difficulty"
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value as Difficulty | '')}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">All</option>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="trails-location" className="block text-sm font-medium mb-2">
+              Location
+            </label>
+            <input
+              id="trails-location"
+              type="text"
+              value={locationInput}
+              onChange={(e) => setLocationInput(e.target.value)}
+              onBlur={() => {
+                if (!isDesktop()) return;
+                setLocation(locationInput.trim());
+              }}
+              placeholder="City or region..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label htmlFor="trails-sport" className="block text-sm font-medium mb-2">
+              Trail Category
+            </label>
+            <select
+              id="trails-sport"
+              value={sport}
+              onChange={(e) => setSport(e.target.value as typeof sport)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">All trail categories</option>
+              {TRAIL_SPORTS.map((sportOption) => (
+                <option key={sportOption.value} value={sportOption.value}>
+                  {sportOption.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="trails-distance-min" className="block text-sm font-medium mb-2">
+              Min distance (km)
+            </label>
+            <input
+              id="trails-distance-min"
+              type="number"
+              min="0"
+              value={distanceMinInput}
+              onChange={(e) => setDistanceMinInput(e.target.value)}
+              onBlur={() => {
+                if (!isDesktop()) return;
+                setDistanceMin(distanceMinInput.trim());
+              }}
+              placeholder="e.g. 10"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label htmlFor="trails-distance-max" className="block text-sm font-medium mb-2">
+              Max distance (km)
+            </label>
+            <input
+              id="trails-distance-max"
+              type="number"
+              min="0"
+              value={distanceMaxInput}
+              onChange={(e) => setDistanceMaxInput(e.target.value)}
+              onBlur={() => {
+                if (!isDesktop()) return;
+                setDistanceMax(distanceMaxInput.trim());
+              }}
+              placeholder="e.g. 40"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+        {hasActiveFilters && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSearchInput('');
+                }}
+                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
+              >
+                Search: {search} ×
+              </button>
+            )}
+            {difficulty && (
+              <button
+                type="button"
+                onClick={() => setDifficulty('')}
+                className="rounded-full border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800"
+              >
+                Difficulty: {difficulty} ×
+              </button>
+            )}
+            {location && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocation('');
+                  setLocationInput('');
+                }}
+                className="rounded-full border border-purple-300 bg-purple-50 px-3 py-1 text-xs font-medium text-purple-800"
+              >
+                Location: {location} ×
+              </button>
+            )}
+            {sport && (
+              <button
+                type="button"
+                onClick={() => setSport('')}
+                className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800"
+              >
+                Sport: {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport} ×
+              </button>
+            )}
+            {distanceMin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDistanceMin('');
+                  setDistanceMinInput('');
+                }}
+                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
+              >
+                Min distance: {distanceMin} km ×
+              </button>
+            )}
+            {distanceMax && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDistanceMax('');
+                  setDistanceMaxInput('');
+                }}
+                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
+              >
+                Max distance: {distanceMax} km ×
+              </button>
+            )}
+          </div>
+        )}
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 sm:w-auto"
+          >
+            Search
+          </button>
           <button
             type="button"
             onClick={() => {
-              setSearch('');
               setSearchInput('');
+              setSearch('');
+              setDifficulty('');
+              setLocationInput('');
+              setLocation('');
+              setSport('');
+              setDistanceMin('');
+              setDistanceMinInput('');
+              setDistanceMax('');
+              setDistanceMaxInput('');
             }}
-            className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
+            className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto"
           >
-            Clear
+            Reset All
           </button>
         </div>
-      )}
+      </form>
 
       {isRefreshingResults && (
         <div
@@ -1006,18 +1254,22 @@ function TrailsPageContent() {
       ) : trails.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">
-            No trails found. Try a different search.
+            No trails found. Try adjusting your search criteria.
           </p>
-          {hasActiveSearch && (
+          {hasActiveFilters && (
             <button
               type="button"
               onClick={() => {
                 setSearchInput('');
                 setSearch('');
+                setDifficulty('');
+                setLocationInput('');
+                setLocation('');
+                setSport('');
               }}
               className="mt-4 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
-              Clear search
+              Clear filters
             </button>
           )}
         </div>
