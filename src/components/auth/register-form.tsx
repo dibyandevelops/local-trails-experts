@@ -19,6 +19,7 @@ export default function RegisterForm({
 }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -147,63 +148,63 @@ export default function RegisterForm({
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-200">
-              Profile photo (optional)
-            </label>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-14 w-14 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-                  {form.profilePhotoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={form.profilePhotoUrl}
-                      alt="Profile preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
-                      {initials}
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  Adds personality to your account. We compress it for faster loading.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const dataUrl = await resizeImageToDataUrl(file, {
-                          maxDimension: 512,
-                          quality: 0.78,
-                        });
-                        if (dataUrl.length > 350_000) {
-                          setError('Profile photo is too large. Please choose a smaller image.');
-                          return;
-                        }
-                        setForm((prev) => ({ ...prev, profilePhotoUrl: dataUrl }));
-                      } catch (uploadError) {
-                        console.error(uploadError);
-                        setError('Unable to process the selected image.');
-                      }
-                    }}
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                {form.profilePhotoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={form.profilePhotoUrl}
+                    alt="Profile preview"
+                    className="h-full w-full object-cover"
                   />
-                  Upload photo
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                    {initials}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
+                  Profile photo (optional)
                 </label>
-                {form.profilePhotoUrl && (
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    setUploadingPhoto(true);
+                    try {
+                      const dataUrl = await resizeImageToDataUrl(file, {
+                        maxDimension: 512,
+                        quality: 0.78,
+                      });
+                      if (dataUrl.length > 350_000) {
+                        setError('Profile photo is too large. Please choose a smaller image.');
+                        return;
+                      }
+                      setForm((prev) => ({ ...prev, profilePhotoUrl: dataUrl }));
+                    } catch (uploadError) {
+                      console.error(uploadError);
+                      setError('Unable to process the selected image.');
+                    } finally {
+                      setUploadingPhoto(false);
+                    }
+                  }}
+                  className="block w-full text-sm text-gray-700 dark:text-slate-200 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-800 hover:file:bg-gray-50 dark:file:border-slate-700 dark:file:bg-slate-900 dark:file:text-slate-100 dark:hover:file:bg-slate-800"
+                />
+                {uploadingPhoto && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                    Processing photo...
+                  </p>
+                )}
+                {!uploadingPhoto && form.profilePhotoUrl && (
                   <button
                     type="button"
                     onClick={() => setForm((prev) => ({ ...prev, profilePhotoUrl: '' }))}
-                    className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/60"
+                    className="mt-2 inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/60"
                   >
-                    Remove
+                    Remove photo
                   </button>
                 )}
               </div>
@@ -358,4 +359,3 @@ export default function RegisterForm({
     </div>
   );
 }
-
