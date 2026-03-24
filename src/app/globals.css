@@ -3,23 +3,66 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --surface: #ffffff;
-  --surface-2: #f1f5f9;
-  --muted: #475569;
-  --border: #dbe3ee;
-  --ring: #2563eb;
+  /* Design tokens (colors are stored as HSL components for easy theming) */
+  --color-bg: 210 40% 98%;
+  --color-fg: 222 47% 11%;
+  --color-surface: 0 0% 100%;
+  --color-surface-2: 210 40% 96%;
+  --color-muted: 215 16% 47%;
+  --color-border: 214 32% 91%;
+  --color-ring: 142 76% 36%;
+
+  /* Brand */
+  --color-brand: 142 72% 29%; /* green-700-ish */
+  --color-brand-contrast: 0 0% 100%;
+
+  /* Status */
+  --color-success: 142 72% 29%;
+  --color-warning: 38 92% 50%;
+  --color-danger: 0 72% 51%;
+
+  /* Radius + shadows */
+  --radius-app: 14px;
+  --radius-app-lg: 20px;
+  --shadow-1: 0 1px 2px rgba(2, 6, 23, 0.08);
+  --shadow-2: 0 10px 20px rgba(2, 6, 23, 0.10);
+
+  /* Legacy variables kept for existing styles */
+  --background: hsl(var(--color-bg));
+  --foreground: hsl(var(--color-fg));
+  --surface: hsl(var(--color-surface));
+  --surface-2: hsl(var(--color-surface-2));
+  --muted: hsl(var(--color-muted));
+  --border: hsl(var(--color-border));
+  --ring: hsl(var(--color-ring));
 }
 
 .dark {
-  --background: #020617;
-  --foreground: #e2e8f0;
-  --surface: #0f172a;
-  --surface-2: #1e293b;
-  --muted: #94a3b8;
-  --border: #334155;
-  --ring: #60a5fa;
+  --color-bg: 222 84% 4.9%;
+  --color-fg: 210 40% 98%;
+  --color-surface: 222 47% 11%;
+  --color-surface-2: 217 33% 17%;
+  --color-muted: 215 20% 65%;
+  --color-border: 217 33% 17%;
+  --color-ring: 142 70% 45%;
+
+  --color-brand: 142 70% 45%; /* emerald-ish */
+  --color-brand-contrast: 144 62% 10%;
+
+  --color-success: 142 70% 45%;
+  --color-warning: 38 92% 50%;
+  --color-danger: 0 74% 60%;
+
+  --shadow-1: 0 1px 2px rgba(2, 6, 23, 0.5);
+  --shadow-2: 0 14px 30px rgba(2, 6, 23, 0.55);
+
+  --background: hsl(var(--color-bg));
+  --foreground: hsl(var(--color-fg));
+  --surface: hsl(var(--color-surface));
+  --surface-2: hsl(var(--color-surface-2));
+  --muted: hsl(var(--color-muted));
+  --border: hsl(var(--color-border));
+  --ring: hsl(var(--color-ring));
 }
 
 body {
