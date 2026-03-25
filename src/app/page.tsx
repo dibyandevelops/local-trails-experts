@@ -6,139 +6,218 @@ export default function Home() {
   return (
     <div className="space-y-14 md:space-y-16">
       {/* <PhoneVerifyToast /> */}
-      <section className="reveal reveal-1 relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-10 text-center shadow-sm dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 md:px-10 md:py-14">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
-        <div className="pointer-events-none absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
+      <section className="reveal reveal-1 relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-10 shadow-sm dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 md:px-10 md:py-14">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
+        <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,rgba(16,185,129,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.08)_1px,transparent_1px)] [background-size:72px_72px]" />
 
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
-          Global Trails • Local Experts • Outdoor Adventures
-        </p>
-        <h1 className="mx-auto mb-4 max-w-4xl text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl lg:text-6xl">
-          Guided Trails & Training with Local Experts
-        </h1>
-        <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600 dark:text-gray-300 md:text-xl">
-          Discover MTB trails, hiking routes, trail runs, and performance
-          training sessions around the world. Join curated group rides or book
-          private coaching with verified local experts.
-        </p>
+        <div className="relative grid gap-8 md:grid-cols-[1.15fr_0.85fr] md:items-center">
+          <div className="text-left">
+            <div className="mb-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-emerald-200/80 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/70 dark:text-emerald-200">
+                Global Trails
+              </span>
+              <span className="rounded-full border border-emerald-200/80 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/70 dark:text-emerald-200">
+                Local Experts
+              </span>
+              <span className="rounded-full border border-emerald-200/80 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/70 dark:text-emerald-200">
+                Outdoor Adventures
+              </span>
+            </div>
+            <h1 className="mb-4 text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl lg:text-6xl">
+              Guided trails and training with verified local experts.
+            </h1>
+            <p className="mb-6 max-w-xl text-base text-gray-600 dark:text-gray-300 md:text-lg">
+              Discover MTB rides, trail runs, hikes, and structured training across the world.
+              Join small-group adventures or book private coaching from verified local experts.
+            </p>
+            <div className="mb-6 flex flex-wrap gap-3">
+              <Link
+                href="/trails"
+                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-emerald-100 px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-300 transition hover:bg-emerald-200 dark:bg-emerald-400 dark:text-emerald-950 dark:ring-emerald-300 dark:hover:bg-emerald-300 md:text-base"
+              >
+                Browse Trails
+              </Link>
+              <Link
+                href="/events"
+                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-green-700 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 md:text-base"
+              >
+                Browse Events
+              </Link>
+              <JoinAdventureButton className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base" />
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Sports</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">8 Categories</p>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Cities</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Worldwide</p>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Experts</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Verified Hosts</p>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Events</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Daily Listings</p>
+              </div>
+            </div>
+          </div>
 
-        <div className="mx-auto mb-6 grid max-w-2xl grid-cols-2 gap-3 text-left sm:grid-cols-4">
-          <div className="reveal reveal-2 rounded-xl border border-emerald-200 bg-white/90 p-3 dark:border-emerald-900 dark:bg-slate-900/90">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Sports</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">8 Categories</p>
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-emerald-200/70 bg-white/90 p-5 shadow-sm dark:border-emerald-900 dark:bg-slate-900/90">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                What you can do
+              </p>
+              <div className="mt-3 space-y-2 text-sm text-gray-700 dark:text-gray-200">
+                <div className="flex items-start gap-2">
+                  <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
+                  Explore curated trails with elevation, difficulty, and local insights.
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
+                  Join expert-led events or request private coaching sessions.
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
+                  Connect with verified hosts for safe, local-first adventures.
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-green-900 to-emerald-950 p-5 text-white shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
+                Built for experts
+              </p>
+              <h3 className="mt-3 text-lg font-semibold">
+                Turn your local knowledge into a premium outdoor experience.
+              </h3>
+              <p className="mt-2 text-sm text-emerald-100">
+                Host paid events, training blocks, and private sessions with flexible pricing and
+                verified expert status.
+              </p>
+              <Link
+                href="/experts/join"
+                className="mt-4 inline-flex text-sm font-semibold text-emerald-100 underline-offset-4 hover:underline"
+              >
+                Start your expert application →
+              </Link>
+            </div>
           </div>
-          <div className="reveal reveal-3 rounded-xl border border-emerald-200 bg-white/90 p-3 dark:border-emerald-900 dark:bg-slate-900/90">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Cities</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Worldwide</p>
-          </div>
-          <div className="reveal reveal-4 rounded-xl border border-emerald-200 bg-white/90 p-3 dark:border-emerald-900 dark:bg-slate-900/90">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Experts</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Verified Hosts</p>
-          </div>
-          <div className="reveal reveal-5 rounded-xl border border-emerald-200 bg-white/90 p-3 dark:border-emerald-900 dark:bg-slate-900/90">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Events</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Daily Listings</p>
-          </div>
-        </div>
-
-        <div className="reveal reveal-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link
-            href="/trails"
-            className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-emerald-100 px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-300 transition hover:bg-emerald-200 dark:bg-emerald-400 dark:text-emerald-950 dark:ring-emerald-300 dark:hover:bg-emerald-300 md:text-base"
-          >
-            Browse Trails
-          </Link>
-          <Link
-            href="/events"
-            className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-green-700 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 md:text-base"
-          >
-            Browse Events
-          </Link>
-          <JoinAdventureButton className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base" />
-          {/* <Link
-            href="/experts/join"
-            className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base"
-          >
-            Become a Sports Expert
-          </Link> */}
         </div>
       </section>
 
       <section className="reveal reveal-2 grid gap-6 md:grid-cols-3">
         <div className="reveal reveal-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            For Riders & Adventurers
+          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+            Riders & Adventurers
+          </span>
+          <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Find trails that match your pace and ambitions.
           </h2>
-          <p className="mb-3 text-sm text-gray-600 dark:text-gray-300">
-            Join small-group rides, hikes, and runs led by locals who know the
-            terrain, weather, and hidden viewpoints.
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            Join rides and hikes led by locals who know the terrain, weather windows,
+            and hidden viewpoints.
           </p>
-          <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-            <li>• MTB trail rides and guided routes worldwide</li>
-            <li>• Sunrise hikes and cultural local visits</li>
-            <li>• Trail running sessions on classic ridgelines</li>
-          </ul>
+          <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
+              MTB trail rides and guided routes worldwide.
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
+              Sunrise hikes and cultural local visits.
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
+              Trail running sessions on iconic ridgelines.
+            </div>
+          </div>
         </div>
 
-        <div className="reveal reveal-4 rounded-2xl bg-green-900 p-6 text-white shadow-sm">
-          <h2 className="mb-2 text-lg font-semibold">
-            For Local Sports Experts
+        <div className="reveal reveal-4 rounded-2xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm">
+          <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
+            Local Experts
+          </span>
+          <h2 className="mt-3 text-lg font-semibold">
+            Turn your local knowledge into premium experiences.
           </h2>
-          <p className="mb-3 text-sm text-green-100">
-            Turn your local knowledge into income. Host guided events or
-            structured training blocks for visiting athletes.
+          <p className="mt-2 text-sm text-emerald-100">
+            Host guided events or structured training blocks for visiting athletes and local
+            communities.
           </p>
-          <ul className="space-y-1 text-sm text-green-100">
-            <li>• Create paid events with flexible pricing</li>
-            <li>• Offer group, private, or corporate sessions</li>
-            <li>
-              • Unlock a <span className="font-semibold">Verified Expert</span> badge
-            </li>
-          </ul>
+          <div className="mt-4 space-y-2 text-sm text-emerald-100">
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
+              Create paid events with flexible pricing.
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
+              Offer group, private, or corporate sessions.
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
+              Unlock a Verified Expert badge after review.
+            </div>
+          </div>
           <Link
             href="/experts/join"
-            className="inline-flex mt-4 text-sm font-semibold text-green-100 underline-offset-4 hover:underline"
+            className="mt-4 inline-flex text-sm font-semibold text-emerald-100 underline-offset-4 hover:underline"
           >
             Start your expert application →
           </Link>
         </div>
 
         <div className="reveal reveal-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Built for Any Region
+          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+            Built Worldwide
+          </span>
+          <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Curated routes and events for any region.
           </h2>
-          <p className="mb-3 text-sm text-gray-600 dark:text-gray-300">
-            Discover curated routes and events across cities, mountain regions,
-            and travel destinations around the world.
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            Discover trails across cities, mountain regions, and travel destinations globally.
           </p>
-          <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-            <li>• Filter by city, sport, date, and difficulty</li>
-            <li>• See trail details and elevation profiles</li>
-            <li>• Book and pay locally using QR-based options</li>
-          </ul>
+          <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
+              Filter by city, sport, date, and difficulty.
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
+              Review trail details and elevation profiles.
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
+              Book and pay locally using QR-based options.
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="reveal reveal-6 flex flex-col items-center justify-between gap-6 rounded-2xl bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:from-green-950/40 dark:to-sky-950/30 md:flex-row md:p-10">
+      <section className="reveal reveal-6 flex flex-col items-center justify-between gap-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:flex-row md:p-10">
         <div>
-          <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Training & Performance Sessions
+          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+            Training & Performance
+          </span>
+          <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Structured coaching sessions with local professionals.
           </h2>
-          <p className="mb-3 max-w-xl text-sm text-gray-600 dark:text-gray-300">
-            Looking for structured cycling training, skills coaching, or
-            trail-running intervals? Browse training-focused events created by
-            local coaches around the world.
+          <p className="mt-3 max-w-xl text-sm text-gray-600 dark:text-gray-300">
+            Browse training-focused events for cycling, trail running, skills coaching,
+            and endurance prep built by verified coaches worldwide.
           </p>
           <Link
             href="/events?sport=training"
-            className="inline-flex items-center px-5 py-2.5 rounded-full bg-green-700 text-white text-sm font-semibold hover:bg-green-800 transition-colors"
+            className="mt-5 inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-800"
           >
-            See training events for experts & athletes
+            See training events
           </Link>
         </div>
-        <div className="max-w-xs text-xs text-gray-500 dark:text-gray-400">
-          Weather-aware scheduling, safety updates, and offline-friendly
-          experiences are part of the roadmap as the platform grows.
+        <div className="max-w-xs rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-500 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-400">
+          Weather-aware scheduling, safety updates, and offline-friendly experiences
+          are part of the platform roadmap.
         </div>
       </section>
     </div>
