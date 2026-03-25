@@ -629,19 +629,19 @@ const TrailPage: React.FunctionComponent = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse">
-          <div className="mb-6 h-9 w-2/3 rounded bg-gray-200 sm:h-10 sm:w-1/2" />
-          <div className="mb-5 h-5 w-1/3 rounded bg-gray-200" />
+          <div className="mb-6 h-9 w-2/3 rounded bg-gray-200 sm:h-10 sm:w-1/2 dark:bg-slate-800" />
+          <div className="mb-5 h-5 w-1/3 rounded bg-gray-200 dark:bg-slate-800" />
           <div className="mb-6 flex flex-wrap gap-2">
-            <div className="h-7 w-24 rounded-full bg-gray-200" />
-            <div className="h-7 w-24 rounded-full bg-gray-200" />
-            <div className="h-7 w-24 rounded-full bg-gray-200" />
+            <div className="h-7 w-24 rounded-full bg-gray-200 dark:bg-slate-800" />
+            <div className="h-7 w-24 rounded-full bg-gray-200 dark:bg-slate-800" />
+            <div className="h-7 w-24 rounded-full bg-gray-200 dark:bg-slate-800" />
           </div>
-          <div className="mb-6 h-[320px] w-full rounded-xl bg-gray-200 sm:h-[420px]" />
+          <div className="mb-6 h-[320px] w-full rounded-xl bg-gray-200 sm:h-[420px] dark:bg-slate-800" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="h-28 rounded-lg bg-gray-200 sm:h-32" />
-            <div className="h-28 rounded-lg bg-gray-200 sm:h-32" />
-            <div className="h-28 rounded-lg bg-gray-200 sm:h-32" />
-            <div className="h-28 rounded-lg bg-gray-200 sm:h-32" />
+            <div className="h-28 rounded-lg bg-gray-200 sm:h-32 dark:bg-slate-800" />
+            <div className="h-28 rounded-lg bg-gray-200 sm:h-32 dark:bg-slate-800" />
+            <div className="h-28 rounded-lg bg-gray-200 sm:h-32 dark:bg-slate-800" />
+            <div className="h-28 rounded-lg bg-gray-200 sm:h-32 dark:bg-slate-800" />
           </div>
         </div>
       </div>

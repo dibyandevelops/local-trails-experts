@@ -9,17 +9,17 @@ function EventsPageFallback() {
       {Array.from({ length: 4 }).map((_, index) => (
         <div
           key={`events-fallback-${index}`}
-          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
+          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900/60"
         >
-          <div className="mb-3 h-6 w-2/3 rounded bg-gray-200" />
-          <div className="mb-4 h-4 w-1/3 rounded bg-gray-200" />
+          <div className="mb-3 h-6 w-2/3 rounded bg-gray-200 dark:bg-slate-800" />
+          <div className="mb-4 h-4 w-1/3 rounded bg-gray-200 dark:bg-slate-800" />
           <div className="mb-3 space-y-2">
-            <div className="h-4 w-full rounded bg-gray-200" />
-            <div className="h-4 w-5/6 rounded bg-gray-200" />
-            <div className="h-4 w-4/6 rounded bg-gray-200" />
+            <div className="h-4 w-full rounded bg-gray-200 dark:bg-slate-800" />
+            <div className="h-4 w-5/6 rounded bg-gray-200 dark:bg-slate-800" />
+            <div className="h-4 w-4/6 rounded bg-gray-200 dark:bg-slate-800" />
           </div>
-          <div className="mb-4 h-20 rounded-lg bg-gray-200" />
-          <div className="h-10 w-full rounded bg-gray-200" />
+          <div className="mb-4 h-20 rounded-lg bg-gray-200 dark:bg-slate-800" />
+          <div className="h-10 w-full rounded bg-gray-200 dark:bg-slate-800" />
         </div>
       ))}
     </div>
