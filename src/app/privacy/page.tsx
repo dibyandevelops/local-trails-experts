@@ -18,6 +18,15 @@ export default function PrivacyPolicyPage() {
           preferences. We only use your data to provide core features like
           events, trails, and verified expert services.
         </p>
+        <p className="text-sm text-gray-700">
+          We use your data primarily to match participants with independent
+          experts and to support bookings and trail requests. We do not sell
+          personal data.
+        </p>
+        <p className="text-sm text-gray-700">
+          The platform currently focuses on trail communities in Nepal. If we
+          expand to new regions, this policy will be updated.
+        </p>
       </section>
 
       {STRAVA_ENABLED && (
@@ -40,7 +49,7 @@ export default function PrivacyPolicyPage() {
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-3">
         <h2 className="text-lg font-semibold text-gray-900">Contact</h2>
         <p className="text-sm text-gray-700">
-          If you have any questions about this policy, please contact us at
+          If you have any questions about this policy, please contact us at{' '}
           {process.env.NEXT_PUBLIC_ADMIN_EMAIL}.
         </p>
       </section>

@@ -40,6 +40,7 @@ type EventFormValues = {
   is_paid_event: boolean;
   qr_image_url: string;
   host_user_id: string;
+  acceptTerms: boolean;
 };
 
 
@@ -90,6 +91,7 @@ const defaultValues: EventFormValues = {
   is_paid_event: false,
   qr_image_url: '',
   host_user_id: '',
+  acceptTerms: false,
 };
 
 type EventFormProps = {
@@ -995,6 +997,31 @@ export default function EventForm({
               />
             </div>
           </div>
+
+          <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+            <input
+              id="event-accept-terms"
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              {...register('acceptTerms', {
+                required: 'Please accept the terms and privacy policy.',
+              })}
+            />
+            <label htmlFor="event-accept-terms" className="text-xs leading-5">
+              I agree to the{' '}
+              <a href="/terms" className="font-semibold text-green-700 hover:underline">
+                Terms &amp; Conditions
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+                Privacy Policy
+              </a>
+              .
+            </label>
+          </div>
+          {formState.errors.acceptTerms?.message && (
+            <p className="text-xs text-red-600">{formState.errors.acceptTerms.message}</p>
+          )}
 
           <div className="flex gap-4 pt-4">
             <button

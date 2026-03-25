@@ -81,6 +81,15 @@ export default function PurposePage() {
             maintain sustainable trails and empower certified experts to lead
             guided rides and trainings.
           </p>
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+            Current focus area: Nepal. We’ll expand to new regions as trail crews
+            and sponsors come onboard.
+          </p>
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+            The platform is designed to be autonomous: experts publish trails,
+            host events, and keep their earnings. LocoXperts focuses on trail
+            stewardship and safety guidance, not taking a cut from expert income.
+          </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -151,6 +160,74 @@ export default function PurposePage() {
       <section className="grid gap-6 md:grid-cols-2">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            How expert verification scales
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+            We can’t manually verify every expert. The platform uses a layered
+            system: community reviews, verification details, and admin checks
+            for higher-trust roles.
+          </p>
+          <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
+            <p>• Community verified: reviews and completion history</p>
+            <p>• Safety & certifications: optional proof for higher trust</p>
+            <p>• Admin review for “Verified Expert” status</p>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            Responsibility & safety
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+            LocoXperts acts as a bulletin board connecting participants with
+            independent experts. We provide safety guidance, but experts run
+            their own events and participants are responsible for their choices.
+          </p>
+          <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
+            <p>• Mandatory risk acknowledgment before booking</p>
+            <p>• Trail reporting and incident feedback for continuous safety</p>
+            <p>• Clear expectations for experts and participants</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/60 dark:via-slate-950/70 dark:to-emerald-900/40 md:p-8">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+            Funding model
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Sponsor-funded trails, expert-led experiences
+          </h2>
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+            We don’t take a cut from expert events. Instead, local companies and
+            partners fund trail building and maintenance through sponsorship tiers.
+            Experts keep their earnings, while sponsors help sustain the trail network.
+          </p>
+          <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
+            <p>• Adopt-a-trail sponsorships (signage, maintenance, safety upgrades)</p>
+            <p>• Community toolkits and trail crew support</p>
+            <p>• Partner visibility on trail pages and on-ground signage</p>
+          </div>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/sponsors"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-green-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800"
+            >
+              Sponsor a trail
+            </Link>
+            <Link
+              href="/donate"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-green-700 px-6 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30"
+            >
+              Donate to the trail fund
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             What we build (offline) + what we ship (online)
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
@@ -203,4 +280,3 @@ export default function PurposePage() {
     </div>
   );
 }
-

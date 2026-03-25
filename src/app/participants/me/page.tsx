@@ -55,6 +55,7 @@ export default function ParticipantProfilePage() {
   const [savingRequestId, setSavingRequestId] = useState<string | null>(null);
   const [cancellingRequestId, setCancellingRequestId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
@@ -197,7 +198,8 @@ export default function ParticipantProfilePage() {
         {message && (
           <p
             className={`text-sm border rounded-lg px-3 py-2 mb-3 ${
-              message.includes('select at least one sport')
+              message.toLowerCase().includes('select at least one sport') ||
+              message.toLowerCase().includes('accept the terms')
                 ? 'text-red-600 bg-red-50 border-red-100'
                 : 'text-green-700 bg-green-50 border-green-100'
             }`}
@@ -214,6 +216,11 @@ export default function ParticipantProfilePage() {
               const selectedSports = parseSelectedSports();
               if (selectedSports.length === 0) {
                 setMessage('Please select at least one sport.');
+                setSaving(false);
+                return;
+              }
+              if (!acceptTerms) {
+                setMessage('Please accept the terms before saving.');
                 setSaving(false);
                 return;
               }
@@ -406,9 +413,20 @@ export default function ParticipantProfilePage() {
             </p>
           </div>
           <div className="md:col-span-2">
+            <label className="flex items-start gap-2 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(event) => setAcceptTerms(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <span>I confirm these profile details are accurate.</span>
+            </label>
+          </div>
+          <div className="md:col-span-2">
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || !acceptTerms}
               className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
             >
               {saving ? 'Saving...' : 'Save changes'}

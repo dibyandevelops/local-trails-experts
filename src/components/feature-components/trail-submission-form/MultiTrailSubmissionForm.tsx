@@ -82,12 +82,21 @@ export default function MultiTrailSubmissionForm({
   const isAdmin = userRole === 'admin';
   const canEditSafetyLabels = userRole === 'admin' || userRole === 'expert';
 
-  const { register, control, handleSubmit, setValue, watch, reset } = useForm<{ trails: TrailCreateForm[] }>({
-    defaultValues: { trails: [createInitialForm()] },
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<{ trails: TrailCreateForm[]; acceptTerms: boolean }>({
+    defaultValues: { trails: [createInitialForm()], acceptTerms: false },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'trails' });
   const values = watch('trails') || [];
+  const acceptTerms = watch('acceptTerms');
 
   const parseGpxMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -249,7 +258,7 @@ export default function MultiTrailSubmissionForm({
     }
   };
 
-  const onSubmit = async (formData: { trails: TrailCreateForm[] }) => {
+  const onSubmit = async (formData: { trails: TrailCreateForm[]; acceptTerms: boolean }) => {
     setError(null);
     setNotice(null);
     const trails = formData.trails || [];
@@ -607,9 +616,26 @@ export default function MultiTrailSubmissionForm({
         </p>
       )}
 
+      <div className="flex flex-col gap-2 text-xs text-gray-600 dark:text-slate-300">
+        <label className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            {...register('acceptTerms', { required: true })}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+          />
+          <span>
+            I confirm these trail details are accurate and ready for review.
+          </span>
+        </label>
+        {errors.acceptTerms && (
+          <span className="text-xs text-red-600 dark:text-red-300">
+            Please acknowledge before submitting trails.
+          </span>
+        )}
+      </div>
       <button
         type="submit"
-        disabled={submitting || parsingGpxIndex !== null}
+        disabled={submitting || parsingGpxIndex !== null || !acceptTerms}
         className="rounded-lg bg-green-600 px-5 py-2 font-medium text-white hover:bg-green-700 disabled:opacity-70"
       >
         {submitting ? 'Submitting...' : submitLabel}

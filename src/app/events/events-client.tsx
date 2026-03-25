@@ -33,6 +33,7 @@ export default function EventsPageClient() {
   const setJoinEventModalOpen = useUiStore((state) => state.setJoinEventModalOpen);
   const [joinedEventIds, setJoinedEventIds] = useState<Set<string>>(new Set());
   const [joinTarget, setJoinTarget] = useState<Event | null>(null);
+  const [riskAcknowledged, setRiskAcknowledged] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const lastSyncedQuery = useRef<string>('');
   const [filtersReady, setFiltersReady] = useState(false);
@@ -221,6 +222,7 @@ export default function EventsPageClient() {
       return;
     }
     setJoinTarget(eventData);
+    setRiskAcknowledged(false);
     setJoinEventModalOpen(true);
   };
 
@@ -285,7 +287,12 @@ export default function EventsPageClient() {
 
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-bold text-green-800 sm:mb-8 sm:text-4xl">Events</h1>
+      <div className="mb-6 flex flex-wrap items-center gap-2 sm:mb-8">
+        <h1 className="text-3xl font-bold text-green-800 sm:text-4xl">Events</h1>
+        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+          Nepal
+        </span>
+      </div>
 
       <div className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6">
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -480,7 +487,10 @@ export default function EventsPageClient() {
         open={joinEventModalOpen && Boolean(joinTarget)}
         onOpenChange={(open) => {
           setJoinEventModalOpen(open);
-          if (!open) setJoinTarget(null);
+          if (!open) {
+            setJoinTarget(null);
+            setRiskAcknowledged(false);
+          }
         }}
       >
         <Dialog.Portal>
@@ -553,6 +563,18 @@ export default function EventsPageClient() {
                     <li>• Follow the guide’s instructions</li>
                   </ul>
                 </div>
+                <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                  <input
+                    type="checkbox"
+                    checked={riskAcknowledged}
+                    onChange={(event) => setRiskAcknowledged(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-500"
+                  />
+                  <span>
+                    I acknowledge the activity carries risk and I will follow the expert’s
+                    safety instructions.
+                  </span>
+                </label>
               </div>
             )}
             <div className="mt-5 flex justify-end gap-2">
@@ -564,14 +586,14 @@ export default function EventsPageClient() {
                   Cancel
                 </button>
               </Dialog.Close>
-                <button
-                  type="button"
-                  onClick={confirmJoin}
-                  disabled={joinMutation.isPending}
-                  className="px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
-                >
+              <button
+                type="button"
+                onClick={confirmJoin}
+                disabled={joinMutation.isPending || !riskAcknowledged}
+                className="px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
+              >
                 {joinMutation.isPending ? 'Joining...' : 'Confirm & Join'}
-                </button>
+              </button>
             </div>
           </Dialog.Content>
         </Dialog.Portal>

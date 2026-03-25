@@ -32,6 +32,7 @@ export default function RegisterForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(initialNotice);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const passwordChecks = useMemo(
     () => ({
@@ -53,6 +54,9 @@ export default function RegisterForm({
     }
     if (form.sports.length === 0) {
       return 'Please select at least one sport.';
+    }
+    if (!acceptTerms) {
+      return 'Please accept the terms and privacy policy.';
     }
     return validatePassword();
   };
@@ -256,10 +260,11 @@ export default function RegisterForm({
               value={form.city}
               onChange={(event) => setForm({ ...form, city: event.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
-              placeholder="e.g., Kathmandu"
+              placeholder="e.g., your city in Nepal"
             />
           </div>
         </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
             Choose your sports
@@ -338,6 +343,27 @@ export default function RegisterForm({
             {success}
           </p>
         )}
+
+        <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200">
+          <input
+            id="accept-terms"
+            type="checkbox"
+            checked={acceptTerms}
+            onChange={(event) => setAcceptTerms(event.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+          />
+          <label htmlFor="accept-terms" className="text-xs leading-5">
+            I agree to the{' '}
+            <a href="/terms" className="font-semibold text-green-700 hover:underline">
+              Terms &amp; Conditions
+            </a>{' '}
+            and{' '}
+            <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+              Privacy Policy
+            </a>
+            .
+          </label>
+        </div>
 
         <button
           type="submit"

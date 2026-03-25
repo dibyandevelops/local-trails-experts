@@ -33,9 +33,9 @@ export default function DonatePage() {
             Help keep trails rideable and communities supported
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
-            Your support helps cover the real costs behind community operations:
-            trail days, tools, signage, safety basics, route documentation, and
-            the work required to keep local outdoor experiences sustainable.
+            Your support helps cover the real costs behind community operations in
+            Nepal: trail days, tools, signage, safety basics, route documentation,
+            and the work required to keep local outdoor experiences sustainable.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -72,8 +72,7 @@ export default function DonatePage() {
         <div className="rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 md:p-10">
           <SectionTitle>Donate via eSewa (QR)</SectionTitle>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-            Scan the QR code to get the payment details. If scanning doesn&apos;t
-            auto-fill, you can still use the details below.
+            Scan the QR code to get the payment details for the LocoXperts Trail Fund.
           </p>
 
           <div className="mt-5 flex flex-col items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/40 sm:flex-row sm:items-start">
@@ -82,31 +81,21 @@ export default function DonatePage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/donate/esewa-qr.svg"
-                alt="eSewa donation QR code for Dibyan Maharjan (9841338488)"
+                alt="eSewa donation QR code for the LocoXperts Trail Fund"
                 className="h-auto w-full"
               />
             </div>
             <div className="w-full">
               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                eSewa receiver details
+                LocoXperts Trail Fund
               </p>
-              <dl className="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-700 dark:text-slate-200">
-                <div className="flex items-center justify-between gap-3 rounded-xl bg-white/70 px-4 py-2 dark:bg-slate-950/40">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-                    Name
-                  </dt>
-                  <dd className="font-semibold">Dibyan Maharjan</dd>
-                </div>
-                <div className="flex items-center justify-between gap-3 rounded-xl bg-white/70 px-4 py-2 dark:bg-slate-950/40">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-                    Phone
-                  </dt>
-                  <dd className="font-semibold">9841338488</dd>
-                </div>
-              </dl>
+              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                Your support goes directly to trail building, maintenance days, and
+                safety essentials for Nepal routes.
+              </p>
               <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
-                Prefer a receipt or want your donation acknowledged publicly? Use
-                the collaboration form and share your transaction reference.
+                Prefer a receipt or want your donation acknowledged publicly? Use the
+                collaboration form and share your transaction reference.
               </p>
             </div>
           </div>
@@ -147,4 +136,3 @@ export default function DonatePage() {
     </div>
   );
 }
-

@@ -223,6 +223,7 @@ const TrailPage: React.FunctionComponent = () => {
   const [requestDescription, setRequestDescription] = useState('');
   const [selectedExpertId, setSelectedExpertId] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
+  const [requestAcceptTerms, setRequestAcceptTerms] = useState(false);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
@@ -251,6 +252,7 @@ const TrailPage: React.FunctionComponent = () => {
       setPendingGpxFile(null);
       setAdminMessage(null);
       setActionMessage(null);
+      setRequestAcceptTerms(false);
     };
     window.addEventListener('pageshow', closeTransientUi);
     return () => window.removeEventListener('pageshow', closeTransientUi);
@@ -726,6 +728,9 @@ const TrailPage: React.FunctionComponent = () => {
         <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
+                Nepal Trail Network
+              </span>
               <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
                 Trail profile
               </span>
@@ -1208,6 +1213,18 @@ const TrailPage: React.FunctionComponent = () => {
               className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               placeholder="Describe what you want (preferred date/time, group size, activity type...)"
             />
+            <label className="mt-3 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+              <input
+                type="checkbox"
+                checked={requestAcceptTerms}
+                onChange={(event) => setRequestAcceptTerms(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-500"
+              />
+              <span>
+                I acknowledge outdoor activities involve risk and I agree to follow the
+                expert’s safety instructions.
+              </span>
+            </label>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
@@ -1227,6 +1244,10 @@ const TrailPage: React.FunctionComponent = () => {
                     setRequestMessage('Please select a preferred date.');
                     return;
                   }
+                  if (!requestAcceptTerms) {
+                    setRequestMessage('Please accept the risk acknowledgment.');
+                    return;
+                  }
                   try {
                     await requestTrailMutation.mutateAsync();
                   } catch (err) {
@@ -1235,7 +1256,7 @@ const TrailPage: React.FunctionComponent = () => {
                     );
                   }
                 }}
-                disabled={requestTrailMutation.isPending}
+                disabled={requestTrailMutation.isPending || !requestAcceptTerms}
                 className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
               >
                 {requestTrailMutation.isPending ? 'Sending...' : 'Send Request'}

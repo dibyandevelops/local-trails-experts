@@ -5,7 +5,7 @@ import CollaborateForm from '@/components/feature-components/collaborate-form';
 export const metadata: Metadata = {
   title: 'Sponsors',
   description:
-    'Support sustainable trail building and local experts. Sponsor LocoXperts and showcase your brand to the outdoor community.',
+    'Support sustainable trail building in Nepal. Sponsor LocoXperts and showcase your brand to the outdoor community.',
   alternates: { canonical: '/sponsors' },
 };
 
@@ -54,9 +54,9 @@ export default function SponsorsPage() {
             Help build trails and grow local outdoor communities
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
-            Sponsor sustainable trail building, community toolkits, and local
-            expert certifications. Your support funds real work on the ground —
-            and it’s visible on the platform.
+            Sponsor sustainable trail building in Nepal, community toolkits, and
+            local expert certifications. Your support funds real work on the ground
+            — and it’s visible on the platform.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -116,4 +116,3 @@ export default function SponsorsPage() {
     </div>
   );
 }
-

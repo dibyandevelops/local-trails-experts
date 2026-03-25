@@ -19,6 +19,7 @@ export default function EventDetailPage() {
   const { data: user = null } = useCurrentUser();
   const [booking, setBooking] = useState<(Booking & { payment_status?: string | null }) | null>(null);
   const [loading, setLoading] = useState(true);
+  const [riskAcknowledged, setRiskAcknowledged] = useState(false);
   const queryClient = useQueryClient();
 
   const cancelMutation = useMutation({
@@ -52,6 +53,10 @@ export default function EventDetailPage() {
     };
 
     fetchEvent();
+  }, [eventId]);
+
+  useEffect(() => {
+    setRiskAcknowledged(false);
   }, [eventId]);
 
   useEffect(() => {
@@ -254,6 +259,30 @@ export default function EventDetailPage() {
                 >
                   {booking?.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
                 </span>
+              </div>
+            )}
+            {event.price_npr && event.price_npr > 0 && (
+              <div className="mt-4 space-y-3">
+                <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+                  <input
+                    type="checkbox"
+                    checked={riskAcknowledged}
+                    onChange={(event) => setRiskAcknowledged(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-500"
+                  />
+                  <span>
+                    I acknowledge outdoor activities involve risk and I agree to follow the
+                    expert’s safety instructions.
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  disabled={!riskAcknowledged}
+                  className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white opacity-60"
+                  title="Payment flow will be enabled soon"
+                >
+                  Continue to payment (coming soon)
+                </button>
               </div>
             )}
           </div>

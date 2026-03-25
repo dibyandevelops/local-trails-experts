@@ -42,6 +42,14 @@ export default function TermsPage() {
           and join outdoor events. Some content is contributed by the community
           and may be updated over time.
         </p>
+        <p className="mt-2 text-sm text-gray-700 dark:text-slate-200">
+          The Platform operates as a bulletin board and matching service. Experts
+          are independent hosts who set their own pricing and run their own events.
+          LocoXperts does not employ experts or provide the activities directly.
+        </p>
+        <p className="mt-2 text-sm text-gray-700 dark:text-slate-200">
+          Current focus area: Nepal. We may expand to additional regions over time.
+        </p>
 
         <H2>2. Safety &amp; Assumption of Risk</H2>
         <p className="mt-2 text-sm text-gray-700 dark:text-slate-200">
@@ -128,4 +136,3 @@ export default function TermsPage() {
     </div>
   );
 }
-

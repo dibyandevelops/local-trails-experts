@@ -20,6 +20,7 @@ type TrailCreateForm = {
   estimated_time_hours: string;
   image_url: string;
   safety_labels: TrailSafetyLabel[];
+  acceptTerms: boolean;
 };
 
 const INITIAL_FORM: TrailCreateForm = {
@@ -33,6 +34,7 @@ const INITIAL_FORM: TrailCreateForm = {
   estimated_time_hours: '',
   image_url: '',
   safety_labels: [],
+  acceptTerms: false,
 };
 
 type Props = {
@@ -77,6 +79,7 @@ export default function TrailSubmissionForm({
     setValue,
     watch,
     reset,
+    formState: { errors },
   } = useForm<TrailCreateForm>({
     defaultValues: INITIAL_FORM,
   });
@@ -534,6 +537,31 @@ export default function TrailSubmissionForm({
             })}
           </div>
         </div>
+      )}
+
+      <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200">
+        <input
+          id="trail-accept-terms"
+          type="checkbox"
+          className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+          {...register('acceptTerms', {
+            required: 'Please accept the terms and privacy policy.',
+          })}
+        />
+        <label htmlFor="trail-accept-terms" className="text-xs leading-5">
+          I agree to the{' '}
+          <a href="/terms" className="font-semibold text-green-700 hover:underline">
+            Terms &amp; Conditions
+          </a>{' '}
+          and{' '}
+          <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+            Privacy Policy
+          </a>
+          .
+        </label>
+      </div>
+      {errors.acceptTerms?.message && (
+        <p className="text-xs text-red-600">{errors.acceptTerms.message}</p>
       )}
 
       <button

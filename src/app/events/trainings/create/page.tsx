@@ -23,6 +23,7 @@ type TrainingFormValues = {
   organizer_name: string;
   organizer_email: string;
   host_user_id: string;
+  acceptTerms: boolean;
 };
 
 const defaultValues: TrainingFormValues = {
@@ -38,6 +39,7 @@ const defaultValues: TrainingFormValues = {
   organizer_name: '',
   organizer_email: '',
   host_user_id: '',
+  acceptTerms: false,
 };
 
 function getUpcomingWeekendDateTimeLocal() {
@@ -279,7 +281,7 @@ export default function CreateTrainingPage() {
                 type="text"
                 {...register('city')}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2"
-                placeholder="e.g., Kathmandu, London, or your city"
+                placeholder="e.g., your city in Nepal"
               />
             </div>
             <div>
@@ -339,6 +341,28 @@ export default function CreateTrainingPage() {
                 className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2"
               />
             </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+            <input
+              id="training-accept-terms"
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              {...register('acceptTerms', {
+                required: 'Please accept the terms and privacy policy.',
+              })}
+            />
+            <label htmlFor="training-accept-terms" className="text-xs leading-5">
+              I agree to the{' '}
+              <a href="/terms" className="font-semibold text-green-700 hover:underline">
+                Terms &amp; Conditions
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+                Privacy Policy
+              </a>
+              .
+            </label>
           </div>
 
           <div className="flex gap-3 pt-2">

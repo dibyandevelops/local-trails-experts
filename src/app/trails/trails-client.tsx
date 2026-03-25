@@ -412,6 +412,7 @@ function TrailsPageContent() {
   const [selectedExpertId, setSelectedExpertId] = useState('');
   const [requestFeedback, setRequestFeedback] = useState('');
   const [requestModalMessage, setRequestModalMessage] = useState('');
+  const [requestAcceptTerms, setRequestAcceptTerms] = useState(false);
   const [requestedByTrailId, setRequestedByTrailId] = useState<Record<string, string>>({});
   const [toastOpen, setToastOpen] = useState(false);
   const [toastTitle, setToastTitle] = useState('Request sent');
@@ -943,16 +944,21 @@ function TrailsPageContent() {
       <div className="mb-6 rounded-2xl border border-emerald-200/70 bg-white/90 p-5 shadow-sm dark:border-emerald-900/60 dark:bg-slate-950/70">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-              Trail discovery
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                Trail discovery
+              </p>
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                Nepal
+              </span>
+            </div>
             <h1 className="mt-2 text-3xl font-bold text-green-800 dark:text-green-200">
               Search Trails
             </h1>
-            <p className="mt-2 max-w-xl text-sm text-gray-600 dark:text-slate-300">
-              Find routes by location, sport, difficulty, and distance. Save time with
-              curated trails that include local safety guidance.
-            </p>
+          <p className="mt-2 max-w-xl text-sm text-gray-600 dark:text-slate-300">
+            Find routes across Nepal by location, sport, difficulty, and distance. Save time
+            with curated trails that include local safety guidance.
+          </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
@@ -1710,6 +1716,7 @@ function TrailsPageContent() {
           if (!open) {
             setRequestTrailItem(null);
             setRequestModalMessage('');
+            setRequestAcceptTerms(false);
           }
         }}
       >
@@ -1771,6 +1778,18 @@ function TrailsPageContent() {
                   placeholder="What kind of activity are you looking for?"
                 />
               </div>
+              <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                <input
+                  type="checkbox"
+                  checked={requestAcceptTerms}
+                  onChange={(event) => setRequestAcceptTerms(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-500"
+                />
+                <span>
+                  I acknowledge outdoor activities involve risk and I agree to follow the
+                  expert’s safety instructions.
+                </span>
+              </label>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <Dialog.Close asChild>
@@ -1793,6 +1812,10 @@ function TrailsPageContent() {
                     setRequestModalMessage('Please select a preferred date.');
                     return;
                   }
+                  if (!requestAcceptTerms) {
+                    setRequestModalMessage('Please accept the risk acknowledgment.');
+                    return;
+                  }
                   setRequestModalMessage('');
                   requestMutation.mutate({
                     trailId: requestTrailItem.id,
@@ -1801,7 +1824,7 @@ function TrailsPageContent() {
                     preferred_date: preferredDate,
                   });
                 }}
-                disabled={requestMutation.isPending}
+                disabled={requestMutation.isPending || !requestAcceptTerms}
                 className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
               >
                 {requestMutation.isPending ? 'Submitting...' : 'Submit Request'}

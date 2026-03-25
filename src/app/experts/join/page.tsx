@@ -29,6 +29,7 @@ export default function ExpertJoinPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const initials =
     name
       .split(' ')
@@ -48,6 +49,10 @@ export default function ExpertJoinPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!acceptTerms) {
+      setErrorMessage('Please accept the terms and privacy policy.');
+      return;
+    }
     setSubmitting(true);
     setErrorMessage(null);
 
@@ -287,7 +292,7 @@ export default function ExpertJoinPage() {
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="e.g., Kathmandu, London, or your city"
+                placeholder="e.g., your city in Nepal"
               />
             </div>
 
@@ -343,6 +348,27 @@ export default function ExpertJoinPage() {
           {errorMessage && (
             <p className="text-sm text-red-600">{errorMessage}</p>
           )}
+
+          <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200">
+            <input
+              id="expert-accept-terms"
+              type="checkbox"
+              checked={acceptTerms}
+              onChange={(event) => setAcceptTerms(event.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <label htmlFor="expert-accept-terms" className="text-xs leading-5">
+              I agree to the{' '}
+              <a href="/terms" className="font-semibold text-green-700 hover:underline">
+                Terms &amp; Conditions
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+                Privacy Policy
+              </a>
+              .
+            </label>
+          </div>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-2">
             <button

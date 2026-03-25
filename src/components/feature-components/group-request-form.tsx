@@ -13,6 +13,7 @@ type GroupRequestValues = {
   groupSize?: string;
   preferredDate?: string;
   message: string;
+  acceptTerms: boolean;
 };
 
 type TrailOption = Pick<Trail, 'id' | 'name' | 'location' | 'sport_type'>;
@@ -48,6 +49,7 @@ export default function GroupRequestForm({
       preferredDate: '',
       message:
         'Hi LocoXperts team,\n\nWe’d like to organize a large group activity.\n\nDetails:\n- Group profile (beginner/intermediate/advanced):\n- Expected pace:\n- Logistics (transport / start time):\n- Any special request:\n\nThanks!\n',
+      acceptTerms: false,
     },
   });
 
@@ -265,6 +267,33 @@ export default function GroupRequestForm({
           {status.message}
         </div>
       )}
+
+      <div className="flex flex-col gap-1">
+        <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200">
+          <input
+            id="group-terms"
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+            {...register('acceptTerms', {
+              required: 'Please accept the terms and privacy policy.',
+            })}
+          />
+          <label htmlFor="group-terms" className="text-xs leading-5">
+            I agree to the{' '}
+            <a href="/terms" className="font-semibold text-green-700 hover:underline">
+              Terms &amp; Conditions
+            </a>{' '}
+            and{' '}
+            <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+              Privacy Policy
+            </a>
+            .
+          </label>
+        </div>
+        {errors.acceptTerms?.message && (
+          <p className="text-xs text-red-600">{errors.acceptTerms.message}</p>
+        )}
+      </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500 dark:text-slate-400">

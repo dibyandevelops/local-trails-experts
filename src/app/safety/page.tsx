@@ -23,6 +23,9 @@ export default function SafetyPolicyPage() {
           setting clear expectations for experts (hosts) and participants
           before, during, and after an activity.
         </p>
+        <p className="mt-2 text-sm text-gray-700 dark:text-slate-200">
+          Current focus area: Nepal trail communities.
+        </p>
       </header>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-3 dark:border-slate-800 dark:bg-slate-900">
@@ -153,4 +156,3 @@ export default function SafetyPolicyPage() {
     </div>
   );
 }
-
