@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import JoinAdventureButton from '@/components/home/join-adventure-button';
 // import PhoneVerifyToast from '@/components/phone-verify-toast';
 
 export default function Home() {
@@ -53,12 +54,7 @@ export default function Home() {
           >
             Browse Events
           </Link>
-          <Link
-            href="/register"
-            className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base"
-          >
-            Join Adventure
-          </Link>
+          <JoinAdventureButton className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base" />
           {/* <Link
             href="/experts/join"
             className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base"

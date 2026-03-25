@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SportType } from '@/types';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
@@ -18,7 +18,6 @@ export default function RegisterForm({
   onRegistered?: () => void;
 }) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -33,10 +32,6 @@ export default function RegisterForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(initialNotice);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const passwordChecks = useMemo(
     () => ({
@@ -113,10 +108,6 @@ export default function RegisterForm({
       setLoading(false);
     }
   };
-
-  if (!mounted) {
-    return <div className={embedded ? '' : 'max-w-lg mx-auto'} />;
-  }
 
   const initials =
     form.name
