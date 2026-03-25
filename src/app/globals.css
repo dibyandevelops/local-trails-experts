@@ -81,6 +81,10 @@ body {
     background-color: var(--background);
     color: var(--foreground);
   }
+  /* Avoid layout shift when Radix Dialog locks scroll (prevents "flicker" on open). */
+  html {
+    scrollbar-gutter: stable;
+  }
 
   * {
     border-color: var(--border);
