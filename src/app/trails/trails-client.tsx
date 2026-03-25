@@ -396,6 +396,7 @@ function TrailsPageContent() {
   const [distanceMax, setDistanceMax] = useState('');
   const [sort, setSort] = useState<TrailSort>('name_asc');
   const [viewMode] = useState<TrailsViewMode>('grid');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
   const [mapTrailId, setMapTrailId] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
@@ -928,231 +929,120 @@ function TrailsPageContent() {
   const hasActiveFilters = Boolean(
     search || difficulty || location || sport || distanceMin || distanceMax
   );
+  const activeFilterCount = [
+    search,
+    difficulty,
+    location,
+    sport,
+    distanceMin,
+    distanceMax,
+  ].filter(Boolean).length;
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="w-full sm:max-w-md">
-          <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
-            Search Trails
-          </h1>
-          <div className="mt-3">
-            <label htmlFor="trails-search" className="sr-only">
-              Search trails
-            </label>
-            <input
-              id="trails-search"
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onBlur={() => {
-                if (!isDesktop()) return;
-                setSearch(searchInput.trim());
+      <div className="mb-6 rounded-2xl border border-emerald-200/70 bg-white/90 p-5 shadow-sm dark:border-emerald-900/60 dark:bg-slate-950/70">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              Trail discovery
+            </p>
+            <h1 className="mt-2 text-3xl font-bold text-green-800 dark:text-green-200">
+              Search Trails
+            </h1>
+            <p className="mt-2 max-w-xl text-sm text-gray-600 dark:text-slate-300">
+              Find routes by location, sport, difficulty, and distance. Save time with
+              curated trails that include local safety guidance.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              <label htmlFor="trails-sort" className="text-gray-500 dark:text-slate-400">
+                Sort
+              </label>
+              <select
+                id="trails-sort"
+                value={sort}
+                onChange={(event) => setSort(event.target.value as TrailSort)}
+                className="bg-transparent text-xs font-semibold text-gray-800 focus:outline-none dark:text-slate-100"
+              >
+                {TRAIL_SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-900 shadow-sm hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100"
+            >
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+            {(user?.role === 'admin' || user?.role === 'expert') && (
+              <button
+                type="button"
+                onClick={() => router.push('/trails/create')}
+                className="rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-green-700"
+              >
+                Create Trail
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setGroupRequestTrail(null);
+                setGroupRequestOpen(true);
               }}
-              placeholder="Search by trail name, description, or location…"
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-emerald-400"
-            />
+              className="rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/40"
+              title="Request help organizing a larger group activity"
+            >
+              Request large group
+            </button>
           </div>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
-          <div className="flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-            <label
-              htmlFor="trails-sort"
-              className="text-gray-500 dark:text-slate-400"
-            >
-              Sort
-            </label>
-            <select
-              id="trails-sort"
-              value={sort}
-              onChange={(event) => setSort(event.target.value as TrailSort)}
-              className="bg-transparent text-xs font-semibold text-gray-800 focus:outline-none dark:text-slate-100"
-            >
-              {TRAIL_SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {(user?.role === 'admin' || user?.role === 'expert') && (
-            <button
-              type="button"
-              onClick={() => router.push('/trails/create')}
-              className="w-full rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 sm:w-auto"
-            >
-              Create Trail
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setGroupRequestTrail(null);
-              setGroupRequestOpen(true);
-            }}
-            className="w-full rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100 sm:w-auto"
-            title="Request help organizing a larger group activity"
-          >
-            Request large group
-          </button>
-        </div>
-      </div>
-
-      <div className="mb-6 grid gap-3 md:grid-cols-2">
-        {(user?.role !== 'expert') && (
-          <div className="group rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-200">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                  <path
-                    d="M12 3l4 7-4 11-4-11 4-7z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </span>
-              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
-                For Participants
-              </p>
+        <div className="mt-4">
+          <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <label htmlFor="trails-search" className="sr-only">
+                Search trails
+              </label>
+              <input
+                id="trails-search"
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onBlur={() => {
+                  if (!isDesktop()) return;
+                  setSearch(searchInput.trim());
+                }}
+                placeholder="Search by trail name, description, or location…"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-emerald-400"
+              />
             </div>
-            <p>
-              Discover local trails with safety tags, distance, and difficulty. Request a
-              guided outing from verified experts when you&apos;re ready.
-            </p>
-            <button
-              type="button"
-              onClick={() => router.push('/events')}
-              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-            >
-              Explore events
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
-        )}
-        {(user?.role !== 'participant') && (
-          <div className="group rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                  <path
-                    d="M4 12h16M12 4v16"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
-                For Experts
-              </p>
+            <div>
+              <label htmlFor="trails-sport-inline" className="sr-only">
+                Trail category
+              </label>
+              <select
+                id="trails-sport-inline"
+                value={sport}
+                onChange={(e) => setSport(e.target.value as typeof sport)}
+                className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-emerald-900 dark:bg-slate-950 dark:text-emerald-100"
+              >
+                <option value="">All trail categories</option>
+                {TRAIL_SPORTS.map((sportOption) => (
+                  <option key={sportOption.value} value={sportOption.value}>
+                    {sportOption.label}
+                  </option>
+                ))}
+              </select>
             </div>
-            <p>
-              Publish your best trails, manage safety labels, and showcase routes that help
-              your community discover guided experiences.
-            </p>
-            <button
-              type="button"
-              onClick={() => router.push('/trails/create')}
-              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-            >
-              Create a trail
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      <form
-        onSubmit={handleSearch}
-        className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6 dark:bg-slate-900/60"
-        aria-label="Trail filters"
-      >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-          <div>
-            <label htmlFor="trails-difficulty" className="block text-sm font-medium mb-2">
-              Difficulty
-            </label>
-            <select
-              id="trails-difficulty"
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as Difficulty | '')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="">All</option>
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="trails-location" className="block text-sm font-medium mb-2">
-              Location
-            </label>
-            <input
-              id="trails-location"
-              type="text"
-              value={locationInput}
-              onChange={(e) => setLocationInput(e.target.value)}
-              onBlur={() => {
-                if (!isDesktop()) return;
-                setLocation(locationInput.trim());
-              }}
-              placeholder="City or region..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label htmlFor="trails-sport" className="block text-sm font-medium mb-2">
-              Trail Category
-            </label>
-            <select
-              id="trails-sport"
-              value={sport}
-              onChange={(e) => setSport(e.target.value as typeof sport)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="">All trail categories</option>
-              {TRAIL_SPORTS.map((sportOption) => (
-                <option key={sportOption.value} value={sportOption.value}>
-                  {sportOption.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="trails-distance-min" className="block text-sm font-medium mb-2">
-              Min distance (km)
-            </label>
-            <input
-              id="trails-distance-min"
-              type="number"
-              min="0"
-              value={distanceMinInput}
-              onChange={(e) => setDistanceMinInput(e.target.value)}
-              onBlur={() => {
-                if (!isDesktop()) return;
-                setDistanceMin(distanceMinInput.trim());
-              }}
-              placeholder="e.g. 10"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label htmlFor="trails-distance-max" className="block text-sm font-medium mb-2">
-              Max distance (km)
-            </label>
-            <input
-              id="trails-distance-max"
-              type="number"
-              min="0"
-              value={distanceMaxInput}
-              onChange={(e) => setDistanceMaxInput(e.target.value)}
-              onBlur={() => {
-                if (!isDesktop()) return;
-                setDistanceMax(distanceMaxInput.trim());
-              }}
-              placeholder="e.g. 40"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
           </div>
         </div>
         {hasActiveFilters && (
@@ -1225,33 +1115,132 @@ function TrailsPageContent() {
             )}
           </div>
         )}
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 sm:w-auto"
-          >
-            Search
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchInput('');
-              setSearch('');
-              setDifficulty('');
-              setLocationInput('');
-              setLocation('');
-              setSport('');
-              setDistanceMin('');
-              setDistanceMinInput('');
-              setDistanceMax('');
-              setDistanceMaxInput('');
-            }}
-            className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto"
-          >
-            Reset All
-          </button>
-        </div>
-      </form>
+      </div>
+
+      <Dialog.Root open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Filter trails
+                </Dialog.Title>
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  Narrow results by difficulty, location, sport type, and distance.
+                </p>
+              </div>
+              <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+                Close
+              </Dialog.Close>
+            </div>
+            <form
+              onSubmit={(event) => {
+                handleSearch(event);
+                setFiltersOpen(false);
+              }}
+              className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2"
+              aria-label="Trail filters"
+            >
+              <div>
+                <label htmlFor="trails-difficulty" className="mb-2 block text-sm font-medium">
+                  Difficulty
+                </label>
+                <select
+                  id="trails-difficulty"
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value as Difficulty | '')}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="">All</option>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="trails-location" className="mb-2 block text-sm font-medium">
+                  Location
+                </label>
+                <input
+                  id="trails-location"
+                  type="text"
+                  value={locationInput}
+                  onChange={(e) => setLocationInput(e.target.value)}
+                  onBlur={() => {
+                    if (!isDesktop()) return;
+                    setLocation(locationInput.trim());
+                  }}
+                  placeholder="City or region..."
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label htmlFor="trails-distance-min" className="mb-2 block text-sm font-medium">
+                  Min distance (km)
+                </label>
+                <input
+                  id="trails-distance-min"
+                  type="number"
+                  min="0"
+                  value={distanceMinInput}
+                  onChange={(e) => setDistanceMinInput(e.target.value)}
+                  onBlur={() => {
+                    if (!isDesktop()) return;
+                    setDistanceMin(distanceMinInput.trim());
+                  }}
+                  placeholder="e.g. 10"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label htmlFor="trails-distance-max" className="mb-2 block text-sm font-medium">
+                  Max distance (km)
+                </label>
+                <input
+                  id="trails-distance-max"
+                  type="number"
+                  min="0"
+                  value={distanceMaxInput}
+                  onChange={(e) => setDistanceMaxInput(e.target.value)}
+                  onBlur={() => {
+                    if (!isDesktop()) return;
+                    setDistanceMax(distanceMaxInput.trim());
+                  }}
+                  placeholder="e.g. 40"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="submit"
+                  className="w-full rounded-lg bg-green-600 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 sm:w-auto"
+                >
+                  Apply filters
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchInput('');
+                    setSearch('');
+                    setDifficulty('');
+                    setLocationInput('');
+                    setLocation('');
+                    setSport('');
+                    setDistanceMin('');
+                    setDistanceMinInput('');
+                    setDistanceMax('');
+                    setDistanceMaxInput('');
+                  }}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Reset all
+                </button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {isRefreshingResults && (
         <div
@@ -1390,6 +1379,66 @@ function TrailsPageContent() {
           )}
         </>
       )}
+
+      <div className="mt-10 grid gap-4 md:grid-cols-2">
+        {(user?.role !== 'expert') && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-200">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                  <path d="M12 3l4 7-4 11-4-11 4-7z" fill="currentColor" />
+                </svg>
+              </span>
+              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
+                For Participants
+              </p>
+            </div>
+            <p>
+              Discover local trails with safety tags, distance, and difficulty. Request a guided
+              outing from verified experts when you&apos;re ready.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push('/events')}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+            >
+              Explore events
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        )}
+        {(user?.role !== 'participant') && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                  <path
+                    d="M4 12h16M12 4v16"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
+                For Experts
+              </p>
+            </div>
+            <p>
+              Publish your best trails, manage safety labels, and showcase routes that help your
+              community discover guided experiences.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push('/trails/create')}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+            >
+              Create a trail
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        )}
+      </div>
 
       <Dialog.Root
         open={mapOpen}
