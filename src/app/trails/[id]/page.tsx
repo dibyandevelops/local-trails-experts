@@ -685,330 +685,416 @@ const TrailPage: React.FunctionComponent = () => {
     }
     router.push('/trails', { scroll: false });
   };
+  const showActionsSection = Boolean(
+    canUploadRoute ||
+      (currentUser?.role === 'admin' && hasRoute) ||
+      trailImages.length > 0 ||
+      canUploadPhotos ||
+      currentUser?.role === 'admin' ||
+      currentUser?.role === 'expert' ||
+      canRequestTrail ||
+      uploadSuccess ||
+      uploadError ||
+      photoUploadMessage ||
+      actionMessage ||
+      requestMessage
+  );
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-8">
-      <div className="mb-6">
-        <div className="mb-4 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleBackToTrails}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            ← Back to trails
-          </button>
-          <button
-            type="button"
-            onClick={copyTrailLink}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Share
-          </button>
-        </div>
-        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={handleBackToTrails}
+          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+        >
+          ← Back to trails
+        </button>
+        <button
+          type="button"
+          onClick={copyTrailLink}
+          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+        >
+          Share
+        </button>
+      </div>
+
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-sm dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
+        <div className="pointer-events-none absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
+
+        <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <h1 className="text-3xl font-bold text-green-800 sm:text-4xl">{trail.name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
+                Trail profile
+              </span>
               {trail.status === 'pending' && (
-                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
                   Pending
                 </span>
               )}
             </div>
-            <p className="text-gray-600">{trail.location}</p>
-            <p className="mt-1 text-xs text-gray-500">
+            <h1 className="mt-3 text-3xl font-extrabold text-green-800 sm:text-4xl dark:text-green-200">
+              {trail.name}
+            </h1>
+            <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
               Added by{' '}
-              <span className="font-semibold text-gray-700">
+              <span className="font-semibold text-gray-700 dark:text-slate-200">
                 {(trail.submitted_by_name || trail.expert_name || trail.created_by || '').trim() ||
                   'LocoXperts'}
               </span>
               {trail.submitted_by_email ? ` (${trail.submitted_by_email})` : ''}
             </p>
-          </div>
-        </div>
-        <div className="mb-4 flex flex-wrap items-stretch gap-2">
-          {canUploadRoute && (
-            <label className="w-full cursor-pointer rounded-lg bg-green-700 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-green-800 sm:w-auto">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".gpx"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              {uploading ? 'Uploading...' : 'Upload GPX Route'}
-            </label>
-          )}
-          {currentUser?.role === 'admin' && hasRoute && (
-            <button
-              type="button"
-              onClick={async () => {
-                const confirmed = window.confirm('Remove the GPX route for this trail?');
-                if (!confirmed) return;
-                await removeRouteMutation.mutateAsync();
-              }}
-              disabled={removeRouteMutation.isPending}
-              className="w-full rounded-lg border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 sm:w-auto disabled:opacity-60"
-            >
-              {removeRouteMutation.isPending ? 'Removing...' : 'Remove GPX Route'}
-            </button>
-          )}
-          {trailImages.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setActiveImageIndex(0);
-                setGalleryModalOpen(true);
-              }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto"
-            >
-              View Trail Photos
-            </button>
-          )}
-          {canUploadPhotos && (
-            <label className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-center text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-              {photoUploading ? 'Uploading Photos...' : 'Upload Trail Photos'}
-            </label>
-          )}
-          {currentUser?.role === 'admin' && (
-            <button
-              type="button"
-              onClick={() => router.push(`/trails/create?trailId=${trailId}`)}
-              className="w-full rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100 sm:w-auto"
-            >
-              Edit Trail
-            </button>
-          )}
-          {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
-            <button
-              type="button"
-              onClick={() => setCreateEventOpen(true)}
-              className="w-full rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-100 sm:w-auto"
-            >
-              Create Event
-            </button>
-          )}
-          {canRequestTrail && (
-            <button
-              type="button"
-              disabled={loadingCurrentUser}
-              onClick={() => {
-                if (loadingCurrentUser) {
-                  setRequestMessage('Checking your account. Please try again in a second.');
-                  return;
-                }
-                if (!currentUser) {
-                  const next =
-                    typeof window !== 'undefined'
-                      ? `${window.location.pathname}${window.location.search}`
-                      : `/trails/${trail.id}`;
-                  window.dispatchEvent(
-                    new CustomEvent('open-register', {
-                      detail: {
-                        message: 'Create a participant account to request a trail activity.',
-                        next,
-                      },
-                    })
-                  );
-                  return;
-                }
-                setRequestMessage(null);
-                setRequestModalOpen(true);
-              }}
-              className="w-full rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-            >
-              Request This Trail
-            </button>
-          )}
-          {uploadSuccess && (
-            <span className="text-sm text-green-600">Route uploaded successfully.</span>
-          )}
-          {uploadError && <span className="text-sm text-red-600">{uploadError}</span>}
-          {photoUploadMessage && (
-            <span className="text-sm text-gray-600">{photoUploadMessage}</span>
-          )}
-          {actionMessage && <span className="text-sm text-gray-600">{actionMessage}</span>}
-          {requestMessage && <span className="text-sm text-gray-600">{requestMessage}</span>}
-        </div>
 
-        {trail.description && (
-          <p className="text-gray-700 mb-4">{trail.description}</p>
-        )}
-
-        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <span className="rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-800 text-center">
-            {trail.difficulty}
-          </span>
-          {trail.sport_type && (
-            <span className="rounded-lg bg-sky-100 px-3 py-2 text-center text-sm text-sky-800">
-              {getSportLabel(trail.sport_type)}
-            </span>
-          )}
-          {routeData?.totalDistance ? (
-            <span className="rounded-lg bg-blue-100 px-3 py-2 text-center text-sm text-blue-800">
-              Distance: {routeData.totalDistance.toFixed(2)} km
-            </span>
-          ) : trail.distance_km ? (
-            <span className="rounded-lg bg-blue-100 px-3 py-2 text-center text-sm text-blue-800">
-              Distance: {trail.distance_km} km
-            </span>
-          ) : null}
-          {routeData?.elevationGain ? (
-            <span className="rounded-lg bg-purple-100 px-3 py-2 text-center text-sm text-purple-800">
-              Elevation gain: +{routeData.elevationGain.toFixed(0)} m ↑
-            </span>
-          ) : trail.elevation_gain_m ? (
-            <span className="rounded-lg bg-purple-100 px-3 py-2 text-center text-sm text-purple-800">
-              Elevation gain: {trail.elevation_gain_m} m
-            </span>
-          ) : null}
-          {routeData?.elevationLoss ? (
-            <span className="rounded-lg bg-red-100 px-3 py-2 text-center text-sm text-red-800">
-              Elevation loss: -{routeData.elevationLoss.toFixed(0)} m ↓
-            </span>
-          ) : null}
-          {trail.estimated_time_hours && (
-            <span className="rounded-lg bg-orange-100 px-3 py-2 text-center text-sm text-orange-800">
-              Estimated time: ~{trail.estimated_time_hours} hours
-            </span>
-          )}
-        </div>
-
-        {!!trail.safety_labels?.length && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {trail.safety_labels.map((label) => (
-              <span
-                key={`${trail.id}-safe-${label}`}
-                className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
-              >
-                {getSafetyLabelText(label)}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {trail.sport_type && (
+                <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-200">
+                  {getSportLabel(trail.sport_type)}
+                </span>
+              )}
+              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                {trail.difficulty}
               </span>
-            ))}
-          </div>
-        )}
+            </div>
 
-        {canManageTrail && (
-          <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <h2 className="mb-2 text-base font-semibold text-gray-900">
-              Safety Labels
-            </h2>
-            <p className="mb-3 text-sm text-gray-600">
-              Update safety labels and manage this trail.
-            </p>
-            <div className="mb-3 flex flex-wrap gap-2">
-              {TRAIL_SAFETY_OPTIONS.map((option) => {
-                const selected = safetyDraft.includes(option.value);
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => toggleSafetyLabel(option.value)}
-                    className={`rounded-full border px-3 py-1 text-sm ${
-                      selected
-                        ? 'border-amber-600 bg-amber-500 text-white'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-amber-400'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <select
-                value={trail.sport_type || 'mtb'}
-                onChange={async (e) => {
-                  try {
-                    await updateTrailMutation.mutateAsync({
-                      sport_type: e.target.value as Trail['sport_type'],
-                    });
-                    setAdminMessage('Trail sport updated.');
-                  } catch (err) {
-                    setAdminMessage(
-                      err instanceof Error
-                        ? err.message
-                        : 'Failed to update sport type'
-                    );
-                  }
-                }}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-              >
-                {TRAIL_SPORTS.map((sport) => (
-                  <option key={sport.value} value={sport.value}>
-                    {sport.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleSaveSafetyLabels}
-                disabled={updateTrailMutation.isPending}
-                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {updateTrailMutation.isPending ? 'Saving...' : 'Save Labels'}
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteTrail}
-                disabled={deleteTrailMutation.isPending || hideTrailMutation.isPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {deleteTrailMutation.isPending || hideTrailMutation.isPending
-                  ? 'Deleting...'
-                  : 'Delete Trail'}
-              </button>
-            </div>
-            {adminMessage && (
-              <p className="mt-2 text-sm text-gray-700">{adminMessage}</p>
+            {trail.description && (
+              <p className="mt-4 text-sm text-gray-700 dark:text-slate-200">
+                {trail.description}
+              </p>
+            )}
+
+            {!!trail.safety_labels?.length && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                  Safety recommendations
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {trail.safety_labels.map((label) => (
+                    <span
+                      key={`${trail.id}-safe-${label}`}
+                      className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                    >
+                      {getSafetyLabelText(label)}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        )}
 
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-emerald-200/70 bg-white/90 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                Trail metrics
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {(routeData?.totalDistance || trail.distance_km) && (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-3 text-center text-xs text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-100">
+                    <div className="uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                      Distance
+                    </div>
+                    <div className="mt-1 text-sm font-semibold">
+                      {routeData?.totalDistance
+                        ? `${routeData.totalDistance.toFixed(2)} km`
+                        : `${trail.distance_km} km`}
+                    </div>
+                  </div>
+                )}
+                {(routeData?.elevationGain || trail.elevation_gain_m) && (
+                  <div className="rounded-xl border border-purple-100 bg-purple-50 px-3 py-3 text-center text-xs text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-100">
+                    <div className="uppercase tracking-wide text-purple-700 dark:text-purple-300">
+                      Elevation gain
+                    </div>
+                    <div className="mt-1 text-sm font-semibold">
+                      {routeData?.elevationGain
+                        ? `+${routeData.elevationGain.toFixed(0)} m`
+                        : `${trail.elevation_gain_m} m`}
+                    </div>
+                  </div>
+                )}
+                {routeData?.elevationLoss && (
+                  <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-center text-xs text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
+                    <div className="uppercase tracking-wide text-rose-700 dark:text-rose-300">
+                      Elevation loss
+                    </div>
+                    <div className="mt-1 text-sm font-semibold">
+                      -{routeData.elevationLoss.toFixed(0)} m
+                    </div>
+                  </div>
+                )}
+                {trail.estimated_time_hours && (
+                  <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-center text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                    <div className="uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                      Estimated time
+                    </div>
+                    <div className="mt-1 text-sm font-semibold">
+                      ~{trail.estimated_time_hours} hrs
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {showActionsSection && (
+              <div className="rounded-2xl border border-emerald-200/70 bg-white/90 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                  Actions
+                </p>
+                <div className="mt-3 flex flex-wrap items-stretch gap-2">
+                  {canUploadRoute && (
+                    <label className="w-full cursor-pointer rounded-full bg-green-700 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-green-800 sm:w-auto">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".gpx"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      {uploading ? 'Uploading...' : 'Upload GPX Route'}
+                    </label>
+                  )}
+                  {currentUser?.role === 'admin' && hasRoute && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const confirmed = window.confirm('Remove the GPX route for this trail?');
+                        if (!confirmed) return;
+                        await removeRouteMutation.mutateAsync();
+                      }}
+                      disabled={removeRouteMutation.isPending}
+                      className="w-full rounded-full border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 sm:w-auto disabled:opacity-60"
+                    >
+                      {removeRouteMutation.isPending ? 'Removing...' : 'Remove GPX Route'}
+                    </button>
+                  )}
+                  {trailImages.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveImageIndex(0);
+                        setGalleryModalOpen(true);
+                      }}
+                      className="w-full rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      View Trail Photos
+                    </button>
+                  )}
+                  {canUploadPhotos && (
+                    <label className="w-full cursor-pointer rounded-full border border-gray-300 bg-white px-4 py-2 text-center text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                      {photoUploading ? 'Uploading Photos...' : 'Upload Trail Photos'}
+                    </label>
+                  )}
+                  {currentUser?.role === 'admin' && (
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/trails/create?trailId=${trailId}`)}
+                      className="w-full rounded-full border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100 sm:w-auto"
+                    >
+                      Edit Trail
+                    </button>
+                  )}
+                  {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
+                    <button
+                      type="button"
+                      onClick={() => setCreateEventOpen(true)}
+                      className="w-full rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-100 sm:w-auto"
+                    >
+                      Create Event
+                    </button>
+                  )}
+                  {canRequestTrail && (
+                    <button
+                      type="button"
+                      disabled={loadingCurrentUser}
+                      onClick={() => {
+                        if (loadingCurrentUser) {
+                          setRequestMessage('Checking your account. Please try again in a second.');
+                          return;
+                        }
+                        if (!currentUser) {
+                          const next =
+                            typeof window !== 'undefined'
+                              ? `${window.location.pathname}${window.location.search}`
+                              : `/trails/${trail.id}`;
+                          window.dispatchEvent(
+                            new CustomEvent('open-register', {
+                              detail: {
+                                message: 'Create a participant account to request a trail activity.',
+                                next,
+                              },
+                            })
+                          );
+                          return;
+                        }
+                        setRequestMessage(null);
+                        setRequestModalOpen(true);
+                      }}
+                      className="w-full rounded-full border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    >
+                      Request This Trail
+                    </button>
+                  )}
+                </div>
+
+                {(uploadSuccess ||
+                  uploadError ||
+                  photoUploadMessage ||
+                  actionMessage ||
+                  requestMessage) && (
+                  <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                    {uploadSuccess && (
+                      <span className="text-green-600">Route uploaded successfully.</span>
+                    )}
+                    {uploadError && <span className="text-red-600">{uploadError}</span>}
+                    {photoUploadMessage && (
+                      <span className="text-gray-600">{photoUploadMessage}</span>
+                    )}
+                    {actionMessage && <span className="text-gray-600">{actionMessage}</span>}
+                    {requestMessage && <span className="text-gray-600">{requestMessage}</span>}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {canManageTrail && (
+        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+                Safety Labels
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-slate-300">
+                Update safety labels and manage this trail.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {TRAIL_SAFETY_OPTIONS.map((option) => {
+              const selected = safetyDraft.includes(option.value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => toggleSafetyLabel(option.value)}
+                  className={`rounded-full border px-3 py-1 text-sm ${
+                    selected
+                      ? 'border-amber-600 bg-amber-500 text-white'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-amber-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <select
+              value={trail.sport_type || 'mtb'}
+              onChange={async (e) => {
+                try {
+                  await updateTrailMutation.mutateAsync({
+                    sport_type: e.target.value as Trail['sport_type'],
+                  });
+                  setAdminMessage('Trail sport updated.');
+                } catch (err) {
+                  setAdminMessage(
+                    err instanceof Error ? err.message : 'Failed to update sport type'
+                  );
+                }
+              }}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            >
+              {TRAIL_SPORTS.map((sport) => (
+                <option key={sport.value} value={sport.value}>
+                  {sport.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleSaveSafetyLabels}
+              disabled={updateTrailMutation.isPending}
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {updateTrailMutation.isPending ? 'Saving...' : 'Save Labels'}
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteTrail}
+              disabled={deleteTrailMutation.isPending || hideTrailMutation.isPending}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {deleteTrailMutation.isPending || hideTrailMutation.isPending
+                ? 'Deleting...'
+                : 'Delete Trail'}
+            </button>
+          </div>
+          {adminMessage && (
+            <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">{adminMessage}</p>
+          )}
+        </section>
+      )}
+
+      <div className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              Trail route
+            </p>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Map & elevation context
+            </h2>
+          </div>
+        </div>
+        <MapSection
+          hasRoute={hasRoute}
+          routeGeoJSON={routeGeoJSON}
+          routeData={routeData}
+          mapCenter={mapCenter}
+          mapStyle={mapStyle}
+          mapStyleMode={mapStyleMode}
+          onStyleModeChange={setMapStyleMode}
+        />
       </div>
 
-      <MapSection
-        hasRoute={hasRoute}
-        routeGeoJSON={routeGeoJSON}
-        routeData={routeData}
-        mapCenter={mapCenter}
-        mapStyle={mapStyle}
-        mapStyleMode={mapStyleMode}
-        onStyleModeChange={setMapStyleMode}
-      />
-
       {trailImages.length > 0 && (
-        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Trail Photos</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Trail Photos</h2>
             <button
               type="button"
               onClick={() => {
                 setActiveImageIndex(0);
                 setGalleryModalOpen(true);
               }}
-              className="text-sm font-medium text-green-700 hover:text-green-800"
+              className="text-sm font-medium text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
             >
               Open Gallery
             </button>
           </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {trailImages.slice(0, 4).map((imageUrl, index) => (
-                <button
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {trailImages.slice(0, 4).map((imageUrl, index) => (
+              <button
                 key={`${imageUrl}-${index}`}
                 type="button"
                 onClick={() => {
                   setActiveImageIndex(index);
                   setGalleryModalOpen(true);
                 }}
-                  className="relative h-32 overflow-hidden rounded-lg ring-offset-2 transition hover:scale-[1.01] hover:ring-2 hover:ring-green-400"
-                >
+                className="relative h-32 overflow-hidden rounded-lg ring-offset-2 transition hover:scale-[1.01] hover:ring-2 hover:ring-green-400 dark:ring-offset-slate-900"
+              >
                 <Image
                   src={imageUrl}
                   alt={`${trail.name} trail photo ${index + 1}`}
