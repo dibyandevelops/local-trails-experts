@@ -695,7 +695,7 @@ function TrailsPageContent() {
   }));
   const isAdmin = user?.role === 'admin';
   const isParticipant = user?.role === 'participant';
-  const canGroupRequest = true;
+  const canGroupRequest = user?.role !== 'expert';
   const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
   const hidingTrailId = hideMutation.isPending ? hideMutation.variables : null;
   const unhidingTrailId = unhideMutation.isPending ? unhideMutation.variables : null;
