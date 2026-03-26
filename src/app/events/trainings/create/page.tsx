@@ -155,13 +155,27 @@ export default function CreateTrainingPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-2 text-3xl font-bold text-green-800 sm:text-4xl">
-        Organize Training
-      </h1>
-      <p className="mb-6 text-sm text-gray-600">
-        Use this focused form for coaching sessions and skill trainings.
-      </p>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+        <div className="relative">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Trainings
+            </span>
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Coaching
+            </span>
+          </div>
+          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+            Organize Training
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            Plan focused coaching sessions and skill blocks led by trusted local experts.
+          </p>
+        </div>
+      </section>
 
       {loadingUser ? (
         <div className="text-gray-600">Loading...</div>
@@ -172,7 +186,7 @@ export default function CreateTrainingPage() {
       ) : (
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-md"
+          className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
         >
           {isExpertUnverified && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

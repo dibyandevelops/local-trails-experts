@@ -113,43 +113,51 @@ export default function ExpertJoinPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <section className="mb-10 text-center">
-        <p className="text-sm font-semibold tracking-wide text-green-700 uppercase mb-2">
-          For Guided Trails & Coaches
-        </p>
-        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
-          Become a Verified Sports Expert
-        </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Share your local knowledge from anywhere in the world. Host guided
-          MTB rides, hikes, trail runs, and performance training sessions for
-          riders, runners, and travelers.
-        </p>
+    <div className="max-w-4xl mx-auto space-y-10">
+      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-6 py-8 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-hero-glow/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-20 h-56 w-56 rounded-full bg-hero-glow/30 blur-3xl" />
+        <div className="relative text-left">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              For Experts
+            </span>
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Nepal
+            </span>
+          </div>
+          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+            Become a Verified Sports Expert
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300 sm:text-base">
+            Share your local knowledge and host guided MTB rides, hikes, trail runs, and
+            performance training sessions for riders and travelers.
+          </p>
+        </div>
       </section>
 
-      <section className="grid md:grid-cols-2 gap-8 mb-10">
-        <div className="bg-white border border-green-100 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-3 text-gray-900">
-            Why get a <span className="text-green-700">Verified Expert Badge</span>?
+      <section className="grid md:grid-cols-2 gap-8">
+        <div className="rounded-2xl border border-hero-border/70 bg-white/90 p-6 shadow-sm dark:bg-slate-900/80">
+          <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">
+            Why get a <span className="text-hero-pill-text">Verified Expert Badge</span>?
           </h2>
-          <ul className="space-y-3 text-sm text-gray-700">
+          <ul className="space-y-3 text-sm text-gray-700 dark:text-slate-200">
             <li className="flex gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-green-500" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
               <span>Stand out in search results for your city and sport categories.</span>
             </li>
             <li className="flex gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-green-500" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
               <span>Build trust with visiting riders, runners, and hikers.</span>
             </li>
             <li className="flex gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-green-500" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
               <span>Access upcoming features like expert-only events and group bookings.</span>
             </li>
           </ul>
         </div>
 
-        <div className="bg-green-900 text-white rounded-2xl p-6 flex flex-col justify-between">
+        <div className="rounded-2xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm">
           <div>
             <h3 className="text-xl font-semibold mb-3">Who is this for?</h3>
             <p className="text-sm text-green-100 mb-4">

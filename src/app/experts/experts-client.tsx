@@ -43,17 +43,29 @@ export default function ExpertsBrowsePage() {
   );
 
   return (
-    <div>
-      <h1 className="text-4xl font-bold mb-2 text-green-800">
-        Find Local Sports Experts
-      </h1>
-      <p className="text-sm text-gray-600 mb-6 max-w-2xl">
-        Browse verified guides, coaches, and outdoor leaders worldwide. Filter
-        by sport to find MTB guides, hiking leaders, trail running partners,
-        and training coaches.
-      </p>
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+        <div className="relative">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Experts
+            </span>
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Nepal
+            </span>
+          </div>
+          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+            Find Local Sports Experts
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+            Browse verified guides, coaches, and outdoor leaders across Nepal.
+          </p>
+        </div>
+      </section>
 
-      <div className="bg-gray-50 p-4 rounded-xl mb-8">
+      <div className="rounded-2xl border border-emerald-200/70 bg-white/80 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">City</label>

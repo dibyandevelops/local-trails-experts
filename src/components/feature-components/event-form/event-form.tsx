@@ -579,14 +579,26 @@ export default function EventForm({
   return (
     <div className="mx-auto max-w-3xl">
       {!embedded && (
-        <>
-          <h1 className="mb-2 text-3xl font-bold text-green-800 sm:text-4xl">
-            {isEditMode ? 'Edit Event' : 'Create Event'}
-          </h1>
-          <p className="mb-6 text-sm text-gray-600">
-            Choose sport first, then pick a trail (auto-fills title/details), then publish.
-          </p>
-        </>
+        <section className="relative mb-6 overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+          <div className="relative">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+                Events
+              </span>
+              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+                Local experts
+              </span>
+            </div>
+            <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+              {isEditMode ? 'Edit Event' : 'Create Event'}
+            </h1>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+              Choose a sport, pick the right trail, and publish an experience riders can trust.
+            </p>
+          </div>
+        </section>
       )}
       {!isEditMode && !embedded && (
         <div className="mb-5">
@@ -610,7 +622,7 @@ export default function EventForm({
       ) : (
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="bg-white border border-gray-200 rounded-lg shadow-md p-6 space-y-6"
+          className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-6 dark:border-slate-800 dark:bg-slate-900"
         >
           {isExpertUnverified && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

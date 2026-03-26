@@ -158,6 +158,26 @@ export default function ParticipantProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+        <div className="relative">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Participant Profile
+            </span>
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Preferences
+            </span>
+          </div>
+          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+            Keep your riding profile ready
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            Update your details, manage requests, and track upcoming rides.
+          </p>
+        </div>
+      </section>
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>

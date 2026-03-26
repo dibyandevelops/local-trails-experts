@@ -14,10 +14,27 @@ export default function CreateTrailPage() {
   const { data: user = null, isLoading: loadingUser } = useCurrentUser();
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-green-800 dark:text-green-200">
-        {isEditMode ? 'Edit Trail' : 'Create Trail'}
-      </h1>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+        <div className="relative">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Trails
+            </span>
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              GPX
+            </span>
+          </div>
+          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+            {isEditMode ? 'Edit Trail' : 'Create Trail'}
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            Upload routes, add photos, and keep Nepal’s trail network up to date.
+          </p>
+        </div>
+      </section>
 
       {loadingUser ? (
         <p className="text-gray-600 dark:text-gray-300">Loading user...</p>
@@ -26,7 +43,7 @@ export default function CreateTrailPage() {
           Unable to load user session. Please login again.
         </div>
       ) : (
-        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {isEditMode ? (
             user.role === 'admin' || user.role === 'expert' ? (
               trailId ? (

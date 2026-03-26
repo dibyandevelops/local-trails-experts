@@ -286,15 +286,29 @@ export default function EventsPageClient() {
   }, {} as Record<ExpertiseLevel, Event[]>);
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center gap-2 sm:mb-8">
-        <h1 className="text-3xl font-bold text-green-800 sm:text-4xl">Events</h1>
-        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-          Nepal
-        </span>
-      </div>
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+        <div className="relative">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Events
+            </span>
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Nepal
+            </span>
+          </div>
+          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+            Find the next ride or training
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            Browse local events, filter by expertise and sport, and join the right crew.
+          </p>
+        </div>
+      </section>
 
-      <div className="mb-6 rounded-lg bg-gray-50 p-4 sm:mb-8 sm:p-6">
+      <div className="rounded-2xl border border-emerald-200/70 bg-white/80 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70 sm:p-6">
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
             <label className="block text-sm font-medium mb-2">Your Expertise Level</label>
