@@ -22,6 +22,13 @@ const config: Config = {
         success: 'hsl(var(--color-success) / <alpha-value>)',
         warning: 'hsl(var(--color-warning) / <alpha-value>)',
         danger: 'hsl(var(--color-danger) / <alpha-value>)',
+        'hero-from': 'hsl(var(--color-hero-from) / <alpha-value>)',
+        'hero-via': 'hsl(var(--color-hero-via) / <alpha-value>)',
+        'hero-to': 'hsl(var(--color-hero-to) / <alpha-value>)',
+        'hero-border': 'hsl(var(--color-hero-border) / <alpha-value>)',
+        'hero-pill': 'hsl(var(--color-hero-pill) / <alpha-value>)',
+        'hero-pill-text': 'hsl(var(--color-hero-pill-text) / <alpha-value>)',
+        'hero-glow': 'hsl(var(--color-hero-glow) / <alpha-value>)',
       },
       borderRadius: {
         app: 'var(--radius-app)',

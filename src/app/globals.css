@@ -16,6 +16,15 @@
   --color-brand: 142 72% 29%; /* green-700-ish */
   --color-brand-contrast: 0 0% 100%;
 
+  /* Hero */
+  --color-hero-from: 151 70% 95%;
+  --color-hero-via: 0 0% 100%;
+  --color-hero-to: 74 80% 94%;
+  --color-hero-border: 151 50% 85%;
+  --color-hero-pill: 151 60% 95%;
+  --color-hero-pill-text: 151 60% 28%;
+  --color-hero-glow: 151 55% 70%;
+
   /* Status */
   --color-success: 142 72% 29%;
   --color-warning: 38 92% 50%;
@@ -48,6 +57,15 @@
 
   --color-brand: 142 70% 45%; /* emerald-ish */
   --color-brand-contrast: 144 62% 10%;
+
+  /* Hero */
+  --color-hero-from: 151 45% 12%;
+  --color-hero-via: 222 47% 11%;
+  --color-hero-to: 151 45% 20%;
+  --color-hero-border: 151 30% 25%;
+  --color-hero-pill: 151 35% 18%;
+  --color-hero-pill-text: 151 40% 75%;
+  --color-hero-glow: 151 45% 35%;
 
   --color-success: 142 70% 45%;
   --color-warning: 38 92% 50%;
