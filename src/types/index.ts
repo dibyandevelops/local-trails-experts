@@ -40,6 +40,12 @@ export interface Trail {
   sport_type?: SportType | null;
   location: string;
   safety_labels?: string[] | null;
+  is_hazardous?: boolean | null;
+  hazard_note?: string | null;
+  hazard_updated_by?: string | null;
+  hazard_updated_at?: string | null;
+  average_rating?: number | null;
+  review_count?: number | null;
   latitude: number | null;
   longitude: number | null;
   distance_km: number | null;
@@ -64,6 +70,35 @@ export interface Trail {
   onDelete?: () => void;
   onHide?: () => void;
   onUnhide?: () => void;
+}
+
+export interface ReviewSummary {
+  averageRating: number;
+  count: number;
+}
+
+export interface TrailReview {
+  id: string;
+  trail_id: string;
+  reviewer_user_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  updated_at: string | null;
+  reviewer_name?: string | null;
+  reviewer_photo_url?: string | null;
+}
+
+export interface ExpertReview {
+  id: string;
+  expert_user_id: string;
+  reviewer_user_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  updated_at: string | null;
+  reviewer_name?: string | null;
+  reviewer_photo_url?: string | null;
 }
 
 export interface Event {
@@ -135,6 +170,8 @@ export interface User {
   city: string | null;
   sports: string[] | null;
   is_verified_expert: boolean;
+  average_rating?: number | null;
+  review_count?: number | null;
   phone?: string | null;
   phone_verified_at?: string | null;
   google_sub?: string | null;

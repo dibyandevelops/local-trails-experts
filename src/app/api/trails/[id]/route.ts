@@ -77,11 +77,8 @@ export async function PATCH(
 
     const trail = existing.rows[0];
     const isAdmin = auth.role === 'admin';
-    const isOwnerExpert = auth.role === 'expert' && trail.submitted_by_user_id === auth.sub;
-
-    if (!isAdmin && !isOwnerExpert) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const isExpert = auth.role === 'expert';
+    const isOwnerExpert = isExpert && trail.submitted_by_user_id === auth.sub;
 
     if (body.name && body.name.trim()) {
       const nameCheck = await pool.query(
@@ -94,6 +91,41 @@ export async function PATCH(
           { status: 409 }
         );
       }
+    }
+
+    const hazardFieldsProvided =
+      Object.prototype.hasOwnProperty.call(body, 'is_hazardous') ||
+      Object.prototype.hasOwnProperty.call(body, 'hazard_note');
+
+    if (hazardFieldsProvided) {
+      if (!(isAdmin || isExpert)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const result = await pool.query(
+        `
+        UPDATE trails
+        SET
+          is_hazardous = $1,
+          hazard_note = $2,
+          hazard_updated_by = $3,
+          hazard_updated_at = NOW(),
+          updated_at = NOW()
+        WHERE id = $4
+        RETURNING *
+        `,
+        [
+          body.is_hazardous ?? trail.is_hazardous ?? false,
+          body.hazard_note ?? trail.hazard_note ?? null,
+          auth.sub,
+          id,
+        ]
+      );
+
+      return NextResponse.json({ trail: result.rows[0] }, { status: 200 });
+    }
+
+    if (!isAdmin && !isOwnerExpert) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Handle hide/unhide action using is_hidden column

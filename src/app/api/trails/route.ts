@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     const distanceMinRaw = searchParams.get('distanceMin');
     const distanceMaxRaw = searchParams.get('distanceMax');
     const status = searchParams.get('status');
+    const hazardous = searchParams.get('hazardous') === 'true';
     const page = Math.max(1, Number(searchParams.get('page') || '1') || 1);
     const pageSizeRaw = Number(searchParams.get('pageSize') || '12') || 12;
     const pageSize = Math.min(50, Math.max(1, pageSizeRaw));
@@ -77,6 +78,10 @@ export async function GET(request: NextRequest) {
         params.push(max);
         paramIndex++;
       }
+    }
+
+    if (hazardous) {
+      whereClause += ` AND t.is_hazardous = TRUE`;
     }
 
     if (auth?.role === 'admin' && status) {
@@ -134,12 +139,22 @@ export async function GET(request: NextRequest) {
         t.submitted_by_user_id,
         t.status,
         t.is_hidden,
+        COALESCE(tr.review_count, 0) AS review_count,
+        COALESCE(tr.average_rating, 0) AS average_rating,
         CASE
           WHEN u.role = 'admin' THEN 'LocoMTBGroup'
           ELSE u.name
         END as created_by
       FROM trails t
       LEFT JOIN users u ON t.submitted_by_user_id = u.id
+      LEFT JOIN (
+        SELECT
+          trail_id,
+          AVG(rating)::float AS average_rating,
+          COUNT(*)::int AS review_count
+        FROM trail_reviews
+        GROUP BY trail_id
+      ) tr ON tr.trail_id = t.id
       ${whereClause}
       ORDER BY ${orderBy}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}

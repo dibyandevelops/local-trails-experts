@@ -11,6 +11,7 @@ export const QUERY_KEYS = {
       distanceMin?: string;
       distanceMax?: string;
       sort?: string;
+      hazardous?: boolean;
     }) =>
       [
         'trails',
@@ -21,6 +22,7 @@ export const QUERY_KEYS = {
         filters?.distanceMin || '',
         filters?.distanceMax || '',
         filters?.sort || '',
+        filters?.hazardous ? 'true' : 'false',
       ] as const,
     forEvents: ['trails-for-events'] as const,
     paginatedList: (filters?: {
@@ -31,6 +33,7 @@ export const QUERY_KEYS = {
       distanceMin?: string;
       distanceMax?: string;
       sort?: string;
+      hazardous?: boolean;
       page?: number;
       pageSize?: number;
     }) =>
@@ -43,6 +46,7 @@ export const QUERY_KEYS = {
         filters?.distanceMin || '',
         filters?.distanceMax || '',
         filters?.sort || '',
+        filters?.hazardous ? 'true' : 'false',
         String(filters?.page || 1),
         String(filters?.pageSize || 12),
       ] as const,
@@ -54,6 +58,7 @@ export const QUERY_KEYS = {
       distanceMin?: string;
       distanceMax?: string;
       sort?: string;
+      hazardous?: boolean;
       pageSize?: number;
     }) =>
       [
@@ -65,9 +70,11 @@ export const QUERY_KEYS = {
         filters?.distanceMin || '',
         filters?.distanceMax || '',
         filters?.sort || '',
+        filters?.hazardous ? 'true' : 'false',
         String(filters?.pageSize || 12),
       ] as const,
     byId: (id?: string | null) => ['trail', id || ''] as const,
+    reviews: (id?: string | null) => ['trail-reviews', id || ''] as const,
   },
   experts: {
     verified: ['experts', 'verified'] as const,
@@ -81,6 +88,7 @@ export const QUERY_KEYS = {
       ] as const,
     events: (expertId?: string) => ['experts-events', expertId || ''] as const,
     strava: (expertId?: string) => ['experts-strava', expertId || ''] as const,
+    reviews: (expertId?: string) => ['expert-reviews', expertId || ''] as const,
   },
   events: {
     byId: (id?: string | null) => ['event', id || ''] as const,
