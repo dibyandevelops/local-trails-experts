@@ -124,13 +124,30 @@ export default function RegisterForm({
 
   return (
     <div className={embedded ? '' : 'max-w-lg mx-auto'}>
-      <h1 className="text-4xl font-bold mb-2 text-green-800 dark:text-green-200">
-        Join the Adventure!
-      </h1>
-      <p className="text-sm text-gray-600 mb-6 max-w-2xl dark:text-slate-300">
-        Create your free account to unlock trails, connect with verified guides and coaches,
-        and never miss an event.
-      </p>
+      {!embedded && (
+        <div className="relative mb-6 overflow-hidden rounded-2xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-4 py-4">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-hero-glow/40 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-hero-glow/30 blur-3xl" />
+          <div className="relative">
+            <div className="mb-2 flex flex-wrap gap-2">
+              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+                Join
+              </span>
+            </div>
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+              Join the Adventure!
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              Create your free account to unlock trails, connect with verified guides,
+              and never miss an event.
+            </p>
+            <div className="mt-3 flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-300">
+              <span>• Save your favorite trails</span>
+              <span>• Join expert-led rides and trainings</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}

@@ -107,13 +107,26 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   return (
     <div className="mx-auto max-w-lg">
       {!embedded && (
-        <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3 dark:border-green-900/70 dark:bg-green-950/40">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-            Login
-          </h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-            Select your role and continue to your workspace.
-          </p>
+        <div className="relative mb-4 overflow-hidden rounded-2xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-4 py-4">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-hero-glow/40 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-hero-glow/30 blur-3xl" />
+          <div className="relative">
+            <div className="mb-2 flex flex-wrap gap-2">
+              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+                Sign in
+              </span>
+            </div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              Login
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              Select your role and continue to your workspace.
+            </p>
+            <div className="mt-3 flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-300">
+              <span>• Access trails and upcoming rides</span>
+              <span>• Manage your profile and bookings</span>
+            </div>
+          </div>
         </div>
       )}
       <form
