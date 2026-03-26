@@ -33,6 +33,17 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
   const hasMultipleImages = images.length > 1;
   const hasImage = images.length > 0;
+  const averageRating = typeof trail.average_rating === 'number' ? trail.average_rating : 0;
+  const reviewCount = trail.review_count || 0;
+  const renderStars = (rating: number) => (
+    <div className="flex items-center gap-0.5 text-amber-500">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <span key={`trail-card-star-${trail.id}-${index}`} className="text-[11px]">
+          {index < Math.round(rating) ? '★' : '☆'}
+        </span>
+      ))}
+    </div>
+  );
 
   React.useEffect(() => {
     setActiveImageIndex(0);
@@ -147,6 +158,13 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           <h3 className="text-lg font-bold text-gray-900">{trail.name}</h3>
         </div>
         <p className="mb-2 text-sm text-gray-600">{trail.location}</p>
+        {reviewCount > 0 && (
+          <div className="mb-2 flex items-center gap-2 text-xs text-amber-700">
+            <span className="font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
+            {renderStars(averageRating)}
+            <span className="text-gray-500">({reviewCount})</span>
+          </div>
+        )}
 
         {(trail.created_by || trail.expert_name) && (
           <p className="mb-3 text-xs font-medium text-blue-600">

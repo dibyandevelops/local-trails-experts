@@ -1,9 +1,10 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Event, User } from '@/types';
-import { useQuery } from '@tanstack/react-query';
+import { Event, User, ExpertReview } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchExpertEvents,
   fetchExperts,
@@ -17,6 +18,7 @@ import VerificationDetailsContent, {
 } from '@/components/ui/verification-details-content';
 import { STRAVA_ENABLED } from '@/lib/feature-flags';
 import DateText from '@/components/ui/date-text';
+import { fetchExpertReviews, submitExpertReview } from '@/services/reviews/reviews.service';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -26,6 +28,11 @@ export default function ExpertDetailPage() {
   const params = useParams<{ id: string }>();
   const expertId = params?.id;
   const { data: currentUser } = useCurrentUser();
+  const queryClient = useQueryClient();
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewAcceptTerms, setReviewAcceptTerms] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
 
   const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
     queryKey: ['expert-detail', expertId || ''],
@@ -48,6 +55,45 @@ export default function ExpertDetailPage() {
     queryKey: QUERY_KEYS.experts.strava(expertId || ''),
     queryFn: ({ signal }) => fetchExpertStravaSummary(expertId || '', signal),
     enabled: STRAVA_ENABLED && !!expertId,
+  });
+
+  const { data: reviewData, isLoading: loadingReviews } = useQuery<{
+    reviews: ExpertReview[];
+    summary: { averageRating: number; count: number };
+  }>({
+    queryKey: QUERY_KEYS.experts.reviews(expertId || ''),
+    queryFn: ({ signal }) => fetchExpertReviews(expertId || '', signal),
+    enabled: !!expertId,
+  });
+
+  const existingReview = useMemo(
+    () =>
+      reviewData?.reviews?.find((review) => review.reviewer_user_id === currentUser?.id) ||
+      null,
+    [reviewData?.reviews, currentUser?.id]
+  );
+
+  useEffect(() => {
+    if (!existingReview) {
+      setReviewRating(5);
+      setReviewComment('');
+      return;
+    }
+    setReviewRating(existingReview.rating || 5);
+    setReviewComment(existingReview.comment || '');
+  }, [existingReview?.id]);
+
+  const reviewMutation = useMutation({
+    mutationFn: (payload: { rating: number; comment?: string }) =>
+      submitExpertReview(expertId || '', payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.experts.reviews(expertId || '') });
+      setReviewMessage('Review submitted. Thanks for sharing!');
+      setReviewAcceptTerms(false);
+    },
+    onError: (error) => {
+      setReviewMessage(error instanceof Error ? error.message : 'Failed to submit review.');
+    },
   });
 
   if (loading) {
@@ -85,6 +131,17 @@ export default function ExpertDetailPage() {
       .map((part) => part[0])
       .join('')
       .toUpperCase() || 'EX';
+  const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
+
+  const renderStars = (rating: number) => (
+    <div className="flex items-center gap-0.5 text-amber-500">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <span key={`expert-star-${index}`} className="text-sm">
+          {index < Math.round(rating) ? '★' : '☆'}
+        </span>
+      ))}
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -236,6 +293,159 @@ export default function ExpertDetailPage() {
           </div>
         </section>
       )}
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              Reviews
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+              Expert ratings & feedback
+            </h2>
+            <div className="mt-2 flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
+              <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                {reviewSummary.averageRating.toFixed(1)}
+              </span>
+              {renderStars(reviewSummary.averageRating)}
+              <span>({reviewSummary.count} reviews)</span>
+            </div>
+          </div>
+          {currentUser ? (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+              {existingReview ? 'Update your review' : 'Leave a review'}
+            </span>
+          ) : (
+            <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              Log in to review
+            </span>
+          )}
+        </div>
+
+        {currentUser && (
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setReviewMessage(null);
+              if (!reviewAcceptTerms) {
+                setReviewMessage('Please accept the terms before submitting your review.');
+                return;
+              }
+              await reviewMutation.mutateAsync({
+                rating: reviewRating,
+                comment: reviewComment,
+              });
+            }}
+            className="mt-4 grid gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                Rating
+              </label>
+              <select
+                value={reviewRating}
+                onChange={(event) => setReviewRating(Number(event.target.value))}
+                className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
+              >
+                {[5, 4, 3, 2, 1].map((value) => (
+                  <option key={`expert-rating-${value}`} value={value}>
+                    {value} star{value > 1 ? 's' : ''}
+                  </option>
+                ))}
+              </select>
+              {renderStars(reviewRating)}
+            </div>
+            <textarea
+              value={reviewComment}
+              onChange={(event) => setReviewComment(event.target.value)}
+              rows={3}
+              className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
+              placeholder="Share how this expert performed during your ride or training."
+            />
+            <label className="flex items-start gap-2 text-xs text-emerald-800 dark:text-emerald-200">
+              <input
+                type="checkbox"
+                checked={reviewAcceptTerms}
+                onChange={(event) => setReviewAcceptTerms(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>
+                I agree to the{' '}
+                <a href="/terms" className="font-semibold text-emerald-700 hover:underline">
+                  Terms &amp; Conditions
+                </a>{' '}
+                and{' '}
+                <a href="/privacy" className="font-semibold text-emerald-700 hover:underline">
+                  Privacy Policy
+                </a>
+                .
+              </span>
+            </label>
+            {reviewMessage && (
+              <p className="text-xs text-emerald-800 dark:text-emerald-200">{reviewMessage}</p>
+            )}
+            <button
+              type="submit"
+              disabled={reviewMutation.isPending || !reviewAcceptTerms}
+              className="w-full rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {reviewMutation.isPending ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}
+            </button>
+          </form>
+        )}
+
+        <div className="mt-4 space-y-3">
+          {loadingReviews ? (
+            <p className="text-sm text-gray-500 dark:text-slate-300">Loading reviews...</p>
+          ) : reviewData?.reviews?.length ? (
+            reviewData.reviews.map((review) => (
+              <div
+                key={review.id}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                      {review.reviewer_photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={review.reviewer_photo_url}
+                          alt={review.reviewer_name || 'Reviewer'}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          {(review.reviewer_name || 'R')
+                            .slice(0, 1)
+                            .toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {review.reviewer_name || 'Anonymous'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                        <DateText value={review.created_at} pattern="PPP" />
+                      </p>
+                    </div>
+                  </div>
+                  {renderStars(review.rating)}
+                </div>
+                {review.comment && (
+                  <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">
+                    {review.comment}
+                  </p>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-slate-300">
+              No reviews yet. Be the first to share your experience.
+            </p>
+          )}
+        </div>
+      </section>
 
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">

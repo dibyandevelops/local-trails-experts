@@ -15,7 +15,7 @@ import Map, {
 } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Trail, RouteData, User, SportType } from '@/types';
+import { Trail, RouteData, User, SportType, TrailReview } from '@/types';
 import {
   getSafetyLabelText,
   TRAIL_SAFETY_OPTIONS,
@@ -26,6 +26,7 @@ import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
+import { fetchTrailReviews, submitTrailReview } from '@/services/reviews/reviews.service';
 import {
   deleteTrail,
   fetchTrailById,
@@ -38,6 +39,7 @@ import {
 import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
+import DateText from '@/components/ui/date-text';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
 
@@ -227,6 +229,12 @@ const TrailPage: React.FunctionComponent = () => {
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
+  const [hazardousDraft, setHazardousDraft] = useState(false);
+  const [hazardNoteDraft, setHazardNoteDraft] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewAcceptTerms, setReviewAcceptTerms] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
     if (typeof window === 'undefined') return 'map';
@@ -271,6 +279,15 @@ const TrailPage: React.FunctionComponent = () => {
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+  });
+
+  const { data: reviewData, isLoading: loadingReviews } = useQuery<{
+    reviews: TrailReview[];
+    summary: { averageRating: number; count: number };
+  }>({
+    queryKey: QUERY_KEYS.trails.reviews(trailId),
+    queryFn: ({ signal }) => fetchTrailReviews(trailId, signal),
+    enabled: Boolean(trailId),
   });
 
   const hasLocation = trail?.latitude != null && trail?.longitude != null;
@@ -335,7 +352,26 @@ const TrailPage: React.FunctionComponent = () => {
   useEffect(() => {
     if (!trail) return;
     setSafetyDraft((trail.safety_labels || []) as TrailSafetyLabel[]);
+    setHazardousDraft(Boolean(trail.is_hazardous));
+    setHazardNoteDraft(trail.hazard_note || '');
   }, [trail]);
+
+  const existingReview = useMemo(
+    () =>
+      reviewData?.reviews?.find((review) => review.reviewer_user_id === currentUser?.id) ||
+      null,
+    [reviewData?.reviews, currentUser?.id]
+  );
+
+  useEffect(() => {
+    if (!existingReview) {
+      setReviewRating(5);
+      setReviewComment('');
+      return;
+    }
+    setReviewRating(existingReview.rating || 5);
+    setReviewComment(existingReview.comment || '');
+  }, [existingReview?.id]);
 
   const uploadRouteMutation = useMutation({
     mutationFn: (file: File) => uploadTrailRoute(trailId, file),
@@ -348,6 +384,19 @@ const TrailPage: React.FunctionComponent = () => {
     mutationFn: (payload: Partial<Trail>) => updateTrail(trailId, payload),
     onSuccess: (updatedTrail) => {
       queryClient.setQueryData(QUERY_KEYS.trails.byId(trailId), updatedTrail);
+    },
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: (payload: { rating: number; comment?: string }) =>
+      submitTrailReview(trailId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.reviews(trailId) });
+      setReviewMessage('Review submitted. Thanks for the feedback!');
+      setReviewAcceptTerms(false);
+    },
+    onError: (error) => {
+      setReviewMessage(error instanceof Error ? error.message : 'Failed to submit review.');
     },
   });
 
@@ -445,6 +494,7 @@ const TrailPage: React.FunctionComponent = () => {
     currentUser?.role === 'expert' && trail?.submitted_by_user_id === currentUser?.id;
   const canManageTrail = isAdmin || isOwnerExpert;
   const canUploadRoute = currentUser?.role === 'admin';
+  const canFlagHazard = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canUploadPhotos = canManageTrail;
   const canRequestTrail = currentUser?.role === 'participant';
 
@@ -702,6 +752,18 @@ const TrailPage: React.FunctionComponent = () => {
       requestMessage
   );
 
+  const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
+
+  const renderStars = (rating: number) => (
+    <div className="flex items-center gap-0.5 text-amber-500">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <span key={`star-${index}`} className="text-sm">
+          {index < Math.round(rating) ? '★' : '☆'}
+        </span>
+      ))}
+    </div>
+  );
+
   return (
     <div className="container mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-8">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -739,6 +801,11 @@ const TrailPage: React.FunctionComponent = () => {
                   Pending
                 </span>
               )}
+              {trail.is_hazardous && (
+                <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
+                  Hazardous
+                </span>
+              )}
             </div>
             <h1 className="mt-3 text-3xl font-extrabold text-green-800 sm:text-4xl dark:text-green-200">
               {trail.name}
@@ -768,6 +835,22 @@ const TrailPage: React.FunctionComponent = () => {
               <p className="mt-4 text-sm text-gray-700 dark:text-slate-200">
                 {trail.description}
               </p>
+            )}
+
+            {trail.is_hazardous && (
+              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
+                <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-200">
+                  Hazard alert
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  This trail is currently marked hazardous.
+                </p>
+                {trail.hazard_note && (
+                  <p className="mt-1 text-xs text-rose-800 dark:text-rose-200">
+                    {trail.hazard_note}
+                  </p>
+                )}
+              </div>
             )}
 
             {!!trail.safety_labels?.length && (
@@ -1052,6 +1135,73 @@ const TrailPage: React.FunctionComponent = () => {
         </section>
       )}
 
+      {canFlagHazard && (
+        <section className="mt-6 rounded-2xl border border-rose-200 bg-rose-50/70 p-5 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/30">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-200">
+                Hazard status
+              </p>
+              <p className="text-sm text-rose-900 dark:text-rose-100">
+                Mark this trail hazardous when conditions are unsafe.
+              </p>
+            </div>
+            <span className="rounded-full border border-rose-200 bg-white/70 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/60 dark:text-rose-200">
+              {hazardousDraft ? 'Currently hazardous' : 'Marked safe'}
+            </span>
+          </div>
+          <label className="mt-3 flex items-start gap-2 text-xs text-rose-900 dark:text-rose-100">
+            <input
+              type="checkbox"
+              checked={hazardousDraft}
+              onChange={(event) => setHazardousDraft(event.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500"
+            />
+            <span>Flag this trail as hazardous</span>
+          </label>
+          <textarea
+            value={hazardNoteDraft}
+            onChange={(event) => setHazardNoteDraft(event.target.value)}
+            rows={2}
+            className="mt-2 w-full rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs text-rose-900 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100"
+            placeholder="Optional: brief hazard details (landslide, damaged bridge, heavy traffic)."
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await updateTrailMutation.mutateAsync({
+                    is_hazardous: hazardousDraft,
+                    hazard_note: hazardNoteDraft.trim() || null,
+                  });
+                  setAdminMessage('Hazard status updated.');
+                } catch (err) {
+                  setAdminMessage(
+                    err instanceof Error ? err.message : 'Failed to update hazard status.'
+                  );
+                }
+              }}
+              disabled={updateTrailMutation.isPending}
+              className="rounded-lg border border-rose-300 bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {updateTrailMutation.isPending ? 'Saving...' : 'Update Hazard Status'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setHazardousDraft(Boolean(trail.is_hazardous));
+                setHazardNoteDraft(trail.hazard_note || '');
+                setAdminMessage('Hazard status reset.');
+              }}
+              className="rounded-lg border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200"
+            >
+              Reset
+            </button>
+          </div>
+        </section>
+      )}
+
       <div className="mt-6">
         <div className="mb-3 flex items-center justify-between">
           <div>
@@ -1073,6 +1223,159 @@ const TrailPage: React.FunctionComponent = () => {
           onStyleModeChange={setMapStyleMode}
         />
       </div>
+
+      <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              Reviews
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+              Trail ratings & feedback
+            </h2>
+            <div className="mt-2 flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
+              <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                {reviewSummary.averageRating.toFixed(1)}
+              </span>
+              {renderStars(reviewSummary.averageRating)}
+              <span>({reviewSummary.count} reviews)</span>
+            </div>
+          </div>
+          {currentUser ? (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+              {existingReview ? 'Update your review' : 'Leave a review'}
+            </span>
+          ) : (
+            <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              Log in to review
+            </span>
+          )}
+        </div>
+
+        {currentUser && (
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setReviewMessage(null);
+              if (!reviewAcceptTerms) {
+                setReviewMessage('Please accept the terms before submitting your review.');
+                return;
+              }
+              await reviewMutation.mutateAsync({
+                rating: reviewRating,
+                comment: reviewComment,
+              });
+            }}
+            className="mt-4 grid gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                Rating
+              </label>
+              <select
+                value={reviewRating}
+                onChange={(event) => setReviewRating(Number(event.target.value))}
+                className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
+              >
+                {[5, 4, 3, 2, 1].map((value) => (
+                  <option key={`trail-rating-${value}`} value={value}>
+                    {value} star{value > 1 ? 's' : ''}
+                  </option>
+                ))}
+              </select>
+              {renderStars(reviewRating)}
+            </div>
+            <textarea
+              value={reviewComment}
+              onChange={(event) => setReviewComment(event.target.value)}
+              rows={3}
+              className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
+              placeholder="Share what riders should expect on this trail."
+            />
+            <label className="flex items-start gap-2 text-xs text-emerald-800 dark:text-emerald-200">
+              <input
+                type="checkbox"
+                checked={reviewAcceptTerms}
+                onChange={(event) => setReviewAcceptTerms(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>
+                I agree to the{' '}
+                <a href="/terms" className="font-semibold text-emerald-700 hover:underline">
+                  Terms &amp; Conditions
+                </a>{' '}
+                and{' '}
+                <a href="/privacy" className="font-semibold text-emerald-700 hover:underline">
+                  Privacy Policy
+                </a>
+                .
+              </span>
+            </label>
+            {reviewMessage && (
+              <p className="text-xs text-emerald-800 dark:text-emerald-200">{reviewMessage}</p>
+            )}
+            <button
+              type="submit"
+              disabled={reviewMutation.isPending || !reviewAcceptTerms}
+              className="w-full rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {reviewMutation.isPending ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}
+            </button>
+          </form>
+        )}
+
+        <div className="mt-4 space-y-3">
+          {loadingReviews ? (
+            <p className="text-sm text-gray-500 dark:text-slate-300">Loading reviews...</p>
+          ) : reviewData?.reviews?.length ? (
+            reviewData.reviews.map((review) => (
+              <div
+                key={review.id}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                      {review.reviewer_photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={review.reviewer_photo_url}
+                          alt={review.reviewer_name || 'Reviewer'}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          {(review.reviewer_name || 'R')
+                            .slice(0, 1)
+                            .toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {review.reviewer_name || 'Anonymous'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                        <DateText value={review.created_at} pattern="PPP" />
+                      </p>
+                    </div>
+                  </div>
+                  {renderStars(review.rating)}
+                </div>
+                {review.comment && (
+                  <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">
+                    {review.comment}
+                  </p>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-slate-300">
+              No reviews yet. Be the first to share your experience.
+            </p>
+          )}
+        </div>
+      </section>
 
       {trailImages.length > 0 && (
         <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">

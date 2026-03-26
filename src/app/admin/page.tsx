@@ -5,6 +5,7 @@ import ExpertApplicationsPanel from '@/components/admin/expert-applications-pane
 import TrailRequestsPanel from '@/components/admin/trail-requests-panel';
 import PendingTrailsPanel from '@/components/admin/pending-trails-panel';
 import UsersPanel from '@/components/admin/users-panel';
+import HazardousTrailsPanel from '@/components/admin/hazardous-trails-panel';
 
 export default function AdminPage() {
   return (
@@ -22,6 +23,7 @@ export default function AdminPage() {
         title="Participants"
         description="Review participant accounts and delete when necessary."
       />
+      <HazardousTrailsPanel />
       <PendingTrailsPanel />
     </div>
   );

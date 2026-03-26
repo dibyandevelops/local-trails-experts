@@ -139,6 +139,18 @@ function ExpertCard({
       .map((part) => part[0])
       .join('')
       .toUpperCase() || 'EX';
+  const averageRating =
+    typeof expert.average_rating === 'number' ? expert.average_rating : 0;
+  const reviewCount = expert.review_count || 0;
+  const renderStars = (rating: number) => (
+    <div className="flex items-center gap-0.5 text-amber-500">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <span key={`expert-card-star-${expert.id}-${index}`} className="text-[11px]">
+          {index < Math.round(rating) ? '★' : '☆'}
+        </span>
+      ))}
+    </div>
+  );
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col h-full hover:shadow-md transition-shadow">
@@ -164,6 +176,15 @@ function ExpertCard({
             </h2>
             {expert.city && (
               <p className="text-xs text-gray-500">{expert.city}</p>
+            )}
+            {reviewCount > 0 && (
+              <div className="mt-1 flex items-center gap-2 text-xs text-amber-700">
+                <span className="font-semibold text-gray-900">
+                  {averageRating.toFixed(1)}
+                </span>
+                {renderStars(averageRating)}
+                <span className="text-gray-500">({reviewCount})</span>
+              </div>
             )}
           </div>
         </div>
