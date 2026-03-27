@@ -817,7 +817,6 @@ const TrailPage: React.FunctionComponent = () => {
                 {(trail.submitted_by_name || trail.expert_name || trail.created_by || '').trim() ||
                   'LocoXperts'}
               </span>
-              {trail.submitted_by_email ? ` (${trail.submitted_by_email})` : ''}
             </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
