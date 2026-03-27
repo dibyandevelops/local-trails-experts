@@ -137,7 +137,7 @@ function TrailGallery({
                 {/* Created by badge for list view */}
                 {(trail.created_by || trail.expert_name) && (
                   <p className="mt-1 text-xs font-medium text-blue-600 dark:text-sky-300">
-                    Created by: {trail.expert_name || trail.created_by}
+                    Added by: {trail.expert_name || trail.created_by}
                   </p>
                 )}
                 <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">

@@ -168,7 +168,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
         {(trail.created_by || trail.expert_name) && (
           <p className="mb-3 text-xs font-medium text-blue-600">
-            Created by: {trail.expert_name || trail.created_by}
+            Added by: {trail.expert_name || trail.created_by}
           </p>
         )}
         <div className='mb-2 flex flex-wrap items-center gap-2' />
