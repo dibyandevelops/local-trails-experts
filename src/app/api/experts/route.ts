@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
         u.verification_links,
         u.created_at,
         u.updated_at,
-        COALESCE(er.average_rating, 0) AS average_rating,
-        COALESCE(er.review_count, 0) AS review_count,
+        COALESCE(MAX(er.average_rating), 0) AS average_rating,
+        COALESCE(MAX(er.review_count), 0) AS review_count,
         COALESCE(
           json_agg(
             DISTINCT jsonb_build_object(
