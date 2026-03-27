@@ -838,17 +838,6 @@ const TrailPage: React.FunctionComponent = () => {
               </span>
             </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {trail.sport_type && (
-                <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-200">
-                  {getSportLabel(trail.sport_type)}
-                </span>
-              )}
-              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-                {trail.difficulty}
-              </span>
-            </div>
-
             <div className="mt-5 flex flex-wrap gap-3">
               <a
                 href="#trail-map"
@@ -902,58 +891,6 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-2xl border border-emerald-200/70 bg-white/90 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                Trail metrics
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                {(routeData?.totalDistance || trail.distance_km) && (
-                  <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-3 text-center text-xs text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-100">
-                    <div className="uppercase tracking-wide text-blue-700 dark:text-blue-300">
-                      Distance
-                    </div>
-                    <div className="mt-1 text-sm font-semibold">
-                      {routeData?.totalDistance
-                        ? `${routeData.totalDistance.toFixed(2)} km`
-                        : `${trail.distance_km} km`}
-                    </div>
-                  </div>
-                )}
-                {(routeData?.elevationGain || trail.elevation_gain_m) && (
-                  <div className="rounded-xl border border-purple-100 bg-purple-50 px-3 py-3 text-center text-xs text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-100">
-                    <div className="uppercase tracking-wide text-purple-700 dark:text-purple-300">
-                      Elevation gain
-                    </div>
-                    <div className="mt-1 text-sm font-semibold">
-                      {routeData?.elevationGain
-                        ? `+${routeData.elevationGain.toFixed(0)} m`
-                        : `${trail.elevation_gain_m} m`}
-                    </div>
-                  </div>
-                )}
-                {routeData?.elevationLoss && (
-                  <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-center text-xs text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
-                    <div className="uppercase tracking-wide text-rose-700 dark:text-rose-300">
-                      Elevation loss
-                    </div>
-                    <div className="mt-1 text-sm font-semibold">
-                      -{routeData.elevationLoss.toFixed(0)} m
-                    </div>
-                  </div>
-                )}
-                {trail.estimated_time_hours && (
-                  <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-center text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
-                    <div className="uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                      Estimated time
-                    </div>
-                    <div className="mt-1 text-sm font-semibold">
-                      ~{trail.estimated_time_hours} hrs
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {showActionsSection && (
               <div className="rounded-2xl border border-emerald-200/70 bg-white/90 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
@@ -1230,6 +1167,125 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         </section>
       )}
+
+      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {(routeData?.totalDistance || trail.distance_km) && (
+          <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-900 shadow-sm dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-100">
+            <span className="rounded-full bg-blue-100 p-2 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                <path
+                  d="M4 12a8 8 0 1 1 16 0 8 8 0 0 1-16 0Zm8-6a6 6 0 0 0 0 12h.5v-6.2l3.6-2.4-.9-1.4-3.2 2.1H12V6Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                Distance
+              </p>
+              <p className="text-sm font-semibold">
+                {routeData?.totalDistance
+                  ? `${routeData.totalDistance.toFixed(2)} km`
+                  : `${trail.distance_km} km`}
+              </p>
+            </div>
+          </div>
+        )}
+        {(routeData?.elevationGain || trail.elevation_gain_m) && (
+          <div className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3 text-purple-900 shadow-sm dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-100">
+            <span className="rounded-full bg-purple-100 p-2 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                <path
+                  d="M3 18h18l-6-10-4 6-3-4-5 8Zm9-8 2 3h-4l2-3Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-purple-700 dark:text-purple-300">
+                Total ascent
+              </p>
+              <p className="text-sm font-semibold">
+                {routeData?.elevationGain
+                  ? `+${routeData.elevationGain.toFixed(0)} m`
+                  : `${trail.elevation_gain_m} m`}
+              </p>
+            </div>
+          </div>
+        )}
+        {routeData?.elevationLoss && (
+          <div className="flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
+            <span className="rounded-full bg-rose-100 p-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                <path
+                  d="M3 6h18l-6 10-4-6-3 4-5-8Zm9 8-2-3h4l-2 3Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">
+                Descent
+              </p>
+              <p className="text-sm font-semibold">-{routeData.elevationLoss.toFixed(0)} m</p>
+            </div>
+          </div>
+        )}
+        {trail.estimated_time_hours && (
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+            <span className="rounded-full bg-amber-100 p-2 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                <path
+                  d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 5h-2v6l4.5 2.7 1-1.6-3.5-2.1V7Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                Ride time
+              </p>
+              <p className="text-sm font-semibold">~{trail.estimated_time_hours} hrs</p>
+            </div>
+          </div>
+        )}
+        {trail.difficulty && (
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-900 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+            <span className="rounded-full bg-emerald-100 p-2 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                <path
+                  d="M4 19h16l-6-10-4 6-3-4-3 8Zm9-7 2 3h-4l2-3Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                Difficulty
+              </p>
+              <p className="text-sm font-semibold">{trail.difficulty}</p>
+            </div>
+          </div>
+        )}
+        {trail.sport_type && (
+          <div className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sky-900 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-100">
+            <span className="rounded-full bg-sky-100 p-2 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                <path
+                  d="M5 12a7 7 0 1 1 14 0 7 7 0 0 1-14 0Zm7-9a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">
+                Sport type
+              </p>
+              <p className="text-sm font-semibold">{getSportLabel(trail.sport_type)}</p>
+            </div>
+          </div>
+        )}
+      </section>
 
       {trail.description && (
         <section
