@@ -58,6 +58,20 @@ function fileToDataUrl(file: File) {
   });
 }
 
+function normalizeKomootEmbedInput(input: string) {
+  const raw = input.trim();
+  if (!raw) return '';
+  if (raw.includes('<iframe')) {
+    const match = raw.match(/src=["']([^"']+)["']/i);
+    return match?.[1]?.trim() || '';
+  }
+  return raw;
+}
+
+function isKomootEmbedUrl(url: string) {
+  return /komoot\.com/i.test(url) && /embed/i.test(url);
+}
+
 export default function TrailSubmissionForm({
   userRole,
   onSuccess,
@@ -99,7 +113,7 @@ export default function TrailSubmissionForm({
       elevation_gain_m: values.elevation_gain_m.trim(),
       estimated_time_hours: values.estimated_time_hours.trim(),
       image_url: values.image_url.trim(),
-      komoot_embed_url: values.komoot_embed_url.trim(),
+      komoot_embed_url: normalizeKomootEmbedInput(values.komoot_embed_url),
       safety_labels: isAdmin ? values.safety_labels : undefined,
     }),
     [values, isAdmin]
@@ -110,6 +124,11 @@ export default function TrailSubmissionForm({
     Boolean(parsedPayload.location) &&
     Boolean(parsedPayload.sport_type) &&
     Boolean(parsedPayload.difficulty);
+
+  const komootPreviewUrl = normalizeKomootEmbedInput(values.komoot_embed_url || '');
+  const komootLooksValid = komootPreviewUrl
+    ? isKomootEmbedUrl(komootPreviewUrl)
+    : true;
 
   const parseGpxMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -506,19 +525,44 @@ export default function TrailSubmissionForm({
       </div>
 
       <div>
-        <label htmlFor="trail-komoot-embed" className="mb-1 block text-sm font-medium text-gray-700">
-          Komoot embed URL (optional)
-        </label>
+        <div className="mb-1 flex items-center gap-2">
+          <label htmlFor="trail-komoot-embed" className="text-sm font-medium text-gray-700">
+            Komoot embed URL (optional)
+          </label>
+          <span className="group relative inline-flex">
+            <button
+              type="button"
+              aria-label="Where to find Komoot embed code"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-[11px] font-semibold text-gray-600 transition hover:bg-gray-50"
+            >
+              i
+            </button>
+            <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-56 -translate-x-1/2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] text-emerald-900 opacity-0 shadow-lg transition group-hover:opacity-100 group-focus-within:opacity-100 dark:border-emerald-900/60 dark:bg-slate-950 dark:text-emerald-100">
+              Open the route in Komoot → Share → Embed → copy the embed URL or iframe.
+            </span>
+          </span>
+        </div>
         <input
           id="trail-komoot-embed"
           type="url"
           {...register('komoot_embed_url')}
           className={inputClass}
-          placeholder="https://www.komoot.com/..."
+          placeholder="Paste Komoot embed URL or iframe code"
         />
         <p className="mt-1 text-xs text-gray-500">
-          Paste the Komoot embed URL to show their interactive map on the trail page.
+          Use Share → Embed in Komoot to get the embed code or URL.
         </p>
+        {komootPreviewUrl && (
+          <p
+            className={`mt-2 text-xs ${
+              komootLooksValid ? 'text-emerald-700' : 'text-rose-700'
+            }`}
+          >
+            {komootLooksValid
+              ? 'Komoot embed link detected.'
+              : 'This doesn’t look like a Komoot embed link. Use Share → Embed.'}
+          </p>
+        )}
       </div>
 
       {/* <div>

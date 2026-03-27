@@ -4,6 +4,16 @@ import { Trail } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { normalizeSafetyLabels } from '@/lib/trail-safety';
 
+function normalizeKomootEmbedInput(raw: string) {
+  const value = raw.trim();
+  if (!value) return '';
+  if (value.includes('<iframe')) {
+    const match = value.match(/src=["']([^"']+)["']/i);
+    return match?.[1]?.trim() || '';
+  }
+  return value;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -226,7 +236,9 @@ export async function PATCH(
         body.estimated_time_hours ?? trail.estimated_time_hours,
         body.image_url ?? trail.image_url,
         body.trail_images ?? trail.trail_images ?? [],
-        body.komoot_embed_url ?? trail.komoot_embed_url ?? null,
+        body.komoot_embed_url
+          ? normalizeKomootEmbedInput(body.komoot_embed_url)
+          : trail.komoot_embed_url ?? null,
         hasSafetyLabelsField
           ? normalizeSafetyLabels(body.safety_labels)
           : trail.safety_labels ?? [],

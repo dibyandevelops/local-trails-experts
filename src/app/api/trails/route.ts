@@ -13,6 +13,16 @@ function parseOptionalNumber(raw: string | null) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function normalizeKomootEmbedInput(raw: string) {
+  const value = raw.trim();
+  if (!value) return '';
+  if (value.includes('<iframe')) {
+    const match = value.match(/src=["']([^"']+)["']/i);
+    return match?.[1]?.trim() || '';
+  }
+  return value;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
@@ -217,7 +227,9 @@ export async function POST(request: NextRequest) {
     const sport_type =
       String(formData.get('sport_type') || '').trim() || DEFAULT_TRAIL_SPORT;
     const image_url = String(formData.get('image_url') || '').trim();
-    const komoot_embed_url = String(formData.get('komoot_embed_url') || '').trim();
+    const komoot_embed_url = normalizeKomootEmbedInput(
+      String(formData.get('komoot_embed_url') || '')
+    );
     const rawTrailImages = String(formData.get('trail_images') || '').trim();
     let trailImagesInput: string[] = [];
     if (rawTrailImages) {

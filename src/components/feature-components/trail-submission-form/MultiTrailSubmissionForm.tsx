@@ -67,6 +67,20 @@ function fileToDataUrl(file: File) {
   });
 }
 
+function normalizeKomootEmbedInput(input: string) {
+  const raw = input.trim();
+  if (!raw) return '';
+  if (raw.includes('<iframe')) {
+    const match = raw.match(/src=["']([^"']+)["']/i);
+    return match?.[1]?.trim() || '';
+  }
+  return raw;
+}
+
+function isKomootEmbedUrl(url: string) {
+  return /komoot\.com/i.test(url) && /embed/i.test(url);
+}
+
 export default function MultiTrailSubmissionForm({
   userRole,
   onSuccess,
@@ -290,7 +304,10 @@ export default function MultiTrailSubmissionForm({
         payload.append('elevation_gain_m', (form.elevation_gain_m || '').trim());
         payload.append('estimated_time_hours', (form.estimated_time_hours || '').trim());
         payload.append('image_url', (form.image_url || '').trim());
-        payload.append('komoot_embed_url', (form.komoot_embed_url || '').trim());
+        payload.append(
+          'komoot_embed_url',
+          normalizeKomootEmbedInput(form.komoot_embed_url || '')
+        );
         payload.append('trail_images', JSON.stringify(files.trailImages || []));
         payload.append('gpx_file', files.gpxFile as File);
         if (form.safety_labels?.length) {
@@ -576,18 +593,49 @@ export default function MultiTrailSubmissionForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-              Komoot embed URL (optional)
-            </label>
+            <div className="mb-1 flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-200">
+                Komoot embed URL (optional)
+              </label>
+              <span className="group relative inline-flex">
+                <button
+                  type="button"
+                  aria-label="Where to find Komoot embed code"
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-[11px] font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  i
+                </button>
+                <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-56 -translate-x-1/2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] text-emerald-900 opacity-0 shadow-lg transition group-hover:opacity-100 group-focus-within:opacity-100 dark:border-emerald-900/60 dark:bg-slate-950 dark:text-emerald-100">
+                  Open the route in Komoot → Share → Embed → copy the embed URL or iframe.
+                </span>
+              </span>
+            </div>
             <input
               type="url"
               {...register(`trails.${index}.komoot_embed_url`)}
               className={inputClass}
-              placeholder="https://www.komoot.com/..."
+              placeholder="Paste Komoot embed URL or iframe code"
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              Paste the Komoot embed URL to show their interactive map on the trail page.
+              Use Share → Embed in Komoot to get the embed code or URL.
             </p>
+            {values[index]?.komoot_embed_url?.trim() && (
+              <p
+                className={`mt-2 text-xs ${
+                  isKomootEmbedUrl(
+                    normalizeKomootEmbedInput(values[index].komoot_embed_url || '')
+                  )
+                    ? 'text-emerald-700 dark:text-emerald-300'
+                    : 'text-rose-700 dark:text-rose-300'
+                }`}
+              >
+                {isKomootEmbedUrl(
+                  normalizeKomootEmbedInput(values[index].komoot_embed_url || '')
+                )
+                  ? 'Komoot embed link detected.'
+                  : 'This doesn’t look like a Komoot embed link. Use Share → Embed.'}
+              </p>
+            )}
           </div>
 
           {canEditSafetyLabels && (

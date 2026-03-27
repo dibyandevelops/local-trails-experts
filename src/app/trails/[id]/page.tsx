@@ -72,19 +72,61 @@ const MapSection = React.memo(function MapSection({
   komootEmbedUrl,
 }: MapSectionProps) {
   const mapRef = React.useRef<MapRef | null>(null);
-  const hasKomootEmbed = Boolean(komootEmbedUrl);
+  const komootUrl = (komootEmbedUrl || '').trim();
+  const hasKomootEmbed = Boolean(komootUrl);
+  const isKomootEmbed = hasKomootEmbed && /komoot\.com/i.test(komootUrl) && /embed/i.test(komootUrl);
+  const komootOpenUrl = komootUrl ? komootUrl.replace('/embed', '') : '';
 
   if (hasKomootEmbed) {
+    if (!isKomootEmbed) {
+      return (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="font-semibold">Komoot embed link needed</p>
+          <p className="mt-2 text-xs leading-5 text-amber-800 dark:text-amber-200">
+            The link provided doesn’t look like a Komoot embed URL, so browsers block it from
+            loading here. Use “Share → Embed” on Komoot and paste the embed URL or iframe code.
+          </p>
+          {komootOpenUrl && (
+            <a
+              href={komootOpenUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100"
+            >
+              Open in Komoot
+            </a>
+          )}
+        </div>
+      );
+    }
+
     return (
-      <div className="mb-6 h-[360px] w-full overflow-hidden rounded-xl border border-emerald-200/60 bg-white shadow-[0_20px_60px_-25px_rgba(2,6,23,0.5)] sm:h-[460px] lg:h-[600px] dark:border-emerald-900/60 dark:bg-slate-950">
-        <iframe
-          src={komootEmbedUrl as string}
-          title="Komoot route map"
-          className="h-full w-full"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          allowFullScreen
-        />
+      <div className="mb-6 overflow-hidden rounded-xl border border-emerald-200/60 bg-white shadow-[0_20px_60px_-25px_rgba(2,6,23,0.5)] dark:border-emerald-900/60 dark:bg-slate-950">
+        <div className="h-[360px] w-full sm:h-[460px] lg:h-[600px]">
+          <iframe
+            src={komootUrl}
+            title="Komoot route map"
+            className="h-full w-full"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-200/60 bg-emerald-50/70 px-4 py-3 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+          <span>
+            Having trouble loading? Open the route directly on Komoot.
+          </span>
+          {komootOpenUrl && (
+            <a
+              href={komootOpenUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-full border border-emerald-300 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100"
+            >
+              Open in Komoot
+            </a>
+          )}
+        </div>
       </div>
     );
   }
