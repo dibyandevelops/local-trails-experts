@@ -26,6 +26,7 @@ type TrailCreateForm = {
   elevation_gain_m: string;
   estimated_time_hours: string;
   image_url: string;
+  komoot_embed_url: string;
   safety_labels: TrailSafetyLabel[];
 };
 
@@ -39,6 +40,7 @@ const createInitialForm = (): TrailCreateForm => ({
   elevation_gain_m: '',
   estimated_time_hours: '',
   image_url: '',
+  komoot_embed_url: '',
   safety_labels: [...DEFAULT_TRAIL_SAFETY_LABELS],
 });
 
@@ -288,6 +290,7 @@ export default function MultiTrailSubmissionForm({
         payload.append('elevation_gain_m', (form.elevation_gain_m || '').trim());
         payload.append('estimated_time_hours', (form.estimated_time_hours || '').trim());
         payload.append('image_url', (form.image_url || '').trim());
+        payload.append('komoot_embed_url', (form.komoot_embed_url || '').trim());
         payload.append('trail_images', JSON.stringify(files.trailImages || []));
         payload.append('gpx_file', files.gpxFile as File);
         if (form.safety_labels?.length) {
@@ -570,6 +573,21 @@ export default function MultiTrailSubmissionForm({
                 className={inputClass}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              Komoot embed URL (optional)
+            </label>
+            <input
+              type="url"
+              {...register(`trails.${index}.komoot_embed_url`)}
+              className={inputClass}
+              placeholder="https://www.komoot.com/..."
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Paste the Komoot embed URL to show their interactive map on the trail page.
+            </p>
           </div>
 
           {canEditSafetyLabels && (

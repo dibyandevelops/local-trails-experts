@@ -24,6 +24,7 @@ type FormValues = {
   distance_km: string;
   elevation_gain_m: string;
   estimated_time_hours: string;
+  komoot_embed_url: string;
   safety_labels: TrailSafetyLabel[];
   acceptTerms: boolean;
 };
@@ -68,6 +69,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       distance_km: toStringOrEmpty(trail?.distance_km),
       elevation_gain_m: toStringOrEmpty(trail?.elevation_gain_m),
       estimated_time_hours: toStringOrEmpty(trail?.estimated_time_hours),
+      komoot_embed_url: trail?.komoot_embed_url ?? '',
       safety_labels:
         (trail?.safety_labels && trail.safety_labels.length > 0
           ? (trail.safety_labels as TrailSafetyLabel[])
@@ -165,6 +167,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       estimated_time_hours: values.estimated_time_hours ? Number(values.estimated_time_hours) : null,
       image_url: trailImages[0] || null,
       trail_images: trailImages,
+      komoot_embed_url: values.komoot_embed_url.trim() || null,
       safety_labels: values.safety_labels || [],
     });
   };
@@ -308,6 +311,20 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
               inputMode="decimal"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+            Komoot embed URL (optional)
+          </label>
+          <input
+            {...register('komoot_embed_url')}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            placeholder="https://www.komoot.com/..."
+          />
+          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+            Paste the Komoot embed URL to show their interactive map on the trail page.
+          </p>
         </div>
 
         <div>

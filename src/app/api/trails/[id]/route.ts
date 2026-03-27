@@ -207,9 +207,10 @@ export async function PATCH(
         estimated_time_hours = $10,
         image_url = $11,
         trail_images = $12,
-        safety_labels = $13,
+        komoot_embed_url = $13,
+        safety_labels = $14,
         updated_at = NOW()
-      WHERE id = $14
+      WHERE id = $15
       RETURNING *
       `,
       [
@@ -225,6 +226,7 @@ export async function PATCH(
         body.estimated_time_hours ?? trail.estimated_time_hours,
         body.image_url ?? trail.image_url,
         body.trail_images ?? trail.trail_images ?? [],
+        body.komoot_embed_url ?? trail.komoot_embed_url ?? null,
         hasSafetyLabelsField
           ? normalizeSafetyLabels(body.safety_labels)
           : trail.safety_labels ?? [],

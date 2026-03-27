@@ -217,6 +217,7 @@ export async function POST(request: NextRequest) {
     const sport_type =
       String(formData.get('sport_type') || '').trim() || DEFAULT_TRAIL_SPORT;
     const image_url = String(formData.get('image_url') || '').trim();
+    const komoot_embed_url = String(formData.get('komoot_embed_url') || '').trim();
     const rawTrailImages = String(formData.get('trail_images') || '').trim();
     let trailImagesInput: string[] = [];
     if (rawTrailImages) {
@@ -317,10 +318,10 @@ export async function POST(request: NextRequest) {
       `
       INSERT INTO trails (
         name, description, difficulty, location, latitude, longitude,
-        distance_km, elevation_gain_m, estimated_time_hours, image_url, trail_images, safety_labels, route_data, sport_type,
+        distance_km, elevation_gain_m, estimated_time_hours, image_url, trail_images, komoot_embed_url, safety_labels, route_data, sport_type,
         status, submitted_by_user_id, approved_by_admin_id, approved_at, is_hidden
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,$16,$17,$18,$19)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15,$16,$17,$18,$19,$20)
       RETURNING *
       `,
       [
@@ -335,6 +336,7 @@ export async function POST(request: NextRequest) {
         estimated_time_hours ?? null,
         image_url || trailImagesInput[0] || null,
         trailImagesInput,
+        komoot_embed_url || null,
         // Public: anyone can submit safety labels; admins can still edit later.
         normalizeSafetyLabels(safetyLabelsInput),
         JSON.stringify(routeData),

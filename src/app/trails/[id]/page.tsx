@@ -58,6 +58,7 @@ type MapSectionProps = {
   mapStyle: string;
   mapStyleMode: MapStyleMode;
   onStyleModeChange: (mode: MapStyleMode) => void;
+  komootEmbedUrl?: string | null;
 };
 
 const MapSection = React.memo(function MapSection({
@@ -68,8 +69,26 @@ const MapSection = React.memo(function MapSection({
   mapStyle,
   mapStyleMode,
   onStyleModeChange,
+  komootEmbedUrl,
 }: MapSectionProps) {
   const mapRef = React.useRef<MapRef | null>(null);
+  const hasKomootEmbed = Boolean(komootEmbedUrl);
+
+  if (hasKomootEmbed) {
+    return (
+      <div className="mb-6 h-[360px] w-full overflow-hidden rounded-xl border border-emerald-200/60 bg-white shadow-[0_20px_60px_-25px_rgba(2,6,23,0.5)] sm:h-[460px] lg:h-[600px] dark:border-emerald-900/60 dark:bg-slate-950">
+        <iframe
+          src={komootEmbedUrl as string}
+          title="Komoot route map"
+          className="h-full w-full"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
   return hasRoute ? (
     <div className="mb-6 h-[360px] w-full overflow-hidden rounded-xl border border-white/20 bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)] sm:h-[460px] lg:h-[600px]">
       <Map
@@ -150,29 +169,29 @@ const MapSection = React.memo(function MapSection({
             />
           </Source>
         )}
-            {routeGeoJSON && (
-              <Layer
-                id="route-arrows-layer"
-                type="symbol"
-                source="route"
-                layout={{
-                  'symbol-placement': 'line',
-                  'symbol-spacing': 120,
-                  'text-field': '›',
-                  'text-size': 24,
-                  'text-rotation-alignment': 'map',
-                  'text-keep-upright': false,
-                  'text-offset': [0, 0],
-                  'text-allow-overlap': true,
-                  'text-ignore-placement': true,
-                }}
-                paint={{
-                  'text-color': '#16a34a',
-                  'text-halo-color': '#ffffff',
-                  'text-halo-width': 1.6,
-                }}
-              />
-            )}
+        {routeGeoJSON && (
+          <Layer
+            id="route-arrows-layer"
+            type="symbol"
+            source="route"
+            layout={{
+              'symbol-placement': 'line',
+              'symbol-spacing': 120,
+              'text-field': '›',
+              'text-size': 24,
+              'text-rotation-alignment': 'map',
+              'text-keep-upright': false,
+              'text-offset': [0, 0],
+              'text-allow-overlap': true,
+              'text-ignore-placement': true,
+            }}
+            paint={{
+              'text-color': '#16a34a',
+              'text-halo-color': '#ffffff',
+              'text-halo-width': 1.6,
+            }}
+          />
+        )}
         {hasRoute && routeData && routeData.coordinates.length > 0 && (
           <>
             <Marker
@@ -830,11 +849,22 @@ const TrailPage: React.FunctionComponent = () => {
               </span>
             </div>
 
-            {trail.description && (
-              <p className="mt-4 text-sm text-gray-700 dark:text-slate-200">
-                {trail.description}
-              </p>
-            )}
+            <div className="mt-5 flex flex-wrap gap-3">
+              <a
+                href="#trail-map"
+                className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+              >
+                View map
+              </a>
+              {trail.description && (
+                <a
+                  href="#route-guide"
+                  className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
+                >
+                  Route guide
+                </a>
+              )}
+            </div>
 
             {trail.is_hazardous && (
               <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
@@ -1201,7 +1231,24 @@ const TrailPage: React.FunctionComponent = () => {
         </section>
       )}
 
-      <div className="mt-6">
+      {trail.description && (
+        <section
+          id="route-guide"
+          className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+            Route guide
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+            What to expect on this trail
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-gray-700 dark:text-slate-200">
+            {trail.description}
+          </p>
+        </section>
+      )}
+
+      <div id="trail-map" className="mt-6">
         <div className="mb-3 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
@@ -1220,6 +1267,7 @@ const TrailPage: React.FunctionComponent = () => {
           mapStyle={mapStyle}
           mapStyleMode={mapStyleMode}
           onStyleModeChange={setMapStyleMode}
+          komootEmbedUrl={trail.komoot_embed_url || null}
         />
       </div>
 

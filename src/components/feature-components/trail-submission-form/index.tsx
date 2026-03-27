@@ -19,6 +19,7 @@ type TrailCreateForm = {
   elevation_gain_m: string;
   estimated_time_hours: string;
   image_url: string;
+  komoot_embed_url: string;
   safety_labels: TrailSafetyLabel[];
   acceptTerms: boolean;
 };
@@ -33,6 +34,7 @@ const INITIAL_FORM: TrailCreateForm = {
   elevation_gain_m: '',
   estimated_time_hours: '',
   image_url: '',
+  komoot_embed_url: '',
   safety_labels: [],
   acceptTerms: false,
 };
@@ -97,6 +99,7 @@ export default function TrailSubmissionForm({
       elevation_gain_m: values.elevation_gain_m.trim(),
       estimated_time_hours: values.estimated_time_hours.trim(),
       image_url: values.image_url.trim(),
+      komoot_embed_url: values.komoot_embed_url.trim(),
       safety_labels: isAdmin ? values.safety_labels : undefined,
     }),
     [values, isAdmin]
@@ -282,6 +285,7 @@ export default function TrailSubmissionForm({
       formData.append('elevation_gain_m', parsedPayload.elevation_gain_m);
       formData.append('estimated_time_hours', parsedPayload.estimated_time_hours);
       formData.append('image_url', parsedPayload.image_url);
+      formData.append('komoot_embed_url', parsedPayload.komoot_embed_url);
       formData.append('trail_images', JSON.stringify(trailImages));
       formData.append('gpx_file', gpxFile);
 
@@ -499,6 +503,22 @@ export default function TrailSubmissionForm({
           </label>
           <input id="trail-estimated-time" type="number" {...register('estimated_time_hours')} className={inputClass} />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="trail-komoot-embed" className="mb-1 block text-sm font-medium text-gray-700">
+          Komoot embed URL (optional)
+        </label>
+        <input
+          id="trail-komoot-embed"
+          type="url"
+          {...register('komoot_embed_url')}
+          className={inputClass}
+          placeholder="https://www.komoot.com/..."
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Paste the Komoot embed URL to show their interactive map on the trail page.
+        </p>
       </div>
 
       {/* <div>
