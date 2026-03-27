@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Donate',
   description:
-    'Support LocoMTBGroup operations and trail building in Nepal. Donate via GoFundMe or scan the eSewa QR.',
+    'Support LocoMTBGroup operations and trail stewardship in Nepal. Donate via eSewa QR.',
   alternates: { canonical: '/donate' },
 };
 
@@ -90,8 +90,8 @@ export default function DonatePage() {
                 LocoXperts Trail Fund
               </p>
               <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-                Your support goes directly to trail building, maintenance days, and
-                safety essentials for Nepal routes.
+                Your support goes directly to trail stewardship, maintenance days,
+                and safety essentials for Nepal routes.
               </p>
               <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
                 Prefer a receipt or want your donation acknowledged publicly? Use the

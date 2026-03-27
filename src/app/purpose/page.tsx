@@ -82,8 +82,8 @@ export default function PurposePage() {
             guided rides and trainings.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            Current focus area: Nepal. We’ll expand to new regions as trail crews
-            and sponsors come onboard.
+            Current focus area: Nepal. We’ll expand to new regions as community
+            partners and sponsors come onboard.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
             The platform is designed to be autonomous: experts publish trails,
@@ -151,7 +151,7 @@ export default function PurposePage() {
             </svg>
           }
         >
-          Trail building done right helps prevent erosion and protect forests—
+          Trail stewardship done right helps prevent erosion and protect forests—
           while encouraging healthier lifestyles through active outdoor mobility
           and community rides.
         </Card>
@@ -200,12 +200,13 @@ export default function PurposePage() {
           </h2>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
             We don’t take a cut from expert events. Instead, local companies and
-            partners fund trail building and maintenance through sponsorship tiers.
+            partners fund trail stewardship through sponsorship tiers.
             Experts keep their earnings, while sponsors help sustain the trail network.
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
-            <p>• Adopt-a-trail sponsorships (signage, maintenance, safety upgrades)</p>
-            <p>• Community toolkits and trail crew support</p>
+            <p>• Adopt-a-trail sponsorships (signage, stewardship, safety upgrades)</p>
+            <p>• Community toolkits and local crew support</p>
+            <p>• Long-term vision: new trail development when local teams are ready</p>
             <p>• Partner visibility on trail pages and on-ground signage</p>
           </div>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
