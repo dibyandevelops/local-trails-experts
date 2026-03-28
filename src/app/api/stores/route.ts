@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
       minLat !== null && maxLat !== null && minLng !== null && maxLng !== null;
     const filtered =
       lat !== null && lng !== null && !hasBounds
-        ? stores.filter((store) => store.distance_km === null || store.distance_km <= radius)
+        ? stores.filter((store) => store.distance_km == null || store.distance_km <= radius)
         : stores;
 
     return NextResponse.json({ stores: filtered }, { status: 200 });

@@ -24,12 +24,6 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
     body: `Hi LocoXperts team,\n\n`,
   });
 
-  const marketingHref = buildMailto({
-    to: contactEmail,
-    subject: 'LocoXperts — Marketing inquiry',
-    body: `Hi LocoXperts team,\n\nI'm interested in marketing opportunities.\n\n`,
-  });
-
   const featureHref = buildMailto({
     to: contactEmail,
     subject: 'LocoXperts — Feature request',
@@ -38,13 +32,16 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
 
   return (
     <footer className="mt-10 border-t border-gray-200 bg-white/70 py-10 text-gray-700 backdrop-blur dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200">
-      <div className="container mx-auto grid gap-6 px-4 md:grid-cols-3 md:gap-10">
+      <div className="container mx-auto grid gap-8 px-4 md:grid-cols-4 md:gap-10">
         <div className="space-y-2">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {brand}
           </p>
           <p className="text-sm text-gray-600 dark:text-slate-300">
             Trails, events, and local experts for outdoor sports.
+          </p>
+          <p className="text-xs text-emerald-700 dark:text-emerald-200">
+            Built with LocoMTB Communities.
           </p>
           <p className="text-xs text-gray-500 dark:text-slate-400">
             © {year} {brand}. All rights reserved. {brand} are
@@ -54,52 +51,9 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
 
         <div className="space-y-2">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Contact
+            Features
           </p>
           <ul className="space-y-1 text-sm">
-            <li>
-              <a className="hover:underline" href={contactHref}>
-                Contact us
-              </a>
-            </li>
-            <li>
-              <a className="hover:underline" href={marketingHref}>
-                Marketing
-              </a>
-            </li>
-            <li>
-              <a className="hover:underline" href={featureHref}>
-                Request a feature
-              </a>
-            </li>
-            <li>
-              <button
-                type="button"
-                className="text-left hover:underline"
-                onClick={() => setGroupRequestOpen(true)}
-              >
-                Custom events / collaborate (big groups)
-              </button>
-            </li>
-          </ul>
-          <p className="text-xs text-gray-500 dark:text-slate-400">
-            Prefer email?{' '}
-            <a className="hover:underline" href={`mailto:${contactEmail}`}>
-              {contactEmail}
-            </a>
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Project
-          </p>
-          <ul className="space-y-1 text-sm">
-            <li>
-              <Link className="hover:underline" href="/purpose">
-                Purpose
-              </Link>
-            </li>
             <li>
               <Link className="hover:underline" href="/trails">
                 Explore trails
@@ -116,6 +70,76 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
               </Link>
             </li>
             <li>
+              <Link className="hover:underline" href="/store-locator">
+                Store locator
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:underline" href="/events/trainings/create">
+                Organize trainings
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            For experts
+          </p>
+          <ul className="space-y-1 text-sm">
+            <li>
+              <Link className="hover:underline" href="/experts/join">
+                For experts
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:underline" href="/events/create">
+                Create events
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:underline" href="/events/trainings/create">
+                Organize trainings
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:underline" href="/trails/create">
+                Create trail
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Support & legal
+          </p>
+          <ul className="space-y-1 text-sm">
+            <li>
+              <a className="hover:underline" href={contactHref}>
+                Contact us
+              </a>
+            </li>
+            <li>
+              <a className="hover:underline" href={featureHref}>
+                Request a feature
+              </a>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="text-left hover:underline"
+                onClick={() => setGroupRequestOpen(true)}
+              >
+                Request a large group ride
+              </button>
+            </li>
+            <li>
+              <Link className="hover:underline" href="/purpose">
+                Purpose
+              </Link>
+            </li>
+            <li>
               <Link className="hover:underline" href="/sponsors">
                 Sponsors
               </Link>
@@ -123,11 +147,6 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             <li>
               <Link className="hover:underline" href="/donate">
                 Donate
-              </Link>
-            </li>
-            <li>
-              <Link className="hover:underline" href="/safety">
-                Safety policy
               </Link>
             </li>
             <li>
@@ -140,10 +159,17 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
                 Terms &amp; conditions
               </Link>
             </li>
+            <li>
+              <Link className="hover:underline" href="/safety">
+                Safety policy
+              </Link>
+            </li>
           </ul>
           <p className="text-xs text-gray-500 dark:text-slate-400">
-            Want something like this for your community or destination? Use the
-            collaboration link and tell us what you’re building.
+            Prefer email?{' '}
+            <a className="hover:underline" href={`mailto:${contactEmail}`}>
+              {contactEmail}
+            </a>
           </p>
         </div>
       </div>
