@@ -11,6 +11,7 @@ function toNumber(value: string | null) {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthFromRequest(request);
     const searchParams = request.nextUrl.searchParams;
     const city = searchParams.get('city');
     const search = (searchParams.get('search') || '').trim();
@@ -25,7 +26,11 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
     let paramIndex = 1;
 
-    let where = 'WHERE is_active = TRUE';
+    const includeInactive = searchParams.get('includeInactive') === 'true';
+    let where = 'WHERE 1=1';
+    if (!(includeInactive && auth?.role === 'admin')) {
+      where += ` AND is_active = TRUE`;
+    }
     if (city) {
       where += ` AND city = $${paramIndex}`;
       params.push(city);

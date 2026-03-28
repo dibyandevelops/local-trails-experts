@@ -6,7 +6,8 @@ import TrailRequestsPanel from '@/components/admin/trail-requests-panel';
 import PendingTrailsPanel from '@/components/admin/pending-trails-panel';
 import UsersPanel from '@/components/admin/users-panel';
 import HazardousTrailsPanel from '@/components/admin/hazardous-trails-panel';
-import StoresPanel from '@/components/admin/stores-panel';
+import StoreRequestsPanel from '@/components/admin/store-requests-panel';
+import StoresAdminPanel from '@/components/admin/stores-admin-panel';
 
 export default function AdminPage() {
   return (
@@ -14,7 +15,8 @@ export default function AdminPage() {
       <AdminHeader />
       <ExpertApplicationsPanel />
       <TrailRequestsPanel />
-      <StoresPanel />
+      <StoreRequestsPanel />
+      <StoresAdminPanel />
       <UsersPanel
         role="expert"
         title="Experts"

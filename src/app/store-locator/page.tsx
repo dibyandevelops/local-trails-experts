@@ -27,7 +27,7 @@ export default function StoreLocatorPage() {
             Find trusted support hubs near your trail
           </h1>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            Discover bike shops and gear partners in Kathmandu and Pokhara. This
+            Discover gear partners in Nepal. This
             list will expand as local teams add verified stores.
           </p>
         </div>
