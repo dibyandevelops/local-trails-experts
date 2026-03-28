@@ -239,6 +239,14 @@ export default function StoreLocatorClient() {
                     Visit site
                   </a>
                 )}
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700 hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
+                >
+                  Navigate
+                </a>
               </div>
             </div>
           ))}
@@ -322,9 +330,20 @@ export default function StoreLocatorClient() {
             <NavigationControl position="top-right" showCompass showZoom />
             {geo && (
               <Marker longitude={geo.lng} latitude={geo.lat} anchor="bottom">
-                <div className="rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold text-white shadow">
+                <button
+                  type="button"
+                  onClick={() => {
+                    mapRef.current?.flyTo({
+                      center: [geo.lng, geo.lat],
+                      zoom: 12.5,
+                      duration: 700,
+                    });
+                  }}
+                  className="rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold text-white shadow hover:bg-blue-700"
+                  aria-label="Fly to your location"
+                >
                   You
-                </div>
+                </button>
               </Marker>
             )}
             {stores.map((store) => (
@@ -334,9 +353,20 @@ export default function StoreLocatorClient() {
                 latitude={store.latitude}
                 anchor="bottom"
               >
-                <div className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white shadow">
+                <button
+                  type="button"
+                  onClick={() => {
+                    mapRef.current?.flyTo({
+                      center: [store.longitude, store.latitude],
+                      zoom: 14,
+                      duration: 700,
+                    });
+                  }}
+                  className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white shadow hover:bg-emerald-700"
+                  aria-label={`Fly to ${store.name}`}
+                >
                   {store.name}
-                </div>
+                </button>
               </Marker>
             ))}
           </Map>
