@@ -11,7 +11,7 @@ type UseCurrentUserOptions = {
 };
 
 function hasAuthHintCookie() {
-  if (typeof document === 'undefined') return true;
+  if (typeof document === 'undefined') return false;
   return document.cookie.split('; ').some((entry) => entry.startsWith('mtb_auth_hint=1'));
 }
 
@@ -24,13 +24,10 @@ export function useCurrentUser(
   initialData?: User | null,
   options?: UseCurrentUserOptions
 ) {
-  const [authHint, setAuthHint] = useState<boolean>(
-    () => hasAuthHintCookie() || hasOAuthConnectedMarker()
-  );
+  const [authHint, setAuthHint] = useState<boolean>(false);
 
   useEffect(() => {
-    const syncHint = () =>
-      setAuthHint(hasAuthHintCookie() || hasOAuthConnectedMarker());
+    const syncHint = () => setAuthHint(hasAuthHintCookie() || hasOAuthConnectedMarker());
     syncHint();
     window.addEventListener('auth-changed', syncHint);
     return () => window.removeEventListener('auth-changed', syncHint);
