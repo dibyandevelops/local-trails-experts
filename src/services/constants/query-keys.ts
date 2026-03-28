@@ -90,6 +90,10 @@ export const QUERY_KEYS = {
     strava: (expertId?: string) => ['experts-strava', expertId || ''] as const,
     reviews: (expertId?: string) => ['expert-reviews', expertId || ''] as const,
   },
+  stores: {
+    all: () => ['stores'] as const,
+    list: (params: Record<string, unknown>) => ['stores', params] as const,
+  },
   events: {
     byId: (id?: string | null) => ['event', id || ''] as const,
     list: (filters?: {

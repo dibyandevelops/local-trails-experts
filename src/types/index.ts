@@ -90,6 +90,23 @@ export interface TrailReview {
   reviewer_photo_url?: string | null;
 }
 
+export interface Store {
+  id: string;
+  name: string;
+  city: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  services?: string | null;
+  hours?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  is_active: boolean;
+  distance_km?: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ExpertReview {
   id: string;
   expert_user_id: string;

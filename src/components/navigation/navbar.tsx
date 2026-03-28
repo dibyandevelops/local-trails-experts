@@ -25,6 +25,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Experts', href: '/experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Store Locator', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
     ],
   },
   {
