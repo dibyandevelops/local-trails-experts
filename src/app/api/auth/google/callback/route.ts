@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(
-      new URL('/?login=1&role=participant&message=Google login is not configured', baseUrl)
+      new URL('/?login=1&message=Google login is not configured', baseUrl)
     );
   }
 
@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
   const expectedState = request.cookies.get(STATE_COOKIE)?.value;
   const next = request.cookies.get(NEXT_COOKIE)?.value || '/trails';
   const mode = request.cookies.get(MODE_COOKIE)?.value === 'connect' ? 'connect' : 'login';
-  const role = request.cookies.get(ROLE_COOKIE)?.value === 'expert' ? 'expert' : 'participant';
+  const roleCookie = request.cookies.get(ROLE_COOKIE)?.value;
 
   if (!code || !state || !expectedState || state !== expectedState) {
     const res = NextResponse.redirect(
-      new URL('/?login=1&role=participant&message=Google login failed. Please try again.', baseUrl)
+      new URL('/?login=1&message=Google login failed. Please try again.', baseUrl)
     );
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
   if (!tokenRes.ok) {
     const res = NextResponse.redirect(
-      new URL('/?login=1&role=participant&message=Google login failed. Please try again.', baseUrl)
+      new URL('/?login=1&message=Google login failed. Please try again.', baseUrl)
     );
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
   const accessToken = tokenJson.access_token;
   if (!accessToken) {
     const res = NextResponse.redirect(
-      new URL('/?login=1&role=participant&message=Google login failed. Please try again.', baseUrl)
+      new URL('/?login=1&message=Google login failed. Please try again.', baseUrl)
     );
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
 
   if (!userRes.ok) {
     const res = NextResponse.redirect(
-      new URL('/?login=1&role=participant&message=Google login failed. Please try again.', baseUrl)
+      new URL('/?login=1&message=Google login failed. Please try again.', baseUrl)
     );
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
 
   if (!email || !sub) {
     const res = NextResponse.redirect(
-      new URL('/?login=1&role=participant&message=Google login failed. Missing email.', baseUrl)
+      new URL('/?login=1&message=Google login failed. Missing email.', baseUrl)
     );
     res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' });
     res.cookies.set(NEXT_COOKIE, '', { maxAge: 0, path: '/' });
@@ -116,10 +116,11 @@ export async function GET(request: NextRequest) {
 
   if (mode === 'connect') {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== role) {
+    const resolvedRole = auth?.role;
+    if (!auth || !resolvedRole) {
       const res = NextResponse.redirect(
         new URL(
-          `/?login=1&role=${role}&message=Please sign in to connect Google.`,
+          '/?login=1&message=Please sign in to connect Google.',
           baseUrl
         )
       );
@@ -135,10 +136,10 @@ export async function GET(request: NextRequest) {
       [auth.sub]
     );
     const meRow = me.rows[0];
-    if (!meRow || meRow.role !== role) {
+    if (!meRow || meRow.role !== resolvedRole) {
       const res = NextResponse.redirect(
         new URL(
-          `/?login=1&role=${role}&message=Please sign in to connect Google.`,
+          '/?login=1&message=Please sign in to connect Google.',
           baseUrl
         )
       );
@@ -153,7 +154,7 @@ export async function GET(request: NextRequest) {
       const res = NextResponse.redirect(
         new URL(
           `/?login=1&message=${encodeURIComponent(
-            `Google email must match your ${role} account email to connect.`
+            `Google email must match your ${resolvedRole} account email to connect.`
           )}`,
           baseUrl
         )
@@ -190,7 +191,12 @@ export async function GET(request: NextRequest) {
       [sub, auth.sub]
     );
 
-    const successPath = role === 'expert' ? '/experts/me' : '/participants/me';
+    const successPath =
+      resolvedRole === 'expert'
+        ? '/experts/me'
+        : resolvedRole === 'admin'
+          ? '/admin'
+          : '/participants/me';
     const res = NextResponse.redirect(
       new URL(`${successPath}?message=google_connected`, baseUrl)
     );
@@ -203,16 +209,19 @@ export async function GET(request: NextRequest) {
 
   // LOGIN mode: only allow if the account exists for the role and it's connected to Google.
   const existing = await pool.query(
-    'SELECT id, role, email, google_sub FROM users WHERE email = $1 AND role = $2 LIMIT 1',
-    [email, role]
+    `SELECT id, role, email, google_sub
+     FROM users
+     WHERE email = $1
+     ORDER BY CASE role WHEN 'admin' THEN 1 WHEN 'expert' THEN 2 ELSE 3 END
+     LIMIT 1`,
+    [email]
   );
 
   if (!existing.rows[0]) {
-    const registerPath = role === 'expert' ? '/experts/join' : '/register';
     const res = NextResponse.redirect(
       new URL(
-        `${registerPath}?message=${encodeURIComponent(
-          `No ${role} account found for this Google email. Please register first.`
+        `/register?message=${encodeURIComponent(
+          'No account found for this Google email. Please register first.'
         )}`,
         baseUrl
       )
@@ -227,8 +236,8 @@ export async function GET(request: NextRequest) {
   if (!existing.rows[0].google_sub) {
     const res = NextResponse.redirect(
       new URL(
-        `/?login=1&role=${role}&message=${encodeURIComponent(
-          `Google login is not enabled for this account yet. Sign in with password and connect Google in your profile.`
+        `/?login=1&message=${encodeURIComponent(
+          'Google login is not enabled for this account yet. Sign in with password and connect Google in your profile.'
         )}`,
         baseUrl
       )
@@ -243,8 +252,8 @@ export async function GET(request: NextRequest) {
   if (existing.rows[0].google_sub !== sub) {
     const res = NextResponse.redirect(
       new URL(
-        `/?login=1&role=${role}&message=${encodeURIComponent(
-          `This Google account does not match the one connected to your ${role} profile.`
+        `/?login=1&message=${encodeURIComponent(
+          'This Google account does not match the one connected to your profile.'
         )}`,
         baseUrl
       )
@@ -257,8 +266,9 @@ export async function GET(request: NextRequest) {
   }
 
   const userId = existing.rows[0].id as string;
+  const resolvedRole = existing.rows[0].role as string;
 
-  const token = signAuthToken({ sub: userId, role, email });
+  const token = signAuthToken({ sub: userId, role: resolvedRole, email });
   await pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [userId]);
 
   const res = NextResponse.redirect(new URL(next, baseUrl));

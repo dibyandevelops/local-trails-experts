@@ -75,7 +75,6 @@ describe('POST /api/login', () => {
       method: 'POST',
       body: JSON.stringify({
         email: 'admin@example.com',
-        role: 'admin',
         password: 'pass1234',
       }),
       headers: { 'content-type': 'application/json' },

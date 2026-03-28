@@ -7,7 +7,6 @@ import type { UserRole } from '@/types';
 type LoginInput = {
   email: string;
   password: string;
-  role: UserRole;
 };
 
 type LoginResponse = {

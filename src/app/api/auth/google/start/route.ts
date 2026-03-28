@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
   if (!clientId) {
     return NextResponse.redirect(
-      new URL('/?login=1&role=participant&message=Google login is not configured', baseUrl)
+      new URL('/?login=1&message=Google login is not configured', baseUrl)
     );
   }
 
@@ -20,18 +20,20 @@ export async function GET(request: NextRequest) {
   const next = url.searchParams.get('next') || '/trails';
   const mode = url.searchParams.get('mode') === 'connect' ? 'connect' : 'login';
   const roleParam = url.searchParams.get('role');
-  const role = roleParam === 'expert' ? 'expert' : 'participant';
+  let role =
+    roleParam === 'admin' ? 'admin' : roleParam === 'expert' ? 'expert' : 'participant';
 
   if (mode === 'connect') {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== role) {
+    if (!auth) {
       return NextResponse.redirect(
         new URL(
-          `/?login=1&role=${role}&message=Please sign in as a ${role} to connect Google.`,
+          '/?login=1&message=Please sign in to connect Google.',
           baseUrl
         )
       );
     }
+    role = auth.role;
   }
 
   const state = randomBytes(16).toString('hex');
@@ -68,7 +70,7 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 10,
     path: '/',
   });
-  res.cookies.set(ROLE_COOKIE, role, {
+  res.cookies.set(ROLE_COOKIE, mode === 'connect' ? role : '', {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',

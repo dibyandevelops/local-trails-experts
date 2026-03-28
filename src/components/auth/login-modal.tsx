@@ -1,13 +1,11 @@
 'use client';
 
 import * as Dialog from '@radix-ui/react-dialog';
-import type { UserRole } from '@/types';
 import LoginComponent from '@/components/feature-components/login';
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialRole?: UserRole;
   message?: string | null;
   next?: string | null;
   onOpenRegister?: () => void;
@@ -16,7 +14,6 @@ type Props = {
 export default function LoginModal({
   open,
   onOpenChange,
-  initialRole,
   message,
   next = null,
   onOpenRegister,
@@ -45,7 +42,7 @@ export default function LoginModal({
                   </Dialog.Description>
                 ) : (
                   <Dialog.Description className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                    Choose your role and continue.
+                    Sign in to access your account.
                   </Dialog.Description>
                 )}
                 <p className="mt-2 text-[11px] text-gray-600 dark:text-gray-300">
@@ -66,7 +63,6 @@ export default function LoginModal({
 
           <LoginComponent
             embedded
-            initialRole={initialRole}
             next={next}
             onLoggedIn={() => onOpenChange(false)}
             onOpenRegister={onOpenRegister}

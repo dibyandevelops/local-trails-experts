@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ThemeToggle from '@/components/theme-toggle';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { User, UserRole } from '@/types';
+import type { User } from '@/types';
 import LoginModal from '@/components/auth/login-modal';
 import RegisterModal from '@/components/auth/register-modal';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -116,7 +116,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [loginInitialRole, setLoginInitialRole] = useState<UserRole | undefined>(undefined);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const [loginNext, setLoginNext] = useState<string | null>(null);
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -145,7 +144,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href);
         url.searchParams.delete('login');
-        url.searchParams.delete('role');
         url.searchParams.delete('message');
         url.searchParams.delete('next');
         const nextUrl = `${url.pathname}${url.search ? url.search : ''}${url.hash ? url.hash : ''}`;
@@ -157,12 +155,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     const errorParam = searchParams.get('error');
     const errorMessage = errorParam ? 'Authentication failed. Please try again.' : null;
 
-    const roleParam = searchParams.get('role');
-    const initialRole: UserRole | undefined =
-      roleParam === 'admin' || roleParam === 'expert' || roleParam === 'participant'
-        ? roleParam
-        : undefined;
-    setLoginInitialRole(initialRole);
     setLoginMessage(searchParams.get('message') || errorMessage);
     setLoginNext(searchParams.get('next'));
     setLoginOpen(true);
@@ -171,7 +163,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.delete('login');
-      url.searchParams.delete('role');
       url.searchParams.delete('message');
       url.searchParams.delete('next');
       const nextUrl = `${url.pathname}${url.search ? url.search : ''}${url.hash ? url.hash : ''}`;
@@ -392,7 +383,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               <button
                 type="button"
                 onClick={() => {
-                  setLoginInitialRole(undefined);
                   setLoginMessage(null);
                   setLoginNext(null);
                   setLoginOpen(true);
@@ -497,7 +487,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 className="px-2 py-2 rounded bg-white text-green-800 font-semibold text-left"
                 onClick={() => {
                   setMobileOpen(false);
-                  setLoginInitialRole(undefined);
                   setLoginMessage(null);
                   setLoginNext(null);
                   setLoginOpen(true);
@@ -530,7 +519,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       <LoginModal
         open={loginOpen}
         onOpenChange={setLoginOpen}
-        initialRole={loginInitialRole}
         message={loginMessage}
         next={loginNext}
         onOpenRegister={() => {

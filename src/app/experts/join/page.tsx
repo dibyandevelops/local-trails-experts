@@ -91,7 +91,6 @@ export default function ExpertJoinPage() {
         await loginUser({
           email,
           password,
-          role: 'expert',
         });
 
         // Dispatch auth changed event to update UI
@@ -102,7 +101,7 @@ export default function ExpertJoinPage() {
       } catch (loginErr) {
         console.error('Auto-login failed after signup:', loginErr);
         // If auto-login fails, redirect to login page with a message
-        router.push('/?login=1&role=expert&message=signup-success&next=%2Ftrails');
+        router.push('/?login=1&message=signup-success&next=%2Ftrails');
       }
     } catch (err) {
       console.error(err);

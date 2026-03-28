@@ -17,7 +17,7 @@ vi.mock('@/lib/auth', () => ({
   setAuthCookie: vi.fn(),
 }));
 
-describe('Google participant auth routes', () => {
+describe('Google auth routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.GOOGLE_CLIENT_ID = 'google-client-id';
@@ -37,13 +37,13 @@ describe('Google participant auth routes', () => {
     expect(response.cookies.get('mtb_google_oauth_next')?.value).toBe('/trails');
   });
 
-  it('GET /api/auth/google/callback logs in only when participant is connected to Google', async () => {
+  it('GET /api/auth/google/callback logs in when the account is connected to Google', async () => {
     vi.mocked(signAuthToken).mockReturnValue('signed.jwt.token' as never);
 
     vi.mocked(pool.query)
       .mockResolvedValueOnce({
         rows: [{ id: 'p-1', role: 'participant', email: 'p@example.com', google_sub: 'sub-1' }],
-      } as never) // SELECT participant by email
+      } as never) // SELECT user by email
       .mockResolvedValueOnce({ rows: [] } as never); // UPDATE last_login
 
     const fetchSpy = vi
@@ -74,7 +74,7 @@ describe('Google participant auth routes', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
-  it('connect mode links google_sub to the current participant and redirects to profile', async () => {
+  it('connect mode links google_sub to the current user and redirects to profile', async () => {
     vi.mocked(getAuthFromRequest).mockReturnValue({
       sub: 'p-1',
       role: 'participant',

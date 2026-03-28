@@ -69,18 +69,9 @@ describe('LoginComponent', () => {
   // Test that form controls have proper accessibility attributes
   it('has accessible form controls', () => {
     renderWithQuery(<LoginComponent />);
-    // Get form inputs by their labels
-    const roleGroup = screen.getByRole('radiogroup', { name: /role/i });
-    const participantRole = screen.getByRole('radio', { name: /participant/i });
-    const expertRole = screen.getByRole('radio', { name: /expert/i });
-    const adminRole = screen.getByRole('radio', { name: /admin/i });
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
     // Verify controls exist and have required accessibility attributes
-    expect(roleGroup).toBeInTheDocument();
-    expect(participantRole).toHaveAttribute('aria-checked', 'true');
-    expect(expertRole).toHaveAttribute('aria-checked', 'false');
-    expect(adminRole).toHaveAttribute('aria-checked', 'false');
     expect(emailInput).toHaveAttribute('required');
     expect(emailInput).toHaveAttribute('autocomplete', 'email');
     expect(passwordInput).toHaveAttribute('required');
@@ -90,7 +81,7 @@ describe('LoginComponent', () => {
   // Test that admin users are redirected to admin dashboard after login
   it('redirects admin user after successful login', async () => {
     // Mock successful login response
-    loginUserMock.mockResolvedValue({ user: { id: 'admin-123' } });
+    loginUserMock.mockResolvedValue({ user: { id: 'admin-123', role: 'admin' } });
     // Spy on window events to verify custom events are dispatched
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
@@ -103,8 +94,6 @@ describe('LoginComponent', () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: '1MicroPassword' },
     });
-    fireEvent.click(screen.getByRole('radio', { name: /admin/i }));
-
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
 
@@ -113,7 +102,6 @@ describe('LoginComponent', () => {
       expect(loginUserMock).toHaveBeenCalled();
       expect(loginUserMock.mock.calls[0][0]).toEqual({
         email: ADMIN_EMAIL,
-        role: 'admin',
         password: '1MicroPassword',
       });
       expect(pushMock).toHaveBeenCalledWith('/admin');
@@ -124,7 +112,7 @@ describe('LoginComponent', () => {
   // Test that participant users are redirected to trails page after login
   it('redirects participant user after successful login', async () => {
     // Mock successful login response for participant
-    loginUserMock.mockResolvedValue({ user: { id: 'participant-123' } });
+    loginUserMock.mockResolvedValue({ user: { id: 'participant-123', role: 'participant' } });
 
     renderWithQuery(<LoginComponent />);
 
@@ -135,8 +123,6 @@ describe('LoginComponent', () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'Pass12345' },
     });
-    fireEvent.click(screen.getByRole('radio', { name: /participant/i }));
-
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
 
@@ -160,8 +146,6 @@ describe('LoginComponent', () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'wrongpass1' },
     });
-    fireEvent.click(screen.getByRole('radio', { name: /participant/i }));
-
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
 
@@ -191,8 +175,6 @@ describe('LoginComponent', () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'Pass12345' },
     });
-    fireEvent.click(screen.getByRole('radio', { name: /expert/i }));
-
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
 
@@ -204,7 +186,7 @@ describe('LoginComponent', () => {
 
     // @ts-ignore
     // Resolve the pending login
-    resolveLogin?.({ user: { id: 'expert-123' } });
+    resolveLogin?.({ user: { id: 'expert-123', role: 'expert' } });
 
     // Verify expert is redirected to their profile page
     await waitFor(() => {

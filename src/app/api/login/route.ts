@@ -11,15 +11,14 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const body = await request.json();
-    const { email, role, password } = body as {
+    const { email, password } = body as {
       email?: string;
-      role?: UserRole;
       password?: string;
     };
 
-    if (!email || !role || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Missing required fields: email, role, password' },
+        { error: 'Missing required fields: email, password' },
         { status: 400 }
       );
     }
@@ -28,16 +27,17 @@ export async function POST(request: NextRequest) {
       SELECT id, name, email, role, bio, city, sports, is_verified_expert, created_at, updated_at
       , password_hash
       FROM users
-      WHERE email = $1 AND role = $2
+      WHERE email = $1
+      ORDER BY CASE role WHEN 'admin' THEN 1 WHEN 'expert' THEN 2 ELSE 3 END
       LIMIT 1
     `;
 
-    const result = await pool.query(query, [email, role]);
+    const result = await pool.query(query, [email]);
     const userRow = result.rows[0];
 
     if (!userRow) {
       return NextResponse.json(
-        { error: 'No user found for that email and role.' },
+        { error: 'No user found for that email.' },
         { status: 401 }
       );
     }
