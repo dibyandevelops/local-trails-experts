@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest, setAuthCookie, signAuthToken } from '@/lib/auth';
+import type { UserRole } from '@/types';
 
 const STATE_COOKIE = 'mtb_google_oauth_state';
 const NEXT_COOKIE = 'mtb_google_oauth_next';
@@ -266,7 +267,11 @@ export async function GET(request: NextRequest) {
   }
 
   const userId = existing.rows[0].id as string;
-  const resolvedRole = existing.rows[0].role as string;
+  const roleValue = existing.rows[0].role as string;
+  const resolvedRole: UserRole =
+    roleValue === 'admin' || roleValue === 'expert' || roleValue === 'participant'
+      ? roleValue
+      : 'participant';
 
   const token = signAuthToken({ sub: userId, role: resolvedRole, email });
   await pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [userId]);
