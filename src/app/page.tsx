@@ -15,18 +15,18 @@ export default function Home() {
           <div className="text-left">
             <div className="mb-4 flex flex-wrap gap-2">
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Nepal Trails
+                Best Nepal Cities
               </span>
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Local Experts
+                Local Trail Hubs
               </span>
             </div>
             <h1 className="mb-4 text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl lg:text-6xl">
-              Guided trails and training with verified local experts.
+              Find the best trails across Nepal’s top cities.
             </h1>
             <p className="mb-6 max-w-xl text-base text-gray-600 dark:text-gray-300 md:text-lg">
-              Discover MTB rides, trail runs, hikes, and structured training across Nepal.
-              Join small-group adventures or book private coaching from verified local experts.
+              Explore curated MTB rides, trail runs, and hikes with clear difficulty, elevation,
+              and local tips. Built around Nepal’s most active trail hubs.
             </p>
             <div className="mb-6 flex flex-wrap gap-3">
               <Link
@@ -36,29 +36,29 @@ export default function Home() {
                 Browse Trails
               </Link>
               <Link
-                href="/events"
-                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-green-700 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 md:text-base"
+                href="/store-locator"
+                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50 dark:bg-slate-900 dark:text-emerald-100 dark:ring-emerald-700/60 dark:hover:bg-emerald-950/30 md:text-base"
               >
-                Browse Events
+                Browse Stores
               </Link>
               <JoinAdventureButton className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base" />
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Sports</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">8 Categories</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Featured City</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Valley Trails</p>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Cities</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nepal</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Featured City</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Lakeside Routes</p>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Experts</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Local Experts</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Verified Hosts</p>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Events</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Daily Listings</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Trail Intel</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Updated Weekly</p>
               </div>
             </div>
           </div>

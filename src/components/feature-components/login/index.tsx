@@ -200,27 +200,25 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         >
           Continue with Google
         </Link>
-        {!embedded && (
-          <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-            Don&apos;t have a participant account?{' '}
-            {onOpenRegister ? (
-              <button
-                type="button"
-                onClick={onOpenRegister}
-                className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-              >
-                Join Adventure
-              </button>
-            ) : (
-              <Link
-                href="/register"
-                className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-              >
-                Join Adventure
-              </Link>
-            )}
-          </p>
-        )}
+        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+          Don&apos;t have a participant account?{' '}
+          {onOpenRegister ? (
+            <button
+              type="button"
+              onClick={onOpenRegister}
+              className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+            >
+              Join Adventure
+            </button>
+          ) : (
+            <Link
+              href="/register"
+              className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+            >
+              Join Adventure
+            </Link>
+          )}
+        </p>
       </form>
     </div>
   );

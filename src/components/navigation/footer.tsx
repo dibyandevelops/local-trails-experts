@@ -40,6 +40,11 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
           <p className="text-sm text-gray-600 dark:text-slate-300">
             Trails, events, and local experts for outdoor sports.
           </p>
+          <ul className="space-y-1 text-xs text-gray-600 dark:text-slate-300">
+            <li>• Fund trail maintenance and local trail crews.</li>
+            <li>• Connect riders with verified local experts.</li>
+            <li>• Keep trail data current for safer adventures.</li>
+          </ul>
           <p className="text-xs text-emerald-700 dark:text-emerald-200">
             Built with LocoMTB Communities.
           </p>
@@ -146,7 +151,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             </li>
             <li>
               <Link className="hover:underline" href="/donate">
-                Donate
+                Contribute to community
               </Link>
             </li>
             <li>
