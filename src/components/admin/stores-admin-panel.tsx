@@ -58,6 +58,26 @@ export default function StoresAdminPanel() {
     },
   });
 
+  const visibilityMutation = useMutation({
+    mutationFn: async ({ store, isActive }: { store: Store; isActive: boolean }) => {
+      const { data } = await apiClient.patch<{ store: Store }>(
+        `/api/stores/${store.id}`,
+        {
+          ...store,
+          is_active: isActive,
+        }
+      );
+      return data.store;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.stores.all() });
+      setMessage('Store visibility updated.');
+    },
+    onError: (error) => {
+      setMessage(error instanceof Error ? error.message : 'Failed to update store.');
+    },
+  });
+
   const groupedStores = useMemo(() => {
     const grouped = stores.reduce<Record<string, Store[]>>((acc, store) => {
       const key = store.city || 'Other';
@@ -160,7 +180,35 @@ export default function StoresAdminPanel() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteMutation.mutate(store.id)}
+                          onClick={() => {
+                            const nextState = store.is_active === false;
+                            const actionLabel = nextState ? 'unhide' : 'hide';
+                            if (
+                              window.confirm(
+                                `Are you sure you want to ${actionLabel} "${store.name}"?`
+                              )
+                            ) {
+                              visibilityMutation.mutate({
+                                store,
+                                isActive: nextState,
+                              });
+                            }
+                          }}
+                          className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+                        >
+                          {store.is_active === false ? 'Unhide' : 'Hide'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Delete "${store.name}" permanently? This cannot be undone.`
+                              )
+                            ) {
+                              deleteMutation.mutate(store.id);
+                            }
+                          }}
                           className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200"
                         >
                           Delete

@@ -10,9 +10,12 @@ import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
 import StoreRequestForm from '@/components/feature-components/store-locator/store-request-form';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import Link from 'next/link';
 
 const DEFAULT_CENTER = { longitude: 84.124, latitude: 28.3949, zoom: 6.6 };
 export default function StoreLocatorClient() {
+  const { data: user = null } = useCurrentUser();
   const mapRef = useRef<MapRef | null>(null);
   const boundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastBounds = useRef<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
@@ -25,7 +28,7 @@ export default function StoreLocatorClient() {
     minLng: number;
     maxLng: number;
   } | null>(null);
-  const [useBoundsFilter, setUseBoundsFilter] = useState(true);
+  const [useBoundsFilter, setUseBoundsFilter] = useState(false);
 
   const queryKey = useMemo(
     () =>
@@ -140,34 +143,43 @@ export default function StoreLocatorClient() {
             >
               Use my location
             </button>
-            <Dialog.Root>
-              <Dialog.Trigger asChild>
-                <button className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
-                  Request to list
-                </button>
-              </Dialog.Trigger>
-              <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-                <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
+            {user ? (
+              <Dialog.Root>
+                <Dialog.Trigger asChild>
+                  <button className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
+                    Add your store
+                  </button>
+                </Dialog.Trigger>
+                <Dialog.Portal>
+                  <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+                  <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
                       <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Request to list your store
+                          Add your store
                       </Dialog.Title>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                        Fill in the details and we’ll follow up.
-                      </p>
+                        <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                          Fill in the details and we’ll follow up.
+                        </p>
+                      </div>
+                      <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+                        Close
+                      </Dialog.Close>
                     </div>
-                    <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
-                      Close
-                    </Dialog.Close>
-                  </div>
-                  <div className="mt-5">
-                    <StoreRequestForm />
-                  </div>
-                </Dialog.Content>
-              </Dialog.Portal>
-            </Dialog.Root>
+                    <div className="mt-5">
+                      <StoreRequestForm />
+                    </div>
+                  </Dialog.Content>
+                </Dialog.Portal>
+              </Dialog.Root>
+            ) : (
+              <Link
+                href="/?login=1&next=/store-locator"
+                className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+              >
+                Sign in to request
+              </Link>
+            )}
           </div>
         </div>
 
