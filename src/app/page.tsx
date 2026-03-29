@@ -20,13 +20,20 @@ export default function Home() {
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
                 Local Trail Hubs
               </span>
+              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+                For the Community, By the Community
+              </span>
+              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+                Boost Local Tourism & Economy
+              </span>
             </div>
             <h1 className="mb-4 text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl lg:text-6xl">
               Find the best trails across Nepal’s top cities.
             </h1>
             <p className="mb-6 max-w-xl text-base text-gray-600 dark:text-gray-300 md:text-lg">
               Explore curated MTB rides and trail runs with clear difficulty, elevation,
-              and local tips. Built around Nepal’s most active trail hubs.
+              and local tips. Built around Nepal’s most active trail hubs to support
+              community livelihoods, local tourism, and the outdoor economy.
             </p>
             <div className="mb-6 flex flex-wrap gap-3">
               <Link
