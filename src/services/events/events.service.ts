@@ -77,6 +77,7 @@ type FetchEventsParams = {
   sport?: SportType | '';
   expert?: string;
   upcoming?: boolean;
+  community?: boolean;
 };
 
 export async function fetchEvents(params: FetchEventsParams, signal?: AbortSignal) {
@@ -88,6 +89,7 @@ export async function fetchEvents(params: FetchEventsParams, signal?: AbortSigna
         sport: params.sport || undefined,
         expert: params.expert || undefined,
         upcoming: params.upcoming ? 'true' : undefined,
+        community: params.community ? 'true' : undefined,
       },
       signal,
     });

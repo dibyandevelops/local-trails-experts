@@ -44,6 +44,12 @@ export default function Home() {
                 Browse Trails
               </Link>
               <Link
+                href="/community-rides"
+                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-green-700 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 md:text-base"
+              >
+                Join Community Rides
+              </Link>
+              <Link
                 href="/store-locator"
                 className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50 dark:bg-slate-900 dark:text-emerald-100 dark:ring-emerald-700/60 dark:hover:bg-emerald-950/30 md:text-base"
               >

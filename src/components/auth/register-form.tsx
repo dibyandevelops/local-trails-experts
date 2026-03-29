@@ -389,6 +389,29 @@ export default function RegisterForm({
         >
           {loading ? 'Creating account...' : 'Start My Adventure'}
         </button>
+        <p className="text-center text-xs text-gray-500 dark:text-slate-400">
+          Already have an account?{' '}
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                window.dispatchEvent(
+                  new CustomEvent('open-login', {
+                    detail: {
+                      message: 'Sign in to continue.',
+                      next,
+                    },
+                  })
+                );
+              } catch {
+                router.push(`/?login=1&next=${encodeURIComponent(next || '/')}`);
+              }
+            }}
+            className="font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+          >
+            Login
+          </button>
+        </p>
       </form>
     </div>
   );

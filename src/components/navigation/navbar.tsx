@@ -24,6 +24,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: 'Explore',
     items: [
       { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Experts', href: '/experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Cycle Hubs', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
     ],
@@ -181,6 +182,19 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     };
     window.addEventListener('open-register', handler);
     return () => window.removeEventListener('open-register', handler);
+  }, [user]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      if (user) return;
+      const custom = event as CustomEvent<{ message?: string; next?: string }>;
+      setRegisterOpen(false);
+      setLoginMessage(custom.detail?.message || null);
+      setLoginNext(custom.detail?.next || null);
+      setLoginOpen(true);
+    };
+    window.addEventListener('open-login', handler);
+    return () => window.removeEventListener('open-login', handler);
   }, [user]);
 
   useEffect(() => {

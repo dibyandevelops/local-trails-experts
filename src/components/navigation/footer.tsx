@@ -71,6 +71,11 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
               </Link>
             </li>
             <li>
+              <Link className="hover:underline" href="/community-rides">
+                Community rides
+              </Link>
+            </li>
+            <li>
               <Link className="hover:underline" href="/experts">
                 Find experts
               </Link>

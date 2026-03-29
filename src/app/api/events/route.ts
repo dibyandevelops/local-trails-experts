@@ -86,13 +86,20 @@ export async function GET(request: NextRequest) {
     }
 
     if (community) {
-      query += ` AND (
-        LOWER(COALESCE(e.organizer_name, '')) LIKE $${paramIndex}
-        OR LOWER(COALESCE(e.organizer_email, '')) = $${paramIndex + 1}
-        OR LOWER(COALESCE(u.role, '')) = 'admin'
-      )`;
-      params.push(communityNameLike, adminEmail);
-      paramIndex += 2;
+      const communityClauses = [
+        `LOWER(COALESCE(e.organizer_name, '')) LIKE $${paramIndex}`,
+        `LOWER(COALESCE(u.role, '')) = 'admin'`,
+      ];
+      params.push(communityNameLike);
+      paramIndex += 1;
+
+      if (adminEmail) {
+        communityClauses.push(`LOWER(COALESCE(e.organizer_email, '')) = $${paramIndex}`);
+        params.push(adminEmail);
+        paramIndex += 1;
+      }
+
+      query += ` AND (${communityClauses.join(' OR ')})`;
     }
 
     query += ' ORDER BY e.event_date ASC';

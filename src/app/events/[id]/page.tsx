@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel } from '@/services/constants/sports';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { cancelEvent } from '@/services/events/events.service';
+import { cancelEvent, joinEvent } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 export default function EventDetailPage() {
@@ -18,6 +18,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const { data: user = null } = useCurrentUser();
   const [booking, setBooking] = useState<(Booking & { payment_status?: string | null }) | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [riskAcknowledged, setRiskAcknowledged] = useState(false);
   const queryClient = useQueryClient();
@@ -30,6 +31,38 @@ export default function EventDetailPage() {
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.byId(eventId) });
       }
       router.push('/events');
+    },
+  });
+
+  const joinMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!user) {
+        throw new Error('Please register or login to join this event.');
+      }
+      return joinEvent(id, {
+        participant_name: user.name || 'Participant',
+        participant_email: user.email,
+        phone: user.phone || undefined,
+        expertise_level: event?.required_expertise || 'beginner',
+      });
+    },
+    onSuccess: async () => {
+      if (eventId) {
+        const [eventRes, bookingRes] = await Promise.all([
+          fetch(`/api/events/${eventId}`),
+          fetch(`/api/events/${eventId}/bookings`),
+        ]);
+        const eventData = await eventRes.json();
+        const bookingData = await bookingRes.json();
+        setEvent(eventData.event || null);
+        setBooking(bookingData.booking || null);
+      }
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.joinedByParticipant });
+      setJoinError(null);
+    },
+    onError: (error) => {
+      setJoinError(error instanceof Error ? error.message : 'Failed to join event.');
     },
   });
 
@@ -94,6 +127,8 @@ export default function EventDetailPage() {
 
   const canCancel =
     user?.role === 'admin' || (user?.role === 'expert' && user?.id === event.host_user_id);
+  const canJoin = user?.role === 'participant' || !user;
+  const alreadyJoined = user?.role === 'participant' && Boolean(booking);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -239,6 +274,62 @@ export default function EventDetailPage() {
               </p>
               {event.organizer_email && <p>{event.organizer_email}</p>}
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+              Join Event
+            </h3>
+            {canJoin ? (
+              <div className="mt-2 space-y-3">
+                {!user && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextPath = `/events/${eventId}`;
+                      window.dispatchEvent(
+                        new CustomEvent('open-register', {
+                          detail: {
+                            message: 'Create a participant account to join this event.',
+                            next: nextPath,
+                          },
+                        })
+                      );
+                    }}
+                    className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+                  >
+                    Register to Join
+                  </button>
+                )}
+                {user?.role === 'participant' && (
+                  <button
+                    type="button"
+                    disabled={alreadyJoined || joinMutation.isPending}
+                    onClick={() => {
+                      if (!eventId) return;
+                      setJoinError(null);
+                      joinMutation.mutate(eventId);
+                    }}
+                    className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {alreadyJoined
+                      ? "You're in"
+                      : joinMutation.isPending
+                        ? 'Joining...'
+                        : 'Join Event'}
+                  </button>
+                )}
+                {joinError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+                    {joinError}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                Join is available for participants.
+              </p>
+            )}
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">

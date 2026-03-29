@@ -102,6 +102,7 @@ export const QUERY_KEYS = {
       sport?: string;
       expert?: string;
       upcoming?: boolean;
+      community?: boolean;
     }) =>
       [
         'events',
@@ -110,6 +111,7 @@ export const QUERY_KEYS = {
         filters?.sport || '',
         filters?.expert || '',
         filters?.upcoming ? 'true' : 'false',
+        filters?.community ? 'true' : 'false',
       ] as const,
     joinedByParticipant: ['participant-joined-events'] as const,
   },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { Event, ExpertiseLevel, SportType, User } from '@/types';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Toast from '@radix-ui/react-toast';
@@ -18,7 +18,7 @@ import {
 import { fetchMyParticipantEvents } from '@/services/participants/participants.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { useUiStore } from '@/stores/ui.store';
-import { getSportLabel, SPORT_OPTIONS } from '@/services/constants/sports';
+import { getSportLabel } from '@/services/constants/sports';
 import DateText from '@/components/ui/date-text';
 
 const EMPTY_EVENTS: Event[] = [];
@@ -153,6 +153,13 @@ export default function EventsPageClient() {
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+    refetchInterval: 30000,
+  });
+
+  const { data: catalogEvents = [] } = useQuery<Event[]>({
+    queryKey: QUERY_KEYS.events.list({ upcoming: showOnlyUpcoming }),
+    queryFn: ({ signal }) => fetchEvents({ upcoming: showOnlyUpcoming }, signal),
+    refetchInterval: 30000,
   });
 
   const { data: joinedEventsData } = useQuery<Event[]>({
@@ -278,7 +285,27 @@ export default function EventsPageClient() {
   };
 
   const expertiseLevels: ExpertiseLevel[] = ['beginner', 'intermediate', 'advanced', 'expert'];
-  const sportTypes: { value: SportType; label: string }[] = SPORT_OPTIONS;
+  const sportTypes = useMemo(() => {
+    const set = new Set<SportType>();
+    for (const event of catalogEvents) {
+      if (event.sport_type) set.add(event.sport_type);
+    }
+    return Array.from(set)
+      .sort((a, b) => getSportLabel(a).localeCompare(getSportLabel(b)))
+      .map((sport) => ({
+        value: sport,
+        label: getSportLabel(sport),
+      }));
+  }, [catalogEvents]);
+
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const event of catalogEvents) {
+      const city = (event.city || '').trim();
+      if (city) set.add(city);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [catalogEvents]);
 
   const eventsByExpertise = expertiseLevels.reduce((acc, level) => {
     acc[level] = events.filter((event) => event.required_expertise === level);
@@ -350,12 +377,18 @@ export default function EventsPageClient() {
           <div>
             <label className="block text-sm font-medium mb-2">City</label>
             <input
+              list="events-city-options"
               type="text"
               value={selectedCity}
               onChange={(e) => setEventsFilterDraft({ city: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Any city (leave blank for all)"
             />
+            <datalist id="events-city-options">
+              {cityOptions.map((city: string) => (
+                <option key={city} value={city} />
+              ))}
+            </datalist>
           </div>
           <div className="flex items-end">
             <label className="flex items-center">
@@ -382,7 +415,7 @@ export default function EventsPageClient() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="">All Sports</option>
-              {sportTypes.map((sport) => (
+              {sportTypes.map((sport: { value: SportType; label: string }) => (
                 <option key={sport.value} value={sport.value}>
                   {sport.label}
                 </option>
