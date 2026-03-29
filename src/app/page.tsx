@@ -53,7 +53,7 @@ export default function Home() {
                 href="/store-locator"
                 className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50 dark:bg-slate-900 dark:text-emerald-100 dark:ring-emerald-700/60 dark:hover:bg-emerald-950/30 md:text-base"
               >
-                Browse Stores
+                Cycle Hubs
               </Link>
               <JoinAdventureButton className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base" />
             </div>
