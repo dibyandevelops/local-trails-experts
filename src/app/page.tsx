@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import JoinAdventureButton from '@/components/home/join-adventure-button';
+import { COMMUNITY_NAME } from '@/lib/branding';
 // import PhoneVerifyToast from '@/components/phone-verify-toast';
 
 export default function Home() {
@@ -235,7 +236,7 @@ export default function Home() {
             </div>
           </div>
           <div className="w-full max-w-sm rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-600 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-300">
-            <p className="font-semibold text-gray-900 dark:text-gray-100">Built by LocoMTB Community</p>
+            <p className="font-semibold text-gray-900 dark:text-gray-100">Built by {COMMUNITY_NAME}</p>
             <p className="mt-2">
               Community-first operations with local experts, stores, and supporters working together
               to keep Nepal trails active, safer, and easier to discover.

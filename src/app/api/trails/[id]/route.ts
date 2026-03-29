@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { Trail } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { normalizeSafetyLabels } from '@/lib/trail-safety';
+import { COMMUNITY_NAME } from '@/lib/branding';
 
 function normalizeKomootEmbedInput(raw: string) {
   const value = raw.trim();
@@ -19,6 +20,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const communityNameSql = COMMUNITY_NAME.replace(/'/g, "''");
     const { id } = await params;
 
     const result = await pool.query(
@@ -26,7 +28,7 @@ export async function GET(
         SELECT
           t.*,
           CASE
-            WHEN u.role = 'admin' THEN 'LocoMTBGroup'
+            WHEN u.role = 'admin' THEN '${communityNameSql}'
             ELSE u.name
           END AS submitted_by_name,
           u.email AS submitted_by_email

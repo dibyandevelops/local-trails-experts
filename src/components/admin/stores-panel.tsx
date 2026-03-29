@@ -72,7 +72,7 @@ export default function StoresPanel() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Store Locator
+            Cycle Hubs
           </h2>
           <p className="text-sm text-gray-600 dark:text-slate-300">
             Add and maintain partner stores for the locator map.

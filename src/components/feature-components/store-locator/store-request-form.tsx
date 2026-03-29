@@ -158,7 +158,7 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
           Request to list your store
         </h2>
         <p className="text-sm text-gray-600 dark:text-slate-300">
-          Share your details and we’ll review your listing for the Nepal store locator.
+          Share your details and we’ll review your listing for Nepal Cycle Hubs.
         </p>
       </div>
 

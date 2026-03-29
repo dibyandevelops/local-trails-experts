@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { COMMUNITY_NAME } from '@/lib/branding';
 
 export const metadata: Metadata = {
   title: 'Donate',
   description:
-    'Support LocoMTBGroup operations and trail stewardship in Nepal. Donate via eSewa QR.',
+    `Support ${COMMUNITY_NAME} operations and trail stewardship in Nepal. Donate via eSewa QR.`,
   alternates: { canonical: '/donate' },
 };
 
@@ -88,7 +89,7 @@ export default function DonatePage() {
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 md:p-10">
-          <SectionTitle>How LocoMTBGroup operates</SectionTitle>
+          <SectionTitle>How {COMMUNITY_NAME} operates</SectionTitle>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
             This is the day-to-day work that keeps a community trail network
             active and safer for everyone.

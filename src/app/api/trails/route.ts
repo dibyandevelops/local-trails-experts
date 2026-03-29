@@ -6,6 +6,7 @@ import { normalizeSafetyLabels } from '@/lib/trail-safety';
 import { parseGPX } from '@/lib/gpx-parser';
 import { DEFAULT_TRAIL_SPORT } from '@/services/constants/sports';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
+import { COMMUNITY_NAME } from '@/lib/branding';
 
 function parseOptionalNumber(raw: string | null) {
   if (!raw || !raw.trim()) return null;
@@ -25,6 +26,7 @@ function normalizeKomootEmbedInput(raw: string) {
 
 export async function GET(request: NextRequest) {
   try {
+    const communityNameSql = COMMUNITY_NAME.replace(/'/g, "''");
     const auth = getAuthFromRequest(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -152,7 +154,7 @@ export async function GET(request: NextRequest) {
         COALESCE(tr.review_count, 0) AS review_count,
         COALESCE(tr.average_rating, 0) AS average_rating,
         CASE
-          WHEN u.role = 'admin' THEN 'LocoMTBGroup'
+          WHEN u.role = 'admin' THEN '${communityNameSql}'
           ELSE u.name
         END as created_by
       FROM trails t

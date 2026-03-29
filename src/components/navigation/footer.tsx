@@ -5,6 +5,7 @@ import Link from 'next/link';
 import * as Dialog from '@radix-ui/react-dialog';
 import type { User } from '@/types';
 import GroupRequestForm from '@/components/feature-components/group-request-form';
+import { COMMUNITY_NAME } from '@/lib/branding';
 
 function buildMailto(params: { to?: string; subject: string; body: string }) {
   const subject = encodeURIComponent(params.subject);
@@ -46,7 +47,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             <li>• Keep trail data current for safer adventures.</li>
           </ul>
           <p className="text-xs text-emerald-700 dark:text-emerald-200">
-            Built with LocoMTB Communities.
+            Built with {COMMUNITY_NAME}.
           </p>
           <p className="text-xs text-gray-500 dark:text-slate-400">
             © {year} {brand}. All rights reserved. {brand} are
@@ -76,7 +77,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             </li>
             <li>
               <Link className="hover:underline" href="/store-locator">
-                Store locator
+                Cycle hubs
               </Link>
             </li>
             <li>

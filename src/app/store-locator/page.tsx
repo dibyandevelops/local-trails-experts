@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import StoreLocatorClient from '@/components/feature-components/store-locator/store-locator-client';
 
 export const metadata: Metadata = {
-  title: 'Store Locator',
+  title: 'Cycle Hubs',
   description:
-    'Find trusted bike shops, gear stores, and support hubs near Kathmandu and Pokhara.',
+    'Find trusted bike shops, repair points, and support hubs across Nepal.',
   alternates: { canonical: '/store-locator' },
 };
 
@@ -20,7 +20,7 @@ export default function StoreLocatorPage() {
               Feature
             </span>
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-              Store Locator
+              Cycle Hubs
             </span>
           </div>
           <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { Event, CreateEventInput, SportType } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
+import { COMMUNITY_NAME } from '@/lib/branding';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +12,9 @@ export async function GET(request: NextRequest) {
     const sport = searchParams.get('sport') as SportType | null;
     const expert = searchParams.get('expert');
     const upcoming = searchParams.get('upcoming') === 'true';
+    const community = searchParams.get('community') === 'true';
+    const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || '').trim().toLowerCase();
+    const communityNameLike = `%${COMMUNITY_NAME.toLowerCase()}%`;
 
     let query = `
       SELECT
@@ -79,6 +83,16 @@ export async function GET(request: NextRequest) {
 
     if (upcoming) {
       query += ` AND e.event_date >= NOW()`;
+    }
+
+    if (community) {
+      query += ` AND (
+        LOWER(COALESCE(e.organizer_name, '')) LIKE $${paramIndex}
+        OR LOWER(COALESCE(e.organizer_email, '')) = $${paramIndex + 1}
+        OR LOWER(COALESCE(u.role, '')) = 'admin'
+      )`;
+      params.push(communityNameLike, adminEmail);
+      paramIndex += 2;
     }
 
     query += ' ORDER BY e.event_date ASC';
