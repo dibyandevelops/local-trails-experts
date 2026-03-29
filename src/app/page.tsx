@@ -25,7 +25,7 @@ export default function Home() {
               Find the best trails across Nepal’s top cities.
             </h1>
             <p className="mb-6 max-w-xl text-base text-gray-600 dark:text-gray-300 md:text-lg">
-              Explore curated MTB rides, trail runs, and hikes with clear difficulty, elevation,
+              Explore curated MTB rides and trail runs with clear difficulty, elevation,
               and local tips. Built around Nepal’s most active trail hubs.
             </p>
             <div className="mb-6 flex flex-wrap gap-3">
@@ -114,7 +114,7 @@ export default function Home() {
             Find trails that match your pace and ambitions.
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Join rides and hikes led by locals who know the terrain, weather windows,
+            Join rides led by locals who know the terrain, weather windows,
             and hidden viewpoints.
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
@@ -124,7 +124,7 @@ export default function Home() {
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Sunrise hikes and cultural local visits.
+              Community-led routes with local cultural stops.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
@@ -193,7 +193,51 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="reveal reveal-6 flex flex-col items-center justify-between gap-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:flex-row md:p-10">
+      <section className="reveal reveal-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:p-10">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div>
+            <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+              Project Purpose
+            </span>
+            <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Grow local trail access, experts, and tourism in Nepal.
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+              LocoXperts helps riders discover reliable local trails, connect with verified experts,
+              and supports long-term trail ecosystems that boost local tourism in Nepal.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/sponsors"
+                className="inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-800"
+              >
+                Sponsor the platform
+              </Link>
+              <Link
+                href="/donate"
+                className="inline-flex items-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30"
+              >
+                Contribute to community
+              </Link>
+              <Link
+                href="/purpose"
+                className="inline-flex items-center rounded-full border border-emerald-300 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm transition-colors hover:bg-emerald-50 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/30"
+              >
+                Read full purpose
+              </Link>
+            </div>
+          </div>
+          <div className="w-full max-w-sm rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-600 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-300">
+            <p className="font-semibold text-gray-900 dark:text-gray-100">Built by LocoMTB Community</p>
+            <p className="mt-2">
+              Community-first operations with local experts, stores, and supporters working together
+              to keep Nepal trails active, safer, and easier to discover.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="reveal reveal-7 flex flex-col items-center justify-between gap-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:flex-row md:p-10">
         <div>
           <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
             Training & Performance

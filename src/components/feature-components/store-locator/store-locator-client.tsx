@@ -147,7 +147,7 @@ export default function StoreLocatorClient() {
               <Dialog.Root>
                 <Dialog.Trigger asChild>
                   <button className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
-                    Add your store
+                    List my shop
                   </button>
                 </Dialog.Trigger>
                 <Dialog.Portal>
@@ -155,9 +155,9 @@ export default function StoreLocatorClient() {
                   <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                      <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                          Add your store
-                      </Dialog.Title>
+                        <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+                          List my shop
+                        </Dialog.Title>
                         <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
                           Fill in the details and we’ll follow up.
                         </p>
@@ -177,7 +177,7 @@ export default function StoreLocatorClient() {
                 href="/?login=1&next=/store-locator"
                 className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
               >
-                Sign in to request
+                Sign in to list your shop
               </Link>
             )}
           </div>

@@ -30,6 +30,17 @@ export default function StoreLocatorPage() {
             Discover gear partners in Nepal. This
             list will expand as local teams add verified stores.
           </p>
+          <div className="mt-5 grid gap-2 text-xs sm:grid-cols-3">
+            <div className="rounded-xl border border-hero-border/70 bg-hero-pill/70 px-3 py-2 text-hero-pill-text">
+              Connect riders with trusted local experts.
+            </div>
+            <div className="rounded-xl border border-hero-border/70 bg-hero-pill/70 px-3 py-2 text-hero-pill-text">
+              Support local shops that keep trails active.
+            </div>
+            <div className="rounded-xl border border-hero-border/70 bg-hero-pill/70 px-3 py-2 text-hero-pill-text">
+              Strengthen Nepal&apos;s long-term trail community.
+            </div>
+          </div>
         </div>
       </section>
 

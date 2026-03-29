@@ -17,8 +17,6 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export default function DonatePage() {
-  const goFundMeUrl = (process.env.NEXT_PUBLIC_GOFUNDME_URL || '').trim();
-
   return (
     <div className="space-y-12">
       <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-6 py-10 shadow-sm dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 md:px-10 md:py-14">
@@ -35,29 +33,17 @@ export default function DonatePage() {
           <p className="mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
             Your support helps cover the real costs behind community operations in
             Nepal: trail days, tools, signage, safety basics, route documentation,
-            and the work required to keep local outdoor experiences sustainable.
+            and the work required to keep the platform up to date for the community,
+            including ongoing infrastructure costs (hosting, storage, maps, and monitoring).
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            {goFundMeUrl ? (
-              <a
-                href={goFundMeUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-green-700 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 md:text-base"
-              >
-                Donate via GoFundMe
-              </a>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="inline-flex min-h-[46px] cursor-not-allowed items-center justify-center rounded-full bg-green-700/50 px-7 py-3 text-sm font-semibold text-white md:text-base"
-                title="Add NEXT_PUBLIC_GOFUNDME_URL to enable this button"
-              >
-                GoFundMe link coming soon
-              </button>
-            )}
+            <Link
+              href="#community-fund"
+              className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-green-700 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 md:text-base"
+            >
+              Support community fundraising
+            </Link>
             <Link
               href="/sponsors"
               className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base"
@@ -69,7 +55,7 @@ export default function DonatePage() {
       </section>
 
       <section className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 md:p-10">
+        <div id="community-fund" className="rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 md:p-10">
           <SectionTitle>Donate via eSewa (QR)</SectionTitle>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
             Scan the QR code to get the payment details for the LocoXperts Trail Fund.
@@ -128,10 +114,17 @@ export default function DonatePage() {
       <section className="rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 md:p-10">
         <SectionTitle>Transparency (recommended)</SectionTitle>
         <p className="mt-2 max-w-3xl text-sm text-gray-600 dark:text-slate-300">
-          If you want this page to feel extra trustworthy, we can add a small
-          “where funds go” breakdown (tools, signage, labor days, transport,
-          safety items) and optionally publish monthly updates.
+          We follow practical transparency standards so contributors can trust where
+          funds go and how decisions are made.
         </p>
+        <ul className="mt-5 space-y-2 text-sm text-gray-700 dark:text-slate-200">
+          <li>• Publish a monthly summary of funds received and key expenses.</li>
+          <li>• Share a clear allocation split (trail work, safety gear, platform upkeep).</li>
+          <li>• Keep basic proof for expenses (receipts, invoices, trail-day logs).</li>
+          <li>• Report outcomes, not just spending (trails maintained, rides supported).</li>
+          <li>• Separate community fund usage from personal accounts and payouts.</li>
+          <li>• Disclose sponsor relationships and any material conflicts of interest.</li>
+        </ul>
       </section>
     </div>
   );
