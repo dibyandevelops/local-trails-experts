@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Purpose',
   description:
-    'LocoXperts builds sustainable trails and empowers certified local experts to lead guided rides and trainings, supporting community health and conservation.',
+    'The Nepal Trail Hub agenda: map Nepal trails for everyone, support local experts, and fund trail building and signage around Kathmandu hills.',
   alternates: { canonical: '/purpose' },
 };
 
@@ -66,29 +66,27 @@ export default function PurposePage() {
 
         <div className="max-w-3xl">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge tone="emerald">Sustainable Trails</Badge>
-            <Badge tone="amber">Local Experts</Badge>
-            <Badge tone="sky">Tourism & Livelihoods</Badge>
-            <Badge tone="slate">Health & Conservation</Badge>
+            <Badge tone="emerald">Nepal Trail Hub</Badge>
+            <Badge tone="amber">Map + Build</Badge>
+            <Badge tone="sky">Kathmandu Focus</Badge>
+            <Badge tone="slate">Tourism & Local Economy</Badge>
           </div>
 
           <h1 className="text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl">
-            A trail platform built to create real-world impact
+            Put Nepal&apos;s trails on the map and build what riders need next.
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
-            LocoXperts is a hybrid digital + community initiative: we map routes
-            and host events, while working with local communities to build and
-            maintain sustainable trails and empower certified experts to lead
-            guided rides and trainings.
+            We are building a simple, free platform so riders can discover and navigate
+            trails across Nepal, while local experts showcase their knowledge through
+            events and trainings.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            Current focus area: Nepal. We’ll expand to new regions as community
-            partners and sponsors come onboard.
+            Immediate ground focus: new and improved trail lines around the Kathmandu
+            hills, with clear trail signage and practical maintenance.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            The platform is designed to be autonomous: experts publish trails,
-            host events, and keep their earnings. LocoXperts focuses on trail
-            stewardship and safety guidance, not taking a cut from expert income.
+            The model is expert-first and autonomous: experts keep event earnings.
+            Sponsor and community funding supports mapping, trail work, and infrastructure.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -110,7 +108,7 @@ export default function PurposePage() {
 
       <section className="grid gap-6 md:grid-cols-3">
         <Card
-          title="Build & restore trails"
+          title="For explorers"
           icon={
             <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
               <path
@@ -121,12 +119,11 @@ export default function PurposePage() {
             </svg>
           }
         >
-          Create international-standard, sustainable cycling trails with
-          beginner-friendly main lines and optional alternates designed to hold
-          up in monsoon conditions.
+          Free access to mapped trails, route details, and navigation-ready data
+          so beginners and pros can ride with confidence and spend less time getting lost.
         </Card>
         <Card
-          title="Empower local experts"
+          title="For local experts"
           icon={
             <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
               <path
@@ -136,12 +133,11 @@ export default function PurposePage() {
             </svg>
           }
         >
-          Certify and support local cyclists and communities so they can host
-          guided rides, trainings, and tours—creating sustainable income through
-          outdoor experiences.
+          A platform to publish trails, run events, offer trainings, and grow a
+          real local business around trail expertise.
         </Card>
         <Card
-          title="Protect health & nature"
+          title="For communities and villages"
           icon={
             <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
               <path
@@ -151,41 +147,38 @@ export default function PurposePage() {
             </svg>
           }
         >
-          Trail stewardship done right helps prevent erosion and protect forests—
-          while encouraging healthier lifestyles through active outdoor mobility
-          and community rides.
+          More riders and visitors on well-managed routes can directly support tea shops,
+          local services, and tourism jobs along the trail network.
         </Card>
       </section>
 
       <section className="grid gap-6 md:grid-cols-2">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            How expert verification scales
+            Main goal
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-            We can’t manually verify every expert. The platform uses a layered
-            system: community reviews, verification details, and admin checks
-            for higher-trust roles.
+            Make local guides easier to discover, make trail navigation easier for everyone,
+            and build new tracks that strengthen Nepal&apos;s outdoor identity.
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
-            <p>• Community verified: reviews and completion history</p>
-            <p>• Safety & certifications: optional proof for higher trust</p>
-            <p>• Admin review for “Verified Expert” status</p>
+            <p>• Free digital map of Nepal trails</p>
+            <p>• Expert-led events and trainings</p>
+            <p>• Trail build + signage work in Kathmandu hills</p>
           </div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Responsibility & safety
+            Why riders should support this
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-            LocoXperts acts as a bulletin board connecting participants with
-            independent experts. We provide safety guidance, but experts run
-            their own events and participants are responsible for their choices.
+            Better trails and easier discovery benefit everyone in the riding ecosystem.
+            Supporting this now creates more places to ride next weekend.
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
-            <p>• Mandatory risk acknowledgment before booking</p>
-            <p>• Trail reporting and incident feedback for continuous safety</p>
-            <p>• Clear expectations for experts and participants</p>
+            <p>• Better mapped trails across Nepal</p>
+            <p>• More trail options around Kathmandu</p>
+            <p>• Stronger local guide and community network</p>
           </div>
         </div>
       </section>
@@ -193,21 +186,20 @@ export default function PurposePage() {
       <section className="rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/60 dark:via-slate-950/70 dark:to-emerald-900/40 md:p-8">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
-            Funding model
+            Where the money goes
           </p>
           <h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Sponsor-funded trails, expert-led experiences
+            Map, Dirt, and Signs
           </h2>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            We don’t take a cut from expert events. Instead, local companies and
-            partners fund trail stewardship through sponsorship tiers.
-            Experts keep their earnings, while sponsors help sustain the trail network.
+            We keep the platform free for riders and experts. Funding helps run the
+            digital map, support local trail crews, and install clear wayfinding signage.
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
-            <p>• Adopt-a-trail sponsorships (signage, stewardship, safety upgrades)</p>
-            <p>• Community toolkits and local crew support</p>
-            <p>• Long-term vision: new trail development when local teams are ready</p>
-            <p>• Partner visibility on trail pages and on-ground signage</p>
+            <p>• The Map: keep LocoXperts free and usable for riders and guides</p>
+            <p>• The Dirt: tools and local crews for Kathmandu hill trail building</p>
+            <p>• The Signs: clear, simple direction signage on key routes</p>
+            <p>• Platform infrastructure: hosting, storage, maps, and monitoring</p>
           </div>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -220,7 +212,7 @@ export default function PurposePage() {
               href="/donate"
               className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-green-700 px-6 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30"
             >
-              Donate to the trail fund
+              Contribute to the trail fund
             </Link>
           </div>
         </div>
@@ -276,6 +268,32 @@ export default function PurposePage() {
             experience revenue can support trail upkeep and maintenance over
             time.
           </p>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+          Core Agenda (Short Version)
+        </p>
+        <div className="mt-4 space-y-4 text-sm text-gray-700 dark:text-slate-200">
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-gray-100">One-sentence summary</p>
+            <p className="mt-1">
+              We are building a free digital map for Nepal trails while supporting new and safer trail lines around Kathmandu hills to strengthen local tourism and communities.
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-gray-100">Why support this</p>
+            <p className="mt-1">
+              Better maps and better trails help every rider discover more routes, and help local shops and villages benefit from responsible trail tourism.
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-gray-100">Main goal</p>
+            <p className="mt-1">
+              Help local experts showcase their skills, make trails easier to navigate, and keep building high-quality routes that put Nepal on the global cycling map.
+            </p>
+          </div>
         </div>
       </section>
     </div>

@@ -5,7 +5,7 @@ import CollaborateForm from '@/components/feature-components/collaborate-form';
 export const metadata: Metadata = {
   title: 'Sponsors',
   description:
-    'Support trail stewardship in Nepal. Sponsor LocoXperts and showcase your brand to the outdoor community.',
+    'Sponsor the Nepal Trail Hub mission: map trails, build routes around Kathmandu hills, and support local tourism and communities.',
   alternates: { canonical: '/sponsors' },
 };
 
@@ -28,7 +28,7 @@ function SponsorSlot({ featured = false }: { featured?: boolean }) {
         </span>
       </div>
       <p className="mt-4 text-sm text-gray-600 dark:text-slate-300">
-        Sponsor a trail, an event series, signage, or community toolkits. We’ll
+        Sponsor mapping, trail building, signage, or community events. We’ll
         feature your brand across the platform and partner updates.
       </p>
       <div className="mt-4 h-px w-full bg-gray-200/80 dark:bg-slate-800" />
@@ -51,12 +51,11 @@ export default function SponsorsPage() {
             Sponsors & Collaboration
           </p>
           <h1 className="text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl">
-            Help sustain trails and grow local outdoor communities
+            Fund the Nepal Trail Hub agenda with us
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
-            Sponsor trail stewardship in Nepal, community toolkits, and local expert
-            certifications. Your support funds real work on the ground — and it’s
-            visible on the platform.
+            Your sponsorship helps keep Nepal trails discoverable online and supports
+            practical trail work in Kathmandu hills: route upgrades, signage, and local crews.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">

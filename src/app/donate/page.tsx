@@ -5,7 +5,7 @@ import { COMMUNITY_NAME } from '@/lib/branding';
 export const metadata: Metadata = {
   title: 'Donate',
   description:
-    `Support ${COMMUNITY_NAME} operations and trail stewardship in Nepal. Donate via eSewa QR.`,
+    `Support ${COMMUNITY_NAME} to map trails across Nepal and build new routes around Kathmandu hills.`,
   alternates: { canonical: '/donate' },
 };
 
@@ -29,13 +29,12 @@ export default function DonatePage() {
             Fundraising
           </p>
           <h1 className="text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl">
-            Help keep trails rideable and communities supported
+            Raise for better maps, better trails, and stronger local communities
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
-            Your support helps cover the real costs behind community operations in
-            Nepal: trail days, tools, signage, safety basics, route documentation,
-            and the work required to keep the platform up to date for the community,
-            including ongoing infrastructure costs (hosting, storage, maps, and monitoring).
+            Your contribution supports the three core buckets: keeping LocoXperts free and
+            updated as a map platform, funding tools and local trail crews, and installing
+            clear route signage for safer navigation.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -77,8 +76,8 @@ export default function DonatePage() {
                 LocoXperts Trail Fund
               </p>
               <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-                Your support goes directly to trail stewardship, maintenance days,
-                and safety essentials for Nepal routes.
+                Funds support the map platform, the dirt work, and clear trail signs
+                that make Nepal routes easier to navigate.
               </p>
               <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
                 Prefer a receipt or want your donation acknowledged publicly? Use the
@@ -91,14 +90,14 @@ export default function DonatePage() {
         <div className="rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 md:p-10">
           <SectionTitle>How {COMMUNITY_NAME} operates</SectionTitle>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-            This is the day-to-day work that keeps a community trail network
-            active and safer for everyone.
+            This is the day-to-day work that keeps the Nepal Trail Hub mission practical
+            and community-led.
           </p>
           <ul className="mt-5 space-y-2 text-sm text-gray-700 dark:text-slate-200">
             <li>• Weekly community rides and route scouting.</li>
-            <li>• Trail stewardship: clearing, minor repairs, drainage checks.</li>
+            <li>• Trail stewardship: clearing, minor repairs, drainage checks, route shaping.</li>
             <li>• Safety-first culture: helmet norms, group protocols, and basic preparedness.</li>
-            <li>• Mapping/documentation: GPX recording, difficulty notes, meeting points.</li>
+            <li>• Mapping/documentation: GPX recording, difficulty notes, meeting points, route visibility.</li>
             <li>• Community coordination: scheduling, volunteer trail days, and partnerships.</li>
           </ul>
 

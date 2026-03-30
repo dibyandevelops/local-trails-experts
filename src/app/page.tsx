@@ -33,8 +33,8 @@ export default function Home() {
             </h1>
             <p className="mb-6 max-w-xl text-base text-gray-600 dark:text-gray-300 md:text-lg">
               Explore curated MTB rides and trail runs with clear difficulty, elevation,
-              and local tips. Built around Nepal’s most active trail hubs to support
-              community livelihoods, local tourism, and the outdoor economy.
+              and local tips. Built to map Nepal trails for everyone while supporting
+              local experts, tourism, and trail-building efforts in the hills.
             </p>
             <div className="mb-6 flex flex-wrap gap-3">
               <Link
@@ -213,11 +213,11 @@ export default function Home() {
               Project Purpose
             </span>
             <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Grow local trail access, experts, and tourism in Nepal.
+              Nepal Trail Hub: map trails, support experts, build future routes.
             </h2>
             <p className="mt-3 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-              LocoXperts helps riders discover reliable local trails, connect with verified experts,
-              and supports long-term trail ecosystems that boost local tourism in Nepal.
+              LocoXperts helps riders discover trails, helps experts grow their local services,
+              and channels sponsor/community support into mapping, signage, and on-ground trail work.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
