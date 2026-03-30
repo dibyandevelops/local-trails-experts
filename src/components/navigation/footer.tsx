@@ -39,12 +39,13 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             {brand}
           </p>
           <p className="text-sm text-gray-600 dark:text-slate-300">
-            Trails, events, and local experts for outdoor sports.
+            Nepal Trail Hub: free trail maps, local experts, and community-led rides.
           </p>
           <ul className="space-y-1 text-xs text-gray-600 dark:text-slate-300">
-            <li>• Fund trail maintenance and local trail crews.</li>
+            <li>• Keep Nepal trails mapped and easier to navigate.</li>
+            <li>• Fund trail maintenance, signage, and local trail crews.</li>
             <li>• Connect riders with verified local experts.</li>
-            <li>• Keep trail data current for safer adventures.</li>
+            <li>• Support local tourism and trail communities.</li>
           </ul>
           <p className="text-xs text-emerald-700 dark:text-emerald-200">
             Built with {COMMUNITY_NAME}.
@@ -62,7 +63,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
           <ul className="space-y-1 text-sm">
             <li>
               <Link className="hover:underline" href="/trails">
-                Explore trails
+                Trail map
               </Link>
             </li>
             <li>
@@ -147,17 +148,17 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             </li>
             <li>
               <Link className="hover:underline" href="/purpose">
-                Purpose
+                Nepal Trail Hub purpose
               </Link>
             </li>
             <li>
               <Link className="hover:underline" href="/sponsors">
-                Sponsors
+                Sponsor the trail hub
               </Link>
             </li>
             <li>
               <Link className="hover:underline" href="/donate">
-                Contribute to community
+                Contribute to trail fund
               </Link>
             </li>
             <li>

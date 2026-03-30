@@ -22,7 +22,7 @@ type NavItem = {
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
-    label: 'Explore',
+    label: 'Explore Nepal',
     items: [
       { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
@@ -52,7 +52,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
 ];
 const navItems: NavItem[] = [
-  { label: 'Search Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  { label: 'Trail Map', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   { label: 'For Experts', href: '/experts/join', showFor: ['anonymous'] },
 ];
 const icon = (
