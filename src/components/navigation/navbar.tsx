@@ -238,7 +238,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     <nav className="sticky top-0 z-30 border-b border-green-900/70 bg-gradient-to-r from-green-900 via-green-800 to-emerald-800 text-white shadow-lg backdrop-blur">
       <div className="container mx-auto px-4 py-2">
         <div className="flex min-h-[80px] items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-2xl font-bold leading-none transition hover:bg-white/5">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-2xl font-bold leading-none transition-opacity hover:opacity-95"
+          >
             {icon}
             {/* <span className="tracking-tight">LocoXperts</span> */}
           </Link>

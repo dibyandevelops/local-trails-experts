@@ -1,10 +1,10 @@
-const CACHE_NAME = 'mtb-trail-finder-v2';
+const CACHE_NAME = 'mtb-trail-finder-v3';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(['/', OFFLINE_URL, '/manifest.webmanifest', '/icons/icon.svg'])
+      cache.addAll(['/', OFFLINE_URL, '/manifest.webmanifest', '/icons/icon-192x192.png'])
     )
   );
   self.skipWaiting();
@@ -75,14 +75,14 @@ self.addEventListener('push', (event) => {
     payload?.notification?.body ||
     payload?.data?.body ||
     'You have a new notification.';
-  const icon = payload?.notification?.icon || '/icons/icon.svg';
+  const icon = payload?.notification?.icon || '/icons/icon-192x192.png';
   const url = payload?.data?.url || payload?.fcmOptions?.link || '/';
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon,
-      badge: '/icons/icon.svg',
+      badge: '/icons/icon-64x64.png',
       data: { url },
     })
   );
