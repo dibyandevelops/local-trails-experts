@@ -64,9 +64,9 @@ export default function TrailImagePlaceholder({
       <div className="relative flex h-full w-full items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/icons/icon.svg"
+          src="/icons/logo-transparent-source.png"
           alt=""
-          className={compact ? 'h-10 w-10 opacity-95' : 'h-12 w-12 opacity-95'}
+          className={compact ? 'h-14 w-24 opacity-95 object-contain' : 'h-20 w-36 opacity-95 object-contain'}
         />
       </div>
 

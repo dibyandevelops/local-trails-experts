@@ -45,7 +45,7 @@ export async function sendPushToUserIds(userIds: string[], payload: PushPayload)
       notification: {
         title: payload.title,
         body: payload.body,
-        icon: '/icons/icon.svg',
+        icon: '/icons/icon-192x192.png',
       },
       data: payload.url ? { url: payload.url } : undefined,
     },
@@ -68,4 +68,3 @@ export async function sendPushToUserIds(userIds: string[], payload: PushPayload)
     failed: response.failureCount,
   };
 }
-

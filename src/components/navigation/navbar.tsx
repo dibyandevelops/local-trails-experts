@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ThemeToggle from '@/components/theme-toggle';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -55,41 +56,14 @@ const navItems: NavItem[] = [
   { label: 'For Experts', href: '/experts/join', showFor: ['anonymous'] },
 ];
 const icon = (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 512 512"
-    role="img"
-    aria-label="LOCOXPERTS"
-    className="h-10 w-10 shrink-0"
-  >
-    <defs>
-      <linearGradient id="navbg" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0%" stopColor="#14532d" />
-        <stop offset="100%" stopColor="#16a34a" />
-      </linearGradient>
-    </defs>
-
-    <rect width="512" height="512" rx="96" fill="url(#navbg)" />
-
-    <path d="M24 210L84 170L136 212L192 176L250 224L314 184L374 232L434 186L488 220" fill="none" stroke="#fff" strokeOpacity=".22" strokeWidth="14" strokeLinecap="round" />
-    <path d="M24 286L82 246L142 300L198 254L258 312L322 264L382 318L440 272L488 324" fill="none" stroke="#fff" strokeOpacity=".26" strokeWidth="15" strokeLinecap="round" />
-    <path d="M24 360L84 324L146 382L206 334L266 390L330 344L392 398L452 354L488 404" fill="none" stroke="#fff" strokeOpacity=".3" strokeWidth="16" strokeLinecap="round" />
-    <path d="M40 484L90 444L140 462L186 396L246 414L304 334L362 352L424 274L488 292" fill="none" stroke="#fff" strokeOpacity=".28" strokeWidth="14" strokeLinecap="round" />
-    <path d="M28 48L86 92L134 74L192 132L246 112L306 170L364 152L426 208L484 192" fill="none" stroke="#fff" strokeOpacity=".21" strokeWidth="13" strokeLinecap="round" />
-    <path d="M488 64L434 120L386 102L328 160L278 142L220 198L164 182L108 238L44 220" fill="none" stroke="#fff" strokeOpacity=".2" strokeWidth="12" strokeLinecap="round" />
-    <path d="M488 428L436 382L386 408L330 350L282 376L226 320L172 348L118 292L56 320" fill="none" stroke="#fff" strokeOpacity=".24" strokeWidth="13" strokeLinecap="round" />
-    <path d="M258 28L276 82L232 126L294 170L248 216L312 262L266 306L330 352L286 410L338 484" fill="none" stroke="#fff" strokeOpacity=".19" strokeWidth="12" strokeLinecap="round" />
-
-    <g fill="#f0fdf4" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="800" letterSpacing="1.2">
-      <text x="52" y="220" fontSize="96">LOCO</text>
-      <text x="52" y="330" fontSize="96">XPERTS</text>
-    </g>
-
-    <circle cx="428" cy="186" r="44" fill="#22c55e" />
-    <circle cx="428" cy="186" r="39" fill="none" stroke="#bbf7d0" strokeWidth="5" />
-    <path d="M409 186l15 15 29-29" fill="none" stroke="#ffffff" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round" />
-
-  </svg>
+  <Image
+    src="/icons/logo-transparent-source.png"
+    alt="LocoXperts logo"
+    width={220}
+    height={120}
+    className="h-20 w-[220px] shrink-0 object-contain object-left"
+    priority
+  />
 );
 type NavbarProps = {
   initialUser?: User | null;
@@ -262,11 +236,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
   return (
     <nav className="sticky top-0 z-30 border-b border-green-900/70 bg-gradient-to-r from-green-900 via-green-800 to-emerald-800 text-white shadow-lg backdrop-blur">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex min-h-[60px] items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-3 rounded-xl px-1 py-1 text-2xl font-bold leading-none transition hover:bg-white/5">
+      <div className="container mx-auto px-4 py-2">
+        <div className="flex min-h-[80px] items-center justify-between gap-4">
+          <Link href="/" className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-2xl font-bold leading-none transition hover:bg-white/5">
             {icon}
-            <span className="tracking-tight">LocoXperts</span>
+            {/* <span className="tracking-tight">LocoXperts</span> */}
           </Link>
           <button
             type="button"
