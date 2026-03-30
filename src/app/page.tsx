@@ -149,34 +149,33 @@ export default function Home() {
 
         <div className="reveal reveal-4 rounded-2xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm">
           <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
-            Local Experts
+            Cycle Hubs & Support
           </span>
           <h2 className="mt-3 text-lg font-semibold">
-            Turn your local knowledge into premium experiences.
+            Discover trusted bike shops, gear help, and ride-day essentials.
           </h2>
           <p className="mt-2 text-sm text-emerald-100">
-            Host guided events or structured training blocks for visiting athletes and local
-            communities.
+            Find nearby cycle hubs for tune-ups, rentals, accessories, and support before your trail day.
           </p>
           <div className="mt-4 space-y-2 text-sm text-emerald-100">
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              Create paid events with flexible pricing.
+              City-based hubs with map view and directions.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              Offer group, private, or corporate sessions.
+              Community-driven store listings with admin moderation.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              Unlock a Verified Expert badge after review.
+              Easy way for local stores to request inclusion.
             </div>
           </div>
           <Link
-            href="/experts/join"
+            href="/store-locator"
             className="mt-4 inline-flex text-sm font-semibold text-emerald-100 underline-offset-4 hover:underline"
           >
-            Start your expert application →
+            Browse cycle hubs →
           </Link>
         </div>
 
