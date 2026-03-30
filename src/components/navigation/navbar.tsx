@@ -261,30 +261,32 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     'U';
 
   return (
-    <nav className="relative z-20 bg-green-800 text-white shadow-lg">
-      <div className="container mx-auto px-4 py-5">
-        <div className="flex min-h-[56px] items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-3 text-2xl font-bold leading-none">
+    <nav className="sticky top-0 z-30 border-b border-green-900/70 bg-gradient-to-r from-green-900 via-green-800 to-emerald-800 text-white shadow-lg backdrop-blur">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex min-h-[60px] items-center justify-between gap-4">
+          <Link href="/" className="inline-flex items-center gap-3 rounded-xl px-1 py-1 text-2xl font-bold leading-none transition hover:bg-white/5">
             {icon}
-            <span>LocoXperts</span>
+            <span className="tracking-tight">LocoXperts</span>
           </Link>
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded border border-green-600 hover:bg-green-700"
+            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-500/70 bg-white/10 hover:bg-white/15"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle navigation"
           >
             {mobileOpen ? '✕' : '☰'}
           </button>
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-3 rounded-full border border-green-500/40 bg-white/10 px-3 py-2 shadow-inner shadow-black/10">
             {navItems.map((item) =>
               canSeeItem(item) ? (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`inline-flex h-9 items-center rounded-md px-2 py-1 text-sm font-semibold transition-colors ${
-                    isNavItemActive(item.href) ? 'bg-green-700 text-white' : 'hover:text-green-200'
+                  className={`inline-flex h-10 items-center rounded-lg px-3 py-1 text-sm font-semibold transition-all ${
+                    isNavItemActive(item.href)
+                      ? 'bg-white text-green-900 shadow-sm'
+                      : 'text-green-50 hover:bg-white/15 hover:text-white'
                   }`}
                 >
                   <span className="truncate max-w-[140px]">{item.label}</span>
@@ -305,8 +307,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     <DropdownMenu.Trigger asChild>
                       <button
                         type="button"
-                        className={`inline-flex h-9 items-center gap-1 rounded-md px-2 py-1 text-sm font-semibold transition-colors ${
-                          groupActive ? 'bg-green-700 text-white' : 'hover:text-green-200'
+                        className={`inline-flex h-10 items-center gap-1 rounded-lg px-3 py-1 text-sm font-semibold transition-all ${
+                          groupActive
+                            ? 'bg-white text-green-900 shadow-sm'
+                            : 'text-green-50 hover:bg-white/15 hover:text-white'
                         }`}
                         aria-label={`${group.label} menu`}
                         onPointerMove={() => {
@@ -330,7 +334,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       <DropdownMenu.Content
                         sideOffset={8}
                         align="start"
-                        className="z-30 flex w-52 flex-col gap-1 rounded-lg border border-green-700/60 bg-green-900/95 p-2 text-sm text-white shadow-lg"
+                        className="z-30 flex w-56 flex-col gap-1 rounded-xl border border-green-700/60 bg-green-950/95 p-2 text-sm text-white shadow-xl"
                         onPointerEnter={() => {
                           if (hoverCloseTimeout.current) {
                             clearTimeout(hoverCloseTimeout.current);
@@ -347,10 +351,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                           <DropdownMenu.Item asChild key={item.href}>
                             <Link
                               href={item.href}
-                              className={`block rounded-md px-3 py-2 text-sm font-semibold outline-none transition ${
+                              className={`block rounded-lg px-3 py-2 text-sm font-semibold outline-none transition ${
                                 isNavItemActive(item.href)
-                                  ? 'bg-green-700 text-white'
-                                  : 'hover:bg-green-700 data-[highlighted]:bg-green-700'
+                                  ? 'bg-white text-green-900'
+                                  : 'text-green-50 hover:bg-white/15 data-[highlighted]:bg-white/15'
                               }`}
                             >
                               <span className="block truncate">{item.label}</span>
@@ -371,16 +375,16 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setRegisterNext(null);
                   setRegisterOpen(true);
                 }}
-                className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/25"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/30"
               >
                 Join Adventure
               </button>
             )}
-            <ThemeToggle className="inline-flex h-9 items-center gap-2 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
+            <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-lg border border-green-400/50 bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/15" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-green-600 bg-green-700 hover:bg-green-600 self-center leading-none shrink-0"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-green-400/50 bg-white/10 hover:bg-white/15 self-center leading-none shrink-0"
                 aria-label="View expert alerts"
                 title="View trail request alerts"
               >
@@ -401,7 +405,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setLoginNext(null);
                   setLoginOpen(true);
                 }}
-                className="inline-flex h-9 items-center justify-center px-3 py-1.5 rounded-lg bg-white text-green-800 text-sm font-semibold hover:bg-green-100"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-green-800 hover:bg-green-100"
               >
                 Login
               </button>
@@ -412,7 +416,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="ml-2 inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-green-700 text-sm font-semibold uppercase border border-green-600 hover:bg-green-600 self-center leading-none shrink-0 align-middle"
+                  className="ml-1 inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-green-400/50 bg-white/10 text-sm font-semibold uppercase hover:bg-white/15 self-center leading-none shrink-0 align-middle"
                   aria-label="User menu"
                 >
                   {user.profile_photo_url ? (
@@ -428,7 +432,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white text-gray-900 shadow-lg z-30">
+                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl z-30">
                     <button
                       type="button"
                       onClick={handleViewProfile}
@@ -451,16 +455,16 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         </div>
 
         {mobileOpen && (
-          <div className="md:hidden mt-4 flex flex-col gap-2 border-t border-green-700 pt-3">
+          <div className="md:hidden mt-3 flex flex-col gap-2 rounded-xl border border-green-600/60 bg-green-900/35 p-3">
             {[...navItems, ...navGroups.flatMap((group) => group.items)].map((item) =>
               canSeeItem(item) ? (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`truncate whitespace-nowrap px-2 py-2 rounded text-sm font-semibold transition-colors ${
+                  className={`truncate whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
                     isNavItemActive(item.href)
-                      ? 'bg-green-700 text-white'
-                      : 'hover:bg-green-700'
+                      ? 'bg-white text-green-900'
+                      : 'text-green-50 hover:bg-white/15'
                   }`}
                   onClick={() => setMobileOpen(false)}
                 >
@@ -482,11 +486,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 Join Adventure
               </button>
             )}
-            <ThemeToggle className="inline-flex items-center gap-2 rounded border border-green-600 px-3 py-1.5 text-sm font-semibold hover:bg-green-700" />
+            <ThemeToggle className="inline-flex items-center gap-2 rounded-lg border border-green-500/70 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/15" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
-                className="rounded px-2 py-2 hover:bg-green-700"
+                className="rounded-lg px-3 py-2.5 text-green-50 hover:bg-white/15"
                 onClick={() => setMobileOpen(false)}
               >
                 Alerts
@@ -498,7 +502,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             {!loadingUser && !user && (
               <button
                 type="button"
-                className="px-2 py-2 rounded bg-white text-green-800 font-semibold text-left"
+                className="rounded-lg bg-white px-3 py-2.5 text-left font-semibold text-green-800"
                 onClick={() => {
                   setMobileOpen(false);
                   setLoginMessage(null);
@@ -514,7 +518,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <button
                   type="button"
                   onClick={handleViewProfile}
-                  className="text-left px-2 py-2 rounded hover:bg-green-700"
+                  className="rounded-lg px-3 py-2.5 text-left text-green-50 hover:bg-white/15"
                 >
                   View profile
                 </button>
