@@ -33,6 +33,12 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
   const hasMultipleImages = images.length > 1;
   const hasImage = images.length > 0;
+  const komootNavigateUrl = React.useMemo(() => {
+    const raw = (trail.komoot_embed_url || '').trim();
+    if (!raw) return '';
+    if (!/komoot\.com/i.test(raw)) return '';
+    return raw.replace('/embed', '');
+  }, [trail.komoot_embed_url]);
   const averageRating = typeof trail.average_rating === 'number' ? trail.average_rating : 0;
   const reviewCount = trail.review_count || 0;
   const renderStars = (rating: number) => (
@@ -178,6 +184,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           </p>
         )}
         {(trail.onViewMap ||
+          komootNavigateUrl ||
           trail.onGroupRequest ||
           trail.onRequestTrail ||
           trail.onCreateEvent ||
@@ -226,6 +233,18 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                 >
                   View Map
                 </button>
+              )}
+              {komootNavigateUrl && (
+                <a
+                  href={komootNavigateUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                  className="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                  title="Open this trail in Komoot"
+                >
+                  Navigate
+                </a>
               )}
               {trail.onRequestTrail && (
                 <button
