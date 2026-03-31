@@ -544,11 +544,6 @@ export default function ParticipantProfilePage() {
                     />
                   </div>
                 </div>
-                {EXPERTS_BETA_ENABLED && (
-                  <p className="mt-2 text-xs font-medium text-amber-700">
-                    Experts beta is active. Admin will handle expert assignment for this request.
-                  </p>
-                )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {!EXPERTS_BETA_ENABLED && (
                     <button

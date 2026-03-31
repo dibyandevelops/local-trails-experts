@@ -3,6 +3,9 @@ import pool from '@/lib/db';
 import { Event, CreateEventInput, SportType } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { COMMUNITY_NAME } from '@/lib/branding';
+import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
+import { sendEmailSafe } from '@/lib/email';
+import { sendPushToUserIds } from '@/lib/push';
 
 export async function GET(request: NextRequest) {
   try {
@@ -186,6 +189,56 @@ export async function POST(request: NextRequest) {
       trail_request_id,
     } = body;
 
+    let trailRequestContext: {
+      id: string;
+      trail_id: string;
+      requester_user_id: string | null;
+      requester_name: string | null;
+      requester_email: string;
+      preferred_date: string | null;
+      preferred_time: string | null;
+      offered_price_npr: number | null;
+      nearest_point: string | null;
+      description: string | null;
+    } | null = null;
+
+    if (trail_request_id) {
+      const requestResult = await pool.query(
+        `
+        SELECT
+          id,
+          trail_id,
+          requester_user_id,
+          requester_name,
+          requester_email,
+          to_char(preferred_date::date, 'YYYY-MM-DD') AS preferred_date,
+          preferred_time,
+          offered_price_npr,
+          nearest_point,
+          description
+        FROM trail_interest_requests
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [trail_request_id]
+      );
+
+      if (requestResult.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Trail request not found.' },
+          { status: 404 }
+        );
+      }
+
+      trailRequestContext = requestResult.rows[0];
+      if (trail_id && trailRequestContext.trail_id && trail_id !== trailRequestContext.trail_id) {
+        return NextResponse.json(
+          { error: 'Selected trail does not match the trail request.' },
+          { status: 400 }
+        );
+      }
+    }
+
     if (auth.role === 'expert') {
       const verifiedResult = await pool.query(
         'SELECT is_verified_expert FROM users WHERE id = $1 LIMIT 1',
@@ -266,6 +319,65 @@ export async function POST(request: NextRequest) {
     ]);
 
     const event: Event = result.rows[0];
+
+    if (trailRequestContext?.requester_email) {
+      const participantName =
+        (trailRequestContext.requester_name || '').trim() ||
+        trailRequestContext.requester_email.split('@')[0] ||
+        'Participant';
+      const participantInsert = await pool.query(
+        `
+        INSERT INTO event_participants (
+          event_id,
+          participant_name,
+          participant_email,
+          phone,
+          expertise_level
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (event_id, participant_email) DO NOTHING
+        RETURNING id
+        `,
+        [
+          event.id,
+          participantName,
+          trailRequestContext.requester_email,
+          null,
+          required_expertise || 'beginner',
+        ]
+      );
+
+      if (participantInsert.rows.length > 0) {
+        await pool.query(
+          'UPDATE events SET current_participants = current_participants + 1 WHERE id = $1',
+          [event.id]
+        );
+      }
+
+      const eventDateLabel = new Date(event.event_date).toLocaleString();
+      const trailRequestEmail = buildBrandedEmail({
+        subject: `Your requested ride is scheduled: ${event.title}`,
+        appUrl: getAppUrl(),
+        headline: 'Good news — your requested ride is now live',
+        subhead: event.title,
+        greetingName: participantName,
+        bodyHtml: `Your trail request has been converted into an event.<br/><br/><strong>Event:</strong> ${event.title}<br/><strong>Date:</strong> ${eventDateLabel}<br/><strong>Meeting point:</strong> ${meeting_point || trailRequestContext.nearest_point || 'TBD'}<br/><strong>Preferred date:</strong> ${trailRequestContext.preferred_date || 'N/A'}<br/><strong>Preferred time:</strong> ${trailRequestContext.preferred_time || 'N/A'}<br/><strong>Offered price (NPR):</strong> ${trailRequestContext.offered_price_npr ?? 'N/A'}<br/><strong>Nearest point:</strong> ${trailRequestContext.nearest_point || 'N/A'}<br/><br/>You were automatically added as a participant.`,
+        bodyText: `Your trail request has been converted into an event.\n\nEvent: ${event.title}\nDate: ${eventDateLabel}\nMeeting point: ${meeting_point || trailRequestContext.nearest_point || 'TBD'}\nPreferred date: ${trailRequestContext.preferred_date || 'N/A'}\nPreferred time: ${trailRequestContext.preferred_time || 'N/A'}\nOffered price (NPR): ${trailRequestContext.offered_price_npr ?? 'N/A'}\nNearest point: ${trailRequestContext.nearest_point || 'N/A'}\n\nYou were automatically added as a participant.`,
+      });
+      await sendEmailSafe({
+        to: trailRequestContext.requester_email,
+        ...trailRequestEmail,
+        dedupeKey: `trail-request-event-created:${trail_request_id}:${event.id}:${trailRequestContext.requester_email}`,
+      });
+
+      if (trailRequestContext.requester_user_id) {
+        await sendPushToUserIds([trailRequestContext.requester_user_id], {
+          title: 'Your requested ride is scheduled',
+          body: `You were added to "${event.title}".`,
+          url: `/events/${event.id}`,
+        });
+      }
+    }
 
     if (trail_request_id) {
       if (auth.role === 'admin') {

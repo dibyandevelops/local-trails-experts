@@ -272,6 +272,9 @@ const TrailPage: React.FunctionComponent = () => {
   const [requestDescription, setRequestDescription] = useState('');
   const [selectedExpertId, setSelectedExpertId] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
+  const [preferredTime, setPreferredTime] = useState('');
+  const [offeredPriceNpr, setOfferedPriceNpr] = useState('');
+  const [nearestPoint, setNearestPoint] = useState('');
   const [requestAcceptTerms, setRequestAcceptTerms] = useState(false);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -515,12 +518,19 @@ const TrailPage: React.FunctionComponent = () => {
         description: requestDescription.trim(),
         expert_user_id: EXPERTS_BETA_ENABLED ? undefined : selectedExpertId,
         preferred_date: preferredDate,
+        preferred_time: preferredTime || undefined,
+        offered_price_npr:
+          offeredPriceNpr.trim() === '' ? null : Number(offeredPriceNpr),
+        nearest_point: nearestPoint.trim() || undefined,
       }),
     onSuccess: () => {
       setRequestMessage('Request sent to experts/admin successfully.');
       setRequestDescription('');
       setSelectedExpertId('');
       setPreferredDate('');
+      setPreferredTime('');
+      setOfferedPriceNpr('');
+      setNearestPoint('');
       setRequestModalOpen(false);
       refetchParticipantRequests();
     },
@@ -1716,7 +1726,17 @@ const TrailPage: React.FunctionComponent = () => {
         )}
       </div>
 
-      <Dialog.Root open={requestModalOpen} onOpenChange={setRequestModalOpen}>
+      <Dialog.Root
+        open={requestModalOpen}
+        onOpenChange={(open) => {
+          setRequestModalOpen(open);
+          if (!open) {
+            setPreferredTime('');
+            setOfferedPriceNpr('');
+            setNearestPoint('');
+          }
+        }}
+      >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40" />
           <Dialog.Content className="fixed left-1/2 top-1/2 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl">
@@ -1759,12 +1779,51 @@ const TrailPage: React.FunctionComponent = () => {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Preferred Time
+                </label>
+                <input
+                  type="time"
+                  value={preferredTime}
+                  onChange={(e) => setPreferredTime(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Offered Price (NPR)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={offeredPriceNpr}
+                  onChange={(e) => setOfferedPriceNpr(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Nearest Point
+              </label>
+              <input
+                type="text"
+                value={nearestPoint}
+                onChange={(e) => setNearestPoint(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                placeholder="e.g., Chobhar gate, near bus stop"
+              />
+            </div>
             <textarea
               value={requestDescription}
               onChange={(e) => setRequestDescription(e.target.value)}
               rows={4}
               className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              placeholder="Describe what you want (preferred date/time, group size, activity type...)"
+              placeholder="Share key expectations: fitness level, pace, route preferences, safety needs, and any special requests."
             />
             <label className="mt-3 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
               <input

@@ -106,6 +106,9 @@ type EventFormProps = {
   requestedByName?: string;
   requestedByEmail?: string;
   requestedDate?: string;
+  requestedTime?: string;
+  requestedOfferNpr?: string;
+  requestedNearestPoint?: string;
   requestedTrailRequestId?: string;
   lockEventDate?: boolean;
   onCompleted?: (eventId: string) => void;
@@ -124,6 +127,9 @@ export default function EventForm({
   requestedByName = '',
   requestedByEmail = '',
   requestedDate = '',
+  requestedTime = '',
+  requestedOfferNpr = '',
+  requestedNearestPoint = '',
   requestedTrailRequestId,
   lockEventDate = false,
   onCompleted,
@@ -170,9 +176,40 @@ export default function EventForm({
   const isPaidEvent = watch('is_paid_event');
   const currentTitle = watch('title');
   const eventDateValue = watch('event_date');
+  const eventDatePart = useMemo(
+    () => (eventDateValue && eventDateValue.includes('T') ? eventDateValue.slice(0, 10) : ''),
+    [eventDateValue]
+  );
+  const eventTimePart = useMemo(
+    () => (eventDateValue && eventDateValue.includes('T') ? eventDateValue.slice(11, 16) : ''),
+    [eventDateValue]
+  );
   const requestedDateOnly = normalizeDateOnly(requestedDate);
   const isEventDateLocked = lockEventDate || Boolean(requestedDateOnly);
   const lockedEventDateTime = requestedDateOnly ? `${requestedDateOnly}T06:30` : '';
+  const hasTrailRequestContext = Boolean(requestedTrailRequestId);
+  const trailRequestSummaryLines = useMemo(
+    () =>
+      [
+        requestedByName || requestedByEmail
+          ? `Requested by: ${requestedByName || 'Participant'}${
+              requestedByEmail ? ` (${requestedByEmail})` : ''
+            }`
+          : '',
+        requestedDate ? `Preferred date: ${requestedDate}` : '',
+        requestedTime ? `Preferred time: ${requestedTime}` : '',
+        requestedOfferNpr ? `Offered price (NPR): ${requestedOfferNpr}` : '',
+        requestedNearestPoint ? `Nearest point: ${requestedNearestPoint}` : '',
+      ].filter(Boolean),
+    [
+      requestedByName,
+      requestedByEmail,
+      requestedDate,
+      requestedTime,
+      requestedOfferNpr,
+      requestedNearestPoint,
+    ]
+  );
 
   const {
     data: trails = [],
@@ -358,7 +395,11 @@ export default function EventForm({
 
   useEffect(() => {
     if (isEditMode) return;
-    const nextKey = `${requestedByName}|${requestedByEmail}|${requestedDateOnly}`;
+    if (hasTrailRequestContext) {
+      requesterPrefillAppliedRef.current = true;
+      return;
+    }
+    const nextKey = `${requestedByName}|${requestedByEmail}|${requestedDateOnly}|${requestedTime}|${requestedOfferNpr}|${requestedNearestPoint}`;
     if (requesterKeyRef.current !== nextKey) {
       requesterPrefillAppliedRef.current = false;
       requesterKeyRef.current = nextKey;
@@ -374,7 +415,22 @@ export default function EventForm({
       requestedByName || 'Participant'
     }${requestedByEmail ? ` (${requestedByEmail})` : ''}`;
     const preferredDateLine = requestedDate ? `Preferred date: ${requestedDate}` : '';
-    const requestContext = [requesterLine, preferredDateLine].filter(Boolean).join('\n');
+    const preferredTimeLine = requestedTime ? `Preferred time: ${requestedTime}` : '';
+    const offeredPriceLine = requestedOfferNpr
+      ? `Offered price (NPR): ${requestedOfferNpr}`
+      : '';
+    const nearestPointLine = requestedNearestPoint
+      ? `Nearest point: ${requestedNearestPoint}`
+      : '';
+    const requestContext = [
+      requesterLine,
+      preferredDateLine,
+      preferredTimeLine,
+      offeredPriceLine,
+      nearestPointLine,
+    ]
+      .filter(Boolean)
+      .join('\n');
     const nextDescription = currentDescription
       ? `${currentDescription}\n\n${requestContext}`
       : requestContext;
@@ -386,9 +442,13 @@ export default function EventForm({
     requestedByName,
     requestedByEmail,
     requestedDate,
+    requestedTime,
+    requestedOfferNpr,
+    requestedNearestPoint,
     getValues,
     setValue,
     requestedDateOnly,
+    hasTrailRequestContext,
   ]);
 
   useEffect(() => {
@@ -841,6 +901,17 @@ export default function EventForm({
             />
           </div>
 
+          {hasTrailRequestContext && trailRequestSummaryLines.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <p className="mb-1 font-semibold uppercase tracking-wide">Trail Request Note</p>
+              <div className="space-y-0.5">
+                {trailRequestSummaryLines.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium mb-2">Description</label>
             <textarea
@@ -852,36 +923,51 @@ export default function EventForm({
           </div>
 
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">
-                Event Date & Time <span className="text-red-500">*</span>
+                Event Date <span className="text-red-500">*</span>
               </label>
               <input
-                type="datetime-local"
-                {...register('event_date', { required: true })}
-                value={isEventDateLocked ? eventDateValue || lockedEventDateTime : undefined}
-                min={isEventDateLocked ? lockedEventDateTime : undefined}
-                max={isEventDateLocked ? lockedEventDateTime : undefined}
+                type="date"
+                value={isEventDateLocked ? requestedDateOnly || eventDatePart : eventDatePart}
+                min={isEventDateLocked ? requestedDateOnly || undefined : new Date().toISOString().slice(0, 10)}
+                max={isEventDateLocked ? requestedDateOnly || undefined : undefined}
+                disabled={isEventDateLocked}
                 onChange={(event) => {
-                  if (!isEventDateLocked) return;
-                  event.preventDefault();
-                  if (lockedEventDateTime) {
-                    setValue('event_date', lockedEventDateTime);
+                  if (isEventDateLocked) return;
+                  const nextDate = event.target.value;
+                  const nextTime = eventTimePart || '06:30';
+                  if (!nextDate) {
+                    setValue('event_date', '');
+                    return;
                   }
+                  setValue('event_date', `${nextDate}T${nextTime}`);
                 }}
-                onClick={(event) => {
-                  if (!isEventDateLocked) return;
-                  const input = event.currentTarget as HTMLInputElement & {
-                    showPicker?: () => void;
-                  };
-                  input.showPicker?.();
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Event Time <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="time"
+                value={eventTimePart}
+                onChange={(event) => {
+                  const nextTime = event.target.value;
+                  const nextDate = isEventDateLocked
+                    ? requestedDateOnly || eventDatePart
+                    : eventDatePart;
+                  if (!nextDate) return;
+                  if (!nextTime) return;
+                  setValue('event_date', `${nextDate}T${nextTime}`);
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
               {isEventDateLocked && (
                 <p className="mt-1 text-xs text-gray-500">
-                  Date/time is locked from participant request. You can view it but not edit.
+                  Date is locked from request. You can still set the event time.
                 </p>
               )}
             </div>

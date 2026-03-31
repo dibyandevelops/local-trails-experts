@@ -24,6 +24,13 @@ export async function POST(
     const description = String(body?.description || '').trim();
     const expertUserId = String(body?.expert_user_id || '').trim();
     const preferredDateRaw = String(body?.preferred_date || '').trim();
+    const preferredTime = String(body?.preferred_time || '').trim();
+    const nearestPoint = String(body?.nearest_point || '').trim();
+    const offeredPriceRaw = body?.offered_price_npr;
+    const offeredPriceNpr =
+      offeredPriceRaw === null || offeredPriceRaw === undefined || String(offeredPriceRaw).trim() === ''
+        ? null
+        : Number(offeredPriceRaw);
 
     if (!EXPERTS_BETA_ENABLED && !expertUserId) {
       return NextResponse.json(
@@ -34,6 +41,12 @@ export async function POST(
     if (!preferredDateRaw) {
       return NextResponse.json(
         { error: 'Please select a preferred date.' },
+        { status: 400 }
+      );
+    }
+    if (offeredPriceNpr !== null && (!Number.isFinite(offeredPriceNpr) || offeredPriceNpr < 0)) {
+      return NextResponse.json(
+        { error: 'Offered price must be a valid number greater than or equal to 0.' },
         { status: 400 }
       );
     }
@@ -140,8 +153,8 @@ export async function POST(
     await pool.query(
       `
       INSERT INTO trail_interest_requests (
-        trail_id, requester_user_id, requester_name, requester_email, description, assigned_expert_user_id, preferred_date
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7::date)
+        trail_id, requester_user_id, requester_name, requester_email, description, assigned_expert_user_id, preferred_date, preferred_time, offered_price_npr, nearest_point
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8, $9, $10)
       `,
       [
         trailId,
@@ -151,6 +164,9 @@ export async function POST(
         description || null,
         EXPERTS_BETA_ENABLED ? null : expertUserId,
         preferredDateOnly,
+        preferredTime || null,
+        offeredPriceNpr,
+        nearestPoint || null,
       ]
     );
 
@@ -178,8 +194,8 @@ export async function POST(
       appUrl: getAppUrl(),
       headline: 'New trail request',
       subhead: trail.name,
-      bodyHtml: `A participant requested activity on this trail.<br/><br/><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateOnly}<br/><strong>Preferred expert:</strong> ${EXPERTS_BETA_ENABLED ? 'Admin assigned (Experts Beta)' : expert?.name || expert?.email || 'N/A'}<br/><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})<br/><strong>Description:</strong> ${description || 'No additional details.'}`,
-      bodyText: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateOnly}\nPreferred expert: ${EXPERTS_BETA_ENABLED ? 'Admin assigned (Experts Beta)' : expert?.name || expert?.email || 'N/A'}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
+      bodyHtml: `A participant requested activity on this trail.<br/><br/><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateOnly}<br/><strong>Preferred time:</strong> ${preferredTime || 'N/A'}<br/><strong>Nearest point:</strong> ${nearestPoint || 'N/A'}<br/><strong>Offered price (NPR):</strong> ${offeredPriceNpr ?? 'N/A'}<br/><strong>Preferred expert:</strong> ${EXPERTS_BETA_ENABLED ? 'Admin assigned (Experts Beta)' : expert?.name || expert?.email || 'N/A'}<br/><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})<br/><strong>Description:</strong> ${description || 'No additional details.'}`,
+      bodyText: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateOnly}\nPreferred time: ${preferredTime || 'N/A'}\nNearest point: ${nearestPoint || 'N/A'}\nOffered price (NPR): ${offeredPriceNpr ?? 'N/A'}\nPreferred expert: ${EXPERTS_BETA_ENABLED ? 'Admin assigned (Experts Beta)' : expert?.name || expert?.email || 'N/A'}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
     });
 
     const recipientKey = EXPERTS_BETA_ENABLED ? 'admin' : expertUserId;

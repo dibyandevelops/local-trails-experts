@@ -53,6 +53,9 @@ export type TrailInterestRequest = {
   assigned_expert_user_id: string | null;
   assigned_expert_name: string | null;
   assigned_expert_email: string | null;
+  preferred_time: string | null;
+  offered_price_npr: number | null;
+  nearest_point: string | null;
   description: string | null;
   created_at: string;
 };

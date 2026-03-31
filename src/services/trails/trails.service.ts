@@ -225,7 +225,14 @@ export async function unhideTrail(trailId: string) {
 
 export async function requestTrail(
   trailId: string,
-  payload: { description: string; expert_user_id?: string; preferred_date: string }
+  payload: {
+    description: string;
+    expert_user_id?: string;
+    preferred_date: string;
+    preferred_time?: string;
+    offered_price_npr?: number | null;
+    nearest_point?: string;
+  }
 ) {
   try {
     const { data } = await apiClient.post<{ success: boolean; error?: string }>(

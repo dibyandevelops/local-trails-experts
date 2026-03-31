@@ -58,6 +58,15 @@ export default function TrailRequestsPanel() {
               <p className="text-xs text-gray-500 mt-1">
                 Preferred date: {request.preferred_date || 'N/A'}
               </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Preferred time: {request.preferred_time || 'N/A'}
+                {request.offered_price_npr != null ? ` • Offer: NPR ${request.offered_price_npr}` : ''}
+              </p>
+              {request.nearest_point && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Nearest point: {request.nearest_point}
+                </p>
+              )}
               {request.description && (
                 <p className="text-sm text-gray-700 mt-2 whitespace-pre-line">
                   {request.description}
@@ -75,6 +84,12 @@ export default function TrailRequestsPanel() {
                     request.requester_email || ''
                   )}&requested_date=${encodeURIComponent(
                     request.preferred_date || ''
+                  )}&requested_time=${encodeURIComponent(
+                    request.preferred_time || ''
+                  )}&requested_offer_npr=${encodeURIComponent(
+                    request.offered_price_npr != null ? String(request.offered_price_npr) : ''
+                  )}&requested_nearest_point=${encodeURIComponent(
+                    request.nearest_point || ''
                   )}&trail_request_id=${encodeURIComponent(request.id)}`}
                   className="inline-flex items-center rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
                 >

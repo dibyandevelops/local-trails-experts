@@ -424,6 +424,9 @@ function TrailsPageContent() {
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
   const [requestDescription, setRequestDescription] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
+  const [preferredTime, setPreferredTime] = useState('');
+  const [offeredPriceNpr, setOfferedPriceNpr] = useState('');
+  const [nearestPoint, setNearestPoint] = useState('');
   const [selectedExpertId, setSelectedExpertId] = useState('');
   const [requestFeedback, setRequestFeedback] = useState('');
   const [requestModalMessage, setRequestModalMessage] = useState('');
@@ -537,11 +540,17 @@ function TrailsPageContent() {
       description: string;
       expert_user_id?: string;
       preferred_date: string;
+      preferred_time?: string;
+      offered_price_npr?: number | null;
+      nearest_point?: string;
     }) =>
       requestTrail(payload.trailId, {
         description: payload.description,
         expert_user_id: payload.expert_user_id,
         preferred_date: payload.preferred_date,
+        preferred_time: payload.preferred_time,
+        offered_price_npr: payload.offered_price_npr,
+        nearest_point: payload.nearest_point,
       }),
     onSuccess: () => {
       setRequestFeedback('Request submitted successfully.');
@@ -554,6 +563,9 @@ function TrailsPageContent() {
       setRequestTrailItem(null);
       setRequestDescription('');
       setPreferredDate('');
+      setPreferredTime('');
+      setOfferedPriceNpr('');
+      setNearestPoint('');
       setSelectedExpertId('');
     },
     onError: (error) => {
@@ -1738,6 +1750,9 @@ function TrailsPageContent() {
             setRequestTrailItem(null);
             setRequestModalMessage('');
             setRequestAcceptTerms(false);
+            setPreferredTime('');
+            setOfferedPriceNpr('');
+            setNearestPoint('');
           }
         }}
       >
@@ -1791,6 +1806,45 @@ function TrailsPageContent() {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Preferred Time
+                  </label>
+                  <input
+                    type="time"
+                    value={preferredTime}
+                    onChange={(e) => setPreferredTime(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Offered Price (NPR)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={offeredPriceNpr}
+                    onChange={(e) => setOfferedPriceNpr(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Optional"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Nearest Point
+                </label>
+                <input
+                  type="text"
+                  value={nearestPoint}
+                  onChange={(e) => setNearestPoint(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="e.g., Chobhar gate, near bus stop"
+                />
+              </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Notes
@@ -1800,7 +1854,7 @@ function TrailsPageContent() {
                   value={requestDescription}
                   onChange={(e) => setRequestDescription(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="What kind of activity are you looking for?"
+                  placeholder="Share key expectations: fitness level, pace, route preferences, safety needs, and any special requests."
                 />
               </div>
               <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
@@ -1847,6 +1901,10 @@ function TrailsPageContent() {
                     description: requestDescription.trim(),
                     expert_user_id: EXPERTS_BETA_ENABLED ? undefined : selectedExpertId,
                     preferred_date: preferredDate,
+                    preferred_time: preferredTime || undefined,
+                    offered_price_npr:
+                      offeredPriceNpr.trim() === '' ? null : Number(offeredPriceNpr),
+                    nearest_point: nearestPoint.trim() || undefined,
                   });
                 }}
                 disabled={requestMutation.isPending || !requestAcceptTerms}
