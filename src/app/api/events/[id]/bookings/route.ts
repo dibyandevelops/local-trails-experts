@@ -42,7 +42,27 @@ export async function GET(
       [eventId, auth.sub]
     );
 
-    return NextResponse.json({ booking: result.rows[0] || null }, { status: 200 });
+    if (result.rows[0]) {
+      return NextResponse.json(
+        { booking: result.rows[0], legacy_joined: false },
+        { status: 200 }
+      );
+    }
+
+    const participantResult = await pool.query(
+      `
+      SELECT id
+      FROM event_participants
+      WHERE event_id = $1 AND participant_email = $2
+      LIMIT 1
+      `,
+      [eventId, auth.email]
+    );
+
+    return NextResponse.json(
+      { booking: null, legacy_joined: participantResult.rows.length > 0 },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error fetching event booking:', error);
     return NextResponse.json({ error: 'Failed to fetch booking' }, { status: 500 });
