@@ -52,7 +52,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
 ];
 const navItems: NavItem[] = [
-  { label: 'Trail Map', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  { label: 'Explore Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   { label: 'For Experts', href: '/experts/join', showFor: ['anonymous'] },
 ];
 const icon = (
