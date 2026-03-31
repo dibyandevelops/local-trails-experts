@@ -28,6 +28,14 @@ export async function PATCH(
     if (Number.isNaN(preferredDate.getTime())) {
       return NextResponse.json({ error: 'Invalid preferred date.' }, { status: 400 });
     }
+    const preferredDateOnly = preferredDateRaw.slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    if (preferredDateOnly < today) {
+      return NextResponse.json(
+        { error: 'Preferred date cannot be in the past.' },
+        { status: 400 }
+      );
+    }
 
     const existingReq = await pool.query(
       `
@@ -58,6 +66,26 @@ export async function PATCH(
       );
     }
 
+    const duplicateDateRequest = await pool.query(
+      `
+      SELECT id
+      FROM trail_interest_requests
+      WHERE requester_user_id = $1
+        AND preferred_date = $2::date
+        AND id <> $3
+      LIMIT 1
+      `,
+      [auth.sub, preferredDateOnly, requestId]
+    );
+    if (duplicateDateRequest.rows.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'You already have a trail request for this date. Cancel it or choose another date.',
+        },
+        { status: 409 }
+      );
+    }
+
     await pool.query(
       `
       UPDATE trail_interest_requests
@@ -65,7 +93,7 @@ export async function PATCH(
           preferred_date = $2::date
       WHERE id = $3 AND requester_user_id = $4
       `,
-      [expertUserId, preferredDateRaw, requestId, auth.sub]
+      [expertUserId, preferredDateOnly, requestId, auth.sub]
     );
 
     return NextResponse.json({ success: true }, { status: 200 });

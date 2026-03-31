@@ -44,6 +44,14 @@ export async function POST(
         { status: 400 }
       );
     }
+    const preferredDateOnly = preferredDateRaw.slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    if (preferredDateOnly < today) {
+      return NextResponse.json(
+        { error: 'Preferred date cannot be in the past.' },
+        { status: 400 }
+      );
+    }
 
     const trailRes = await pool.query(
       'SELECT id, name, sport_type, location FROM trails WHERE id = $1 LIMIT 1',
@@ -83,6 +91,26 @@ export async function POST(
       );
     }
 
+    const activeRequestRes = await pool.query(
+      `
+      SELECT id
+      FROM trail_interest_requests
+      WHERE requester_user_id = $1
+        AND preferred_date = $2::date
+      LIMIT 1
+      `,
+      [auth.sub, preferredDateOnly]
+    );
+    if (activeRequestRes.rows.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            'You already have a trail request for this date. Cancel it or choose another date.',
+        },
+        { status: 409 }
+      );
+    }
+
     const busyRes = await pool.query(
       `
       SELECT id, title, event_date
@@ -91,7 +119,7 @@ export async function POST(
         AND DATE(event_date) = $2::date
       LIMIT 1
       `,
-      [expertUserId, preferredDateRaw]
+      [expertUserId, preferredDateOnly]
     );
     if (busyRes.rows.length > 0) {
       const conflict = busyRes.rows[0];
@@ -116,7 +144,7 @@ export async function POST(
         user.email,
         description || null,
         expertUserId,
-        preferredDateRaw,
+        preferredDateOnly,
       ]
     );
 
@@ -127,11 +155,11 @@ export async function POST(
       appUrl: getAppUrl(),
       headline: 'New trail request',
       subhead: trail.name,
-      bodyHtml: `A participant requested activity on this trail.<br/><br/><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateRaw}<br/><strong>Preferred expert:</strong> ${expert.name || expert.email}<br/><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})<br/><strong>Description:</strong> ${description || 'No additional details.'}`,
-      bodyText: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateRaw}\nPreferred expert: ${expert.name || expert.email}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
+      bodyHtml: `A participant requested activity on this trail.<br/><br/><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateOnly}<br/><strong>Preferred expert:</strong> ${expert.name || expert.email}<br/><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})<br/><strong>Description:</strong> ${description || 'No additional details.'}`,
+      bodyText: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateOnly}\nPreferred expert: ${expert.name || expert.email}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
     });
 
-    const dedupeKey = `trail-request:${trailId}:${preferredDateRaw}:${expertUserId}:${auth.sub}`;
+    const dedupeKey = `trail-request:${trailId}:${preferredDateOnly}:${expertUserId}:${auth.sub}`;
     await Promise.all(
       uniqueRecipients.map((to) =>
         sendEmailSafe({
