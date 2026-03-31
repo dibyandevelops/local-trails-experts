@@ -8,6 +8,7 @@ const schema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
   company: z.string().trim().optional().default(''),
+  sponsorTier: z.enum(['bronze', 'silver', 'gold', 'custom']).optional().default('custom'),
   subject: z.string().trim().min(2).max(120),
   message: z.string().trim().min(20).max(5000),
 });
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, company, subject, message } = parsed.data;
+    const { name, email, company, sponsorTier, subject, message } = parsed.data;
     const adminEmail = getAdminEmail();
 
     const html = `
@@ -57,6 +58,9 @@ export async function POST(request: NextRequest) {
                       )}</p>`
                     : ''
                 }
+                <p style="margin:0 0 12px 0;"><strong>Requested tier:</strong> ${escapeHtml(
+                  sponsorTier
+                )}</p>
                 <p style="margin:0 0 8px 0;"><strong>Message:</strong></p>
                 <pre style="white-space:pre-wrap;margin:0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;font-size:13px;line-height:1.6;color:#111827;">${escapeHtml(
                   message
@@ -85,6 +89,7 @@ export async function POST(request: NextRequest) {
       `Subject: ${subject}\n` +
       `From: ${name} <${email}>\n` +
       (company ? `Company / group: ${company}\n` : '') +
+      `Requested tier: ${sponsorTier}\n` +
       `\n${message}\n`;
 
     await sendEmailSafe({
@@ -111,4 +116,3 @@ function escapeHtml(input: string) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 }
-

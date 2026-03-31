@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+export type SponsorTier = 'bronze' | 'silver' | 'gold' | 'custom';
+
 type CollaborateFormValues = {
   name: string;
   email: string;
   company: string;
+  sponsorTier: SponsorTier;
   subject: string;
   message: string;
   acceptTerms: boolean;
@@ -20,10 +23,44 @@ const defaultTemplate =
   `Timeline / urgency:\n- \n\n` +
   `Budget range (optional):\n- \n`;
 
+const tierTemplate: Record<SponsorTier, string> = {
+  bronze:
+    `Hi LocoXperts team,\n\n` +
+    `We are interested in the Bronze sponsorship tier.\n\n` +
+    `Brand / group:\n- \n\n` +
+    `What we want to support (mapping / signage / events):\n- \n\n` +
+    `Preferred start timeline:\n- \n\n` +
+    `Budget range:\n- \n`,
+  silver:
+    `Hi LocoXperts team,\n\n` +
+    `We are interested in the Silver sponsorship tier.\n\n` +
+    `Brand / group:\n- \n\n` +
+    `Expected collaboration scope:\n- \n\n` +
+    `Preferred campaign duration:\n- \n\n` +
+    `Budget range:\n- \n`,
+  gold:
+    `Hi LocoXperts team,\n\n` +
+    `We are interested in the Gold sponsorship tier.\n\n` +
+    `Brand / group:\n- \n\n` +
+    `Strategic support area (trail workday / signage zone / platform campaign):\n- \n\n` +
+    `Partnership timeline:\n- \n\n` +
+    `Budget range:\n- \n`,
+  custom: defaultTemplate,
+};
+
+const tierLabel: Record<SponsorTier, string> = {
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+  custom: 'Custom',
+};
+
 export default function CollaborateForm({
   compact = false,
+  initialTier = 'custom',
 }: {
   compact?: boolean;
+  initialTier?: SponsorTier;
 }) {
   const [status, setStatus] = useState<
     { type: 'idle' } | { type: 'sending' } | { type: 'sent' } | { type: 'error'; message: string }
@@ -33,14 +70,19 @@ export default function CollaborateForm({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CollaborateFormValues>({
     defaultValues: {
       name: '',
       email: '',
       company: '',
-      subject: 'Collaboration / sponsorship inquiry',
-      message: defaultTemplate,
+      sponsorTier: initialTier,
+      subject:
+        initialTier === 'custom'
+          ? 'Collaboration / sponsorship inquiry'
+          : `Sponsorship inquiry (${tierLabel[initialTier]})`,
+      message: tierTemplate[initialTier],
       acceptTerms: false,
     },
   });
@@ -64,8 +106,12 @@ export default function CollaborateForm({
         name: '',
         email: '',
         company: '',
-        subject: 'Collaboration / sponsorship inquiry',
-        message: defaultTemplate,
+        sponsorTier: initialTier,
+        subject:
+          initialTier === 'custom'
+            ? 'Collaboration / sponsorship inquiry'
+            : `Sponsorship inquiry (${tierLabel[initialTier]})`,
+        message: tierTemplate[initialTier],
       });
     } catch (error) {
       setStatus({
@@ -132,6 +178,38 @@ export default function CollaborateForm({
             placeholder="Your company / riding group"
             {...register('company')}
           />
+        </div>
+        <div>
+          <label className={labelClass} htmlFor="collab-tier">
+            Sponsorship tier
+          </label>
+          <select
+            id="collab-tier"
+            className={inputClass}
+            {...register('sponsorTier', { required: 'Select a sponsorship tier' })}
+            onChange={(event) => {
+              const nextTier = event.target.value as SponsorTier;
+              // keep subject/message aligned with selected tier template
+              setValue('sponsorTier', nextTier, { shouldDirty: true });
+              setValue(
+                'subject',
+                nextTier === 'custom'
+                  ? 'Collaboration / sponsorship inquiry'
+                  : `Sponsorship inquiry (${tierLabel[nextTier]})`,
+                { shouldDirty: true }
+              );
+              setValue('message', tierTemplate[nextTier], { shouldDirty: true });
+            }}
+            aria-invalid={Boolean(errors.sponsorTier)}
+          >
+            <option value="bronze">Bronze</option>
+            <option value="silver">Silver</option>
+            <option value="gold">Gold</option>
+            <option value="custom">Custom</option>
+          </select>
+          {errors.sponsorTier?.message && (
+            <p className="mt-1 text-xs text-red-600">{errors.sponsorTier.message}</p>
+          )}
         </div>
         <div>
           <label className={labelClass} htmlFor="collab-subject">

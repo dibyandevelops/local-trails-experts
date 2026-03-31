@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import CollaborateForm from '@/components/feature-components/collaborate-form';
+import SponsorInquiryModal from '@/components/feature-components/sponsor-inquiry-modal';
 
 export const metadata: Metadata = {
   title: 'Sponsors',
@@ -33,11 +33,53 @@ function SponsorSlot({ featured = false }: { featured?: boolean }) {
       </p>
       <div className="mt-4 h-px w-full bg-gray-200/80 dark:bg-slate-800" />
       <p className="mt-4 text-xs text-gray-500 dark:text-slate-400">
-        Interested? Use the collaboration form below.
+        Interested? Start a sponsor inquiry from the CTA below.
       </p>
     </div>
   );
 }
+
+const SPONSOR_TIERS = [
+  {
+    name: 'Bronze',
+    fit: 'Entry support',
+    price: 'NPR 50,000 – 100,000 / year',
+    highlight: 'Best for first-time community sponsors',
+    deliverables: [
+      'Logo placement on sponsor showcase',
+      'Mention in monthly community update',
+      'Contribution supports route mapping and documentation',
+    ],
+    color:
+      'border-amber-200 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/30',
+  },
+  {
+    name: 'Silver',
+    fit: 'Growth support',
+    price: 'NPR 100,000 – 200,000 / year',
+    highlight: 'Best for brands seeking consistent local visibility',
+    deliverables: [
+      'Everything in Bronze',
+      'Featured slot on trail/sponsor pages (rotational)',
+      'Support allocation to signage and safety touchpoints',
+    ],
+    color:
+      'border-slate-200 bg-slate-50/70 dark:border-slate-700 dark:bg-slate-900/40',
+  },
+  {
+    name: 'Gold',
+    fit: 'Strategic partner',
+    price: 'NPR 200,000+ / year',
+    highlight: 'Best for long-term trail-hub partners',
+    deliverables: [
+      'Everything in Silver',
+      'Priority brand placement on campaign pages',
+      'Named support for trail workdays or route signage zones',
+    ],
+    color:
+      'border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/60 dark:bg-emerald-950/30',
+  },
+];
 
 export default function SponsorsPage() {
   return (
@@ -103,14 +145,53 @@ export default function SponsorsPage() {
       <section className="rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 md:p-10">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Collaborate with us
+            Sponsorship tiers
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-slate-300">
-            Share what you want to sponsor (trail stewardship, signage, toolkits,
-            events, or expert programs). We’ll reply with next steps.
+          <p className="mt-2 max-w-3xl text-sm text-gray-600 dark:text-slate-300">
+            Structured tiers make commitments clear for both sides. We recommend fixed deliverables,
+            transparent reporting, and quarterly review points for every sponsor.
           </p>
         </div>
-        <CollaborateForm />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {SPONSOR_TIERS.map((tier) => (
+            <article
+              key={tier.name}
+              className={`rounded-2xl border p-5 shadow-sm ${tier.color}`}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600 dark:text-slate-300">
+                {tier.fit}
+              </p>
+              <h3 className="mt-2 text-xl font-bold text-gray-900 dark:text-gray-100">{tier.name}</h3>
+              <p className="mt-1 inline-flex rounded-full border border-emerald-300 bg-white/80 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-slate-950/60 dark:text-emerald-200">
+                {tier.price}
+              </p>
+              <p className="mt-2 text-sm font-medium text-gray-700 dark:text-slate-200">{tier.highlight}</p>
+              <ul className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
+                {tier.deliverables.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
+          <p className="font-semibold">Best-practice governance</p>
+          <p className="mt-1">
+            Every tier follows the same baseline: clear scope, no guaranteed performance claims,
+            and transparent updates on where support was allocated (mapping, signage, trail work, operations).
+          </p>
+          <p className="mt-2 text-xs text-emerald-800/90 dark:text-emerald-200/90">
+            Price bands are guidance only and can be adjusted based on campaign scope, duration, and on-ground commitments.
+          </p>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <SponsorInquiryModal triggerLabel="Start sponsorship inquiry" />
+          <SponsorInquiryModal triggerLabel="Apply for Bronze tier" initialTier="bronze" />
+          <SponsorInquiryModal triggerLabel="Apply for Silver tier" initialTier="silver" />
+          <SponsorInquiryModal triggerLabel="Apply for Gold tier" initialTier="gold" />
+        </div>
       </section>
     </div>
   );
