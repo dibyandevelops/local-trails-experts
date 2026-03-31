@@ -44,6 +44,7 @@ export default function EventDetailPage() {
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [showCancelBookingModal, setShowCancelBookingModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [imagePreview, setImagePreview] = useState<{ src: string; alt: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [riskAcknowledged, setRiskAcknowledged] = useState(false);
   const queryClient = useQueryClient();
@@ -611,6 +612,18 @@ export default function EventDetailPage() {
                       alt="eSewa QR for event payment"
                       className="h-48 w-48 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
                     />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setImagePreview({
+                          src: event.qr_image_url as string,
+                          alt: 'eSewa QR for event payment',
+                        })
+                      }
+                      className="mt-2 inline-flex rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                    >
+                      View full QR
+                    </button>
                   </div>
                 ) : (
                   <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
@@ -682,12 +695,26 @@ export default function EventDetailPage() {
                       </p>
                     )}
                     {item.proof_image_url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.proof_image_url}
-                        alt="Submitted payment proof"
-                        className="mt-2 h-28 w-28 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
-                      />
+                      <div className="mt-2 space-y-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.proof_image_url}
+                          alt="Submitted payment proof"
+                          className="h-28 w-28 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setImagePreview({
+                              src: item.proof_image_url as string,
+                              alt: 'Submitted payment proof',
+                            })
+                          }
+                          className="inline-flex rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                        >
+                          View full proof
+                        </button>
+                      </div>
                     )}
                     {item.payment_id && item.payment_status !== 'paid' && item.proof_submitted_at && (
                       <div className="mt-3 flex gap-2">
@@ -786,6 +813,18 @@ export default function EventDetailPage() {
                     alt="eSewa QR for event payment"
                     className="h-48 w-48 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
                   />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setImagePreview({
+                        src: event.qr_image_url as string,
+                        alt: 'eSewa QR for event payment',
+                      })
+                    }
+                    className="mt-2 inline-flex rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                  >
+                    View full QR
+                  </button>
                 </div>
               ) : (
                 <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
@@ -817,12 +856,26 @@ export default function EventDetailPage() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
               />
               {paymentProofImage && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={paymentProofImage}
-                  alt="Payment proof preview"
-                  className="h-32 w-32 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
-                />
+                <div className="space-y-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={paymentProofImage}
+                    alt="Payment proof preview"
+                    className="h-32 w-32 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setImagePreview({
+                        src: paymentProofImage,
+                        alt: 'Payment proof preview',
+                      })
+                    }
+                    className="inline-flex rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                  >
+                    View full proof
+                  </button>
+                </div>
               )}
               <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
                 <input
@@ -862,6 +915,28 @@ export default function EventDetailPage() {
             {paymentProofStatus && (
               <p className="mt-3 text-xs text-gray-700 dark:text-slate-200">{paymentProofStatus}</p>
             )}
+          </div>
+        </div>
+      )}
+      {imagePreview && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Image preview</h3>
+              <button
+                type="button"
+                onClick={() => setImagePreview(null)}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Close
+              </button>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imagePreview.src}
+              alt={imagePreview.alt}
+              className="max-h-[75vh] w-full rounded-lg border border-gray-200 object-contain bg-white dark:border-slate-700"
+            />
           </div>
         </div>
       )}
