@@ -238,7 +238,7 @@ function TrailGallery({
                         : 'Request this trail activity with preferred expert/date'
                     }
                   >
-                    {trail.isRequested ? 'Trail Requested' : 'Request'}
+                    {trail.isRequested ? 'Trail Requested' : 'Want to ride with a local pro?'}
                   </button>
                 )}
                 {canRequestTrail && trail.isRequested && onCancelRequest && (

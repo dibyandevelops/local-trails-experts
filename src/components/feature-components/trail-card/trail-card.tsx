@@ -263,7 +263,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                       : 'Request this trail activity with preferred expert/date'
                   }
                 >
-                  {trail.isRequested ? 'Trail Requested' : 'Request Trail'}
+                  {trail.isRequested ? 'Trail Requested' : 'Want to ride with a local pro?'}
                 </button>
               )}
               {trail.onCancelRequest && trail.isRequested && (
