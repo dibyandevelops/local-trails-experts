@@ -11,10 +11,12 @@ import type { User } from '@/types';
 import LoginModal from '@/components/auth/login-modal';
 import RegisterModal from '@/components/auth/register-modal';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 type NavItem = {
   label: string;
   href: string;
+  badge?: string;
   requiresAuth?: boolean;
   requiresRole?: Array<'admin' | 'expert' | 'participant'>;
   showFor?: Array<'anonymous' | 'admin' | 'expert' | 'participant'>;
@@ -22,11 +24,16 @@ type NavItem = {
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
-    label: 'Explore Nepal',
+    label: 'Explore',
     items: [
       { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Experts', href: '/experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      {
+        label: 'Experts',
+        href: '/experts',
+        showFor: ['anonymous', 'participant', 'expert', 'admin'],
+        badge: EXPERTS_BETA_ENABLED ? 'Beta' : undefined,
+      },
       { label: 'Cycle Hubs', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
     ],
   },
@@ -53,7 +60,12 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 ];
 const navItems: NavItem[] = [
   { label: 'Explore Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-  { label: 'For Experts', href: '/experts/join', showFor: ['anonymous'] },
+  {
+    label: 'For Experts',
+    href: '/experts/join',
+    showFor: ['anonymous'],
+    badge: EXPERTS_BETA_ENABLED ? 'Beta' : undefined,
+  },
 ];
 const icon = (
   <Image
@@ -267,6 +279,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   }`}
                 >
                   <span className="truncate max-w-[140px]">{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-1 rounded-full border border-amber-300/70 bg-amber-200/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-100">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               ) : null
             )}
@@ -334,7 +351,14 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                                   : 'text-green-50 hover:bg-white/15 data-[highlighted]:bg-white/15'
                               }`}
                             >
-                              <span className="block truncate">{item.label}</span>
+                              <span className="inline-flex items-center gap-2">
+                                <span className="block truncate">{item.label}</span>
+                                {item.badge && (
+                                  <span className="rounded-full border border-amber-300/70 bg-amber-200/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-100">
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </span>
                             </Link>
                           </DropdownMenu.Item>
                         ))}
@@ -445,7 +469,14 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   }`}
                   onClick={() => setMobileOpen(false)}
                 >
-                  {item.label}
+                  <span className="inline-flex items-center gap-2">
+                    <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="rounded-full border border-amber-300/70 bg-amber-200/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-100">
+                        {item.badge}
+                      </span>
+                    )}
+                  </span>
                 </Link>
               ) : null
             )}

@@ -6,6 +6,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import type { User } from '@/types';
 import GroupRequestForm from '@/components/feature-components/group-request-form';
 import { COMMUNITY_NAME } from '@/lib/branding';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 function buildMailto(params: { to?: string; subject: string; body: string }) {
   const subject = encodeURIComponent(params.subject);
@@ -102,6 +103,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             <li>
               <Link className="hover:underline" href="/experts/join">
                 For experts
+                {EXPERTS_BETA_ENABLED ? ' (Beta)' : ''}
               </Link>
             </li>
             <li>
@@ -183,6 +185,11 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
               {contactEmail}
             </a>
           </p>
+          {EXPERTS_BETA_ENABLED && (
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Experts features are in beta: workflows may change.
+            </p>
+          )}
         </div>
       </div>
 

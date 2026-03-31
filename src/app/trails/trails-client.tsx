@@ -28,6 +28,7 @@ import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 import GroupRequestForm from '@/components/feature-components/group-request-form';
 import { getKomootNavigateUrl } from '@/lib/komoot';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -464,6 +465,7 @@ function TrailsPageContent() {
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+    enabled: !EXPERTS_BETA_ENABLED,
   });
   const queryClient = useQueryClient();
   const { data: mapTrailDetail, isLoading: loadingMapTrail } = useQuery({
@@ -533,7 +535,7 @@ function TrailsPageContent() {
     mutationFn: (payload: {
       trailId: string;
       description: string;
-      expert_user_id: string;
+      expert_user_id?: string;
       preferred_date: string;
     }) =>
       requestTrail(payload.trailId, {
@@ -1443,6 +1445,11 @@ function TrailsPageContent() {
               <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
                 For Experts
               </p>
+              {EXPERTS_BETA_ENABLED && (
+                <span className="rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                  Beta
+                </span>
+              )}
             </div>
             <p>
               Publish your best trails, manage safety labels, and showcase routes that help your
@@ -1743,6 +1750,8 @@ function TrailsPageContent() {
             <p className="mt-1 text-sm text-gray-600">
               {requestTrailItem
                 ? `Trail: ${requestTrailItem.name}`
+                : EXPERTS_BETA_ENABLED
+                ? 'Pick your preferred date. Requests are handled by admin while experts are in beta.'
                 : 'Pick expert and date for your request.'}
             </p>
             <div className="mt-4 space-y-3">
@@ -1751,23 +1760,25 @@ function TrailsPageContent() {
                   {requestModalMessage}
                 </div>
               )}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Select Expert
-                </label>
-                <select
-                  value={selectedExpertId}
-                  onChange={(e) => setSelectedExpertId(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                >
-                  <option value="">Choose expert</option>
-                  {experts.map((expert) => (
-                    <option key={expert.id} value={expert.id}>
-                      {expert.name || expert.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {!EXPERTS_BETA_ENABLED && (
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Select Expert
+                  </label>
+                  <select
+                    value={selectedExpertId}
+                    onChange={(e) => setSelectedExpertId(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">Choose expert</option>
+                    {experts.map((expert) => (
+                      <option key={expert.id} value={expert.id}>
+                        {expert.name || expert.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Preferred Date
@@ -1818,7 +1829,7 @@ function TrailsPageContent() {
                 type="button"
                 onClick={() => {
                   if (!requestTrailItem) return;
-                  if (!selectedExpertId) {
+                  if (!EXPERTS_BETA_ENABLED && !selectedExpertId) {
                     setRequestModalMessage('Please select an expert.');
                     return;
                   }
@@ -1834,7 +1845,7 @@ function TrailsPageContent() {
                   requestMutation.mutate({
                     trailId: requestTrailItem.id,
                     description: requestDescription.trim(),
-                    expert_user_id: selectedExpertId,
+                    expert_user_id: EXPERTS_BETA_ENABLED ? undefined : selectedExpertId,
                     preferred_date: preferredDate,
                   });
                 }}

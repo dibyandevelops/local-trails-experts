@@ -13,6 +13,7 @@ export default function CreateEventPage() {
   const requestedByName = searchParams.get('requested_by_name') || '';
   const requestedByEmail = searchParams.get('requested_by_email') || '';
   const requestedDate = searchParams.get('requested_date') || '';
+  const requestedTrailRequestId = searchParams.get('trail_request_id') || '';
 
   return (
     <EventForm
@@ -23,6 +24,7 @@ export default function CreateEventPage() {
       requestedByName={requestedByName}
       requestedByEmail={requestedByEmail}
       requestedDate={requestedDate}
+      requestedTrailRequestId={requestedTrailRequestId}
     />
   );
 }

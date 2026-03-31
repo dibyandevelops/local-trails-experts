@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
         e.id,
         e.title,
         e.event_date,
+        e.trail_id,
+        e.host_user_id,
         e.city,
         e.sport_type,
         ep.participant_name,

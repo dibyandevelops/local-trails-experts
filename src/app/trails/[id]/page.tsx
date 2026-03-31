@@ -28,6 +28,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
 import { fetchTrailReviews, submitTrailReview } from '@/services/reviews/reviews.service';
+import { fetchMyParticipantEvents } from '@/services/participants/participants.service';
 import {
   deleteTrail,
   fetchTrailById,
@@ -41,6 +42,7 @@ import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
 
@@ -51,6 +53,11 @@ type GeoJSON = {
     coordinates: number[][];
   };
 } | null;
+
+type ParticipantTrailRequest = {
+  id: string;
+  trail_id: string;
+};
 type MapSectionProps = {
   hasRoute: boolean;
   routeGeoJSON: GeoJSON;
@@ -319,6 +326,7 @@ const TrailPage: React.FunctionComponent = () => {
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
+    enabled: !EXPERTS_BETA_ENABLED,
   });
 
   const { data: reviewData, isLoading: loadingReviews } = useQuery<{
@@ -328,6 +336,25 @@ const TrailPage: React.FunctionComponent = () => {
     queryKey: QUERY_KEYS.trails.reviews(trailId),
     queryFn: ({ signal }) => fetchTrailReviews(trailId, signal),
     enabled: Boolean(trailId),
+  });
+  const { data: joinedEvents = [] } = useQuery({
+    queryKey: QUERY_KEYS.events.joinedByParticipant,
+    queryFn: ({ signal }) => fetchMyParticipantEvents(signal),
+    enabled: currentUser?.role === 'participant',
+  });
+  const { data: participantRequests = [], refetch: refetchParticipantRequests } = useQuery<
+    ParticipantTrailRequest[]
+  >({
+    queryKey: ['participant-trail-requests', trailId, currentUser?.id],
+    queryFn: async () => {
+      const response = await fetch('/api/participants/me/trail-requests', {
+        cache: 'no-store',
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      return Array.isArray(data?.requests) ? data.requests : [];
+    },
+    enabled: currentUser?.role === 'participant' && Boolean(trailId),
   });
 
   const hasLocation = trail?.latitude != null && trail?.longitude != null;
@@ -406,6 +433,9 @@ const TrailPage: React.FunctionComponent = () => {
       null,
     [reviewData?.reviews, currentUser?.id]
   );
+  const canReviewTrail =
+    currentUser?.role === 'participant' &&
+    joinedEvents.some((event) => event.trail_id === trailId);
 
   useEffect(() => {
     if (!existingReview) {
@@ -483,7 +513,7 @@ const TrailPage: React.FunctionComponent = () => {
     mutationFn: () =>
       requestTrail(trailId, {
         description: requestDescription.trim(),
-        expert_user_id: selectedExpertId,
+        expert_user_id: EXPERTS_BETA_ENABLED ? undefined : selectedExpertId,
         preferred_date: preferredDate,
       }),
     onSuccess: () => {
@@ -492,6 +522,23 @@ const TrailPage: React.FunctionComponent = () => {
       setSelectedExpertId('');
       setPreferredDate('');
       setRequestModalOpen(false);
+      refetchParticipantRequests();
+    },
+  });
+  const cancelRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const response = await fetch(`/api/participants/me/trail-requests/${requestId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to cancel request');
+      }
+      return data;
+    },
+    onSuccess: () => {
+      setRequestMessage('Trail request cancelled.');
+      refetchParticipantRequests();
     },
   });
 
@@ -541,6 +588,8 @@ const TrailPage: React.FunctionComponent = () => {
   const canFlagHazard = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canUploadPhotos = canManageTrail;
   const canRequestTrail = currentUser?.role === 'participant';
+  const existingTrailRequest = participantRequests.find((request) => request.trail_id === trailId);
+  const hasRequestedTrail = Boolean(existingTrailRequest);
 
   const toggleSafetyLabel = (value: TrailSafetyLabel) => {
     setSafetyDraft((prev) =>
@@ -1024,12 +1073,35 @@ const TrailPage: React.FunctionComponent = () => {
                           );
                           return;
                         }
+                        if (hasRequestedTrail) {
+                          setRequestMessage('You have already requested this trail.');
+                          return;
+                        }
                         setRequestMessage(null);
                         setRequestModalOpen(true);
                       }}
                       className="w-full rounded-full border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                     >
-                      Want to ride with a local pro?
+                      {hasRequestedTrail ? 'Trail Requested' : 'Want to ride with a local pro?'}
+                    </button>
+                  )}
+                  {canRequestTrail && hasRequestedTrail && (
+                    <button
+                      type="button"
+                      disabled={cancelRequestMutation.isPending}
+                      onClick={async () => {
+                        if (!existingTrailRequest?.id) return;
+                        try {
+                          await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
+                        } catch (error) {
+                          setRequestMessage(
+                            error instanceof Error ? error.message : 'Failed to cancel request'
+                          );
+                        }
+                      }}
+                      className="w-full rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    >
+                      {cancelRequestMutation.isPending ? 'Cancelling...' : 'Cancel Request'}
                     </button>
                   )}
                 </div>
@@ -1381,7 +1453,11 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
           {currentUser ? (
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-              {existingReview ? 'Update your review' : 'Leave a review'}
+              {canReviewTrail
+                ? existingReview
+                  ? 'Update your review'
+                  : 'Leave a review'
+                : 'Join a ride on this trail to review'}
             </span>
           ) : (
             <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -1395,6 +1471,12 @@ const TrailPage: React.FunctionComponent = () => {
             onSubmit={async (event) => {
               event.preventDefault();
               setReviewMessage(null);
+              if (!canReviewTrail) {
+                setReviewMessage(
+                  'You can review this trail only after you have joined a ride on it.'
+                );
+                return;
+              }
               if (!reviewAcceptTerms) {
                 setReviewMessage('Please accept the terms before submitting your review.');
                 return;
@@ -1413,6 +1495,7 @@ const TrailPage: React.FunctionComponent = () => {
               <select
                 value={reviewRating}
                 onChange={(event) => setReviewRating(Number(event.target.value))}
+                disabled={!canReviewTrail}
                 className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
               >
                 {[5, 4, 3, 2, 1].map((value) => (
@@ -1427,6 +1510,7 @@ const TrailPage: React.FunctionComponent = () => {
               value={reviewComment}
               onChange={(event) => setReviewComment(event.target.value)}
               rows={3}
+              disabled={!canReviewTrail}
               className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
               placeholder="Share what riders should expect on this trail."
             />
@@ -1435,6 +1519,7 @@ const TrailPage: React.FunctionComponent = () => {
                 type="checkbox"
                 checked={reviewAcceptTerms}
                 onChange={(event) => setReviewAcceptTerms(event.target.checked)}
+                disabled={!canReviewTrail}
                 className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
               />
               <span>
@@ -1454,7 +1539,7 @@ const TrailPage: React.FunctionComponent = () => {
             )}
             <button
               type="submit"
-              disabled={reviewMutation.isPending || !reviewAcceptTerms}
+              disabled={reviewMutation.isPending || !reviewAcceptTerms || !canReviewTrail}
               className="w-full rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {reviewMutation.isPending ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}
@@ -1599,13 +1684,36 @@ const TrailPage: React.FunctionComponent = () => {
               );
               return;
             }
+            if (hasRequestedTrail) {
+              setRequestMessage('You have already requested this trail.');
+              return;
+            }
             setRequestMessage(null);
             setRequestModalOpen(true);
           }}
           className="flex-1 rounded-lg border border-green-700 px-3 py-2 text-xs font-semibold text-green-700"
         >
-          Want to ride with a local pro?
+          {hasRequestedTrail ? 'Trail Requested' : 'Want to ride with a local pro?'}
         </button>
+        {canRequestTrail && hasRequestedTrail && (
+          <button
+            type="button"
+            disabled={cancelRequestMutation.isPending}
+            onClick={async () => {
+              if (!existingTrailRequest?.id) return;
+              try {
+                await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
+              } catch (error) {
+                setRequestMessage(
+                  error instanceof Error ? error.message : 'Failed to cancel request'
+                );
+              }
+            }}
+            className="flex-1 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-60"
+          >
+            {cancelRequestMutation.isPending ? 'Cancelling...' : 'Cancel Request'}
+          </button>
+        )}
       </div>
 
       <Dialog.Root open={requestModalOpen} onOpenChange={setRequestModalOpen}>
@@ -1616,25 +1724,29 @@ const TrailPage: React.FunctionComponent = () => {
               Request Trail Activity
             </Dialog.Title>
             <p className="mt-1 text-sm text-gray-600">
-              This sends your request to experts/admin. Add details to help them.
+              {EXPERTS_BETA_ENABLED
+                ? 'This sends your request to admin while experts are in beta. Add details to help planning.'
+                : 'This sends your request to experts/admin. Add details to help them.'}
             </p>
-            <div className="mt-4">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Select Expert
-              </label>
-              <select
-                value={selectedExpertId}
-                onChange={(e) => setSelectedExpertId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              >
-                <option value="">Choose expert</option>
-                {experts.map((expert) => (
-                  <option key={expert.id} value={expert.id}>
-                    {expert.name || expert.email}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!EXPERTS_BETA_ENABLED && (
+              <div className="mt-4">
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Select Expert
+                </label>
+                <select
+                  value={selectedExpertId}
+                  onChange={(e) => setSelectedExpertId(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">Choose expert</option>
+                  {experts.map((expert) => (
+                    <option key={expert.id} value={expert.id}>
+                      {expert.name || expert.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="mt-3">
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Preferred Date
@@ -1677,7 +1789,7 @@ const TrailPage: React.FunctionComponent = () => {
               <button
                 type="button"
                 onClick={async () => {
-                  if (!selectedExpertId) {
+                  if (!EXPERTS_BETA_ENABLED && !selectedExpertId) {
                     setRequestMessage('Please select an expert.');
                     return;
                   }

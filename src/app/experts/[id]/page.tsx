@@ -16,9 +16,10 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import VerificationDetailsContent, {
   hasVerificationDetails,
 } from '@/components/ui/verification-details-content';
-import { STRAVA_ENABLED } from '@/lib/feature-flags';
+import { EXPERTS_BETA_ENABLED, STRAVA_ENABLED } from '@/lib/feature-flags';
 import DateText from '@/components/ui/date-text';
 import { fetchExpertReviews, submitExpertReview } from '@/services/reviews/reviews.service';
+import { fetchMyParticipantEvents } from '@/services/participants/participants.service';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -64,6 +65,11 @@ export default function ExpertDetailPage() {
     queryKey: QUERY_KEYS.experts.reviews(expertId || ''),
     queryFn: ({ signal }) => fetchExpertReviews(expertId || '', signal),
     enabled: !!expertId,
+  });
+  const { data: joinedEvents = [] } = useQuery({
+    queryKey: QUERY_KEYS.events.joinedByParticipant,
+    queryFn: ({ signal }) => fetchMyParticipantEvents(signal),
+    enabled: currentUser?.role === 'participant',
   });
 
   const existingReview = useMemo(
@@ -132,6 +138,9 @@ export default function ExpertDetailPage() {
       .join('')
       .toUpperCase() || 'EX';
   const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
+  const canReviewExpert =
+    currentUser?.role === 'participant' &&
+    joinedEvents.some((event) => event.host_user_id === expertId);
 
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-0.5 text-amber-500">
@@ -204,6 +213,11 @@ export default function ExpertDetailPage() {
             {expert.bio && (
               <p className="mt-3 max-w-2xl text-sm text-gray-700 dark:text-slate-200">
                 {expert.bio}
+              </p>
+            )}
+            {EXPERTS_BETA_ENABLED && (
+              <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">
+                Beta feature: workflows may change.
               </p>
             )}
           </div>
@@ -313,7 +327,11 @@ export default function ExpertDetailPage() {
           </div>
           {currentUser ? (
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-              {existingReview ? 'Update your review' : 'Leave a review'}
+              {canReviewExpert
+                ? existingReview
+                  ? 'Update your review'
+                  : 'Leave a review'
+                : 'Join this expert’s event to review'}
             </span>
           ) : (
             <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -327,6 +345,12 @@ export default function ExpertDetailPage() {
             onSubmit={async (event) => {
               event.preventDefault();
               setReviewMessage(null);
+              if (!canReviewExpert) {
+                setReviewMessage(
+                  'You can review this expert only after joining one of their rides.'
+                );
+                return;
+              }
               if (!reviewAcceptTerms) {
                 setReviewMessage('Please accept the terms before submitting your review.');
                 return;
@@ -345,6 +369,7 @@ export default function ExpertDetailPage() {
               <select
                 value={reviewRating}
                 onChange={(event) => setReviewRating(Number(event.target.value))}
+                disabled={!canReviewExpert}
                 className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
               >
                 {[5, 4, 3, 2, 1].map((value) => (
@@ -359,6 +384,7 @@ export default function ExpertDetailPage() {
               value={reviewComment}
               onChange={(event) => setReviewComment(event.target.value)}
               rows={3}
+              disabled={!canReviewExpert}
               className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
               placeholder="Share how this expert performed during your ride or training."
             />
@@ -367,6 +393,7 @@ export default function ExpertDetailPage() {
                 type="checkbox"
                 checked={reviewAcceptTerms}
                 onChange={(event) => setReviewAcceptTerms(event.target.checked)}
+                disabled={!canReviewExpert}
                 className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
               />
               <span>
@@ -386,7 +413,7 @@ export default function ExpertDetailPage() {
             )}
             <button
               type="submit"
-              disabled={reviewMutation.isPending || !reviewAcceptTerms}
+              disabled={reviewMutation.isPending || !reviewAcceptTerms || !canReviewExpert}
               className="w-full rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {reviewMutation.isPending ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}

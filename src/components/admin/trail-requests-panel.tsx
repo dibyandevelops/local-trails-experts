@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import {
   fetchAdminTrailRequests,
   type TrailInterestRequest,
 } from '@/services/admin/admin.service';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 export default function TrailRequestsPanel() {
   const {
@@ -22,6 +24,11 @@ export default function TrailRequestsPanel() {
       <p className="text-sm text-gray-600 mb-5">
         Requests submitted by participants to notify experts/admin.
       </p>
+      {EXPERTS_BETA_ENABLED && (
+        <p className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
+          Experts beta is enabled. Trail requests are currently routed to admin for scheduling.
+        </p>
+      )}
       {loadingTrailRequests ? (
         <p className="text-sm text-gray-600">Loading trail requests...</p>
       ) : trailRequests.length === 0 ? (
@@ -56,6 +63,24 @@ export default function TrailRequestsPanel() {
                   {request.description}
                 </p>
               )}
+              <div className="mt-3">
+                <Link
+                  href={`/events/create?trail_id=${encodeURIComponent(
+                    request.trail_id
+                  )}&sport=${encodeURIComponent(
+                    request.trail_sport_type || ''
+                  )}&requested_by_name=${encodeURIComponent(
+                    request.requester_name || ''
+                  )}&requested_by_email=${encodeURIComponent(
+                    request.requester_email || ''
+                  )}&requested_date=${encodeURIComponent(
+                    request.preferred_date || ''
+                  )}&trail_request_id=${encodeURIComponent(request.id)}`}
+                  className="inline-flex items-center rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
+                >
+                  Create event from request
+                </Link>
+              </div>
             </div>
           ))}
         </div>

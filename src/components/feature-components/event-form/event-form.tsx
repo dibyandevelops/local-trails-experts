@@ -463,7 +463,10 @@ export default function EventForm({
     if (prefillAppliedRef.current) return;
 
     if (prefillSport) {
-      setValue('sport_type', prefillSport);
+      const currentSport = getValues('sport_type');
+      if (currentSport !== prefillSport) {
+        setValue('sport_type', prefillSport);
+      }
     }
 
     if (!prefillTrailId) {
@@ -471,11 +474,24 @@ export default function EventForm({
       return;
     }
 
+    const currentTrailId = getValues('trail_id');
+    if (currentTrailId === prefillTrailId) {
+      prefillAppliedRef.current = true;
+      return;
+    }
+
     if (trailsBySport.some((trail) => trail.id === prefillTrailId)) {
       handleTrailChange(prefillTrailId);
       prefillAppliedRef.current = true;
+      return;
     }
-  }, [isEditMode, prefillSport, prefillTrailId, trailsBySport, setValue]);
+
+    // If trails were loaded for this sport and the requested prefill trail isn't present,
+    // stop trying to apply the prefill on every render.
+    if (trailsBySport.length > 0) {
+      prefillAppliedRef.current = true;
+    }
+  }, [isEditMode, prefillSport, prefillTrailId, trailsBySport, setValue, getValues]);
 
   useEffect(() => {
     if (!lockTrailAndSport) return;

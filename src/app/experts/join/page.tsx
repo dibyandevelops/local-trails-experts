@@ -8,6 +8,7 @@ import { resizeImageToDataUrl } from '@/lib/image';
 import VerificationDetailsForm, {
   VerificationDetailsValues,
 } from '@/components/feature-components/verification-details-form';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 export default function ExpertJoinPage() {
   const router = useRouter();
@@ -121,6 +122,11 @@ export default function ExpertJoinPage() {
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
               For Experts
             </span>
+            {EXPERTS_BETA_ENABLED && (
+              <span className="rounded-full border border-amber-300/80 bg-amber-100/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800">
+                Beta
+              </span>
+            )}
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
               Nepal
             </span>
@@ -132,6 +138,11 @@ export default function ExpertJoinPage() {
             Share your local knowledge and host guided MTB rides, hikes, trail runs, and
             performance training sessions for riders and travelers.
           </p>
+          {EXPERTS_BETA_ENABLED && (
+            <p className="mt-2 max-w-2xl text-xs font-medium text-amber-700 dark:text-amber-300">
+              Beta feature: workflows may change.
+            </p>
+          )}
         </div>
       </section>
 
@@ -180,11 +191,21 @@ export default function ExpertJoinPage() {
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Apply for Expert Verification
+          {EXPERTS_BETA_ENABLED && (
+            <span className="ml-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
+              Beta
+            </span>
+          )}
         </h2>
         <p className="text-sm text-gray-600 mb-6">
           Tell us about your experience guiding, coaching, or leading outdoor
           activities. This helps us keep the community safe and high-quality.
         </p>
+        {EXPERTS_BETA_ENABLED && (
+          <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Experts onboarding is currently in beta. Applications are open, and review timelines may vary.
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
@@ -383,7 +404,7 @@ export default function ExpertJoinPage() {
               disabled={submitting}
               className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-green-700 text-white font-semibold text-sm shadow-sm hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Submitting...' : 'Submit Application'}
+              {submitting ? 'Submitting...' : EXPERTS_BETA_ENABLED ? 'Submit Application (Beta)' : 'Submit Application'}
             </button>
             <p className="text-xs text-gray-500 max-w-md">
               Once registered, your profile and hosted events can display a

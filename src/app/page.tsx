@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import JoinAdventureButton from '@/components/home/join-adventure-button';
 import { COMMUNITY_NAME } from '@/lib/branding';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 // import PhoneVerifyToast from '@/components/phone-verify-toast';
 
 export default function Home() {
@@ -21,6 +22,11 @@ export default function Home() {
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
                 Local Trail Hubs
               </span>
+              {EXPERTS_BETA_ENABLED && (
+                <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+                  For Experts ( Beta )
+                </span>
+              )}
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
                 For the Community, By the Community
               </span>
@@ -101,6 +107,11 @@ export default function Home() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
                 Built for experts
               </p>
+              {EXPERTS_BETA_ENABLED && (
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-200">
+                  Beta feature: workflows may change.
+                </p>
+              )}
               <h3 className="mt-3 text-lg font-semibold">
                 Turn your local knowledge into a premium outdoor experience.
               </h3>

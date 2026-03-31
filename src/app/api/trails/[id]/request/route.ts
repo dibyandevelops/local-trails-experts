@@ -4,6 +4,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 import { sendEmailSafe } from '@/lib/email';
 import { sendPushToUserIds } from '@/lib/push';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 export async function POST(
   request: NextRequest,
@@ -24,7 +25,7 @@ export async function POST(
     const expertUserId = String(body?.expert_user_id || '').trim();
     const preferredDateRaw = String(body?.preferred_date || '').trim();
 
-    if (!expertUserId) {
+    if (!EXPERTS_BETA_ENABLED && !expertUserId) {
       return NextResponse.json(
         { error: 'Please select an expert for this request.' },
         { status: 400 }
@@ -74,21 +75,24 @@ export async function POST(
       );
     }
 
-    const expertRes = await pool.query(
-      `
-      SELECT id, name, email
-      FROM users
-      WHERE id = $1 AND role = 'expert' AND is_verified_expert = true
-      LIMIT 1
-      `,
-      [expertUserId]
-    );
-    const expert = expertRes.rows[0];
-    if (!expert?.email) {
-      return NextResponse.json(
-        { error: 'Selected expert is not available.' },
-        { status: 400 }
+    let expert: { id: string; name: string | null; email: string | null } | null = null;
+    if (!EXPERTS_BETA_ENABLED) {
+      const expertRes = await pool.query(
+        `
+        SELECT id, name, email
+        FROM users
+        WHERE id = $1 AND role = 'expert' AND is_verified_expert = true
+        LIMIT 1
+        `,
+        [expertUserId]
       );
+      expert = expertRes.rows[0] || null;
+      if (!expert?.email) {
+        return NextResponse.json(
+          { error: 'Selected expert is not available.' },
+          { status: 400 }
+        );
+      }
     }
 
     const activeRequestRes = await pool.query(
@@ -111,24 +115,26 @@ export async function POST(
       );
     }
 
-    const busyRes = await pool.query(
-      `
-      SELECT id, title, event_date
-      FROM events
-      WHERE host_user_id = $1
-        AND DATE(event_date) = $2::date
-      LIMIT 1
-      `,
-      [expertUserId, preferredDateOnly]
-    );
-    if (busyRes.rows.length > 0) {
-      const conflict = busyRes.rows[0];
-      return NextResponse.json(
-        {
-          error: `Selected expert is busy on ${preferredDateRaw} (${conflict.title}). Please choose another date or expert.`,
-        },
-        { status: 409 }
+    if (!EXPERTS_BETA_ENABLED && expertUserId) {
+      const busyRes = await pool.query(
+        `
+        SELECT id, title, event_date
+        FROM events
+        WHERE host_user_id = $1
+          AND DATE(event_date) = $2::date
+        LIMIT 1
+        `,
+        [expertUserId, preferredDateOnly]
       );
+      if (busyRes.rows.length > 0) {
+        const conflict = busyRes.rows[0];
+        return NextResponse.json(
+          {
+            error: `Selected expert is busy on ${preferredDateRaw} (${conflict.title}). Please choose another date or expert.`,
+          },
+          { status: 409 }
+        );
+      }
     }
 
     await pool.query(
@@ -143,23 +149,41 @@ export async function POST(
         user.name || null,
         user.email,
         description || null,
-        expertUserId,
+        EXPERTS_BETA_ENABLED ? null : expertUserId,
         preferredDateOnly,
       ]
     );
 
-    const uniqueRecipients = Array.from(new Set([expert.email]));
+    const adminRows = await pool.query(
+      `SELECT id, email FROM users WHERE role = 'admin' AND email IS NOT NULL`
+    );
+    const adminEmails = Array.from(
+      new Set(
+        adminRows.rows
+          .map((row) => String(row.email || '').trim())
+          .filter(Boolean)
+      )
+    );
+    const adminUserIds = adminRows.rows.map((row) => String(row.id));
+    const uniqueRecipients = Array.from(
+      new Set(
+        (EXPERTS_BETA_ENABLED ? adminEmails : [expert?.email, ...adminEmails]).filter(
+          Boolean
+        ) as string[]
+      )
+    );
 
     const requestEmail = buildBrandedEmail({
       subject: `Trail request: ${trail.name}`,
       appUrl: getAppUrl(),
       headline: 'New trail request',
       subhead: trail.name,
-      bodyHtml: `A participant requested activity on this trail.<br/><br/><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateOnly}<br/><strong>Preferred expert:</strong> ${expert.name || expert.email}<br/><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})<br/><strong>Description:</strong> ${description || 'No additional details.'}`,
-      bodyText: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateOnly}\nPreferred expert: ${expert.name || expert.email}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
+      bodyHtml: `A participant requested activity on this trail.<br/><br/><strong>Trail:</strong> ${trail.name}<br/><strong>Sport:</strong> ${trail.sport_type || 'N/A'}<br/><strong>Location:</strong> ${trail.location || 'N/A'}<br/><strong>Preferred date:</strong> ${preferredDateOnly}<br/><strong>Preferred expert:</strong> ${EXPERTS_BETA_ENABLED ? 'Admin assigned (Experts Beta)' : expert?.name || expert?.email || 'N/A'}<br/><strong>Requested by:</strong> ${user.name || 'Participant'} (${user.email})<br/><strong>Description:</strong> ${description || 'No additional details.'}`,
+      bodyText: `A participant requested activity on this trail.\n\nTrail: ${trail.name}\nSport: ${trail.sport_type || 'N/A'}\nLocation: ${trail.location || 'N/A'}\nPreferred date: ${preferredDateOnly}\nPreferred expert: ${EXPERTS_BETA_ENABLED ? 'Admin assigned (Experts Beta)' : expert?.name || expert?.email || 'N/A'}\nRequested by: ${user.name || 'Participant'} (${user.email})\n\nDescription:\n${description || 'No additional details.'}`,
     });
 
-    const dedupeKey = `trail-request:${trailId}:${preferredDateOnly}:${expertUserId}:${auth.sub}`;
+    const recipientKey = EXPERTS_BETA_ENABLED ? 'admin' : expertUserId;
+    const dedupeKey = `trail-request:${trailId}:${preferredDateOnly}:${recipientKey}:${auth.sub}`;
     await Promise.all(
       uniqueRecipients.map((to) =>
         sendEmailSafe({
@@ -170,10 +194,13 @@ export async function POST(
       )
     );
 
-    await sendPushToUserIds([expertUserId], {
+    const pushRecipients = EXPERTS_BETA_ENABLED
+      ? adminUserIds
+      : Array.from(new Set([expertUserId, ...adminUserIds].filter(Boolean)));
+    await sendPushToUserIds(pushRecipients, {
       title: 'New trail request',
       body: `${user.name || 'Participant'} requested ${trail.name}.`,
-      url: `/experts/me#trail-requests`,
+      url: EXPERTS_BETA_ENABLED ? '/admin' : '/experts/me#trail-requests',
     });
 
     return NextResponse.json({ success: true }, { status: 200 });

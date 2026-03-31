@@ -10,6 +10,7 @@ import { resizeImageToDataUrl } from '@/lib/image';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import DateText from '@/components/ui/date-text';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 type ParticipantEvent = {
   id: string;
@@ -178,34 +179,34 @@ export default function ParticipantProfilePage() {
           </p>
         </div>
       </section>
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Google Login</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Google Login</h2>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
               Connect your Google account to enable one-tap login
             </p>
           </div>
           {user.google_sub ? (
-            <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+            <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 dark:border-emerald-700/60 dark:bg-emerald-950/50 dark:text-emerald-200">
               Connected
             </span>
           ) : (
             <Link
               href={`/api/auth/google/start?mode=connect&next=${encodeURIComponent('/participants/me')}`}
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
             >
               Connect Google
             </Link>
           )}
         </div>
         {googleNotice && (
-          <p className="mt-3 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-700">
+          <p className="mt-3 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-emerald-700/50 dark:bg-emerald-950/40 dark:text-emerald-200">
             {googleNotice}
           </p>
         )}
         {!user.google_sub && (
-          <p className="mt-3 text-xs text-gray-500">
+          <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
             For security, the Google email must match your participant account email.
           </p>
         )}
@@ -492,32 +493,34 @@ export default function ParticipantProfilePage() {
                   </p>
                 )}
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600">
-                      Assigned Expert
-                    </label>
-                    <select
-                      value={request.assigned_expert_user_id || ''}
-                      onChange={(event) => {
-                        const nextExpertId = event.target.value;
-                        setTrailRequests((prev) =>
-                          prev.map((item) =>
-                            item.id === request.id
-                              ? { ...item, assigned_expert_user_id: nextExpertId }
-                              : item
-                          )
-                        );
-                      }}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    >
-                      <option value="">Select expert</option>
-                      {experts.map((expert) => (
-                        <option key={expert.id} value={expert.id}>
-                          {expert.name || expert.email}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {!EXPERTS_BETA_ENABLED && (
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-600">
+                        Assigned Expert
+                      </label>
+                      <select
+                        value={request.assigned_expert_user_id || ''}
+                        onChange={(event) => {
+                          const nextExpertId = event.target.value;
+                          setTrailRequests((prev) =>
+                            prev.map((item) =>
+                              item.id === request.id
+                                ? { ...item, assigned_expert_user_id: nextExpertId }
+                                : item
+                            )
+                          );
+                        }}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      >
+                        <option value="">Select expert</option>
+                        {experts.map((expert) => (
+                          <option key={expert.id} value={expert.id}>
+                            {expert.name || expert.email}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="mb-1 block text-xs font-medium text-gray-600">
                       Preferred Date
@@ -527,61 +530,69 @@ export default function ParticipantProfilePage() {
                       min={new Date().toISOString().slice(0, 10)}
                       value={request.preferred_date?.slice(0, 10) || ''}
                       onChange={(event) => {
+                        if (EXPERTS_BETA_ENABLED) return;
                         const nextDate = event.target.value;
                         setTrailRequests((prev) =>
                           prev.map((item) =>
                             item.id === request.id
                               ? { ...item, preferred_date: nextDate }
                               : item
-                          )
+                            )
                         );
                       }}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
+                {EXPERTS_BETA_ENABLED && (
+                  <p className="mt-2 text-xs font-medium text-amber-700">
+                    Experts beta is active. Admin will handle expert assignment for this request.
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setRequestMessage(null);
-                      if (!request.assigned_expert_user_id || !request.preferred_date) {
-                        setRequestMessage('Please select expert and preferred date.');
-                        return;
-                      }
-                      try {
-                        setSavingRequestId(request.id);
-                        const response = await fetch(
-                          `/api/participants/me/trail-requests/${request.id}`,
-                          {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              expert_user_id: request.assigned_expert_user_id,
-                              preferred_date: request.preferred_date,
-                            }),
-                          }
-                        );
-                        const data = await response.json();
-                        if (!response.ok) {
-                          throw new Error(data?.error || 'Failed to update request');
+                  {!EXPERTS_BETA_ENABLED && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setRequestMessage(null);
+                        if (!request.assigned_expert_user_id || !request.preferred_date) {
+                          setRequestMessage('Please select expert and preferred date.');
+                          return;
                         }
-                        setRequestMessage('Request updated successfully.');
-                      } catch (error) {
-                        setRequestMessage(
-                          error instanceof Error ? error.message : 'Failed to update request'
-                        );
-                      } finally {
-                        setSavingRequestId(null);
-                      }
-                    }}
-                    disabled={savingRequestId === request.id}
-                    className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-60"
-                  >
-                    {savingRequestId === request.id
-                      ? 'Updating...'
-                      : 'Change Date / Expert'}
-                  </button>
+                        try {
+                          setSavingRequestId(request.id);
+                          const response = await fetch(
+                            `/api/participants/me/trail-requests/${request.id}`,
+                            {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                expert_user_id: request.assigned_expert_user_id,
+                                preferred_date: request.preferred_date,
+                              }),
+                            }
+                          );
+                          const data = await response.json();
+                          if (!response.ok) {
+                            throw new Error(data?.error || 'Failed to update request');
+                          }
+                          setRequestMessage('Request updated successfully.');
+                        } catch (error) {
+                          setRequestMessage(
+                            error instanceof Error ? error.message : 'Failed to update request'
+                          );
+                        } finally {
+                          setSavingRequestId(null);
+                        }
+                      }}
+                      disabled={savingRequestId === request.id}
+                      className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-60"
+                    >
+                      {savingRequestId === request.id
+                        ? 'Updating...'
+                        : 'Change Date / Expert'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={async () => {
