@@ -27,6 +27,7 @@ import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 import GroupRequestForm from '@/components/feature-components/group-request-form';
+import { getKomootNavigateUrl } from '@/lib/komoot';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -109,6 +110,7 @@ function TrailGallery({
             trail.image_url ||
             (Array.isArray(trail.trail_images) ? trail.trail_images[0] : null) ||
             null;
+          const komootNavigateUrl = getKomootNavigateUrl(trail.komoot_embed_url);
           return (
             <article
               key={trail.id}
@@ -191,6 +193,18 @@ function TrailGallery({
                 >
                   Map
                 </button>
+                {komootNavigateUrl && (
+                  <a
+                    href={komootNavigateUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100"
+                    title="Open this trail in Komoot"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    Navigate
+                  </a>
+                )}
                 {canGroupRequest && onGroupRequest && (
                   <button
                     type="button"

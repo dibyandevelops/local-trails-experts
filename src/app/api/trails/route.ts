@@ -145,6 +145,7 @@ export async function GET(request: NextRequest) {
         t.estimated_time_hours,
         t.image_url,
         t.trail_images,
+        t.komoot_embed_url,
         NULL::jsonb AS route_data,
         t.created_at,
         t.updated_at,

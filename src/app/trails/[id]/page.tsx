@@ -23,6 +23,7 @@ import {
 } from '@/lib/trail-safety';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
+import { extractKomootEmbedUrl, getKomootNavigateUrl } from '@/lib/komoot';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
@@ -73,38 +74,16 @@ const MapSection = React.memo(function MapSection({
 }: MapSectionProps) {
   const mapRef = React.useRef<MapRef | null>(null);
   const komootUrl = (komootEmbedUrl || '').trim();
-  const hasKomootEmbed = Boolean(komootUrl);
-  const isKomootEmbed = hasKomootEmbed && /komoot\.com/i.test(komootUrl) && /embed/i.test(komootUrl);
-  const komootOpenUrl = komootUrl ? komootUrl.replace('/embed', '') : '';
+  const normalizedKomootEmbedUrl = extractKomootEmbedUrl(komootUrl);
+  const hasKomootEmbed = Boolean(normalizedKomootEmbedUrl);
+  const komootOpenUrl = getKomootNavigateUrl(normalizedKomootEmbedUrl);
 
   if (hasKomootEmbed) {
-    if (!isKomootEmbed) {
-      return (
-        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
-          <p className="font-semibold">Komoot embed link needed</p>
-          <p className="mt-2 text-xs leading-5 text-amber-800 dark:text-amber-200">
-            The link provided doesn’t look like a Komoot embed URL, so browsers block it from
-            loading here. Use “Share → Embed” on Komoot and paste the embed URL or iframe code.
-          </p>
-          {komootOpenUrl && (
-            <a
-              href={komootOpenUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-flex items-center rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100"
-            >
-              Open in Komoot
-            </a>
-          )}
-        </div>
-      );
-    }
-
     return (
       <div className="mb-6 overflow-hidden rounded-xl border border-emerald-200/60 bg-white shadow-[0_20px_60px_-25px_rgba(2,6,23,0.5)] dark:border-emerald-900/60 dark:bg-slate-950">
         <div className="h-[360px] w-full sm:h-[460px] lg:h-[600px]">
           <iframe
-            src={komootUrl}
+            src={normalizedKomootEmbedUrl}
             title="Komoot route map"
             className="h-full w-full"
             loading="lazy"
@@ -372,12 +351,10 @@ const TrailPage: React.FunctionComponent = () => {
         .filter((image, index, arr) => arr.indexOf(image) === index),
     [trail?.image_url, trail?.trail_images]
   );
-  const komootNavigateUrl = useMemo(() => {
-    const raw = (trail?.komoot_embed_url || '').trim();
-    if (!raw) return '';
-    if (!/komoot\.com/i.test(raw)) return '';
-    return raw.replace('/embed', '');
-  }, [trail?.komoot_embed_url]);
+  const komootNavigateUrl = useMemo(
+    () => getKomootNavigateUrl(trail?.komoot_embed_url),
+    [trail?.komoot_embed_url]
+  );
   const mapCenter = useMemo(() => {
     if (mapBounds) {
       return {

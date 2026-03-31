@@ -4,6 +4,7 @@ import { Trail } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getSafetyLabelText } from '@/lib/trail-safety';
+import { getKomootNavigateUrl } from '@/lib/komoot';
 import { getSportLabel } from '@/services/constants/sports';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 
@@ -33,12 +34,10 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
   const hasMultipleImages = images.length > 1;
   const hasImage = images.length > 0;
-  const komootNavigateUrl = React.useMemo(() => {
-    const raw = (trail.komoot_embed_url || '').trim();
-    if (!raw) return '';
-    if (!/komoot\.com/i.test(raw)) return '';
-    return raw.replace('/embed', '');
-  }, [trail.komoot_embed_url]);
+  const komootNavigateUrl = React.useMemo(
+    () => getKomootNavigateUrl(trail.komoot_embed_url),
+    [trail.komoot_embed_url]
+  );
   const averageRating = typeof trail.average_rating === 'number' ? trail.average_rating : 0;
   const reviewCount = trail.review_count || 0;
   const renderStars = (rating: number) => (
