@@ -504,6 +504,10 @@ export default function EventForm({
         alert('Paid events must have a price greater than 0.');
         return;
       }
+      if (values.is_paid_event && !values.qr_image_url) {
+        alert('Please upload an eSewa QR image for paid events.');
+        return;
+      }
 
       const descriptionParts: string[] = [];
       if (values.sport_type === 'training' && values.custom_trail_text.trim()) {
@@ -952,8 +956,8 @@ export default function EventForm({
             <p className="text-xs text-gray-500 mt-1">0 = free</p>
           </div>
 
-          {/* <div>
-            <label className="block text-sm font-medium mb-2">QR Payment Image</label>
+          <div>
+            <label className="block text-sm font-medium mb-2">eSewa QR Payment Image</label>
             <input
               type="file"
               accept="image/*"
@@ -975,7 +979,7 @@ export default function EventForm({
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Upload QR image used for participant payment reference.
+              Upload the QR image participants will scan to pay.
             </p>
             {qrPreview && (
               <img
@@ -984,7 +988,7 @@ export default function EventForm({
                 className="mt-3 h-36 w-36 rounded border border-gray-200 object-contain bg-white"
               />
             )}
-          </div> */}
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

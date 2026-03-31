@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { Booking, Event } from '@/types';
 import DateText from '@/components/ui/date-text';
@@ -18,10 +18,49 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const { data: user = null } = useCurrentUser();
   const [booking, setBooking] = useState<(Booking & { payment_status?: string | null }) | null>(null);
+  const [reviewBookings, setReviewBookings] = useState<
+    Array<{
+      booking_id: string;
+      participant_name: string | null;
+      participant_email: string;
+      total_price_npr: number;
+      payment_id: string | null;
+      payment_status: string | null;
+      transaction_reference: string | null;
+      proof_image_url: string | null;
+      proof_submitted_at: string | null;
+      review_note: string | null;
+      verified_at: string | null;
+    }>
+  >([]);
+  const [transactionReference, setTransactionReference] = useState('');
+  const [paymentProofImage, setPaymentProofImage] = useState<string | null>(null);
+  const [paymentProofStatus, setPaymentProofStatus] = useState<string | null>(null);
+  const [submittingProof, setSubmittingProof] = useState(false);
+  const [reviewingPaymentId, setReviewingPaymentId] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [riskAcknowledged, setRiskAcknowledged] = useState(false);
   const queryClient = useQueryClient();
+  const canCancel =
+    user?.role === 'admin' || (user?.role === 'expert' && user?.id === event?.host_user_id);
+  const canJoin = user?.role === 'participant' || !user;
+  const alreadyJoined = user?.role === 'participant' && Boolean(booking);
+  const canReviewPayments = Boolean(canCancel);
+
+  const refreshBooking = useCallback(async () => {
+    if (!eventId || !user || user.role !== 'participant') return;
+    const res = await fetch(`/api/events/${eventId}/bookings`);
+    const data = await res.json();
+    setBooking(data.booking || null);
+  }, [eventId, user]);
+
+  const refreshReviewBookings = useCallback(async () => {
+    if (!eventId || !canReviewPayments) return;
+    const res = await fetch(`/api/events/${eventId}/bookings/review`);
+    const data = await res.json();
+    setReviewBookings(data.bookings || []);
+  }, [eventId, canReviewPayments]);
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => cancelEvent(id),
@@ -96,15 +135,25 @@ export default function EventDetailPage() {
     if (!eventId || !user || user.role !== 'participant') return;
     const fetchBooking = async () => {
       try {
-        const res = await fetch(`/api/events/${eventId}/bookings`);
-        const data = await res.json();
-        setBooking(data.booking || null);
+        await refreshBooking();
       } catch {
         setBooking(null);
       }
     };
     fetchBooking();
-  }, [eventId, user]);
+  }, [eventId, user, refreshBooking]);
+
+  useEffect(() => {
+    if (!eventId || !canReviewPayments) return;
+    const fetchReviewBookings = async () => {
+      try {
+        await refreshReviewBookings();
+      } catch {
+        setReviewBookings([]);
+      }
+    };
+    fetchReviewBookings();
+  }, [eventId, canReviewPayments, refreshReviewBookings]);
 
   if (loading) {
     return <div className="text-gray-600">Loading event...</div>;
@@ -125,10 +174,70 @@ export default function EventDetailPage() {
     );
   }
 
-  const canCancel =
-    user?.role === 'admin' || (user?.role === 'expert' && user?.id === event.host_user_id);
-  const canJoin = user?.role === 'participant' || !user;
-  const alreadyJoined = user?.role === 'participant' && Boolean(booking);
+  const submitPaymentProof = async () => {
+    if (!booking?.id) return;
+    if (!transactionReference.trim()) {
+      setPaymentProofStatus('Please enter transaction reference.');
+      return;
+    }
+    if (!paymentProofImage) {
+      setPaymentProofStatus('Please upload payment proof image.');
+      return;
+    }
+    try {
+      setSubmittingProof(true);
+      setPaymentProofStatus(null);
+      const res = await fetch(`/api/bookings/${booking.id}/payment-proof`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          transaction_reference: transactionReference.trim(),
+          proof_image_url: paymentProofImage,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to submit payment proof.');
+      }
+      setPaymentProofStatus('Payment proof submitted. Waiting for expert/admin verification.');
+      await refreshBooking();
+    } catch (error) {
+      setPaymentProofStatus(
+        error instanceof Error ? error.message : 'Failed to submit payment proof.'
+      );
+    } finally {
+      setSubmittingProof(false);
+    }
+  };
+
+  const reviewPaymentProof = async (
+    paymentId: string,
+    action: 'approve' | 'reject'
+  ) => {
+    try {
+      setReviewingPaymentId(paymentId);
+      const res = await fetch(`/api/payments/${paymentId}/review`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          review_note:
+            action === 'approve'
+              ? 'Payment proof verified.'
+              : 'Payment proof rejected. Please re-submit with clear receipt.',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to review payment.');
+      }
+      await Promise.all([refreshReviewBookings(), refreshBooking()]);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to review payment.');
+    } finally {
+      setReviewingPaymentId(null);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -354,6 +463,23 @@ export default function EventDetailPage() {
             )}
             {event.price_npr && event.price_npr > 0 && (
               <div className="mt-4 space-y-3">
+                {event.qr_image_url ? (
+                  <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/60">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+                      Scan to pay (eSewa)
+                    </p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={event.qr_image_url}
+                      alt="eSewa QR for event payment"
+                      className="h-48 w-48 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
+                    />
+                  </div>
+                ) : (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                    Organizer has not uploaded a QR yet. Please contact organizer before paying.
+                  </p>
+                )}
                 <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
                   <input
                     type="checkbox"
@@ -366,17 +492,122 @@ export default function EventDetailPage() {
                     expert’s safety instructions.
                   </span>
                 </label>
-                <button
-                  type="button"
-                  disabled={!riskAcknowledged}
-                  className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white opacity-60"
-                  title="Payment flow will be enabled soon"
-                >
-                  Continue to payment (coming soon)
-                </button>
+                {user?.role === 'participant' && alreadyJoined && booking?.payment_status !== 'paid' && (
+                  <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-slate-700 dark:bg-slate-900/50">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+                      Submit payment proof
+                    </p>
+                    <input
+                      type="text"
+                      value={transactionReference}
+                      onChange={(event) => setTransactionReference(event.target.value)}
+                      placeholder="eSewa transaction reference"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) {
+                          setPaymentProofImage(null);
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setPaymentProofImage(
+                            typeof reader.result === 'string' ? reader.result : null
+                          );
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                    />
+                    {paymentProofImage && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={paymentProofImage}
+                        alt="Payment proof preview"
+                        className="h-32 w-32 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={submitPaymentProof}
+                      disabled={!riskAcknowledged || submittingProof}
+                      className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {submittingProof ? 'Submitting...' : 'Submit payment proof'}
+                    </button>
+                    {paymentProofStatus && (
+                      <p className="text-xs text-gray-700 dark:text-slate-200">{paymentProofStatus}</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
+
+          {canReviewPayments && event.price_npr > 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+                Payment proof review
+              </h3>
+              <div className="mt-3 space-y-3">
+                {reviewBookings.length === 0 && (
+                  <p className="text-sm text-gray-600 dark:text-slate-300">
+                    No paid booking proofs to review yet.
+                  </p>
+                )}
+                {reviewBookings.map((item) => (
+                  <div
+                    key={item.booking_id}
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-slate-700 dark:bg-slate-900/50"
+                  >
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {item.participant_name || 'Participant'} ({item.participant_email})
+                    </p>
+                    <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">
+                      Amount: NPR {item.total_price_npr} • Status: {item.payment_status || 'pending'}
+                    </p>
+                    {item.transaction_reference && (
+                      <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">
+                        Txn ref: {item.transaction_reference}
+                      </p>
+                    )}
+                    {item.proof_image_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.proof_image_url}
+                        alt="Submitted payment proof"
+                        className="mt-2 h-28 w-28 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
+                      />
+                    )}
+                    {item.payment_id && item.payment_status !== 'paid' && item.proof_submitted_at && (
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          disabled={reviewingPaymentId === item.payment_id}
+                          onClick={() => reviewPaymentProof(item.payment_id as string, 'approve')}
+                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                          Mark paid
+                        </button>
+                        <button
+                          type="button"
+                          disabled={reviewingPaymentId === item.payment_id}
+                          onClick={() => reviewPaymentProof(item.payment_id as string, 'reject')}
+                          className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+                        >
+                          Mark failed
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

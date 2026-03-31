@@ -21,10 +21,16 @@ export async function GET(
       SELECT
         b.id, b.event_id, b.user_id, b.spots, b.total_price_npr, b.status,
         b.refund_npr, b.cancelled_at, b.cancellation_policy_snapshot, b.created_at,
-        p.status as payment_status
+        p.id as payment_id,
+        p.status as payment_status,
+        p.transaction_reference,
+        p.proof_image_url,
+        p.proof_submitted_at,
+        p.review_note,
+        p.verified_at
       FROM bookings b
       LEFT JOIN LATERAL (
-        SELECT status
+        SELECT id, status, transaction_reference, proof_image_url, proof_submitted_at, review_note, verified_at
         FROM payments
         WHERE booking_id = b.id
         ORDER BY created_at DESC
