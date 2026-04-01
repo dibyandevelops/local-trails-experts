@@ -313,24 +313,33 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
           <div className="hidden md:flex items-center gap-3 rounded-full border border-green-500/40 bg-white/10 px-3 py-2 shadow-inner shadow-black/10">
             {navItems.map((item) =>
-              canSeeItem(item) ? (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`inline-flex h-10 items-center rounded-lg px-3 py-1 text-sm font-semibold transition-all ${
-                    isNavItemActive(item.href)
-                      ? 'bg-white text-green-900 shadow-sm'
-                      : 'text-green-50 hover:bg-white/15 hover:text-white'
-                  }`}
-                >
-                  <span className="truncate max-w-[140px]">{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-1 rounded-full border border-amber-300/70 bg-amber-200/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-100">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              ) : null
+              canSeeItem(item) ? (() => {
+                const itemActive = isNavItemActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`inline-flex h-10 items-center rounded-lg px-3 py-1 text-sm font-semibold transition-all ${
+                      itemActive
+                        ? 'bg-white text-green-900 shadow-sm'
+                        : 'text-green-50 hover:bg-white/15 hover:text-white'
+                    }`}
+                  >
+                    <span className="truncate max-w-[140px]">{item.label}</span>
+                    {item.badge && (
+                      <span
+                        className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                          itemActive
+                            ? 'border border-amber-300 bg-amber-100 text-amber-800'
+                            : 'border border-amber-300/70 bg-amber-200/20 text-amber-100'
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })() : null
             )}
             {navGroups.map((group) => {
               const visibleItems = group.items.filter(canSeeItem);
@@ -386,27 +395,36 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                           }, 120);
                         }}
                       >
-                        {visibleItems.map((item) => (
-                          <DropdownMenu.Item asChild key={item.href}>
-                            <Link
-                              href={item.href}
-                              className={`block rounded-lg px-3 py-2 text-sm font-semibold outline-none transition ${
-                                isNavItemActive(item.href)
-                                  ? 'bg-white text-green-900'
-                                  : 'text-green-50 hover:bg-white/15 data-[highlighted]:bg-white/15'
-                              }`}
-                            >
-                              <span className="inline-flex items-center gap-2">
-                                <span className="block truncate">{item.label}</span>
-                                {item.badge && (
-                                  <span className="rounded-full border border-amber-300/70 bg-amber-200/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-100">
-                                    {item.badge}
-                                  </span>
-                                )}
-                              </span>
-                            </Link>
-                          </DropdownMenu.Item>
-                        ))}
+                        {visibleItems.map((item) => {
+                          const itemActive = isNavItemActive(item.href);
+                          return (
+                            <DropdownMenu.Item asChild key={item.href}>
+                              <Link
+                                href={item.href}
+                                className={`block rounded-lg px-3 py-2 text-sm font-semibold outline-none transition ${
+                                  itemActive
+                                    ? 'bg-white text-green-900'
+                                    : 'text-green-50 hover:bg-white/15 data-[highlighted]:bg-white/15'
+                                }`}
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <span className="block truncate">{item.label}</span>
+                                  {item.badge && (
+                                    <span
+                                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                        itemActive
+                                          ? 'border border-amber-300 bg-amber-100 text-amber-800'
+                                          : 'border border-amber-300/70 bg-amber-200/20 text-amber-100'
+                                      }`}
+                                    >
+                                      {item.badge}
+                                    </span>
+                                  )}
+                                </span>
+                              </Link>
+                            </DropdownMenu.Item>
+                          );
+                        })}
                       </DropdownMenu.Content>
                     </DropdownMenu.Portal>
                   </DropdownMenu.Root>
@@ -503,27 +521,36 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         {mobileOpen && (
           <div className="md:hidden mt-3 flex flex-col gap-2 rounded-xl border border-green-600/60 bg-green-900/35 p-3">
             {[...navItems, ...navGroups.flatMap((group) => group.items)].map((item) =>
-              canSeeItem(item) ? (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`truncate whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
-                    isNavItemActive(item.href)
-                      ? 'bg-white text-green-900'
-                      : 'text-green-50 hover:bg-white/15'
-                  }`}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <span>{item.label}</span>
-                    {item.badge && (
-                      <span className="rounded-full border border-amber-300/70 bg-amber-200/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-100">
-                        {item.badge}
-                      </span>
-                    )}
-                  </span>
-                </Link>
-              ) : null
+              canSeeItem(item) ? (() => {
+                const itemActive = isNavItemActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`truncate whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
+                      itemActive
+                        ? 'bg-white text-green-900'
+                        : 'text-green-50 hover:bg-white/15'
+                    }`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                            itemActive
+                              ? 'border border-amber-300 bg-amber-100 text-amber-800'
+                              : 'border border-amber-300/70 bg-amber-200/20 text-amber-100'
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </span>
+                  </Link>
+                );
+              })() : null
             )}
             {!loadingUser && !user && (
               <button
