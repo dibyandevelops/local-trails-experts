@@ -145,24 +145,26 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
           >
             Password
           </label>
-          <input
-            type={showPassword ? 'text' : 'password'}
-            name="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100 dark:placeholder:text-slate-400"
-            required
-            autoComplete="current-password"
-            aria-invalid={!!error}
-            aria-describedby={error ? 'login-error' : undefined}
-          />
-          <div className="mt-2 flex items-center justify-between">
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-28 text-sm focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100 dark:placeholder:text-slate-400"
+              required
+              autoComplete="current-password"
+              aria-invalid={!!error}
+              aria-describedby={error ? 'login-error' : undefined}
+            />
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="text-xs font-medium text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+              aria-pressed={showPassword}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50 hover:text-green-800 dark:text-green-300 dark:hover:bg-slate-700 dark:hover:text-green-200"
             >
               {showPassword ? 'Hide password' : 'Show password'}
             </button>

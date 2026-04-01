@@ -25,6 +25,7 @@ export default function RegisterForm({
   const [success, setSuccess] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(initialNotice);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const passwordChecks = useMemo(
     () => ({
@@ -173,15 +174,26 @@ export default function RegisterForm({
           <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
             Create a strong password
           </label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={form.password}
-            onChange={(event) => setForm({ ...form, password: event.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
-            placeholder="At least 8 characters with a number"
-            required
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              value={form.password}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-28 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
+              placeholder="At least 8 characters with a number"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              aria-pressed={showPassword}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50 hover:text-green-800 dark:text-green-300 dark:hover:bg-slate-700 dark:hover:text-green-200"
+            >
+              {showPassword ? 'Hide password' : 'Show password'}
+            </button>
+          </div>
           <div className="mt-2 text-xs text-gray-600 space-y-1 dark:text-slate-300">
             <p className={passwordChecks.length ? 'text-green-700 dark:text-green-300' : ''}>
               At least 8 characters
