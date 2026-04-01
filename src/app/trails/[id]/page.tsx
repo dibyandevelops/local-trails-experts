@@ -268,6 +268,7 @@ const TrailPage: React.FunctionComponent = () => {
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+  const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [requestDescription, setRequestDescription] = useState('');
   const [selectedExpertId, setSelectedExpertId] = useState('');
@@ -1001,7 +1002,7 @@ const TrailPage: React.FunctionComponent = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        setActiveImageIndex(0);
+                        setGalleryInitialIndex(0);
                         setGalleryModalOpen(true);
                       }}
                       className="w-full rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -1597,7 +1598,7 @@ const TrailPage: React.FunctionComponent = () => {
             <button
               type="button"
               onClick={() => {
-                setActiveImageIndex(0);
+                setGalleryInitialIndex(0);
                 setGalleryModalOpen(true);
               }}
               className="text-sm font-medium text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
@@ -1611,7 +1612,7 @@ const TrailPage: React.FunctionComponent = () => {
                 key={`${imageUrl}-${index}`}
                 type="button"
                 onClick={() => {
-                  setActiveImageIndex(index);
+                  setGalleryInitialIndex(index);
                   setGalleryModalOpen(true);
                 }}
                 className="relative h-32 overflow-hidden rounded-lg ring-offset-2 transition hover:scale-[1.01] hover:ring-2 hover:ring-green-400 dark:ring-offset-slate-900"
@@ -1644,7 +1645,7 @@ const TrailPage: React.FunctionComponent = () => {
           <button
             type="button"
             onClick={() => {
-              setActiveImageIndex(0);
+              setGalleryInitialIndex(0);
               setGalleryModalOpen(true);
             }}
             className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800"
@@ -1942,6 +1943,7 @@ const TrailPage: React.FunctionComponent = () => {
         onOpenChange={setGalleryModalOpen}
         trailName={trail.name}
         images={trailImages}
+        initialIndex={galleryInitialIndex}
       />
 
     </div>

@@ -197,7 +197,8 @@ function TrailGallery({
                 >
                   Map
                 </button>
-                {images.length > 0 && onOpenImageGallery && (
+                {(image || (Array.isArray(trail.trail_images) && trail.trail_images.length > 0)) &&
+                  onOpenImageGallery && (
                   <button
                     type="button"
                     onClick={(event) => {

@@ -9,6 +9,7 @@ type TrailImageCarouselModalProps = {
   onOpenChange: (open: boolean) => void;
   trailName: string;
   images: string[];
+  initialIndex?: number;
 };
 
 export default function TrailImageCarouselModal({
@@ -16,12 +17,15 @@ export default function TrailImageCarouselModal({
   onOpenChange,
   trailName,
   images,
+  initialIndex = 0,
 }: TrailImageCarouselModalProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
-    setActiveImageIndex(0);
-  }, [trailName, images]);
+    const safeIndex =
+      initialIndex >= 0 && initialIndex < images.length ? initialIndex : 0;
+    setActiveImageIndex(safeIndex);
+  }, [trailName, images, initialIndex]);
 
   useEffect(() => {
     if (!open) return;
