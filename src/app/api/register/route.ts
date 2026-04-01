@@ -22,6 +22,11 @@ export async function POST(request: NextRequest) {
       profile_photo_url?: string;
     };
 
+    const normalizedName =
+      (typeof name === 'string' && name.trim()) ||
+      (typeof email === 'string' ? email.split('@')[0] : '') ||
+      'Participant';
+
     if (!email || !password || !phone) {
       return NextResponse.json(
         { error: 'Missing required fields: email, password, phone' },
@@ -133,7 +138,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-    const normalizedName =
-      (typeof name === 'string' && name.trim()) ||
-      email.split('@')[0] ||
-      'Participant';

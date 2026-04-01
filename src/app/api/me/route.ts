@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(
       `
-      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, availability_weekdays, google_sub, profile_photo_url,
+      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, availability_weekdays, google_sub, facebook_sub, profile_photo_url,
              verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
              created_at, updated_at
       FROM users
@@ -161,7 +161,7 @@ export async function PATCH(request: NextRequest) {
           verification_links = $12,
           updated_at = NOW()
       WHERE id = $13
-      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, availability_weekdays, google_sub, profile_photo_url,
+      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, availability_weekdays, google_sub, facebook_sub, profile_photo_url,
                 verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
                 created_at, updated_at
     `,

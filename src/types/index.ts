@@ -194,6 +194,7 @@ export interface User {
   phone_verified_at?: string | null;
   availability_weekdays?: string[] | null;
   google_sub?: string | null;
+  facebook_sub?: string | null;
   profile_photo_url?: string | null;
   verification_years_experience?: string | null;
   verification_certifications?: string | null;

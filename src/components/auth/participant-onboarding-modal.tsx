@@ -32,6 +32,7 @@ export default function ParticipantOnboardingModal({
   const [error, setError] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [form, setForm] = useState({
+    name: user.name || '',
     sports: (user.sports || []) as SportType[],
     availability_weekdays: (user.availability_weekdays || []) as string[],
     city: user.city || '',
@@ -73,6 +74,7 @@ export default function ParticipantOnboardingModal({
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
+          name: form.name.trim() || null,
           sports: form.sports,
           availability_weekdays: form.availability_weekdays,
           city: form.city.trim() || null,
@@ -153,6 +155,18 @@ export default function ParticipantOnboardingModal({
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                  Full name
+                </label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                  placeholder="Your full name"
+                />
+              </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
                   Phone

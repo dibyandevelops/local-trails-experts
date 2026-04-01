@@ -42,6 +42,16 @@ type ExpertOption = {
   email: string;
 };
 
+const WEEKDAYS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+] as const;
+
 export default function ParticipantProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
@@ -64,6 +74,7 @@ export default function ParticipantProfilePage() {
     city: '',
     bio: '',
     sports: '',
+    availabilityWeekdays: [] as string[],
     phone: '',
     profilePhotoUrl: '',
   });
@@ -80,6 +91,9 @@ export default function ParticipantProfilePage() {
         sports: Array.isArray(currentUser.sports)
           ? currentUser.sports.join(', ')
           : '',
+        availabilityWeekdays: Array.isArray(currentUser.availability_weekdays)
+          ? currentUser.availability_weekdays
+          : [],
         phone: currentUser.phone || '',
         profilePhotoUrl: currentUser.profile_photo_url || '',
       });
@@ -253,6 +267,7 @@ export default function ParticipantProfilePage() {
                   city: editForm.city,
                   bio: editForm.bio,
                   sports: selectedSports,
+                  availability_weekdays: editForm.availabilityWeekdays,
                   phone: editForm.phone,
                   profile_photo_url: editForm.profilePhotoUrl || null,
                 }),
@@ -431,6 +446,40 @@ export default function ParticipantProfilePage() {
             />
             <p className="text-xs text-gray-500 mt-1">
               Phone number must be unique across all users.
+            </p>
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Availability weekdays
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {WEEKDAYS.map((day) => {
+                const selected = editForm.availabilityWeekdays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        availabilityWeekdays: selected
+                          ? prev.availabilityWeekdays.filter((value) => value !== day)
+                          : [...prev.availabilityWeekdays, day],
+                      }))
+                    }
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                      selected
+                        ? 'bg-emerald-700 text-white border-emerald-700'
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-600'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Select days when you are usually free to ride.
             </p>
           </div>
           <div className="md:col-span-2">
@@ -676,6 +725,7 @@ export default function ParticipantProfilePage() {
           </div>
         )}
       </section>
+
     </div>
   );
 }

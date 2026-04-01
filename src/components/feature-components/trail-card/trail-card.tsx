@@ -11,6 +11,7 @@ export type TrailCardProps = Trail & {
   detailsHref?: string;
   onBeforeNavigate?: () => void;
   onGroupRequest?: () => void;
+  onOpenImageGallery?: () => void;
   hideLoading?: boolean;
   unhideLoading?: boolean;
   deleteLoading?: boolean;
@@ -179,6 +180,19 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                   title="Open this trail in map modal"
                 >
                   View Map
+                </button>
+              )}
+              {images.length > 0 && trail.onOpenImageGallery && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    trail.onOpenImageGallery?.();
+                  }}
+                  className="rounded-md border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800 hover:bg-violet-100"
+                  title="Open trail images gallery"
+                >
+                  Photos
                 </button>
               )}
               {komootNavigateUrl && (

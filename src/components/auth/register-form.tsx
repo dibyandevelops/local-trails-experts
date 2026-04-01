@@ -237,7 +237,7 @@ export default function RegisterForm({
           <span className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
         </div>
         <a
-          href={`/api/auth/google/start?next=${encodeURIComponent(next || '/trails')}`}
+          href={`/api/auth/google/start?mode=register&next=${encodeURIComponent(next || '/trails')}`}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
         >
           <svg
@@ -264,10 +264,9 @@ export default function RegisterForm({
           </svg>
           Continue with Google
         </a>
-        <button
-          type="button"
-          disabled
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500 opacity-80 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+        <a
+          href={`/api/auth/facebook/start?mode=register&next=${encodeURIComponent(next || '/trails')}`}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-[#1877F2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1667d8] dark:border-slate-700"
         >
           <svg
             aria-hidden="true"
@@ -277,8 +276,8 @@ export default function RegisterForm({
           >
             <path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.8 3.7-3.8 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.5 2.9h-2.3v7A10 10 0 0 0 22 12z" />
           </svg>
-          Continue with Facebook (Coming soon)
-        </button>
+          Continue with Facebook
+        </a>
         <p className="text-center text-xs text-gray-500 dark:text-slate-400">
           Already have an account?{' '}
           <button

@@ -1,4 +1,5 @@
 import { STRAVA_ENABLED } from '@/lib/feature-flags';
+import AccountDeletionRequestCta from '@/components/account/account-deletion-request-cta';
 
 export default function PrivacyPolicyPage() {
   return (
@@ -52,6 +53,19 @@ export default function PrivacyPolicyPage() {
           If you have any questions about this policy, please contact us at{' '}
           {process.env.NEXT_PUBLIC_ADMIN_EMAIL}.
         </p>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-3">
+        <h2 className="text-lg font-semibold text-gray-900">Account Deletion Instructions</h2>
+        <ol className="list-decimal space-y-2 pl-5 text-sm text-gray-700">
+          <li>Open the deletion form and submit your request with optional reason.</li>
+          <li>We review pending obligations (events, bookings, and moderation records).</li>
+          <li>You receive email updates when the request is approved/rejected/completed.</li>
+        </ol>
+        <p className="text-xs text-gray-500">
+          For compliance and safety, account deletion is manual and not instant.
+        </p>
+        <AccountDeletionRequestCta />
       </section>
     </div>
   );

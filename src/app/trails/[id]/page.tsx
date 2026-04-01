@@ -42,6 +42,7 @@ import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
+import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -268,7 +269,6 @@ const TrailPage: React.FunctionComponent = () => {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [requestDescription, setRequestDescription] = useState('');
   const [selectedExpertId, setSelectedExpertId] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
@@ -402,26 +402,6 @@ const TrailPage: React.FunctionComponent = () => {
     }
     return { longitude: 0, latitude: 0, zoom: 2 };
   }, [mapBounds, hasLocation, trail?.latitude, trail?.longitude]);
-
-  useEffect(() => {
-    if (!galleryModalOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!trailImages.length) return;
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        setActiveImageIndex((prev) => (prev === trailImages.length - 1 ? 0 : prev + 1));
-      }
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        setActiveImageIndex((prev) => (prev === 0 ? trailImages.length - 1 : prev - 1));
-      }
-      if (event.key === 'Escape') {
-        setGalleryModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [galleryModalOpen, trailImages.length]);
 
   useEffect(() => {
     if (!trail) return;
@@ -1957,84 +1937,12 @@ const TrailPage: React.FunctionComponent = () => {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <Dialog.Root open={galleryModalOpen} onOpenChange={setGalleryModalOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/75" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-5xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-slate-950 p-3 sm:p-4 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between">
-              <Dialog.Title className="text-base font-semibold text-white">
-                {trail.name} Gallery
-              </Dialog.Title>
-              <Dialog.Close className="rounded border border-white/20 px-3 py-1 text-sm text-white hover:bg-white/10">
-                Close
-              </Dialog.Close>
-            </div>
-            {trailImages.length > 0 && (
-              <>
-                <div className="relative h-[60vh] w-full">
-                  <Image
-                    src={trailImages[activeImageIndex]}
-                    alt={`${trail.name} photo ${activeImageIndex + 1}`}
-                    fill
-                    unoptimized
-                    sizes="95vw"
-                    className="rounded-lg object-contain"
-                  />
-                  {trailImages.length > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveImageIndex((prev) =>
-                            prev === 0 ? trailImages.length - 1 : prev - 1
-                          )
-                        }
-                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white"
-                        aria-label="Previous photo"
-                      >
-                        ‹
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveImageIndex((prev) =>
-                            prev === trailImages.length - 1 ? 0 : prev + 1
-                          )
-                        }
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white"
-                        aria-label="Next photo"
-                      >
-                        ›
-                      </button>
-                    </>
-                  )}
-                </div>
-                {trailImages.length > 1 && (
-                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-                    {trailImages.map((imageUrl, index) => (
-                      <button
-                        key={`thumb-${imageUrl}-${index}`}
-                        type="button"
-                        onClick={() => setActiveImageIndex(index)}
-                        className={`h-16 w-24 flex-shrink-0 overflow-hidden rounded border ${index === activeImageIndex ? 'border-green-500' : 'border-white/20'}`}
-                      >
-                        <Image
-                          src={imageUrl}
-                          alt={`${trail.name} thumbnail ${index + 1}`}
-                          width={96}
-                          height={64}
-                          unoptimized
-                          className="h-full w-full object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <TrailImageCarouselModal
+        open={galleryModalOpen}
+        onOpenChange={setGalleryModalOpen}
+        trailName={trail.name}
+        images={trailImages}
+      />
 
     </div>
   );

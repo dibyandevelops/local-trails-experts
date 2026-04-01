@@ -78,6 +78,19 @@ const icon = (
     priority
   />
 );
+const PARTICIPANT_ONBOARDING_DISMISSED_KEY = 'participant-onboarding-dismissed-user-id';
+
+function needsParticipantOnboarding(user: User | null) {
+  if (!user || user.role !== 'participant') return false;
+  const hasName = Boolean(user.name?.trim());
+  const hasPhone = Boolean(user.phone?.trim());
+  const hasCity = Boolean(user.city?.trim());
+  const hasSports = Array.isArray(user.sports) && user.sports.length > 0;
+  const hasWeekdays =
+    Array.isArray(user.availability_weekdays) && user.availability_weekdays.length > 0;
+  return !(hasName && hasPhone && hasCity && hasSports && hasWeekdays);
+}
+
 type NavbarProps = {
   initialUser?: User | null;
 };
@@ -161,6 +174,21 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   }, [searchParams.toString(), user?.id]);
 
   useEffect(() => {
+    const onboarding = searchParams.get('onboarding');
+    if (onboarding !== '1') return;
+    if (!user || user.role !== 'participant') return;
+
+    setParticipantOnboardingOpen(true);
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('onboarding');
+      const nextUrl = `${url.pathname}${url.search ? url.search : ''}${url.hash ? url.hash : ''}`;
+      window.history.replaceState(null, '', nextUrl);
+    }
+  }, [searchParams.toString(), user?.id, user?.role]);
+
+  useEffect(() => {
     const handler = (event: Event) => {
       if (user) return;
       const custom = event as CustomEvent<{ message?: string; next?: string }>;
@@ -174,13 +202,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!user || user.role !== 'participant') return;
-    if (localStorage.getItem('participant-onboarding-pending') !== '1') return;
+    if (!needsParticipantOnboarding(user)) return;
+
+    const dismissedForUser = sessionStorage.getItem(PARTICIPANT_ONBOARDING_DISMISSED_KEY);
+    const wasDismissedThisSession = dismissedForUser === user?.id;
+    const pendingFromSignup = localStorage.getItem('participant-onboarding-pending') === '1';
+    if (wasDismissedThisSession && !pendingFromSignup) return;
+
     const timer = window.setTimeout(() => {
       setParticipantOnboardingOpen(true);
     }, 1600);
     return () => window.clearTimeout(timer);
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, user?.name, user?.phone, user?.city, user?.sports, user?.availability_weekdays]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -579,6 +612,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             setParticipantOnboardingOpen(open);
             if (!open && typeof window !== 'undefined') {
               localStorage.removeItem('participant-onboarding-pending');
+              if (needsParticipantOnboarding(user)) {
+                sessionStorage.setItem(PARTICIPANT_ONBOARDING_DISMISSED_KEY, user.id);
+              } else {
+                sessionStorage.removeItem(PARTICIPANT_ONBOARDING_DISMISSED_KEY);
+              }
             }
           }}
           user={user}
@@ -586,6 +624,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             queryClient.setQueryData(['me'], updatedUser);
             if (typeof window !== 'undefined') {
               localStorage.removeItem('participant-onboarding-pending');
+              sessionStorage.removeItem(PARTICIPANT_ONBOARDING_DISMISSED_KEY);
             }
             window.dispatchEvent(new Event('auth-changed'));
           }}

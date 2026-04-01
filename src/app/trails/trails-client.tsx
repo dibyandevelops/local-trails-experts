@@ -26,6 +26,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
+import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
 import GroupRequestForm from '@/components/feature-components/group-request-form';
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
@@ -63,6 +64,7 @@ function TrailGallery({
   onRequestTrail,
   onCancelRequest,
   onCreateEvent,
+  onOpenImageGallery,
   canRequestTrail,
   canGroupRequest,
   canCreateEvent,
@@ -82,6 +84,7 @@ function TrailGallery({
   onRequestTrail?: (trail: Trail & { isRequested?: boolean }) => void;
   onCancelRequest?: (trail: Trail & { isRequested?: boolean }) => void;
   onCreateEvent: (trail: Trail) => void;
+  onOpenImageGallery?: (trail: Trail) => void;
   canRequestTrail: boolean;
   canGroupRequest: boolean;
   canCreateEvent: boolean;
@@ -194,6 +197,19 @@ function TrailGallery({
                 >
                   Map
                 </button>
+                {images.length > 0 && onOpenImageGallery && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      onOpenImageGallery(trail);
+                    }}
+                    className="rounded-md border border-violet-300 bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-800 hover:bg-violet-100"
+                    title="Open trail images gallery"
+                  >
+                    Photos
+                  </button>
+                )}
                 {komootNavigateUrl && (
                   <a
                     href={komootNavigateUrl}
@@ -313,6 +329,13 @@ function TrailGallery({
                   },
                 }
               : {}),
+            ...(onOpenImageGallery
+              ? {
+                  onOpenImageGallery() {
+                    onOpenImageGallery(trail);
+                  },
+                }
+              : {}),
             ...(isAdmin
               ? {
                   deleteLoading: deletingTrailId === trail.id,
@@ -420,6 +443,9 @@ function TrailsPageContent() {
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [requestTrailItem, setRequestTrailItem] = useState<Trail | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryTrailName, setGalleryTrailName] = useState('Trail');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [groupRequestTrail, setGroupRequestTrail] = useState<Trail | null>(null);
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
   const [requestDescription, setRequestDescription] = useState('');
@@ -441,11 +467,21 @@ function TrailsPageContent() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const pageSize = 12;
 
+  const getTrailImages = (trail: Trail) =>
+    Array.from(
+      new Set(
+        [trail.image_url, ...(Array.isArray(trail.trail_images) ? trail.trail_images : [])].filter(
+          (value): value is string => Boolean(value)
+        )
+      )
+    );
+
   useEffect(() => {
     const closeTransientUi = () => {
       setRequestOpen(false);
       setGroupRequestOpen(false);
       setMapOpen(false);
+      setGalleryOpen(false);
       // Only reopen create-event if the URL explicitly asks for it.
       try {
         const url = new URL(window.location.href);
@@ -1342,6 +1378,13 @@ function TrailsPageContent() {
               setMapTrailId(trail.id);
               setMapOpen(true);
             }}
+            onOpenImageGallery={(trail) => {
+              const images = getTrailImages(trail);
+              if (!images.length) return;
+              setGalleryTrailName(trail.name || 'Trail');
+              setGalleryImages(images);
+              setGalleryOpen(true);
+            }}
             onGroupRequest={(trail) => {
               setGroupRequestTrail(trail);
               setGroupRequestOpen(true);
@@ -1639,6 +1682,13 @@ function TrailsPageContent() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      <TrailImageCarouselModal
+        open={galleryOpen}
+        onOpenChange={setGalleryOpen}
+        trailName={galleryTrailName}
+        images={galleryImages}
+      />
 
       <Dialog.Root
         open={createEventOpen}
