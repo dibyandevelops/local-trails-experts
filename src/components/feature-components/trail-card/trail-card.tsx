@@ -3,7 +3,6 @@ import * as React from 'react';
 import { Trail } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getSafetyLabelText } from '@/lib/trail-safety';
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { getSportLabel } from '@/services/constants/sports';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
@@ -32,7 +31,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
     return Array.from(new Set(list));
   }, [trail.trail_images, trail.image_url]);
   const primaryImage = images[0] || null;
-  const hasImage = Boolean(primaryImage);
   const komootNavigateUrl = React.useMemo(
     () => getKomootNavigateUrl(trail.komoot_embed_url),
     [trail.komoot_embed_url]
@@ -65,7 +63,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
       <div className="relative">
         <div className="relative">
-        {hasImage ? (
+        {primaryImage ? (
           <div className="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
             <Image
               src={primaryImage}
