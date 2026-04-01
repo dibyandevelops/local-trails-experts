@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
     let paramIndex = 1;
 
-    // Temporary: hide some categories from the main listing.
-    whereClause += ` AND t.sport_type NOT IN ('hiking', 'local_tour')`;
+    // Temporary: hide local tours from the main listing.
+    whereClause += ` AND t.sport_type NOT IN ('local_tour')`;
 
     if (search) {
       whereClause += ` AND (t.name ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex} OR t.location ILIKE $${paramIndex})`;
