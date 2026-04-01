@@ -31,9 +31,8 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
     return Array.from(new Set(list));
   }, [trail.trail_images, trail.image_url]);
-  const [activeImageIndex, setActiveImageIndex] = React.useState(0);
-  const hasMultipleImages = images.length > 1;
-  const hasImage = images.length > 0;
+  const primaryImage = images[0] || null;
+  const hasImage = Boolean(primaryImage);
   const komootNavigateUrl = React.useMemo(
     () => getKomootNavigateUrl(trail.komoot_embed_url),
     [trail.komoot_embed_url]
@@ -49,10 +48,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       ))}
     </div>
   );
-
-  React.useEffect(() => {
-    setActiveImageIndex(0);
-  }, [trail.id, images.length]);
 
   return (
     <article
@@ -71,18 +66,19 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       <div className="relative">
         <div className="relative">
         {hasImage ? (
-          <Image
-            src={images[activeImageIndex]}
-            alt={trail.name}
-            width={640}
-            height={320}
-            className="h-40 w-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.02]"
-            sizes="(max-width: 768px) 100vw, 400px"
-          />
+          <div className="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+            <Image
+              src={primaryImage}
+              alt={trail.name}
+              fill
+              className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              priority={false}
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 to-transparent" />
+          </div>
         ) : (
-          <TrailImagePlaceholder
-            className="h-40 w-full"
-          />
+          <TrailImagePlaceholder className="h-44 w-full" />
         )}
         {(trail.sport_type || trail.distance_km != null || trail.difficulty) && (
           <div className="absolute right-2 top-2 flex flex-wrap items-center justify-end gap-1.5">
@@ -111,51 +107,10 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             )}
           </div>
         )}
-        {hasMultipleImages && (
-          <>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                setActiveImageIndex((prev) =>
-                  prev === 0 ? images.length - 1 : prev - 1,
-                );
-              }}
-              className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
-              aria-label="Previous trail image"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                setActiveImageIndex((prev) =>
-                  prev === images.length - 1 ? 0 : prev + 1,
-                );
-              }}
-              className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/50 px-2 py-1 text-xs text-white"
-              aria-label="Next trail image"
-            >
-              ›
-            </button>
-            <div className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2 flex items-center gap-1">
-              {images.map((_, index) => (
-                <button
-                  key={`${trail.id}-image-dot-${index}`}
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    setActiveImageIndex(index);
-                  }}
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    index === activeImageIndex ? 'bg-white' : 'bg-white/50'
-                  }`}
-                  aria-label={`Show trail image ${index + 1}`}
-                />
-              ))}
-            </div>
-          </>
+        {images.length > 1 && (
+          <div className="absolute bottom-2 right-2 z-20 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white">
+            +{images.length - 1} more
+          </div>
         )}
         </div>
         <div className="p-4">
