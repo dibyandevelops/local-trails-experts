@@ -115,9 +115,7 @@ export default function ExpertsBrowsePage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-600">
-          Loading experts...
-        </div>
+        <ExpertsGridSkeleton />
       ) : experts.length === 0 ? (
         <div className="text-center py-12 text-gray-600">
           No experts found. Try a different city or sport.
@@ -176,10 +174,11 @@ function ExpertCard({
   );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col h-full hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-emerald-200/70 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl dark:border-emerald-900/60 dark:bg-slate-950/60">
+      <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-cyan-50 p-5 dark:border-emerald-900/60 dark:from-emerald-950/40 dark:via-slate-950/20 dark:to-cyan-950/30">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-14 w-14 overflow-hidden rounded-full border border-emerald-200 bg-gray-100 text-gray-700 dark:border-emerald-900/60">
             {expert.profile_photo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -194,71 +193,67 @@ function ExpertCard({
             )}
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
               {expert.name || 'Local Expert'}
-            </h2>
+              </h2>
             {expert.city && (
-              <p className="text-xs text-gray-500">{expert.city}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">{expert.city}</p>
             )}
-            {reviewCount > 0 && (
-              <div className="mt-1 flex items-center gap-2 text-xs text-amber-700">
+              <div className="mt-1 flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
                 <span className="font-semibold text-gray-900">
                   {averageRating.toFixed(1)}
                 </span>
                 {renderStars(averageRating)}
-                <span className="text-gray-500">({reviewCount})</span>
+                <span className="text-gray-500 dark:text-slate-400">({reviewCount})</span>
               </div>
-            )}
+            </div>
           </div>
+          {expert.is_verified_expert ? (
+            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-[11px] font-semibold text-green-800 dark:bg-green-900/60 dark:text-green-100">
+              Verified
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/60 dark:text-amber-100">
+              Pending
+            </span>
+          )}
         </div>
-        {expert.is_verified_expert ? (
-          <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-[11px] font-semibold">
-            Verified Expert
-          </span>
-        ) : (
-          <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold">
-            Pending Verification
-          </span>
-        )}
-      </div>
 
-      {expert.bio && (
-        <p className="text-sm text-gray-700 mb-3 line-clamp-3">
-          {expert.bio}
-        </p>
-      )}
-
-      {primarySports.length > 0 && (
-        <div className="mb-3">
-          <p className="text-xs font-medium text-gray-600 mb-1">Sports</p>
+        {primarySports.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {primarySports.map((sport) => (
               <span
                 key={sport}
-                className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-medium"
+                className="rounded-full border border-emerald-300/80 bg-emerald-100/80 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-100"
               >
                 {getSportLabel(sport)}
               </span>
             ))}
           </div>
-        </div>
+        )}
+      </div>
+
+      {expert.bio && (
+        <p className="mb-3 line-clamp-3 px-5 pt-4 text-sm text-gray-700 dark:text-slate-200">
+          {expert.bio}
+        </p>
       )}
 
-      <div className="mt-auto">
+      <div className="mt-auto px-5 pb-5">
         {upcomingEvents.length > 0 ? (
-          <div className="mb-3">
-            <p className="text-xs font-medium text-gray-600 mb-1">
+          <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+            <p className="mb-2 text-xs font-medium text-gray-600 dark:text-slate-300">
               Upcoming events
             </p>
             <ul className="space-y-1.5">
               {upcomingEvents.map((evt) => (
                 <li
                   key={evt.id}
-                  className="text-xs text-gray-700 flex justify-between gap-2"
+                  className="flex justify-between gap-2 text-xs text-gray-700 dark:text-slate-200"
                 >
-                  <span className="font-medium line-clamp-1">{evt.title}</span>
+                  <span className="line-clamp-1 font-medium">{evt.title}</span>
                   {evt.price_npr > 0 && (
-                    <span className="text-[11px] text-gray-500 whitespace-nowrap">
+                    <span className="whitespace-nowrap text-[11px] text-gray-500 dark:text-slate-400">
                       NPR {evt.price_npr}
                     </span>
                   )}
@@ -267,7 +262,7 @@ function ExpertCard({
             </ul>
           </div>
         ) : (
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="mb-3 text-xs text-gray-500 dark:text-slate-400">
             No upcoming events listed yet.
           </p>
         )}
@@ -276,7 +271,7 @@ function ExpertCard({
           <button
             type="button"
             onClick={onViewExpert}
-            className="rounded-lg border border-green-700 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50"
+            className="rounded-lg border border-green-700 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
           >
             View Expert
           </button>
@@ -291,6 +286,30 @@ function ExpertCard({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ExpertsGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={`expert-skeleton-${index}`}
+          className="animate-pulse rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
+        >
+          <div className="mb-3 flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-slate-800" />
+            <div className="space-y-2">
+              <div className="h-4 w-36 rounded bg-gray-200 dark:bg-slate-800" />
+              <div className="h-3 w-20 rounded bg-gray-200 dark:bg-slate-800" />
+            </div>
+          </div>
+          <div className="mb-3 h-4 w-full rounded bg-gray-200 dark:bg-slate-800" />
+          <div className="mb-3 h-4 w-4/5 rounded bg-gray-200 dark:bg-slate-800" />
+          <div className="h-24 rounded-xl bg-gray-200 dark:bg-slate-800" />
+        </div>
+      ))}
     </div>
   );
 }
