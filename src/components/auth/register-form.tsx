@@ -264,7 +264,7 @@ export default function RegisterForm({
           </svg>
           Continue with Google
         </a>
-        <a
+        {/* <a
           href={`/api/auth/facebook/start?mode=register&next=${encodeURIComponent(next || '/trails')}`}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-[#1877F2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1667d8] dark:border-slate-700"
         >
@@ -277,7 +277,7 @@ export default function RegisterForm({
             <path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.8 3.7-3.8 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.5 2.9h-2.3v7A10 10 0 0 0 22 12z" />
           </svg>
           Continue with Facebook
-        </a>
+        </a> */}
         <p className="text-center text-xs text-gray-500 dark:text-slate-400">
           Already have an account?{' '}
           <button
