@@ -71,11 +71,20 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
               src={primaryImage}
               alt={trail.name}
               fill
-              className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+              className="scale-105 object-cover object-center blur-sm brightness-90"
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-              priority={false}
+              quality={60}
+              aria-hidden="true"
             />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 to-transparent" />
+            <Image
+              src={primaryImage}
+              alt={trail.name}
+              fill
+              className="object-contain object-center p-2 transition-transform duration-300 group-hover:scale-[1.02]"
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              quality={90}
+            />
+            <div className="pointer-events-none absolute inset-0 bg-black/10" />
           </div>
         ) : (
           <TrailImagePlaceholder className="h-44 w-full" />
