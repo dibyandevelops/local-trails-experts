@@ -7,6 +7,19 @@ import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 import { sendEmailSafe } from '@/lib/email';
 import { sendPushToUserIds } from '@/lib/push';
 
+type TrailRequestContext = {
+  id: string;
+  trail_id: string;
+  requester_user_id: string | null;
+  requester_name: string | null;
+  requester_email: string;
+  preferred_date: string | null;
+  preferred_time: string | null;
+  offered_price_npr: number | null;
+  nearest_point: string | null;
+  description: string | null;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -189,21 +202,10 @@ export async function POST(request: NextRequest) {
       trail_request_id,
     } = body;
 
-    let trailRequestContext: {
-      id: string;
-      trail_id: string;
-      requester_user_id: string | null;
-      requester_name: string | null;
-      requester_email: string;
-      preferred_date: string | null;
-      preferred_time: string | null;
-      offered_price_npr: number | null;
-      nearest_point: string | null;
-      description: string | null;
-    } | null = null;
+    let trailRequestContext: TrailRequestContext | null = null;
 
     if (trail_request_id) {
-      const requestResult = await pool.query(
+      const requestResult = await pool.query<TrailRequestContext>(
         `
         SELECT
           id,
@@ -230,8 +232,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      trailRequestContext = requestResult.rows[0];
-      if (trail_id && trailRequestContext.trail_id && trail_id !== trailRequestContext.trail_id) {
+      const requestContext = requestResult.rows[0];
+      trailRequestContext = requestContext;
+      if (trail_id && requestContext.trail_id && trail_id !== requestContext.trail_id) {
         return NextResponse.json(
           { error: 'Selected trail does not match the trail request.' },
           { status: 400 }
