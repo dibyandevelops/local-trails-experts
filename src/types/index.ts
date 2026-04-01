@@ -192,6 +192,7 @@ export interface User {
   review_count?: number | null;
   phone?: string | null;
   phone_verified_at?: string | null;
+  availability_weekdays?: string[] | null;
   google_sub?: string | null;
   profile_photo_url?: string | null;
   verification_years_experience?: string | null;

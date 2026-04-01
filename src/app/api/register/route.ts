@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
       profile_photo_url?: string;
     };
 
-    if (!name || !email || !password || !phone) {
+    if (!email || !password || !phone) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, email, password, phone' },
+        { error: 'Missing required fields: email, password, phone' },
         { status: 400 }
       );
     }
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       VALUES ($1, $2, $3, 'participant', $4::jsonb, $5, $6, $7)
       RETURNING id, email, role
     `,
-      [name, email, passwordHash, sportsJson, normalizedPhone, city || null, profile_photo_url || null]
+      [normalizedName, email, passwordHash, sportsJson, normalizedPhone, city || null, profile_photo_url || null]
     );
 
     const user = result.rows[0];
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     setAuthCookie(response, token);
 
     const { subject, text, html } = buildWelcomeEmail({
-      name,
+      name: normalizedName,
       appUrl: getAppUrl(),
       role: 'participant',
     });
@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
       'LocoXperts <onboarding@resend.dev>';
     const from =
       fromBase.includes('<') && fromBase.includes('>')
-        ? fromBase.replace(/^[^<]+/, `${name} via LocoXperts `)
-        : `${name} via LocoXperts <${fromBase}>`;
+        ? fromBase.replace(/^[^<]+/, `${normalizedName} via LocoXperts `)
+        : `${normalizedName} via LocoXperts <${fromBase}>`;
 
     await sendEmailSafe({
       to: email,
@@ -133,3 +133,7 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+    const normalizedName =
+      (typeof name === 'string' && name.trim()) ||
+      email.split('@')[0] ||
+      'Participant';

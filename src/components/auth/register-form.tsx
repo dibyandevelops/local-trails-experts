@@ -2,9 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { SportType } from '@/types';
-import { TRAIL_SPORTS } from '@/services/constants/sports';
-import { resizeImageToDataUrl } from '@/lib/image';
 
 export default function RegisterForm({
   embedded = false,
@@ -18,15 +15,10 @@ export default function RegisterForm({
   onRegistered?: () => void;
 }) {
   const router = useRouter();
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [form, setForm] = useState({
-    name: '',
     email: '',
-    sports: [] as SportType[],
     password: '',
     phone: '',
-    city: '',
-    profilePhotoUrl: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,11 +41,8 @@ export default function RegisterForm({
   };
 
   const validateForm = () => {
-    if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
-      return 'Full name, email, and phone number are required.';
-    }
-    if (form.sports.length === 0) {
-      return 'Please select at least one sport.';
+    if (!form.email.trim() || !form.phone.trim()) {
+      return 'Email and phone number are required.';
     }
     if (!acceptTerms) {
       return 'Please accept the terms and privacy policy.';
@@ -78,13 +67,9 @@ export default function RegisterForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: form.name.trim(),
           email: form.email.trim(),
-          sports: form.sports,
           password: form.password,
           phone: form.phone.trim(),
-          city: form.city.trim() || null,
-          profile_photo_url: form.profilePhotoUrl || null,
         }),
       });
 
@@ -94,16 +79,17 @@ export default function RegisterForm({
       }
 
       setSuccess('Account created! You are now signed in.');
+      try {
+        localStorage.setItem('participant-onboarding-pending', '1');
+      } catch {
+        // ignore local storage issues
+      }
       window.dispatchEvent(new Event('auth-changed'));
       onRegistered?.();
       setForm({
-        name: '',
         email: '',
-        sports: [],
         password: '',
         phone: '',
-        city: '',
-        profilePhotoUrl: '',
       });
       router.push(next || '/');
     } catch (err) {
@@ -112,15 +98,6 @@ export default function RegisterForm({
       setLoading(false);
     }
   };
-
-  const initials =
-    form.name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase() || 'P';
 
   return (
     <div className={embedded ? '' : 'max-w-lg mx-auto'}>
@@ -138,8 +115,8 @@ export default function RegisterForm({
               Join the Adventure!
             </h1>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              Create your free account to unlock trails, connect with verified guides,
-              and never miss an event.
+              Create your account in under a minute. We&apos;ll ask for the rest of your
+              profile details after you sign in.
             </p>
             <div className="mt-3 flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-300">
               <span>• Save your favorite trails</span>
@@ -159,83 +136,6 @@ export default function RegisterForm({
           </p>
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-                {form.profilePhotoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={form.profilePhotoUrl}
-                    alt="Profile preview"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
-                    {initials}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
-                  Profile photo (optional)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={async (event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) return;
-                    setUploadingPhoto(true);
-                    try {
-                      const dataUrl = await resizeImageToDataUrl(file, {
-                        maxDimension: 512,
-                        quality: 0.78,
-                      });
-                      if (dataUrl.length > 350_000) {
-                        setError('Profile photo is too large. Please choose a smaller image.');
-                        return;
-                      }
-                      setForm((prev) => ({ ...prev, profilePhotoUrl: dataUrl }));
-                    } catch (uploadError) {
-                      console.error(uploadError);
-                      setError('Unable to process the selected image.');
-                    } finally {
-                      setUploadingPhoto(false);
-                    }
-                  }}
-                  className="block w-full text-sm text-gray-700 dark:text-slate-200 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-800 hover:file:bg-gray-50 dark:file:border-slate-700 dark:file:bg-slate-900 dark:file:text-slate-100 dark:hover:file:bg-slate-800"
-                />
-                {uploadingPhoto && (
-                  <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                    Processing photo...
-                  </p>
-                )}
-                {!uploadingPhoto && form.profilePhotoUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, profilePhotoUrl: '' }))}
-                    className="mt-2 inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/60"
-                  >
-                    Remove photo
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
-              Full name
-            </label>
-            <input
-              type="text"
-              autoComplete="name"
-              value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
-              placeholder="e.g., Deepa Shrestha"
-              required
-            />
-          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
               Email
@@ -267,64 +167,6 @@ export default function RegisterForm({
               Use international format (e.g., +977...).
             </p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
-              City
-            </label>
-            <input
-              type="text"
-              autoComplete="address-level2"
-              value={form.city}
-              onChange={(event) => setForm({ ...form, city: event.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
-              placeholder="e.g., your city in Nepal"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
-            Choose your sports
-          </label>
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-600 dark:text-slate-300">
-                Pick at least one.
-              </p>
-              <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">
-                {form.sports.length} selected
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {TRAIL_SPORTS.map((sport) => {
-                const selected = form.sports.includes(sport.value);
-                return (
-                  <button
-                    key={sport.value}
-                    type="button"
-                    onClick={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        sports: selected
-                          ? prev.sports.filter((value) => value !== sport.value)
-                          : [...prev.sports, sport.value],
-                      }))
-                    }
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                      selected
-                        ? 'bg-green-700 text-white border-green-700'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-green-600 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700 dark:hover:border-green-500'
-                    }`}
-                  >
-                    {sport.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2 dark:text-slate-400">
-            You can change this later from your profile.
-          </p>
         </div>
 
         <div>
@@ -388,6 +230,54 @@ export default function RegisterForm({
           className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
         >
           {loading ? 'Creating account...' : 'Start My Adventure'}
+        </button>
+        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <span className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
+          <span>or</span>
+          <span className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
+        </div>
+        <a
+          href={`/api/auth/google/start?next=${encodeURIComponent(next || '/trails')}`}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+          >
+            <path
+              fill="#EA4335"
+              d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3 2.3c1.8-1.7 2.8-4.1 2.8-6.9 0-.7-.1-1.3-.2-1.9H12z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 21c2.6 0 4.8-.9 6.4-2.3l-3-2.3c-.8.6-2 .9-3.4.9-2.6 0-4.8-1.8-5.6-4.2H3.3v2.6C4.9 18.8 8.1 21 12 21z"
+            />
+            <path
+              fill="#4A90E2"
+              d="M6.4 13.1c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V6.7H3.3C2.5 8.2 2 9.9 2 11.2s.5 3 1.3 4.5l3.1-2.6z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M12 5.3c1.4 0 2.7.5 3.7 1.4l2.7-2.7C16.8 2.5 14.6 1.5 12 1.5c-3.9 0-7.1 2.2-8.7 5.2l3.1 2.6c.8-2.4 3-4.2 5.6-4.2z"
+            />
+          </svg>
+          Continue with Google
+        </a>
+        <button
+          type="button"
+          disabled
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500 opacity-80 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="currentColor"
+          >
+            <path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.8 3.7-3.8 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.5 2.9h-2.3v7A10 10 0 0 0 22 12z" />
+          </svg>
+          Continue with Facebook (Coming soon)
         </button>
         <p className="text-center text-xs text-gray-500 dark:text-slate-400">
           Already have an account?{' '}

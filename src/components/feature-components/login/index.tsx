@@ -196,8 +196,26 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
         </div>
         <Link
           href={`/api/auth/google/start?next=${encodeURIComponent(next || '/trails')}`}
-          className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
         >
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4">
+            <path
+              fill="#EA4335"
+              d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3 2.3c1.8-1.7 2.8-4.1 2.8-6.9 0-.7-.1-1.3-.2-1.9H12z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 21c2.6 0 4.8-.9 6.4-2.3l-3-2.3c-.8.6-2 .9-3.4.9-2.6 0-4.8-1.8-5.6-4.2H3.3v2.6C4.9 18.8 8.1 21 12 21z"
+            />
+            <path
+              fill="#4A90E2"
+              d="M6.4 13.1c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V6.7H3.3C2.5 8.2 2 9.9 2 11.2s.5 3 1.3 4.5l3.1-2.6z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M12 5.3c1.4 0 2.7.5 3.7 1.4l2.7-2.7C16.8 2.5 14.6 1.5 12 1.5c-3.9 0-7.1 2.2-8.7 5.2l3.1 2.6c.8-2.4 3-4.2 5.6-4.2z"
+            />
+          </svg>
           Continue with Google
         </Link>
         <p className="text-center text-xs text-gray-500 dark:text-gray-400">

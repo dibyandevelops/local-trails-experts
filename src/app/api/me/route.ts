@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(
       `
-      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, profile_photo_url,
+      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, availability_weekdays, google_sub, profile_photo_url,
              verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
              created_at, updated_at
       FROM users
@@ -55,6 +55,7 @@ export async function PATCH(request: NextRequest) {
       bio,
       sports,
       phone,
+      availability_weekdays,
       profile_photo_url,
       verification_years_experience,
       verification_certifications,
@@ -67,6 +68,7 @@ export async function PATCH(request: NextRequest) {
       bio?: string;
       sports?: string[];
       phone?: string;
+      availability_weekdays?: string[];
       profile_photo_url?: string;
       verification_years_experience?: string;
       verification_certifications?: string;
@@ -86,13 +88,48 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const sportsJson =
-      Array.isArray(sports) && sports.length > 0
-        ? JSON.stringify(sports)
-        : null;
+    const existingUserResult = await pool.query(
+      `
+      SELECT
+        name, city, bio, sports, phone, availability_weekdays, profile_photo_url,
+        verification_years_experience, verification_certifications, verification_guiding_history,
+        verification_safety_training, verification_links
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [auth.sub]
+    );
+    const existingUser = existingUserResult.rows[0];
+    if (!existingUser) {
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+    }
+
+    const hasOwn = <K extends string>(key: K) =>
+      Object.prototype.hasOwnProperty.call(body, key);
+
+    const nextSports =
+      hasOwn('sports')
+        ? Array.isArray(sports) && sports.length > 0
+          ? sports
+          : null
+        : existingUser.sports ?? null;
+    const sportsJson = nextSports ? JSON.stringify(nextSports) : null;
+
+    const nextWeekdays =
+      hasOwn('availability_weekdays')
+        ? Array.isArray(availability_weekdays) && availability_weekdays.length > 0
+          ? availability_weekdays
+          : null
+        : existingUser.availability_weekdays ?? null;
+    const weekdaysJson = nextWeekdays ? JSON.stringify(nextWeekdays) : null;
 
     const normalizedPhone =
-      typeof phone === 'string' ? phone.trim() : phone;
+      hasOwn('phone')
+        ? typeof phone === 'string'
+          ? phone.trim()
+          : ''
+        : existingUser.phone;
 
     if (normalizedPhone) {
       const existingPhone = await pool.query(
@@ -116,29 +153,41 @@ export async function PATCH(request: NextRequest) {
           sports = $4::jsonb,
           phone = $5,
           profile_photo_url = $6,
-          verification_years_experience = $7,
-          verification_certifications = $8,
-          verification_guiding_history = $9,
-          verification_safety_training = $10,
-          verification_links = $11,
+          availability_weekdays = $7::jsonb,
+          verification_years_experience = $8,
+          verification_certifications = $9,
+          verification_guiding_history = $10,
+          verification_safety_training = $11,
+          verification_links = $12,
           updated_at = NOW()
-      WHERE id = $12
-      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, google_sub, profile_photo_url,
+      WHERE id = $13
+      RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, availability_weekdays, google_sub, profile_photo_url,
                 verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
                 created_at, updated_at
     `,
       [
-        name || null,
-        city || null,
-        bio || null,
+        hasOwn('name') ? (name || null) : existingUser.name,
+        hasOwn('city') ? (city || null) : existingUser.city,
+        hasOwn('bio') ? (bio || null) : existingUser.bio,
         sportsJson,
         normalizedPhone || null,
-        profile_photo_url || null,
-        verification_years_experience || null,
-        verification_certifications || null,
-        verification_guiding_history || null,
-        verification_safety_training || null,
-        verification_links || null,
+        hasOwn('profile_photo_url') ? (profile_photo_url || null) : existingUser.profile_photo_url,
+        weekdaysJson,
+        hasOwn('verification_years_experience')
+          ? (verification_years_experience || null)
+          : existingUser.verification_years_experience,
+        hasOwn('verification_certifications')
+          ? (verification_certifications || null)
+          : existingUser.verification_certifications,
+        hasOwn('verification_guiding_history')
+          ? (verification_guiding_history || null)
+          : existingUser.verification_guiding_history,
+        hasOwn('verification_safety_training')
+          ? (verification_safety_training || null)
+          : existingUser.verification_safety_training,
+        hasOwn('verification_links')
+          ? (verification_links || null)
+          : existingUser.verification_links,
         auth.sub,
       ]
     );

@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from '@/types';
 import LoginModal from '@/components/auth/login-modal';
 import RegisterModal from '@/components/auth/register-modal';
+import ParticipantOnboardingModal from '@/components/auth/participant-onboarding-modal';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
@@ -108,6 +109,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerMessage, setRegisterMessage] = useState<string | null>(null);
   const [registerNext, setRegisterNext] = useState<string | null>(null);
+  const [participantOnboardingOpen, setParticipantOnboardingOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const hoverCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -169,6 +171,16 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     window.addEventListener('open-register', handler);
     return () => window.removeEventListener('open-register', handler);
   }, [user]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!user || user.role !== 'participant') return;
+    if (localStorage.getItem('participant-onboarding-pending') !== '1') return;
+    const timer = window.setTimeout(() => {
+      setParticipantOnboardingOpen(true);
+    }, 1600);
+    return () => window.clearTimeout(timer);
+  }, [user?.id, user?.role]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -560,6 +572,25 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         notice={registerMessage}
         next={registerNext || undefined}
       />
+      {user?.role === 'participant' && (
+        <ParticipantOnboardingModal
+          open={participantOnboardingOpen}
+          onOpenChange={(open) => {
+            setParticipantOnboardingOpen(open);
+            if (!open && typeof window !== 'undefined') {
+              localStorage.removeItem('participant-onboarding-pending');
+            }
+          }}
+          user={user}
+          onCompleted={(updatedUser) => {
+            queryClient.setQueryData(['me'], updatedUser);
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('participant-onboarding-pending');
+            }
+            window.dispatchEvent(new Event('auth-changed'));
+          }}
+        />
+      )}
     </nav>
   );
 }
