@@ -35,11 +35,19 @@ export async function GET(
         b.spots,
         b.total_price_npr,
         b.status AS booking_status,
+        b.refund_status,
+        b.refund_reference,
         u.id AS participant_user_id,
         u.name AS participant_name,
         u.email AS participant_email,
+        u.phone AS participant_phone,
+        u.city AS participant_city,
         p.id AS payment_id,
+        p.provider AS payment_provider,
         p.status AS payment_status,
+        p.transaction_uuid,
+        p.gateway_status,
+        p.paid_at,
         p.transaction_reference,
         p.proof_image_url,
         p.proof_submitted_at,
@@ -48,7 +56,7 @@ export async function GET(
       FROM bookings b
       JOIN users u ON u.id = b.user_id
       LEFT JOIN LATERAL (
-        SELECT id, status, transaction_reference, proof_image_url, proof_submitted_at, review_note, verified_at
+        SELECT id, provider, status, transaction_uuid, gateway_status, paid_at, transaction_reference, proof_image_url, proof_submitted_at, review_note, verified_at
         FROM payments
         WHERE booking_id = b.id
         ORDER BY created_at DESC
@@ -70,4 +78,3 @@ export async function GET(
     );
   }
 }
-
