@@ -194,7 +194,6 @@ export interface User {
   phone_verified_at?: string | null;
   availability_weekdays?: string[] | null;
   google_sub?: string | null;
-  facebook_sub?: string | null;
   profile_photo_url?: string | null;
   verification_years_experience?: string | null;
   verification_certifications?: string | null;
@@ -215,6 +214,9 @@ export interface Booking {
   total_price_npr: number;
   status: 'pending' | 'confirmed' | 'cancelled';
   refund_npr?: number;
+  refund_status?: 'none' | 'requested' | 'settled' | 'failed';
+  refunded_at?: string | null;
+  refund_reference?: string | null;
   cancelled_at?: string | null;
   cancellation_policy_snapshot?: string | null;
   created_at: string;
@@ -224,7 +226,7 @@ export interface Payment {
   id: string;
   booking_id: string;
   amount_npr: number;
-  status: 'pending' | 'paid' | 'failed';
+  status: 'pending' | 'paid' | 'failed' | 'refunded';
   qr_payload: string | null;
   created_at: string;
 }

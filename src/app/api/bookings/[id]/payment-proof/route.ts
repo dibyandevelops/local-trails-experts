@@ -71,7 +71,7 @@ export async function POST(
     if (!payment) {
       return NextResponse.json({ error: 'Payment record not found.' }, { status: 404 });
     }
-    if (payment.status === 'paid') {
+    if (payment.status === 'paid' || payment.status === 'refunded') {
       return NextResponse.json(
         { error: 'Payment is already verified.' },
         { status: 409 }
@@ -101,4 +101,3 @@ export async function POST(
     );
   }
 }
-

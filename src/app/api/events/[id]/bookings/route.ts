@@ -20,9 +20,14 @@ export async function GET(
       `
       SELECT
         b.id, b.event_id, b.user_id, b.spots, b.total_price_npr, b.status,
-        b.refund_npr, b.cancelled_at, b.cancellation_policy_snapshot, b.created_at,
+        b.refund_npr, b.refund_status, b.refunded_at, b.refund_reference,
+        b.cancelled_at, b.cancellation_policy_snapshot, b.created_at,
         p.id as payment_id,
+        p.provider as payment_provider,
         p.status as payment_status,
+        p.transaction_uuid,
+        p.gateway_status,
+        p.paid_at,
         p.transaction_reference,
         p.proof_image_url,
         p.proof_submitted_at,
@@ -30,7 +35,7 @@ export async function GET(
         p.verified_at
       FROM bookings b
       LEFT JOIN LATERAL (
-        SELECT id, status, transaction_reference, proof_image_url, proof_submitted_at, review_note, verified_at
+        SELECT id, provider, status, transaction_uuid, gateway_status, paid_at, transaction_reference, proof_image_url, proof_submitted_at, review_note, verified_at
         FROM payments
         WHERE booking_id = b.id
         ORDER BY created_at DESC
@@ -177,8 +182,8 @@ export async function POST(
 
         const paymentResult = await client.query(
           `
-          INSERT INTO payments (booking_id, amount_npr, status, qr_payload)
-          VALUES ($1, $2, 'pending', $3)
+          INSERT INTO payments (booking_id, amount_npr, status, qr_payload, provider)
+          VALUES ($1, $2, 'pending', $3, 'esewa')
           RETURNING *
           `,
           [booking.rows[0].id, totalPrice, qrPayload]
