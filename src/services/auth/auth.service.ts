@@ -29,7 +29,15 @@ export async function fetchCurrentUser(
     if (axios.isCancel(error)) {
       throw error;
     }
-    return null;
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      // Only treat explicit unauthenticated responses as logged-out state.
+      if (status === 401 || status === 403) {
+        return null;
+      }
+      throw new Error(`Failed to fetch current user (status: ${status || 'network'})`);
+    }
+    throw new Error('Failed to fetch current user');
   }
 }
 

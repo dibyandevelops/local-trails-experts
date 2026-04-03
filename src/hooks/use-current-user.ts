@@ -43,7 +43,13 @@ export function useCurrentUser(
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    retry: false,
+    retry: (failureCount, error) => {
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('status: 401') || message.includes('status: 403')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
     initialData,
     placeholderData: (previousData) => previousData,
   });
