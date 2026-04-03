@@ -220,15 +220,6 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
           </svg>
           Continue with Google
         </Link>
-        {/* <Link
-          href={`/api/auth/facebook/start?next=${encodeURIComponent(next || '/trails')}`}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-[#1877F2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1667d8] dark:border-slate-700"
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-            <path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.8 3.7-3.8 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.5 2.9h-2.3v7A10 10 0 0 0 22 12z" />
-          </svg>
-          Continue with Facebook
-        </Link> */}
         <p className="text-center text-xs text-gray-500 dark:text-gray-400">
           Don&apos;t have a participant account?{' '}
           {onOpenRegister ? (
