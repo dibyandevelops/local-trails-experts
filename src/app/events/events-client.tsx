@@ -208,7 +208,7 @@ export default function EventsPageClient() {
   const cancelMutation = useMutation({
     mutationFn: (eventId: string) => cancelEvent(eventId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() });
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
     },
   });
 

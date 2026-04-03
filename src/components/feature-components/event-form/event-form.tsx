@@ -525,6 +525,7 @@ export default function EventForm({
     if (prefillSport) {
       const currentSport = getValues('sport_type');
       if (currentSport !== prefillSport) {
+        skipSportClearRef.current = true;
         setValue('sport_type', prefillSport);
       }
     }
@@ -557,6 +558,7 @@ export default function EventForm({
     if (!lockTrailAndSport) return;
     if (!selectedLockedTrail) return;
     const lockedSport = (selectedLockedTrail.sport_type || prefillSport || 'mtb') as SportType;
+    skipSportClearRef.current = true;
     setValue('sport_type', lockedSport);
     applyTrailDefaults(selectedLockedTrail, selectedLockedTrail.id);
   }, [lockTrailAndSport, selectedLockedTrail, prefillSport, setValue]);
@@ -578,10 +580,6 @@ export default function EventForm({
 
       if (values.is_paid_event && (!values.price_npr || values.price_npr <= 0)) {
         alert('Paid events must have a price greater than 0.');
-        return;
-      }
-      if (values.is_paid_event && !values.qr_image_url) {
-        alert('Please upload an eSewa QR image for paid events.');
         return;
       }
 
