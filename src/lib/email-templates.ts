@@ -22,6 +22,14 @@ type WelcomeEmailInput = {
   role?: 'participant' | 'expert';
 };
 
+type BookingEmailInput = {
+  appUrl: string;
+  title: string;
+  participantName?: string | null;
+  amountNpr?: number | null;
+  eventId?: string | null;
+};
+
 export function getAppUrl() {
   return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
     .trim()
@@ -148,5 +156,60 @@ export function buildWelcomeEmail({ name, appUrl, role }: WelcomeEmailInput) {
     bodyText: 'Welcome to LocoXperts. Your account is ready!',
     ctas,
     profilePath: isExpert ? '/experts/me' : '/participants/me',
+  });
+}
+
+export function buildBookingConfirmedEmail({
+  appUrl,
+  title,
+  participantName,
+  amountNpr,
+  eventId,
+}: BookingEmailInput) {
+  const eventsUrl = `${appUrl.replace(/\/$/, '')}${eventId ? `/events/${eventId}` : '/events'}`;
+  const amountLine =
+    typeof amountNpr === 'number' ? `<br/><strong>Amount:</strong> NPR ${amountNpr}` : '';
+  return buildBrandedEmail({
+    subject: `Booking confirmed: ${title}`,
+    appUrl,
+    headline: 'Booking confirmed',
+    subhead: title,
+    greetingName: participantName || undefined,
+    bodyHtml: `Your payment was verified successfully.<br/><strong>Booking:</strong> ${title}${amountLine}`,
+    bodyText:
+      typeof amountNpr === 'number'
+        ? `Your booking is confirmed for ${title}. Amount: NPR ${amountNpr}.`
+        : `Your booking is confirmed for ${title}.`,
+    ctas: [
+      { label: 'View booking', href: eventsUrl, variant: 'primary' },
+      { label: 'Search trails', href: `${appUrl.replace(/\/$/, '')}/trails`, variant: 'secondary' },
+    ],
+  });
+}
+
+export function buildBookingCancelledEmail({
+  appUrl,
+  title,
+  participantName,
+  amountNpr,
+  eventId,
+}: BookingEmailInput) {
+  const eventsUrl = `${appUrl.replace(/\/$/, '')}${eventId ? `/events/${eventId}` : '/events'}`;
+  const refundLine =
+    typeof amountNpr === 'number'
+      ? `Your booking was cancelled with a full refund of NPR ${amountNpr}.`
+      : 'Your booking was cancelled with a full refund.';
+  return buildBrandedEmail({
+    subject: `Booking cancelled: ${title}`,
+    appUrl,
+    headline: 'Booking cancelled',
+    subhead: title,
+    greetingName: participantName || undefined,
+    bodyHtml: `Your booking for <strong>${title}</strong> was cancelled.<br/><strong>Refund:</strong> NPR ${amountNpr ?? 0} (full refund).`,
+    bodyText: refundLine,
+    ctas: [
+      { label: 'Browse events', href: eventsUrl, variant: 'primary' },
+      { label: 'Search trails', href: `${appUrl.replace(/\/$/, '')}/trails`, variant: 'secondary' },
+    ],
   });
 }

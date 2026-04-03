@@ -97,8 +97,8 @@ export async function POST(
           });
           await client.query(
             `
-            INSERT INTO payments (booking_id, amount_npr, status, qr_payload)
-            VALUES ($1, $2, 'pending', $3)
+            INSERT INTO payments (booking_id, amount_npr, status, qr_payload, provider)
+            VALUES ($1, $2, 'pending', $3, 'esewa')
             `,
             [booking.id, totalPrice, qrPayload]
           );

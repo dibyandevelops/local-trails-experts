@@ -1,0 +1,10 @@
+ALTER TABLE payments
+  ADD COLUMN IF NOT EXISTS provider VARCHAR(20) DEFAULT 'manual',
+  ADD COLUMN IF NOT EXISTS transaction_uuid VARCHAR(120),
+  ADD COLUMN IF NOT EXISTS gateway_status VARCHAR(40),
+  ADD COLUMN IF NOT EXISTS gateway_payload JSONB,
+  ADD COLUMN IF NOT EXISTS initiated_at TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP WITH TIME ZONE;
+
+CREATE INDEX IF NOT EXISTS idx_payments_transaction_uuid
+  ON payments (transaction_uuid);
