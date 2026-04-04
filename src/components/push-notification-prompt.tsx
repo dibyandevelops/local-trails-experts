@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getFirebaseApp } from '@/lib/firebase';
+import type { User } from '@/types';
 
 type PermissionState = NotificationPermission | 'unsupported';
 
@@ -13,8 +14,14 @@ function getPlatformLabel() {
   return 'web';
 }
 
-export default function PushNotificationPrompt() {
-  const { data: user = null } = useCurrentUser();
+type PushNotificationPromptProps = {
+  initialUser?: User | null;
+};
+
+export default function PushNotificationPrompt({
+  initialUser = null,
+}: PushNotificationPromptProps) {
+  const { data: user = null } = useCurrentUser(initialUser);
   const [permission, setPermission] = useState<PermissionState>('unsupported');
   const [isEnabling, setIsEnabling] = useState(false);
   const [message, setMessage] = useState<string | null>(null);

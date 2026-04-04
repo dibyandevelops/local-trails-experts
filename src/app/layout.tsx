@@ -101,7 +101,7 @@ export default async function RootLayout({
         <Analytics />
         <PWARegister />
         <MainContent>
-          <PushNotificationPrompt />
+          <PushNotificationPrompt initialUser={initialUser} />
           <Navbar initialUser={initialUser} />
           <main className="container mx-auto flex-grow px-4 py-8">{children}</main>
           <Footer initialUser={initialUser} />
