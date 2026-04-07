@@ -64,9 +64,9 @@ export async function POST(
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (auth.role !== 'participant') {
+    if (auth.role !== 'participant' && auth.role !== 'admin') {
       return NextResponse.json(
-        { error: 'Only participants can submit trail reviews.' },
+        { error: 'Only participants or admins can submit trail reviews.' },
         { status: 403 }
       );
     }
@@ -81,26 +81,28 @@ export async function POST(
 
     const comment = body.comment?.trim() || null;
 
-    const eligibility = await pool.query(
-      `
-      SELECT 1
-      FROM users u
-      JOIN event_participants ep ON ep.participant_email = u.email
-      JOIN events e ON e.id = ep.event_id
-      WHERE u.id = $1
-        AND e.trail_id = $2
-      LIMIT 1
-      `,
-      [auth.sub, id]
-    );
-    if (eligibility.rows.length === 0) {
-      return NextResponse.json(
-        {
-          error:
-            'You can review this trail only after you have joined a ride on it.',
-        },
-        { status: 403 }
+    if (auth.role === 'participant') {
+      const eligibility = await pool.query(
+        `
+        SELECT 1
+        FROM users u
+        JOIN event_participants ep ON ep.participant_email = u.email
+        JOIN events e ON e.id = ep.event_id
+        WHERE u.id = $1
+          AND e.trail_id = $2
+        LIMIT 1
+        `,
+        [auth.sub, id]
       );
+      if (eligibility.rows.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              'You can review this trail only after you have joined a ride on it.',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const result = await pool.query(

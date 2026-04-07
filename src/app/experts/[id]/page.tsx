@@ -139,8 +139,9 @@ export default function ExpertDetailPage() {
       .toUpperCase() || 'EX';
   const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
   const canReviewExpert =
-    currentUser?.role === 'participant' &&
-    joinedEvents.some((event) => event.host_user_id === expertId);
+    currentUser?.role === 'admin' ||
+    (currentUser?.role === 'participant' &&
+      joinedEvents.some((event) => event.host_user_id === expertId));
 
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-0.5 text-amber-500">
@@ -331,7 +332,7 @@ export default function ExpertDetailPage() {
                 ? existingReview
                   ? 'Update your review'
                   : 'Leave a review'
-                : 'Join this expert’s event to review'}
+                : 'Join this expert’s event to review (admins can review directly)'}
             </span>
           ) : (
             <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -347,7 +348,7 @@ export default function ExpertDetailPage() {
               setReviewMessage(null);
               if (!canReviewExpert) {
                 setReviewMessage(
-                  'You can review this expert only after joining one of their rides.'
+                  'You can review this expert only after joining one of their rides. Admins can review directly.'
                 );
                 return;
               }
