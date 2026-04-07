@@ -12,9 +12,10 @@ import Map, {
   ScaleControl,
   Source,
   type MapRef,
-} from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
+} from 'react-map-gl/mapbox';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Trail, RouteData, User, SportType, TrailReview } from '@/types';
 import {
   getSafetyLabelText,
@@ -66,6 +67,7 @@ type MapSectionProps = {
   mapCenter: { longitude: number; latitude: number; zoom: number };
   mapStyle: string;
   mapStyleMode: MapStyleMode;
+  mapboxToken?: string;
   onStyleModeChange: (mode: MapStyleMode) => void;
   komootEmbedUrl?: string | null;
 };
@@ -77,6 +79,7 @@ const MapSection = React.memo(function MapSection({
   mapCenter,
   mapStyle,
   mapStyleMode,
+  mapboxToken,
   onStyleModeChange,
   komootEmbedUrl,
 }: MapSectionProps) {
@@ -125,6 +128,21 @@ const MapSection = React.memo(function MapSection({
         initialViewState={mapCenter}
         style={{ width: '100%', height: '100%' }}
         mapStyle={mapStyle}
+        mapboxAccessToken={mapboxToken}
+        onLoad={() => {
+          if (!mapboxToken) return;
+          const map = mapRef.current?.getMap() as any;
+          if (!map) return;
+          if (!map.getSource('mapbox-dem')) {
+            map.addSource('mapbox-dem', {
+              type: 'raster-dem',
+              url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+              tileSize: 512,
+              maxzoom: 14,
+            });
+          }
+          map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.1 });
+        }}
       >
         <div className="absolute left-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
           <button
@@ -164,9 +182,9 @@ const MapSection = React.memo(function MapSection({
               type="line"
               paint={{
                 'line-color': '#10b981',
-                'line-width': 10,
-                'line-opacity': 0.25,
-                'line-blur': 1.2,
+                'line-width': 6,
+                'line-opacity': 0.22,
+                'line-blur': 1,
               }}
             />
             <Layer
@@ -174,7 +192,7 @@ const MapSection = React.memo(function MapSection({
               type="line"
               paint={{
                 'line-color': '#064e3b',
-                'line-width': 6.5,
+                'line-width': 4.2,
                 'line-opacity': 0.9,
               }}
             />
@@ -183,7 +201,7 @@ const MapSection = React.memo(function MapSection({
               type="line"
               paint={{
                 'line-color': '#34d399',
-                'line-width': 4.5,
+                'line-width': 2.8,
                 'line-opacity': 0.98,
               }}
             />
@@ -192,8 +210,8 @@ const MapSection = React.memo(function MapSection({
               type="line"
               paint={{
                 'line-color': '#ecfeff',
-                'line-width': 1.1,
-                'line-opacity': 0.9,
+                'line-width': 0.7,
+                'line-opacity': 0.85,
               }}
             />
           </Source>
@@ -205,9 +223,9 @@ const MapSection = React.memo(function MapSection({
             source="route"
             layout={{
               'symbol-placement': 'line',
-              'symbol-spacing': 120,
+              'symbol-spacing': 84,
               'text-field': '›',
-              'text-size': 24,
+              'text-size': 20,
               'text-rotation-alignment': 'map',
               'text-keep-upright': false,
               'text-offset': [0, 0],
@@ -217,7 +235,7 @@ const MapSection = React.memo(function MapSection({
             paint={{
               'text-color': '#16a34a',
               'text-halo-color': '#ffffff',
-              'text-halo-width': 1.6,
+              'text-halo-width': 1.2,
             }}
           />
         )}
@@ -286,6 +304,9 @@ const TrailPage: React.FunctionComponent = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewAcceptTerms, setReviewAcceptTerms] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [sportTypeDraft, setSportTypeDraft] = useState<Trail['sport_type']>('mtb');
+  const [sportSafetyModalOpen, setSportSafetyModalOpen] = useState(false);
+  const [hazardModalOpen, setHazardModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
     if (typeof window === 'undefined') return 'map';
@@ -293,6 +314,7 @@ const TrailPage: React.FunctionComponent = () => {
     return saved === 'map' || saved === 'satellite' ? saved : 'map';
   });
   const mapStyle = useMemo(() => getMapStyle(mapStyleMode), [mapStyleMode]);
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
   useEffect(() => {
     try {
@@ -409,6 +431,7 @@ const TrailPage: React.FunctionComponent = () => {
     setSafetyDraft((trail.safety_labels || []) as TrailSafetyLabel[]);
     setHazardousDraft(Boolean(trail.is_hazardous));
     setHazardNoteDraft(trail.hazard_note || '');
+    setSportTypeDraft((trail.sport_type || 'mtb') as Trail['sport_type']);
   }, [trail]);
 
   const existingReview = useMemo(
@@ -418,8 +441,9 @@ const TrailPage: React.FunctionComponent = () => {
     [reviewData?.reviews, currentUser?.id]
   );
   const canReviewTrail =
-    currentUser?.role === 'participant' &&
-    joinedEvents.some((event) => event.trail_id === trailId);
+    currentUser?.role === 'admin' ||
+    (currentUser?.role === 'participant' &&
+      joinedEvents.some((event) => event.trail_id === trailId));
 
   useEffect(() => {
     if (!existingReview) {
@@ -821,21 +845,6 @@ const TrailPage: React.FunctionComponent = () => {
     }
     router.push('/trails', { scroll: false });
   };
-  const showActionsSection = Boolean(
-    canUploadRoute ||
-      (currentUser?.role === 'admin' && hasRoute) ||
-      trailImages.length > 0 ||
-      canUploadPhotos ||
-      currentUser?.role === 'admin' ||
-      currentUser?.role === 'expert' ||
-      canRequestTrail ||
-      uploadSuccess ||
-      uploadError ||
-      photoUploadMessage ||
-      actionMessage ||
-      requestMessage
-  );
-
   const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
 
   const renderStars = (rating: number) => (
@@ -858,16 +867,193 @@ const TrailPage: React.FunctionComponent = () => {
         >
           ← Back to trails
         </button>
-        <button
-          type="button"
-          onClick={copyTrailLink}
-          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          Share
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdmin && (
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  type="button"
+                  className="rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800"
+                >
+                  Admin Actions
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  align="end"
+                  sideOffset={8}
+                  className="z-50 min-w-[220px] rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                >
+                  <DropdownMenu.Item
+                    onSelect={() => fileInputRef.current?.click()}
+                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    {uploading ? 'Uploading route...' : 'Upload GPX Route'}
+                  </DropdownMenu.Item>
+                  {hasRoute && (
+                    <DropdownMenu.Item
+                      onSelect={async () => {
+                        const confirmed = window.confirm(
+                          'Remove the GPX route for this trail?'
+                        );
+                        if (!confirmed) return;
+                        await removeRouteMutation.mutateAsync();
+                      }}
+                      disabled={removeRouteMutation.isPending}
+                      className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      {removeRouteMutation.isPending ? 'Removing...' : 'Remove GPX Route'}
+                    </DropdownMenu.Item>
+                  )}
+                  <DropdownMenu.Item
+                    onSelect={() => setSportSafetyModalOpen(true)}
+                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Manage Sport & Safety
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    onSelect={() => setHazardModalOpen(true)}
+                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Manage Hazard Status
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    onSelect={() => router.push(`/trails/create?trailId=${trailId}`)}
+                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Edit Trail
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator className="my-1 h-px bg-gray-200 dark:bg-slate-700" />
+                  <DropdownMenu.Item
+                    onSelect={handleDeleteTrail}
+                    disabled={deleteTrailMutation.isPending || hideTrailMutation.isPending}
+                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-red-700 outline-none hover:bg-red-50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-red-300 dark:hover:bg-red-950/40"
+                  >
+                    {deleteTrailMutation.isPending || hideTrailMutation.isPending
+                      ? 'Deleting...'
+                      : 'Delete Trail'}
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )}
+          <button
+            type="button"
+            onClick={copyTrailLink}
+            className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Share
+          </button>
+          {trailImages.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setGalleryInitialIndex(0);
+                setGalleryModalOpen(true);
+              }}
+              className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              View Trail Photos
+            </button>
+          )}
+          {canUploadPhotos && (
+            <label className="cursor-pointer rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              {photoUploading ? 'Uploading Photos...' : 'Upload Trail Photos'}
+            </label>
+          )}
+          {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
+            <button
+              type="button"
+              onClick={() => setCreateEventOpen(true)}
+              className="rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-100"
+            >
+              Create Event
+            </button>
+          )}
+          {canRequestTrail && (
+            <button
+              type="button"
+              disabled={loadingCurrentUser}
+              onClick={() => {
+                if (loadingCurrentUser) {
+                  setRequestMessage('Checking your account. Please try again in a second.');
+                  return;
+                }
+                if (!currentUser) {
+                  const next =
+                    typeof window !== 'undefined'
+                      ? `${window.location.pathname}${window.location.search}`
+                      : `/trails/${trail.id}`;
+                  window.dispatchEvent(
+                    new CustomEvent('open-register', {
+                      detail: {
+                        message: 'Create a participant account to request a trail activity.',
+                        next,
+                      },
+                    })
+                  );
+                  return;
+                }
+                if (hasRequestedTrail) {
+                  setRequestMessage('You have already requested this trail.');
+                  return;
+                }
+                setRequestMessage(null);
+                setRequestModalOpen(true);
+              }}
+              className="rounded-full border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {hasRequestedTrail ? 'Trail Requested' : 'Want to ride with a local pro?'}
+            </button>
+          )}
+          {canRequestTrail && hasRequestedTrail && (
+            <button
+              type="button"
+              disabled={cancelRequestMutation.isPending}
+              onClick={async () => {
+                if (!existingTrailRequest?.id) return;
+                try {
+                  await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
+                } catch (error) {
+                  setRequestMessage(
+                    error instanceof Error ? error.message : 'Failed to cancel request'
+                  );
+                }
+              }}
+              className="rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {cancelRequestMutation.isPending ? 'Cancelling...' : 'Cancel Request'}
+            </button>
+          )}
+        </div>
       </div>
+      {(uploadSuccess || uploadError || photoUploadMessage || actionMessage || requestMessage) && (
+        <div className="mb-5 flex flex-wrap gap-2 text-sm">
+          {uploadSuccess && <span className="text-green-600">Route uploaded successfully.</span>}
+          {uploadError && <span className="text-red-600">{uploadError}</span>}
+          {photoUploadMessage && <span className="text-gray-600">{photoUploadMessage}</span>}
+          {actionMessage && <span className="text-gray-600">{actionMessage}</span>}
+          {requestMessage && <span className="text-gray-600">{requestMessage}</span>}
+        </div>
+      )}
+      {isAdmin && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".gpx"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+      )}
 
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-sm dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-lg shadow-emerald-100/60 dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 dark:shadow-emerald-950/30">
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
         <div className="pointer-events-none absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
 
@@ -906,7 +1092,7 @@ const TrailPage: React.FunctionComponent = () => {
             <div className="mt-5 flex flex-wrap gap-3">
               <a
                 href="#trail-map"
-                className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+                className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-800"
               >
                 View map
               </a>
@@ -915,7 +1101,7 @@ const TrailPage: React.FunctionComponent = () => {
                   href={komootNavigateUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
+                  className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
                 >
                   Navigate in Komoot
                 </a>
@@ -923,7 +1109,7 @@ const TrailPage: React.FunctionComponent = () => {
               {trail.description && (
                 <a
                   href="#route-guide"
-                  className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
+                  className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
                 >
                   Route guide
                 </a>
@@ -965,162 +1151,10 @@ const TrailPage: React.FunctionComponent = () => {
             )}
           </div>
 
-          <div className="space-y-4">
-            {showActionsSection && (
-              <div className="rounded-2xl border border-emerald-200/70 bg-white/90 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                  Actions
-                </p>
-                <div className="mt-3 flex flex-wrap items-stretch gap-2">
-                  {canUploadRoute && (
-                    <label className="w-full cursor-pointer rounded-full bg-green-700 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-green-800 sm:w-auto">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".gpx"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                      {uploading ? 'Uploading...' : 'Upload GPX Route'}
-                    </label>
-                  )}
-                  {currentUser?.role === 'admin' && hasRoute && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const confirmed = window.confirm('Remove the GPX route for this trail?');
-                        if (!confirmed) return;
-                        await removeRouteMutation.mutateAsync();
-                      }}
-                      disabled={removeRouteMutation.isPending}
-                      className="w-full rounded-full border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 sm:w-auto disabled:opacity-60"
-                    >
-                      {removeRouteMutation.isPending ? 'Removing...' : 'Remove GPX Route'}
-                    </button>
-                  )}
-                  {trailImages.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGalleryInitialIndex(0);
-                        setGalleryModalOpen(true);
-                      }}
-                      className="w-full rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      View Trail Photos
-                    </button>
-                  )}
-                  {canUploadPhotos && (
-                    <label className="w-full cursor-pointer rounded-full border border-gray-300 bg-white px-4 py-2 text-center text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                      {photoUploading ? 'Uploading Photos...' : 'Upload Trail Photos'}
-                    </label>
-                  )}
-                  {currentUser?.role === 'admin' && (
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/trails/create?trailId=${trailId}`)}
-                      className="w-full rounded-full border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100 sm:w-auto"
-                    >
-                      Edit Trail
-                    </button>
-                  )}
-                  {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
-                    <button
-                      type="button"
-                      onClick={() => setCreateEventOpen(true)}
-                      className="w-full rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-100 sm:w-auto"
-                    >
-                      Create Event
-                    </button>
-                  )}
-                  {canRequestTrail && (
-                    <button
-                      type="button"
-                      disabled={loadingCurrentUser}
-                      onClick={() => {
-                        if (loadingCurrentUser) {
-                          setRequestMessage('Checking your account. Please try again in a second.');
-                          return;
-                        }
-                        if (!currentUser) {
-                          const next =
-                            typeof window !== 'undefined'
-                              ? `${window.location.pathname}${window.location.search}`
-                              : `/trails/${trail.id}`;
-                          window.dispatchEvent(
-                            new CustomEvent('open-register', {
-                              detail: {
-                                message: 'Create a participant account to request a trail activity.',
-                                next,
-                              },
-                            })
-                          );
-                          return;
-                        }
-                        if (hasRequestedTrail) {
-                          setRequestMessage('You have already requested this trail.');
-                          return;
-                        }
-                        setRequestMessage(null);
-                        setRequestModalOpen(true);
-                      }}
-                      className="w-full rounded-full border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                    >
-                      {hasRequestedTrail ? 'Trail Requested' : 'Want to ride with a local pro?'}
-                    </button>
-                  )}
-                  {canRequestTrail && hasRequestedTrail && (
-                    <button
-                      type="button"
-                      disabled={cancelRequestMutation.isPending}
-                      onClick={async () => {
-                        if (!existingTrailRequest?.id) return;
-                        try {
-                          await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
-                        } catch (error) {
-                          setRequestMessage(
-                            error instanceof Error ? error.message : 'Failed to cancel request'
-                          );
-                        }
-                      }}
-                      className="w-full rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                    >
-                      {cancelRequestMutation.isPending ? 'Cancelling...' : 'Cancel Request'}
-                    </button>
-                  )}
-                </div>
-
-                {(uploadSuccess ||
-                  uploadError ||
-                  photoUploadMessage ||
-                  actionMessage ||
-                  requestMessage) && (
-                  <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                    {uploadSuccess && (
-                      <span className="text-green-600">Route uploaded successfully.</span>
-                    )}
-                    {uploadError && <span className="text-red-600">{uploadError}</span>}
-                    {photoUploadMessage && (
-                      <span className="text-gray-600">{photoUploadMessage}</span>
-                    )}
-                    {actionMessage && <span className="text-gray-600">{actionMessage}</span>}
-                    {requestMessage && <span className="text-gray-600">{requestMessage}</span>}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </section>
 
-      {canManageTrail && (
+      {!isAdmin && canManageTrail && (
         <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -1199,7 +1233,7 @@ const TrailPage: React.FunctionComponent = () => {
         </section>
       )}
 
-      {canFlagHazard && (
+      {!isAdmin && canFlagHazard && (
         <section className="mt-6 rounded-2xl border border-rose-200 bg-rose-50/70 p-5 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/30">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -1268,7 +1302,7 @@ const TrailPage: React.FunctionComponent = () => {
 
       <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {(routeData?.totalDistance || trail.distance_km) && (
-          <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-900 shadow-sm dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-100">
+          <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-100">
             <span className="rounded-full bg-blue-100 p-2 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
               <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
                 <path
@@ -1290,7 +1324,7 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         )}
         {(routeData?.elevationGain || trail.elevation_gain_m) && (
-          <div className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3 text-purple-900 shadow-sm dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-100">
+          <div className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3 text-purple-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-100">
             <span className="rounded-full bg-purple-100 p-2 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200">
               <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
                 <path
@@ -1312,7 +1346,7 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         )}
         {routeData?.elevationLoss && (
-          <div className="flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
+          <div className="flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
             <span className="rounded-full bg-rose-100 p-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
               <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
                 <path
@@ -1330,7 +1364,7 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         )}
         {trail.estimated_time_hours && (
-          <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
             <span className="rounded-full bg-amber-100 p-2 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
               <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
                 <path
@@ -1348,7 +1382,7 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         )}
         {trail.difficulty && (
-          <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-900 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
             <span className="rounded-full bg-emerald-100 p-2 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
               <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
                 <path
@@ -1366,7 +1400,7 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         )}
         {trail.sport_type && (
-          <div className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sky-900 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-100">
+          <div className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sky-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-100">
             <span className="rounded-full bg-sky-100 p-2 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200">
               <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
                 <path
@@ -1396,7 +1430,7 @@ const TrailPage: React.FunctionComponent = () => {
           <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
             What to expect on this trail
           </h2>
-          <p className="mt-3 text-sm leading-6 text-gray-700 dark:text-slate-200">
+          <p className="mt-3 text-sm leading-8 tracking-[0.01em] text-gray-700 dark:text-slate-200">
             {trail.description}
           </p>
         </section>
@@ -1420,6 +1454,7 @@ const TrailPage: React.FunctionComponent = () => {
           mapCenter={mapCenter}
           mapStyle={mapStyle}
           mapStyleMode={mapStyleMode}
+          mapboxToken={mapboxToken}
           onStyleModeChange={setMapStyleMode}
           komootEmbedUrl={trail.komoot_embed_url || null}
         />
@@ -1448,7 +1483,7 @@ const TrailPage: React.FunctionComponent = () => {
                 ? existingReview
                   ? 'Update your review'
                   : 'Leave a review'
-                : 'Join a ride on this trail to review'}
+                : 'Join a ride on this trail to review (admins can review directly)'}
             </span>
           ) : (
             <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -1464,7 +1499,7 @@ const TrailPage: React.FunctionComponent = () => {
               setReviewMessage(null);
               if (!canReviewTrail) {
                 setReviewMessage(
-                  'You can review this trail only after you have joined a ride on it.'
+                  'You can review this trail only after joining a ride. Admins can review directly.'
                 );
                 return;
               }
@@ -1891,6 +1926,146 @@ const TrailPage: React.FunctionComponent = () => {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {isAdmin && (
+        <Dialog.Root open={sportSafetyModalOpen} onOpenChange={setSportSafetyModalOpen}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+              <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                Manage Sport & Safety
+              </Dialog.Title>
+              <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                Update trail sport type and safety labels.
+              </p>
+              <div className="mt-4">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                  Sport Type
+                </label>
+                <select
+                  value={(sportTypeDraft || 'mtb') as string}
+                  onChange={(e) => setSportTypeDraft(e.target.value as Trail['sport_type'])}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                >
+                  {TRAIL_SPORTS.map((sport) => (
+                    <option key={sport.value} value={sport.value}>
+                      {sport.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mt-4">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                  Safety Labels
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {TRAIL_SAFETY_OPTIONS.map((option) => {
+                    const selected = safetyDraft.includes(option.value);
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => toggleSafetyLabel(option.value)}
+                        className={`rounded-full border px-3 py-1 text-sm ${
+                          selected
+                            ? 'border-amber-600 bg-amber-500 text-white'
+                            : 'border-gray-300 bg-white text-gray-700 hover:border-amber-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="mt-5 flex justify-end gap-2">
+                <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                  Cancel
+                </Dialog.Close>
+                <button
+                  type="button"
+                  disabled={updateTrailMutation.isPending}
+                  onClick={async () => {
+                    try {
+                      await updateTrailMutation.mutateAsync({
+                        sport_type: sportTypeDraft || 'mtb',
+                        safety_labels: safetyDraft,
+                      });
+                      setAdminMessage('Sport type and safety labels updated.');
+                      setSportSafetyModalOpen(false);
+                    } catch (err) {
+                      setAdminMessage(
+                        err instanceof Error ? err.message : 'Failed to update sport and safety.'
+                      );
+                    }
+                  }}
+                  className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+                >
+                  {updateTrailMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
+
+      {isAdmin && (
+        <Dialog.Root open={hazardModalOpen} onOpenChange={setHazardModalOpen}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+              <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                Manage Hazard Status
+              </Dialog.Title>
+              <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                Mark this trail hazardous when conditions are unsafe.
+              </p>
+              <label className="mt-4 flex items-start gap-2 text-sm text-gray-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={hazardousDraft}
+                  onChange={(event) => setHazardousDraft(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
+                />
+                <span>Flag this trail as hazardous</span>
+              </label>
+              <textarea
+                value={hazardNoteDraft}
+                onChange={(event) => setHazardNoteDraft(event.target.value)}
+                rows={3}
+                className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                placeholder="Optional: brief hazard details (landslide, damaged bridge, heavy traffic)."
+              />
+              <div className="mt-5 flex justify-end gap-2">
+                <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                  Cancel
+                </Dialog.Close>
+                <button
+                  type="button"
+                  disabled={updateTrailMutation.isPending}
+                  onClick={async () => {
+                    try {
+                      await updateTrailMutation.mutateAsync({
+                        is_hazardous: hazardousDraft,
+                        hazard_note: hazardNoteDraft.trim() || null,
+                      });
+                      setAdminMessage('Hazard status updated.');
+                      setHazardModalOpen(false);
+                    } catch (err) {
+                      setAdminMessage(
+                        err instanceof Error ? err.message : 'Failed to update hazard status.'
+                      );
+                    }
+                  }}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+                >
+                  {updateTrailMutation.isPending ? 'Saving...' : 'Save Hazard Status'}
+                </button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
 
       <Dialog.Root
         open={replaceConfirmOpen}
