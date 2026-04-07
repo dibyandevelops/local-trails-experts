@@ -14,6 +14,7 @@ import {
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
 import { fetchTrailById, updateTrail, uploadTrailRoute } from '@/services/trails/trails.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { apiClient } from '@/services/api/client';
 
 type FormValues = {
   name: string;
@@ -119,8 +120,20 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
   const safetyLabels = watch('safety_labels') || [];
   const acceptTerms = watch('acceptTerms');
   const komootValue = watch('komoot_embed_url') || '';
+  const nameValue = watch('name') || '';
+  const locationValue = watch('location') || '';
+  const sportValue = watch('sport_type');
+  const difficultyValue = watch('difficulty');
+  const distanceValue = watch('distance_km') || '';
+  const elevationValue = watch('elevation_gain_m') || '';
+  const estimatedTimeValue = watch('estimated_time_hours') || '';
   const komootPreviewUrl = normalizeKomootEmbedInput(komootValue);
   const komootLooksValid = komootPreviewUrl ? isKomootEmbedUrl(komootPreviewUrl) : true;
+  const canGenerateDescription =
+    Boolean(nameValue.trim()) &&
+    Boolean(locationValue.trim()) &&
+    Boolean(sportValue) &&
+    Boolean(difficultyValue);
 
   const updateMutation = useMutation({
     mutationFn: (payload: Partial<Trail>) => updateTrail(trailId, payload),
@@ -159,6 +172,53 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
     onError: (e) => {
       setNotice(null);
       setError(e instanceof Error ? e.message : 'Failed to upload GPX route.');
+    },
+  });
+
+  const generateDescriptionMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: nameValue,
+        location: locationValue,
+        sport_type: sportValue,
+        difficulty: difficultyValue,
+        distance_km: distanceValue,
+        elevation_gain_m: elevationValue,
+        estimated_time_hours: estimatedTimeValue,
+      };
+      const delays = [700, 1400, 2200];
+      for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+        try {
+          const { data } = await apiClient.post('/api/ai/trail-description', payload);
+          return data as { description?: string };
+        } catch (err) {
+          const status = (err as { response?: { status?: number } })?.response?.status;
+          if (status === 429 && attempt < delays.length) {
+            await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+            continue;
+          }
+          throw err;
+        }
+      }
+      return { description: '' };
+    },
+    onSuccess: (data) => {
+      if (data?.description) {
+        setValue('description', data.description, { shouldDirty: true });
+        setNotice('Description generated.');
+        setError(null);
+      } else {
+        setError('AI did not return a description.');
+      }
+    },
+    onError: (err) => {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      setNotice(null);
+      if (status === 429) {
+        setError('AI rate limit hit. Please wait a moment and try again.');
+        return;
+      }
+      setError('Failed to generate description.');
     },
   });
 
@@ -372,15 +432,34 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-            Description
-          </label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">
+              Description
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setNotice(null);
+                generateDescriptionMutation.mutate();
+              }}
+              disabled={!canGenerateDescription || generateDescriptionMutation.isPending}
+              className="text-xs font-semibold text-green-700 transition hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-300 dark:hover:text-emerald-200"
+            >
+              {generateDescriptionMutation.isPending ? 'Generating...' : 'Generate with AI'}
+            </button>
+          </div>
           <textarea
             {...register('description')}
             rows={4}
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400"
             placeholder="Short trail overview..."
           />
+          {!canGenerateDescription && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Fill in trail name, location, sport type, and difficulty to enable AI.
+            </p>
+          )}
         </div>
 
         <div>

@@ -15,7 +15,6 @@ import Map, {
 } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Trail, RouteData, User, SportType, TrailReview } from '@/types';
 import {
   getSafetyLabelText,
@@ -44,6 +43,7 @@ import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
+import ThemedDropdown from '@/components/ui/themed-dropdown';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -869,73 +869,55 @@ const TrailPage: React.FunctionComponent = () => {
         </button>
         <div className="flex flex-wrap items-center gap-2">
           {isAdmin && (
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild>
-                <button
-                  type="button"
-                  className="rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800"
-                >
-                  Admin Actions
-                </button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  align="end"
-                  sideOffset={8}
-                  className="z-50 min-w-[220px] rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900"
-                >
-                  <DropdownMenu.Item
-                    onSelect={() => fileInputRef.current?.click()}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    {uploading ? 'Uploading route...' : 'Upload GPX Route'}
-                  </DropdownMenu.Item>
-                  {hasRoute && (
-                    <DropdownMenu.Item
-                      onSelect={async () => {
-                        const confirmed = window.confirm(
-                          'Remove the GPX route for this trail?'
-                        );
-                        if (!confirmed) return;
-                        await removeRouteMutation.mutateAsync();
-                      }}
-                      disabled={removeRouteMutation.isPending}
-                      className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      {removeRouteMutation.isPending ? 'Removing...' : 'Remove GPX Route'}
-                    </DropdownMenu.Item>
-                  )}
-                  <DropdownMenu.Item
-                    onSelect={() => setSportSafetyModalOpen(true)}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Manage Sport & Safety
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    onSelect={() => setHazardModalOpen(true)}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Manage Hazard Status
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    onSelect={() => router.push(`/trails/create?trailId=${trailId}`)}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Edit Trail
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Separator className="my-1 h-px bg-gray-200 dark:bg-slate-700" />
-                  <DropdownMenu.Item
-                    onSelect={handleDeleteTrail}
-                    disabled={deleteTrailMutation.isPending || hideTrailMutation.isPending}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-sm text-red-700 outline-none hover:bg-red-50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-red-300 dark:hover:bg-red-950/40"
-                  >
-                    {deleteTrailMutation.isPending || hideTrailMutation.isPending
+            <ThemedDropdown
+              label="Admin Actions"
+              triggerClassName="rounded-full border-transparent bg-green-700 px-4 py-2 text-sm font-semibold text-white shadow-none hover:bg-green-800 focus-visible:ring-green-300 dark:text-white"
+              items={[
+                {
+                  label: uploading ? 'Uploading route...' : 'Upload GPX Route',
+                  onSelect: () => fileInputRef.current?.click(),
+                },
+                ...(hasRoute
+                  ? [
+                      {
+                        label: removeRouteMutation.isPending
+                          ? 'Removing...'
+                          : 'Remove GPX Route',
+                        onSelect: async () => {
+                          const confirmed = window.confirm(
+                            'Remove the GPX route for this trail?'
+                          );
+                          if (!confirmed) return;
+                          await removeRouteMutation.mutateAsync();
+                        },
+                        disabled: removeRouteMutation.isPending,
+                      },
+                    ]
+                  : []),
+                {
+                  label: 'Manage Sport & Safety',
+                  onSelect: () => setSportSafetyModalOpen(true),
+                },
+                {
+                  label: 'Manage Hazard Status',
+                  onSelect: () => setHazardModalOpen(true),
+                },
+                {
+                  label: 'Edit Trail',
+                  onSelect: () => router.push(`/trails/create?trailId=${trailId}`),
+                },
+                {
+                  label:
+                    deleteTrailMutation.isPending || hideTrailMutation.isPending
                       ? 'Deleting...'
-                      : 'Delete Trail'}
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+                      : 'Delete Trail',
+                  onSelect: handleDeleteTrail,
+                  disabled: deleteTrailMutation.isPending || hideTrailMutation.isPending,
+                  separatorBefore: true,
+                  tone: 'danger',
+                },
+              ]}
+            />
           )}
           <button
             type="button"
