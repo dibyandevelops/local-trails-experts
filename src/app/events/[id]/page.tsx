@@ -494,7 +494,9 @@ export default function EventDetailPage() {
   return (
     <>
       <div className="mx-auto max-w-5xl space-y-6">
-      <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/40 p-6 shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/60 dark:via-slate-950/70 dark:to-emerald-900/40">
+      <section className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/40 p-6 shadow-md shadow-emerald-100/60 dark:border-emerald-900/60 dark:from-emerald-950/60 dark:via-slate-950/70 dark:to-emerald-900/40 dark:shadow-emerald-950/30">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-emerald-200/30 blur-3xl dark:bg-emerald-700/20" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-lime-200/20 blur-3xl dark:bg-lime-700/10" />
         <Link
           href="/events"
           className="text-xs font-semibold uppercase tracking-wide text-emerald-700 hover:underline dark:text-emerald-200"
@@ -538,7 +540,7 @@ export default function EventDetailPage() {
               <button
                 type="button"
                 onClick={() => router.push(`/experts/${event.host_user_id}`)}
-                className="inline-flex items-center rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                className="inline-flex items-center rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
               >
                 View Expert Profile
               </button>
@@ -547,7 +549,7 @@ export default function EventDetailPage() {
               <button
                 type="button"
                 onClick={() => router.push(`/trails/${event.trail?.id}`)}
-                className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+                className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
               >
                 Open Trail Map
               </button>
@@ -562,7 +564,7 @@ export default function EventDetailPage() {
                   cancelMutation.mutate(eventId);
                 }}
                 disabled={cancelMutation.isPending}
-                className="inline-flex items-center rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+                className="inline-flex items-center rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
               >
                 {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Event'}
               </button>
@@ -572,7 +574,7 @@ export default function EventDetailPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Event Overview
           </h2>
@@ -626,7 +628,7 @@ export default function EventDetailPage() {
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
               Organizer
             </h3>
@@ -638,7 +640,7 @@ export default function EventDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
               Join Event
             </h3>
@@ -712,7 +714,7 @@ export default function EventDetailPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
               Payment
             </h3>
@@ -857,7 +859,7 @@ export default function EventDetailPage() {
         </div>
       </section>
       {canReviewPayments && event.price_npr > 0 && (
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
             Participants & Payment Status
           </h3>

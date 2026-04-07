@@ -47,8 +47,15 @@ function buildEsriSatelliteWithPlacesOverlayStyle() {
 }
 
 export function getMapStyle(mode: MapStyleMode) {
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
   const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
   const explicitStyleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_URL;
+
+  if (mapboxToken) {
+    return mode === 'map'
+      ? 'mapbox://styles/mapbox/outdoors-v12'
+      : 'mapbox://styles/mapbox/satellite-streets-v12';
+  }
 
   if (mode === 'map') {
     if (explicitStyleUrl) return explicitStyleUrl;
