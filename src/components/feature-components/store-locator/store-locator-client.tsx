@@ -13,6 +13,20 @@ import StoreRequestForm from '@/components/feature-components/store-locator/stor
 import { useCurrentUser } from '@/hooks/use-current-user';
 
 const DEFAULT_CENTER = { longitude: 84.124, latitude: 28.3949, zoom: 6.6 };
+
+const STORE_MAP_LIGHT_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors',
+    },
+  },
+  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+} as const;
+
 export default function StoreLocatorClient() {
   const { data: user = null } = useCurrentUser();
   const mapRef = useRef<MapRef | null>(null);
@@ -55,7 +69,10 @@ export default function StoreLocatorClient() {
     staleTime: 15000,
   });
 
-  const mapStyle = useMemo(() => getMapStyle(mapStyleMode), [mapStyleMode]);
+  const mapStyle = useMemo(() => {
+    if (mapStyleMode === 'map') return STORE_MAP_LIGHT_STYLE;
+    return getMapStyle('satellite');
+  }, [mapStyleMode]);
 
   const mapCenter = useMemo(() => {
     if (geo) {
@@ -100,7 +117,6 @@ export default function StoreLocatorClient() {
 
   useEffect(() => {
     requestNearby();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

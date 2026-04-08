@@ -22,11 +22,12 @@ export type TrailCardProps = Trail & {
   onCancelRequest?: () => void;
 };
 
+const toFiniteNumber = (value: unknown) => {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
-  const toFiniteNumber = (value: unknown) => {
-    const parsed = typeof value === 'number' ? value : Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
 
   const detailsHref = trail.detailsHref || `/trails/${trail.id}`;
   const images = React.useMemo(() => {
@@ -53,18 +54,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const ratingRaw = toFiniteNumber(trail.average_rating);
   const ratingValue =
     ratingRaw != null && (trail.review_count || 0) > 0 ? ratingRaw : null;
-  const hasActions =
-    Boolean(trail.onViewMap) ||
-    Boolean(komootNavigateUrl) ||
-    Boolean(trail.onRequestTrail) ||
-    Boolean(trail.onCreateEvent) ||
-    Boolean(trail.onCancelRequest) ||
-    Boolean(trail.onDelete) ||
-    Boolean(trail.onHide) ||
-    Boolean(trail.onUnhide) ||
-    Boolean(trail.onEdit) ||
-    Boolean(trail.onOpenImageGallery);
-
   const dropdownItems = [
     ...(trail.onCreateEvent
       ? [{ label: 'Create event', onSelect: () => trail.onCreateEvent?.() }]
@@ -74,14 +63,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       ? [{ label: 'View photos', onSelect: () => trail.onOpenImageGallery?.() }]
       : []),
     ...(komootNavigateUrl ? [{ label: 'Navigate', href: komootNavigateUrl }] : []),
-    ...(trail.onRequestTrail
-      ? [
-          {
-            label: trail.isRequested ? 'Trail requested' : 'Want to ride with a local pro?',
-            onSelect: () => trail.onRequestTrail?.(),
-          },
-        ]
-      : []),
     ...(trail.onCancelRequest && trail.isRequested
       ? [{ label: 'Cancel request', onSelect: () => trail.onCancelRequest?.(), tone: 'danger' as const }]
       : []),
@@ -131,10 +112,11 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
         ]
       : []),
   ];
+  const hasActions = dropdownItems.length > 0;
 
   return (
     <article
-      className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-green-400 dark:border-slate-800 dark:bg-slate-900/60"
+      className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-md transition-all duration-200 hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-green-400 dark:border-slate-800 dark:bg-slate-900/60"
       aria-label={trail.name}
     >
       <Link
@@ -154,15 +136,16 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
               src={primaryImage}
               alt={trail.name}
               fill
-              className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.04]"
+              className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
               quality={90}
+              loading="lazy"
             />
           </div>
         ) : (
           <TrailImagePlaceholder className="h-64 w-full" />
         )}
-        <div className="absolute left-2 top-2 z-20 flex max-w-[78%] flex-wrap gap-1.5">
+        <div className="absolute left-3 top-3 z-20 flex max-w-[80%] flex-wrap gap-2">
           {trail.sport_type && (
             <span className="inline-flex items-center justify-center rounded-full border border-emerald-300/70 bg-emerald-500/90 px-2.5 py-1 text-center text-[10px] leading-none font-semibold uppercase tracking-wide text-white">
               {getSportLabel(trail.sport_type)}
@@ -203,7 +186,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           )}
         </div>
         {hasActions && (
-          <div className="absolute right-2 top-2 z-20">
+          <div className="absolute right-3 top-3 z-20">
             <ThemedDropdown
               label="More actions"
               hideCaret
@@ -224,13 +207,13 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           </div>
         )}
         {images.length > 1 && (
-          <div className="absolute bottom-2 right-2 z-20 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white">
+          <div className="absolute bottom-3 right-3 z-20 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-semibold text-white">
             +{images.length - 1} more
           </div>
         )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[11] bg-gradient-to-t from-black/85 via-black/45 to-transparent p-4">
-          <h3 className="text-lg font-bold uppercase tracking-wide text-white">{trail.name}</h3>
-          <p className="mt-1 text-sm text-white/90">{trail.location}</p>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[11] bg-gradient-to-t from-black/85 via-black/45 to-transparent px-5 pb-5 pt-7">
+          <h3 className="text-xl font-bold uppercase tracking-wide text-white">{trail.name}</h3>
+          <p className="mt-1.5 truncate text-sm text-white/90">{trail.location}</p>
         </div>
         </div>
       </div>

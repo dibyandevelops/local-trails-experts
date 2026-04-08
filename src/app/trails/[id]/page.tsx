@@ -1500,7 +1500,7 @@ const TrailPage: React.FunctionComponent = () => {
                 ? existingReview
                   ? 'Update your review'
                   : 'Leave a review'
-                : 'Join a ride on this trail to review (admins can review directly)'}
+                : 'Join a ride on this trail to review'}
             </span>
           ) : (
             <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -1516,7 +1516,7 @@ const TrailPage: React.FunctionComponent = () => {
               setReviewMessage(null);
               if (!canReviewTrail) {
                 setReviewMessage(
-                  'You can review this trail only after joining a ride. Admins can review directly.'
+                  'You can review this trail only after joining a ride.'
                 );
                 return;
               }
