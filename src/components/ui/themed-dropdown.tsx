@@ -17,6 +17,8 @@ type ThemedDropdownProps = {
   items: ThemedDropdownItem[];
   align?: 'start' | 'center' | 'end';
   triggerClassName?: string;
+  hideCaret?: boolean;
+  triggerContent?: React.ReactNode;
 };
 
 export default function ThemedDropdown({
@@ -24,6 +26,8 @@ export default function ThemedDropdown({
   items,
   align = 'end',
   triggerClassName,
+  hideCaret = false,
+  triggerContent,
 }: ThemedDropdownProps) {
   return (
     <DropdownMenu.Root>
@@ -34,10 +38,12 @@ export default function ThemedDropdown({
             triggerClassName || ''
           }`}
         >
-          {label}
-          <span aria-hidden="true" className="translate-y-[0.5px] text-xs opacity-80">
-            ▾
-          </span>
+          {triggerContent ?? label}
+          {!hideCaret && (
+            <span aria-hidden="true" className="translate-y-[0.5px] text-xs opacity-80">
+              ▾
+            </span>
+          )}
         </button>
       </DropdownMenu.Trigger>
 

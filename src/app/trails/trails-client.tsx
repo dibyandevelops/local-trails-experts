@@ -30,6 +30,7 @@ import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal'
 import GroupRequestForm from '@/components/feature-components/group-request-form';
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
+import TrailRequestModal from '@/components/feature-components/trail-request/trail-request-modal';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -449,15 +450,8 @@ function TrailsPageContent() {
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [groupRequestTrail, setGroupRequestTrail] = useState<Trail | null>(null);
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
-  const [requestDescription, setRequestDescription] = useState('');
-  const [preferredDate, setPreferredDate] = useState('');
-  const [preferredTime, setPreferredTime] = useState('');
-  const [offeredPriceNpr, setOfferedPriceNpr] = useState('');
-  const [nearestPoint, setNearestPoint] = useState('');
-  const [selectedExpertId, setSelectedExpertId] = useState('');
   const [requestFeedback, setRequestFeedback] = useState('');
   const [requestModalMessage, setRequestModalMessage] = useState('');
-  const [requestAcceptTerms, setRequestAcceptTerms] = useState(false);
   const [requestedByTrailId, setRequestedByTrailId] = useState<Record<string, string>>({});
   const [toastOpen, setToastOpen] = useState(false);
   const [toastTitle, setToastTitle] = useState('Request sent');
@@ -598,12 +592,6 @@ function TrailsPageContent() {
       loadParticipantRequests();
       setRequestOpen(false);
       setRequestTrailItem(null);
-      setRequestDescription('');
-      setPreferredDate('');
-      setPreferredTime('');
-      setOfferedPriceNpr('');
-      setNearestPoint('');
-      setSelectedExpertId('');
     },
     onError: (error) => {
       const message =
@@ -1011,18 +999,17 @@ function TrailsPageContent() {
           <div>
             <div className="flex items-center gap-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                Trail discovery
+                Trail Guide
               </p>
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
                 Nepal
               </span>
             </div>
             <h1 className="mt-2 text-3xl font-bold text-green-800 dark:text-green-200">
-              Search Trails
+              Find a Trail
             </h1>
           <p className="mt-2 max-w-xl text-sm text-gray-600 dark:text-slate-300">
-            Find routes across Nepal by location, sport, difficulty, and distance. Save time
-            with curated trails that include local safety guidance.
+            Pick a place, open a trail, and ride with confidence.
           </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -1092,7 +1079,7 @@ function TrailsPageContent() {
                   if (!isDesktop()) return;
                   setSearch(searchInput.trim());
                 }}
-                placeholder="Search by trail name, description, or location…"
+                placeholder="Search by trail or place"
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-emerald-400"
               />
             </div>
@@ -1106,7 +1093,7 @@ function TrailsPageContent() {
                 onChange={(e) => setSport(e.target.value as typeof sport)}
                 className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-emerald-900 dark:bg-slate-950 dark:text-emerald-100"
               >
-                <option value="">All trail categories</option>
+                <option value="">All categories</option>
                 {TRAIL_SPORTS.map((sportOption) => (
                   <option key={sportOption.value} value={sportOption.value}>
                     {sportOption.label}
@@ -1793,180 +1780,27 @@ function TrailsPageContent() {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <Dialog.Root
+      <TrailRequestModal
         open={requestOpen}
         onOpenChange={(open) => {
           setRequestOpen(open);
           if (!open) {
             setRequestTrailItem(null);
-            setRequestModalMessage('');
-            setRequestAcceptTerms(false);
-            setPreferredTime('');
-            setOfferedPriceNpr('');
-            setNearestPoint('');
           }
         }}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 shadow-xl">
-            <Dialog.Title className="text-lg font-semibold text-gray-900">
-              Request Trail Activity
-            </Dialog.Title>
-            <p className="mt-1 text-sm text-gray-600">
-              {requestTrailItem
-                ? `Trail: ${requestTrailItem.name}`
-                : EXPERTS_BETA_ENABLED
-                ? 'Pick your preferred date. Requests are handled by admin while experts are in beta.'
-                : 'Pick expert and date for your request.'}
-            </p>
-            <div className="mt-4 space-y-3">
-              {requestModalMessage && (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
-                  {requestModalMessage}
-                </div>
-              )}
-              {!EXPERTS_BETA_ENABLED && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Select Expert
-                  </label>
-                  <select
-                    value={selectedExpertId}
-                    onChange={(e) => setSelectedExpertId(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  >
-                    <option value="">Choose expert</option>
-                    {experts.map((expert) => (
-                      <option key={expert.id} value={expert.id}>
-                        {expert.name || expert.email}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Preferred Date
-                </label>
-                <input
-                  type="date"
-                  value={preferredDate}
-                  min={new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => setPreferredDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Preferred Time
-                  </label>
-                  <input
-                    type="time"
-                    value={preferredTime}
-                    onChange={(e) => setPreferredTime(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Offered Price (NPR)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={offeredPriceNpr}
-                    onChange={(e) => setOfferedPriceNpr(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="Optional"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Nearest Point
-                </label>
-                <input
-                  type="text"
-                  value={nearestPoint}
-                  onChange={(e) => setNearestPoint(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="e.g., Chobhar gate, near bus stop"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Notes
-                </label>
-                <textarea
-                  rows={4}
-                  value={requestDescription}
-                  onChange={(e) => setRequestDescription(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="Share key expectations: fitness level, pace, route preferences, safety needs, and any special requests."
-                />
-              </div>
-              <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-                <input
-                  type="checkbox"
-                  checked={requestAcceptTerms}
-                  onChange={(event) => setRequestAcceptTerms(event.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-500"
-                />
-                <span>
-                  I acknowledge outdoor activities involve risk and I agree to follow the
-                  expert’s safety instructions.
-                </span>
-              </label>
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <Dialog.Close asChild>
-                <button
-                  type="button"
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </Dialog.Close>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!requestTrailItem) return;
-                  if (!EXPERTS_BETA_ENABLED && !selectedExpertId) {
-                    setRequestModalMessage('Please select an expert.');
-                    return;
-                  }
-                  if (!preferredDate) {
-                    setRequestModalMessage('Please select a preferred date.');
-                    return;
-                  }
-                  if (!requestAcceptTerms) {
-                    setRequestModalMessage('Please accept the risk acknowledgment.');
-                    return;
-                  }
-                  setRequestModalMessage('');
-                  requestMutation.mutate({
-                    trailId: requestTrailItem.id,
-                    description: requestDescription.trim(),
-                    expert_user_id: EXPERTS_BETA_ENABLED ? undefined : selectedExpertId,
-                    preferred_date: preferredDate,
-                    preferred_time: preferredTime || undefined,
-                    offered_price_npr:
-                      offeredPriceNpr.trim() === '' ? null : Number(offeredPriceNpr),
-                    nearest_point: nearestPoint.trim() || undefined,
-                  });
-                }}
-                disabled={requestMutation.isPending || !requestAcceptTerms}
-                className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
-              >
-                {requestMutation.isPending ? 'Submitting...' : 'Submit Request'}
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+        trailOptions={
+          requestTrailItem
+            ? [{ id: requestTrailItem.id, name: requestTrailItem.name }]
+            : trails.map((trail) => ({ id: trail.id, name: trail.name }))
+        }
+        lockedTrailId={requestTrailItem?.id || null}
+        experts={experts}
+        expertsBetaEnabled={EXPERTS_BETA_ENABLED}
+        isSubmitting={requestMutation.isPending}
+        message={requestModalMessage}
+        onMessageChange={setRequestModalMessage}
+        onSubmit={(payload) => requestMutation.mutate(payload)}
+      />
 
       <Toast.Provider swipeDirection="right">
         <Toast.Root

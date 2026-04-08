@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { getSportLabel } from '@/services/constants/sports';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
+import ThemedDropdown from '@/components/ui/themed-dropdown';
 
 export type TrailCardProps = Trail & {
   detailsHref?: string;
@@ -22,6 +23,11 @@ export type TrailCardProps = Trail & {
 };
 
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
+  const toFiniteNumber = (value: unknown) => {
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   const detailsHref = trail.detailsHref || `/trails/${trail.id}`;
   const images = React.useMemo(() => {
     const list = [
@@ -36,17 +42,95 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
     () => getKomootNavigateUrl(trail.komoot_embed_url),
     [trail.komoot_embed_url]
   );
-  const averageRating = typeof trail.average_rating === 'number' ? trail.average_rating : 0;
-  const reviewCount = trail.review_count || 0;
-  const renderStars = (rating: number) => (
-    <div className="flex items-center gap-0.5 text-amber-500">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <span key={`trail-card-star-${trail.id}-${index}`} className="text-[11px]">
-          {index < Math.round(rating) ? '★' : '☆'}
-        </span>
-      ))}
-    </div>
-  );
+  const distanceKmRaw = toFiniteNumber(trail.distance_km);
+  const distanceKm = distanceKmRaw != null && distanceKmRaw > 0 ? distanceKmRaw : null;
+  const estimatedHoursRaw = toFiniteNumber(trail.estimated_time_hours);
+  const estimatedHours =
+    estimatedHoursRaw != null && estimatedHoursRaw > 0 ? estimatedHoursRaw : null;
+  const elevationGainMRaw = toFiniteNumber(trail.elevation_gain_m);
+  const elevationGainM =
+    elevationGainMRaw != null && elevationGainMRaw > 0 ? elevationGainMRaw : null;
+  const ratingRaw = toFiniteNumber(trail.average_rating);
+  const ratingValue =
+    ratingRaw != null && (trail.review_count || 0) > 0 ? ratingRaw : null;
+  const hasActions =
+    Boolean(trail.onViewMap) ||
+    Boolean(komootNavigateUrl) ||
+    Boolean(trail.onRequestTrail) ||
+    Boolean(trail.onCreateEvent) ||
+    Boolean(trail.onCancelRequest) ||
+    Boolean(trail.onDelete) ||
+    Boolean(trail.onHide) ||
+    Boolean(trail.onUnhide) ||
+    Boolean(trail.onEdit) ||
+    Boolean(trail.onOpenImageGallery);
+
+  const dropdownItems = [
+    ...(trail.onCreateEvent
+      ? [{ label: 'Create event', onSelect: () => trail.onCreateEvent?.() }]
+      : []),
+    ...(trail.onViewMap ? [{ label: 'View map', onSelect: () => trail.onViewMap?.() }] : []),
+    ...(images.length > 0 && trail.onOpenImageGallery
+      ? [{ label: 'View photos', onSelect: () => trail.onOpenImageGallery?.() }]
+      : []),
+    ...(komootNavigateUrl ? [{ label: 'Navigate', href: komootNavigateUrl }] : []),
+    ...(trail.onRequestTrail
+      ? [
+          {
+            label: trail.isRequested ? 'Trail requested' : 'Want to ride with a local pro?',
+            onSelect: () => trail.onRequestTrail?.(),
+          },
+        ]
+      : []),
+    ...(trail.onCancelRequest && trail.isRequested
+      ? [{ label: 'Cancel request', onSelect: () => trail.onCancelRequest?.(), tone: 'danger' as const }]
+      : []),
+    ...(trail.onEdit
+      ? [
+          {
+            label: trail.editLoading ? 'Opening...' : 'Edit trail',
+            disabled:
+              trail.deleteLoading || trail.hideLoading || trail.unhideLoading || trail.editLoading,
+            onSelect: () => trail.onEdit?.(),
+          },
+        ]
+      : []),
+    ...(trail.onUnhide && trail.is_hidden
+      ? [
+          {
+            label: trail.unhideLoading ? 'Unhiding...' : 'Unhide trail',
+            disabled: trail.unhideLoading || trail.deleteLoading || trail.hideLoading,
+            onSelect: () => trail.onUnhide?.(),
+          },
+        ]
+      : []),
+    ...(trail.onHide && !trail.is_hidden
+      ? [
+          {
+            label: trail.hideLoading ? 'Hiding...' : 'Hide trail',
+            disabled: trail.hideLoading || trail.deleteLoading || trail.unhideLoading,
+            onSelect: () => trail.onHide?.(),
+          },
+        ]
+      : []),
+    ...(trail.onDelete
+      ? [
+          {
+            label: trail.deleteLoading ? 'Deleting...' : 'Delete trail',
+            disabled: trail.deleteLoading || trail.hideLoading || trail.unhideLoading,
+            onSelect: () => {
+              if (
+                confirm('Are you sure you want to delete this trail? This action cannot be undone.')
+              ) {
+                trail.onDelete?.();
+              }
+            },
+            separatorBefore: true,
+            tone: 'danger' as const,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <article
@@ -65,54 +149,78 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       <div className="relative">
         <div className="relative">
         {primaryImage ? (
-          <div className="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+          <div className="relative h-64 w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
             <Image
               src={primaryImage}
               alt={trail.name}
               fill
-              className="scale-105 object-cover object-center blur-sm brightness-90"
-              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-              quality={60}
-              aria-hidden="true"
-            />
-            <Image
-              src={primaryImage}
-              alt={trail.name}
-              fill
-              className="object-contain object-center p-2 transition-transform duration-300 group-hover:scale-[1.02]"
+              className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.04]"
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
               quality={90}
             />
-            <div className="pointer-events-none absolute inset-0 bg-black/10" />
           </div>
         ) : (
-          <TrailImagePlaceholder className="h-44 w-full" />
+          <TrailImagePlaceholder className="h-64 w-full" />
         )}
-        {(trail.sport_type || trail.distance_km != null || trail.difficulty) && (
-          <div className="absolute right-2 top-2 flex flex-wrap items-center justify-end gap-1.5">
-            {trail.sport_type && (
-              <span className="rounded-md bg-emerald-600/90 px-2 py-1 text-[11px] font-semibold text-white">
-                {getSportLabel(trail.sport_type)}
-              </span>
-            )}
-            {trail.distance_km != null && (
-              <span className="rounded-md bg-slate-900/70 px-2 py-1 text-[11px] font-semibold text-white">
-                {trail.distance_km} km
-              </span>
-            )}
-            {trail.difficulty && (
-              <span
-                className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                  trail.difficulty === 'easy'
-                    ? 'bg-green-600/90 text-white'
-                    : trail.difficulty === 'medium'
-                      ? 'bg-yellow-500/90 text-white'
-                      : 'bg-red-600/90 text-white'
-                }`}
-              >
-                {trail.difficulty}
-              </span>
-            )}
+        <div className="absolute left-2 top-2 z-20 flex max-w-[78%] flex-wrap gap-1.5">
+          {trail.sport_type && (
+            <span className="inline-flex items-center justify-center rounded-full border border-emerald-300/70 bg-emerald-500/90 px-2.5 py-1 text-center text-[10px] leading-none font-semibold uppercase tracking-wide text-white">
+              {getSportLabel(trail.sport_type)}
+            </span>
+          )}
+          {distanceKm != null && (
+            <span className="inline-flex items-center justify-center rounded-full border border-slate-200/30 bg-slate-900/60 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white backdrop-blur-sm">
+              {distanceKm.toFixed(1)} km
+            </span>
+          )}
+          {trail.difficulty && (
+            <span
+              className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] leading-none font-semibold capitalize text-white ${
+                trail.difficulty === 'easy'
+                  ? 'border border-emerald-200/60 bg-emerald-600/85'
+                  : trail.difficulty === 'medium'
+                    ? 'border border-amber-200/60 bg-amber-500/90'
+                    : 'border border-rose-200/60 bg-rose-600/85'
+              }`}
+            >
+              {trail.difficulty}
+            </span>
+          )}
+          {estimatedHours != null && (
+            <span className="inline-flex items-center justify-center rounded-full border border-sky-200/60 bg-sky-600/85 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
+              ~{estimatedHours}h
+            </span>
+          )}
+          {elevationGainM != null && (
+            <span className="inline-flex items-center justify-center rounded-full border border-indigo-200/60 bg-indigo-600/85 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
+              ↑ {Math.round(elevationGainM)} m
+            </span>
+          )}
+          {ratingValue != null && (
+            <span className="inline-flex items-center justify-center rounded-full border border-amber-200/70 bg-amber-500/90 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
+              {ratingValue.toFixed(1)}★
+            </span>
+          )}
+        </div>
+        {hasActions && (
+          <div className="absolute right-2 top-2 z-20">
+            <ThemedDropdown
+              label="More actions"
+              hideCaret
+              triggerContent={
+                <svg
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                  className="h-6 w-6 fill-slate-900 dark:fill-slate-100"
+                >
+                  <circle cx="10" cy="4" r="2.1" />
+                  <circle cx="10" cy="10" r="2.1" />
+                  <circle cx="10" cy="16" r="2.1" />
+                </svg>
+              }
+              triggerClassName="h-9 w-9 justify-center rounded-full border border-slate-200 bg-white/95 px-0 py-0 text-slate-900 shadow-sm hover:bg-white dark:border-white/20 dark:bg-black/55 dark:text-white dark:hover:bg-black/40 focus-visible:ring-white/60"
+              items={dropdownItems}
+            />
           </div>
         )}
         {images.length > 1 && (
@@ -120,215 +228,10 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             +{images.length - 1} more
           </div>
         )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[11] bg-gradient-to-t from-black/85 via-black/45 to-transparent p-4">
+          <h3 className="text-lg font-bold uppercase tracking-wide text-white">{trail.name}</h3>
+          <p className="mt-1 text-sm text-white/90">{trail.location}</p>
         </div>
-        <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-bold text-gray-900">{trail.name}</h3>
-        </div>
-        <p className="mb-2 text-sm text-gray-600">{trail.location}</p>
-        {reviewCount > 0 && (
-          <div className="mb-2 flex items-center gap-2 text-xs text-amber-700">
-            <span className="font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
-            {renderStars(averageRating)}
-            <span className="text-gray-500">({reviewCount})</span>
-          </div>
-        )}
-
-        {(trail.created_by || trail.expert_name) && (
-          <p className="mb-3 text-xs font-medium text-blue-600">
-            Added by: {trail.expert_name || trail.created_by}
-          </p>
-        )}
-        <div className='mb-2 flex flex-wrap items-center gap-2' />
-        {trail.description && (
-          <p className="mb-3 line-clamp-2 text-sm text-gray-700">
-            {trail.description}
-          </p>
-        )}
-        {(trail.onViewMap ||
-          komootNavigateUrl ||
-          trail.onRequestTrail ||
-          trail.onCreateEvent ||
-          trail.onCancelRequest ||
-          trail.onDelete ||
-          trail.onHide ||
-          trail.onUnhide ||
-          trail.onEdit) && (
-          <div className="mt-4 border-t border-gray-200 pt-3">
-            <div className="relative z-20 flex flex-wrap items-center gap-2">
-              {trail.onCreateEvent && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trail.onCreateEvent?.();
-                  }}
-                  className="rounded-md border border-indigo-300 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
-                  title="Create an event using this trail"
-                >
-                  Create Event
-                </button>
-              )}
-              {trail.onViewMap && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trail.onViewMap?.();
-                  }}
-                  className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-                  title="Open this trail in map modal"
-                >
-                  View Map
-                </button>
-              )}
-              {images.length > 0 && trail.onOpenImageGallery && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trail.onOpenImageGallery?.();
-                  }}
-                  className="rounded-md border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800 hover:bg-violet-100"
-                  title="Open trail images gallery"
-                >
-                  Photos
-                </button>
-              )}
-              {komootNavigateUrl && (
-                <a
-                  href={komootNavigateUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(event) => event.stopPropagation()}
-                  className="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
-                  title="Open this trail in Komoot"
-                >
-                  Navigate
-                </a>
-              )}
-              {trail.onRequestTrail && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trail.onRequestTrail?.();
-                  }}
-                  className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${
-                    trail.isRequested
-                      ? 'border-amber-300 bg-amber-50 text-amber-800'
-                      : 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
-                  }`}
-                  title={
-                    trail.isRequested
-                      ? 'Trail requested'
-                      : 'Request this trail activity with preferred expert/date'
-                  }
-                >
-                  {trail.isRequested ? 'Trail Requested' : 'Want to ride with a local pro?'}
-                </button>
-              )}
-              {trail.onCancelRequest && trail.isRequested && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trail.onCancelRequest?.();
-                  }}
-                  className="rounded-md border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
-                  title="Cancel your trail request"
-                >
-                  Cancel Request
-                </button>
-              )}
-              {/* Hidden badge indicator */}
-              {trail.is_hidden && (
-                <span className="rounded-full bg-gray-200 px-2 py-1 text-[10px] font-semibold text-gray-600">
-                  Hidden
-                </span>
-              )}
-              {trail.onEdit && (
-                <button
-                  type="button"
-                  disabled={
-                    trail.deleteLoading ||
-                    trail.hideLoading ||
-                    trail.unhideLoading ||
-                    trail.editLoading
-                  }
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trail.onEdit?.();
-                  }}
-                  className="rounded-md border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 hover:bg-sky-100 disabled:opacity-60 disabled:cursor-not-allowed"
-                  title="Edit trail details"
-                >
-                  {trail.editLoading ? 'Opening...' : 'Edit'}
-                </button>
-              )}
-              {trail.onUnhide && trail.is_hidden && (
-                <button
-                  type="button"
-                  disabled={
-                    trail.unhideLoading ||
-                    trail.deleteLoading ||
-                    trail.hideLoading
-                  }
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trail.onUnhide?.();
-                  }}
-                  className="rounded-md border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800 hover:bg-green-100 disabled:opacity-60 disabled:cursor-not-allowed"
-                  title="Make this trail visible again"
-                >
-                  {trail.unhideLoading ? 'Unhiding...' : 'Unhide'}
-                </button>
-              )}
-              {trail.onHide && !trail.is_hidden && (
-                <button
-                  type="button"
-                  disabled={
-                    trail.hideLoading ||
-                    trail.deleteLoading ||
-                    trail.unhideLoading
-                  }
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trail.onHide?.();
-                  }}
-                  className="rounded-md border border-yellow-300 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-800 hover:bg-yellow-100 disabled:opacity-60 disabled:cursor-not-allowed"
-                  title="Hide this trail from public view"
-                >
-                  {trail.hideLoading ? 'Hiding...' : 'Hide'}
-                </button>
-              )}
-              {trail.onDelete && (
-                <button
-                  type="button"
-                  disabled={
-                    trail.deleteLoading ||
-                    trail.hideLoading ||
-                    trail.unhideLoading
-                  }
-                  onClick={(event) => {
-                    event.preventDefault();
-                    if (
-                      confirm(
-                        'Are you sure you want to delete this trail? This action cannot be undone.',
-                      )
-                    ) {
-                      trail.onDelete?.();
-                    }
-                  }}
-                  className="rounded-md border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-800 hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"
-                  title="Delete this trail permanently"
-                >
-                  {trail.deleteLoading ? 'Deleting...' : 'Delete'}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
         </div>
       </div>
     </article>

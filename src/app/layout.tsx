@@ -68,7 +68,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0f172a',
+  themeColor: '#ffffff',
 };
 
 export default async function RootLayout({
@@ -86,8 +86,8 @@ export default async function RootLayout({
               (function() {
                 try {
                   var stored = localStorage.getItem('mtb_theme');
-                  // Default to dark unless user explicitly chose light.
-                  var theme = (stored === 'dark' || stored === 'light') ? stored : 'dark';
+                  // Default to light unless user explicitly chose dark.
+                  var theme = (stored === 'dark' || stored === 'light') ? stored : 'light';
                   if (theme === 'dark') document.documentElement.classList.add('dark');
                   document.documentElement.style.colorScheme = theme;
                 } catch (e) {}

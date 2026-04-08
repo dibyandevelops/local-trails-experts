@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import JoinAdventureButton from '@/components/home/join-adventure-button';
+import RideWithLocalExpertsCta from '@/components/home/ride-with-local-experts-cta';
 import { COMMUNITY_NAME } from '@/lib/branding';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 // import PhoneVerifyToast from '@/components/phone-verify-toast';
@@ -17,10 +18,10 @@ export default function Home() {
           <div className="text-left">
             <div className="mb-4 flex flex-wrap gap-2">
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Best Nepal Cities
+                Nepal Trails
               </span>
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Local Trail Hubs
+                Local Experts
               </span>
               {EXPERTS_BETA_ENABLED && (
                 <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
@@ -28,19 +29,18 @@ export default function Home() {
                 </span>
               )}
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                For the Community, By the Community
+                Community First
               </span>
               <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Boost Local Tourism & Economy
+                Support Local Tourism
               </span>
             </div>
             <h1 className="mb-4 text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl lg:text-6xl">
-              Find the best trails across Nepal’s top cities.
+              Find trails and local guides across Nepal.
             </h1>
             <p className="mb-6 max-w-xl text-base text-gray-600 dark:text-gray-300 md:text-lg">
-              Explore curated MTB rides and trail runs with clear difficulty, elevation,
-              and local tips. Built to map Nepal trails for everyone while supporting
-              local experts, tourism, and trail-building efforts in the hills.
+              Search by place, view clear trail details, and join rides with local experts.
+              We keep trail info simple, practical, and community-driven.
             </p>
             <div className="mb-6 flex flex-wrap gap-3">
               <Link
@@ -62,23 +62,29 @@ export default function Home() {
                 Cycle Hubs
               </Link>
               <JoinAdventureButton className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base" />
+              <Link
+                href="/trails"
+                className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-emerald-300 bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/30 md:text-base"
+              >
+                Request Trail Ride
+              </Link>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Featured City</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Valley Trails</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Kathmandu Routes</p>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Featured City</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Lakeside Routes</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Nepal Wide</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Popular Routes</p>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Local Experts</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Verified Hosts</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Guides & Coaches</p>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Trail Intel</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Updated Weekly</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Trail Updates</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Latest Conditions</p>
               </div>
             </div>
           </div>
@@ -86,20 +92,20 @@ export default function Home() {
           <div className="space-y-4">
             <div className="rounded-2xl border border-emerald-200/70 bg-white/90 p-5 shadow-sm dark:border-emerald-900 dark:bg-slate-900/90">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                What you can do
+                Start Here
               </p>
               <div className="mt-3 space-y-2 text-sm text-gray-700 dark:text-gray-200">
                 <div className="flex items-start gap-2">
                   <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
-                  Explore curated trails with elevation, difficulty, and local insights.
+                  Browse trails with distance, climb, and difficulty.
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
-                  Join expert-led events or request private coaching sessions.
+                  Join group rides or training events.
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
-                  Connect with verified hosts for safe, local-first adventures.
+                  Request a custom ride with a local expert.
                 </div>
               </div>
             </div>
@@ -113,11 +119,10 @@ export default function Home() {
                 </p>
               )}
               <h3 className="mt-3 text-lg font-semibold">
-                Turn your local knowledge into a premium outdoor experience.
+                Turn your local trail knowledge into events.
               </h3>
               <p className="mt-2 text-sm text-emerald-100">
-                Host paid events, training blocks, and private sessions with flexible pricing and
-                verified expert status.
+                Create rides, organize training sessions, and grow your local community.
               </p>
               <Link
                 href="/experts/join"
@@ -130,31 +135,33 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="reveal reveal-2 grid gap-6 md:grid-cols-3">
+      <section className="reveal reveal-2 space-y-6">
         <div className="reveal reveal-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
             Riders & Adventurers
           </span>
           <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Find trails that match your pace and ambitions.
+            Find a trail that fits your level.
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Join rides led by locals who know the terrain, weather windows,
-            and hidden viewpoints.
+            See the key details first, then decide where to ride.
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              MTB trail rides and guided routes across Nepal.
+              MTB and mixed-surface routes across Nepal.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Community-led routes with local cultural stops.
+              Community-led rides in local areas.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Trail running sessions on iconic ridgelines.
+              Training and skill-based rides.
             </div>
+          </div>
+          <div className="mt-5">
+            <RideWithLocalExpertsCta />
           </div>
         </div>
 
@@ -163,23 +170,23 @@ export default function Home() {
             Cycle Hubs & Support
           </span>
           <h2 className="mt-3 text-lg font-semibold">
-            Discover trusted bike shops, gear help, and ride-day essentials.
+            Find bike shops, service points, and ride support.
           </h2>
           <p className="mt-2 text-sm text-emerald-100">
-            Find nearby cycle hubs for tune-ups, rentals, accessories, and support before your trail day.
+            Use Cycle Hubs to locate repairs, parts, and pre-ride help.
           </p>
           <div className="mt-4 space-y-2 text-sm text-emerald-100">
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              City-based hubs with map view and directions.
+              Map-based shop listings with directions.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              Community-driven store listings with admin moderation.
+              Community listings with admin review.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              Easy way for local stores to request inclusion.
+              Simple form for stores to join.
             </div>
           </div>
           <Link
@@ -195,23 +202,23 @@ export default function Home() {
             Nepal Focus
           </span>
           <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Curated routes and events across Nepal’s trail regions.
+            One place for trails, rides, and local guidance.
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Discover verified routes across Nepal with local guides who know the terrain.
+            Built for Nepal riders who want clear trail information without extra noise.
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Filter by city, sport, date, and difficulty.
+              Filter by place, category, and difficulty.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Review trail details and elevation profiles.
+              Check distance, climb, and map quickly.
             </div>
             <div className="flex items-start gap-2">
               <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Book and pay locally using QR-based options.
+              Join rides and manage booking in one flow.
             </div>
           </div>
         </div>
@@ -224,11 +231,11 @@ export default function Home() {
               Project Purpose
             </span>
             <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Nepal Trail Hub: map trails, support experts, build future routes.
+              Why this platform exists
             </h2>
             <p className="mt-3 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-              LocoXperts helps riders discover trails, helps experts grow their local services,
-              and channels sponsor/community support into mapping, signage, and on-ground trail work.
+              We help riders find trails, help experts run rides, and keep the platform running
+              with sponsor and community support.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
@@ -254,8 +261,7 @@ export default function Home() {
           <div className="w-full max-w-sm rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-600 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-300">
             <p className="font-semibold text-gray-900 dark:text-gray-100">Built by {COMMUNITY_NAME}</p>
             <p className="mt-2">
-              Community-first operations with local experts, stores, and supporters working together
-              to keep Nepal trails active, safer, and easier to discover.
+              Local experts, riders, stores, and supporters working together to keep Nepal trails active and easier to discover.
             </p>
           </div>
         </div>
@@ -267,11 +273,10 @@ export default function Home() {
             Training & Performance
           </span>
           <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Structured coaching sessions with local professionals.
+            Training rides with local coaches.
           </h2>
           <p className="mt-3 max-w-xl text-sm text-gray-600 dark:text-gray-300">
-            Browse training-focused events for cycling, trail running, skills coaching,
-            and endurance prep built by verified coaches in Nepal.
+            Join skill rides, endurance sessions, and guided practice rides.
           </p>
           <Link
             href="/events?sport=training"
@@ -281,8 +286,7 @@ export default function Home() {
           </Link>
         </div>
         <div className="max-w-xs rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-500 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-400">
-          Weather-aware scheduling, safety updates, and offline-friendly experiences
-          are part of the platform roadmap.
+          We are continuously improving safety updates, route quality, and ride planning tools.
         </div>
       </section>
     </div>

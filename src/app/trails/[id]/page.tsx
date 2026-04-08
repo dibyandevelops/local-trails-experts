@@ -308,6 +308,7 @@ const TrailPage: React.FunctionComponent = () => {
   const [sportSafetyModalOpen, setSportSafetyModalOpen] = useState(false);
   const [hazardModalOpen, setHazardModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
     if (typeof window === 'undefined') return 'map';
     const saved = window.localStorage.getItem('mtb_map_style_mode');
@@ -602,6 +603,8 @@ const TrailPage: React.FunctionComponent = () => {
   const canUploadRoute = currentUser?.role === 'admin';
   const canFlagHazard = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canUploadPhotos = canManageTrail;
+  const canCreateEvent = currentUser?.role === 'admin' || currentUser?.role === 'expert';
+  const showActionMenu = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canRequestTrail = currentUser?.role === 'participant';
   const existingTrailRequest = participantRequests.find((request) => request.trail_id === trailId);
   const hasRequestedTrail = Boolean(existingTrailRequest);
@@ -833,6 +836,34 @@ const TrailPage: React.FunctionComponent = () => {
     }
   };
 
+  const handleOpenRequestRide = () => {
+    if (loadingCurrentUser) {
+      setRequestMessage('Checking your account. Please try again in a second.');
+      return;
+    }
+    if (!currentUser) {
+      const next =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : `/trails/${trail.id}`;
+      window.dispatchEvent(
+        new CustomEvent('open-register', {
+          detail: {
+            message: 'Create a participant account to request a trail activity.',
+            next,
+          },
+        })
+      );
+      return;
+    }
+    if (hasRequestedTrail) {
+      setRequestMessage('You have already requested this trail.');
+      return;
+    }
+    setRequestMessage(null);
+    setRequestModalOpen(true);
+  };
+
   const handleBackToTrails = () => {
     const lastListUrl = sessionStorage.getItem(TRAILS_LAST_URL_KEY);
     if (lastListUrl) {
@@ -846,6 +877,17 @@ const TrailPage: React.FunctionComponent = () => {
     router.push('/trails', { scroll: false });
   };
   const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
+  const trailConsiderations = [
+    trail.is_hazardous
+      ? `Hazard alert: ${trail.hazard_note || 'check latest conditions before riding.'}`
+      : 'No active hazard alert, but ride with normal caution.',
+    ...(trail.safety_labels || []).slice(0, 3).map((label) => getSafetyLabelText(label)),
+    trail.difficulty === 'hard'
+      ? 'Hard rating: expect demanding sections and sustained effort.'
+      : trail.difficulty === 'medium'
+        ? 'Medium rating: suitable for riders with regular off-road experience.'
+        : 'Easy rating: suitable for most beginners with basic fitness.',
+  ];
 
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-0.5 text-amber-500">
@@ -858,74 +900,110 @@ const TrailPage: React.FunctionComponent = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-8">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={handleBackToTrails}
-          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          ← Back to trails
-        </button>
-        <div className="flex flex-wrap items-center gap-2">
-          {isAdmin && (
-            <ThemedDropdown
-              label="Admin Actions"
-              triggerClassName="rounded-full border-transparent bg-green-700 px-4 py-2 text-sm font-semibold text-white shadow-none hover:bg-green-800 focus-visible:ring-green-300 dark:text-white"
-              items={[
-                {
-                  label: uploading ? 'Uploading route...' : 'Upload GPX Route',
-                  onSelect: () => fileInputRef.current?.click(),
-                },
-                ...(hasRoute
+    <div className="container mx-auto px-3 py-5 pb-24 sm:px-4 sm:py-8 sm:pb-8">
+      <div className="mb-5 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={handleBackToTrails}
+            className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ← Back to trails
+          </button>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={copyTrailLink}
+              className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Share
+            </button>
+            {showActionMenu && (
+              <ThemedDropdown
+                label="More"
+                hideCaret
+                triggerContent={
+                  <svg
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                    className="h-5 w-5 fill-slate-800 dark:fill-slate-200"
+                  >
+                    <circle cx="10" cy="4" r="1.6" />
+                    <circle cx="10" cy="10" r="1.6" />
+                    <circle cx="10" cy="16" r="1.6" />
+                  </svg>
+                }
+                triggerClassName="shrink-0 h-10 w-10 justify-center rounded-full border border-transparent bg-transparent px-0 py-0 text-xl font-bold text-slate-800 hover:bg-slate-100/70 focus-visible:ring-green-300 dark:text-slate-200 dark:hover:bg-slate-800/60"
+                items={[
+                ...(isAdmin
                   ? [
                       {
-                        label: removeRouteMutation.isPending
-                          ? 'Removing...'
-                          : 'Remove GPX Route',
-                        onSelect: async () => {
-                          const confirmed = window.confirm(
-                            'Remove the GPX route for this trail?'
-                          );
-                          if (!confirmed) return;
-                          await removeRouteMutation.mutateAsync();
-                        },
-                        disabled: removeRouteMutation.isPending,
+                        label: uploading ? 'Uploading route...' : 'Upload GPX Route',
+                        onSelect: () => fileInputRef.current?.click(),
+                      },
+                      ...(hasRoute
+                        ? [
+                            {
+                              label: removeRouteMutation.isPending
+                                ? 'Removing...'
+                                : 'Remove GPX Route',
+                              onSelect: async () => {
+                                const confirmed = window.confirm(
+                                  'Remove the GPX route for this trail?'
+                                );
+                                if (!confirmed) return;
+                                await removeRouteMutation.mutateAsync();
+                              },
+                              disabled: removeRouteMutation.isPending,
+                            },
+                          ]
+                        : []),
+                      {
+                        label: 'Manage Sport & Safety',
+                        onSelect: () => setSportSafetyModalOpen(true),
+                      },
+                      {
+                        label: 'Manage Hazard Status',
+                        onSelect: () => setHazardModalOpen(true),
+                      },
+                      {
+                        label: 'Edit Trail',
+                        onSelect: () => router.push(`/trails/create?trailId=${trailId}`),
+                      },
+                      {
+                        label:
+                          deleteTrailMutation.isPending || hideTrailMutation.isPending
+                            ? 'Deleting...'
+                            : 'Delete Trail',
+                        onSelect: handleDeleteTrail,
+                        disabled: deleteTrailMutation.isPending || hideTrailMutation.isPending,
+                        separatorBefore: true,
+                        tone: 'danger' as const,
                       },
                     ]
                   : []),
-                {
-                  label: 'Manage Sport & Safety',
-                  onSelect: () => setSportSafetyModalOpen(true),
-                },
-                {
-                  label: 'Manage Hazard Status',
-                  onSelect: () => setHazardModalOpen(true),
-                },
-                {
-                  label: 'Edit Trail',
-                  onSelect: () => router.push(`/trails/create?trailId=${trailId}`),
-                },
-                {
-                  label:
-                    deleteTrailMutation.isPending || hideTrailMutation.isPending
-                      ? 'Deleting...'
-                      : 'Delete Trail',
-                  onSelect: handleDeleteTrail,
-                  disabled: deleteTrailMutation.isPending || hideTrailMutation.isPending,
-                  separatorBefore: true,
-                  tone: 'danger',
-                },
-              ]}
-            />
-          )}
-          <button
-            type="button"
-            onClick={copyTrailLink}
-            className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            Share
-          </button>
+                ...(canUploadPhotos
+                  ? [
+                      {
+                        label: photoUploading ? 'Uploading photos...' : 'Upload Trail Photos',
+                        onSelect: () => photoInputRef.current?.click(),
+                      },
+                    ]
+                  : []),
+                ...(canCreateEvent
+                  ? [
+                      {
+                        label: 'Create Event',
+                        onSelect: () => setCreateEventOpen(true),
+                      },
+                    ]
+                  : []),
+                ]}
+              />
+            )}
+          </div>
+        </div>
+        <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
           {trailImages.length > 0 && (
             <button
               type="button"
@@ -933,64 +1011,17 @@ const TrailPage: React.FunctionComponent = () => {
                 setGalleryInitialIndex(0);
                 setGalleryModalOpen(true);
               }}
-              className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               View Trail Photos
-            </button>
-          )}
-          {canUploadPhotos && (
-            <label className="cursor-pointer rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-              {photoUploading ? 'Uploading Photos...' : 'Upload Trail Photos'}
-            </label>
-          )}
-          {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
-            <button
-              type="button"
-              onClick={() => setCreateEventOpen(true)}
-              className="rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-100"
-            >
-              Create Event
             </button>
           )}
           {canRequestTrail && (
             <button
               type="button"
               disabled={loadingCurrentUser}
-              onClick={() => {
-                if (loadingCurrentUser) {
-                  setRequestMessage('Checking your account. Please try again in a second.');
-                  return;
-                }
-                if (!currentUser) {
-                  const next =
-                    typeof window !== 'undefined'
-                      ? `${window.location.pathname}${window.location.search}`
-                      : `/trails/${trail.id}`;
-                  window.dispatchEvent(
-                    new CustomEvent('open-register', {
-                      detail: {
-                        message: 'Create a participant account to request a trail activity.',
-                        next,
-                      },
-                    })
-                  );
-                  return;
-                }
-                if (hasRequestedTrail) {
-                  setRequestMessage('You have already requested this trail.');
-                  return;
-                }
-                setRequestMessage(null);
-                setRequestModalOpen(true);
-              }}
-              className="rounded-full border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={handleOpenRequestRide}
+              className="shrink-0 rounded-full border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {hasRequestedTrail ? 'Trail Requested' : 'Want to ride with a local pro?'}
             </button>
@@ -1009,7 +1040,7 @@ const TrailPage: React.FunctionComponent = () => {
                   );
                 }
               }}
-              className="rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="shrink-0 rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {cancelRequestMutation.isPending ? 'Cancelling...' : 'Cancel Request'}
             </button>
@@ -1034,6 +1065,16 @@ const TrailPage: React.FunctionComponent = () => {
           className="hidden"
         />
       )}
+      {canUploadPhotos && (
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handlePhotoUpload}
+          className="hidden"
+        />
+      )}
 
       <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-lg shadow-emerald-100/60 dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 dark:shadow-emerald-950/30">
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
@@ -1048,6 +1089,11 @@ const TrailPage: React.FunctionComponent = () => {
               <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
                 Trail profile
               </span>
+              {trail.sport_type && (
+                <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
+                  {getSportLabel(trail.sport_type)}
+                </span>
+              )}
               {trail.status === 'pending' && (
                 <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
                   Pending
@@ -1088,13 +1134,21 @@ const TrailPage: React.FunctionComponent = () => {
                   Navigate in Komoot
                 </a>
               )}
-              {trail.description && (
-                <a
-                  href="#route-guide"
-                  className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
+              <a
+                href="#route-guide"
+                className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
+              >
+                Route guide
+              </a>
+              {canRequestTrail && (
+                <button
+                  type="button"
+                  onClick={handleOpenRequestRide}
+                  disabled={loadingCurrentUser}
+                  className="inline-flex items-center justify-center rounded-full border border-green-700 bg-white/90 px-4 py-2 text-xs font-semibold text-green-700 transition duration-200 hover:-translate-y-0.5 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-500 dark:bg-slate-900/70 dark:text-green-200 dark:hover:bg-green-900/30"
                 >
-                  Route guide
-                </a>
+                  {hasRequestedTrail ? 'Trail Requested' : 'Request Ride with Expert'}
+                </button>
               )}
             </div>
 
@@ -1282,11 +1336,11 @@ const TrailPage: React.FunctionComponent = () => {
         </section>
       )}
 
-      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {(routeData?.totalDistance || trail.distance_km) && (
-          <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-100">
-            <span className="rounded-full bg-blue-100 p-2 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+          <div className="flex min-h-[106px] items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-gray-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:min-h-[126px] sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+            <span className="rounded-full bg-emerald-100 p-3 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+              <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
                 <path
                   d="M4 12a8 8 0 1 1 16 0 8 8 0 0 1-16 0Zm8-6a6 6 0 0 0 0 12h.5v-6.2l3.6-2.4-.9-1.4-3.2 2.1H12V6Z"
                   fill="currentColor"
@@ -1294,10 +1348,10 @@ const TrailPage: React.FunctionComponent = () => {
               </svg>
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
                 Distance
               </p>
-              <p className="text-sm font-semibold">
+              <p className="text-lg font-semibold">
                 {routeData?.totalDistance
                   ? `${routeData.totalDistance.toFixed(2)} km`
                   : `${trail.distance_km} km`}
@@ -1306,9 +1360,9 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         )}
         {(routeData?.elevationGain || trail.elevation_gain_m) && (
-          <div className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3 text-purple-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-100">
-            <span className="rounded-full bg-purple-100 p-2 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+          <div className="flex min-h-[106px] items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-gray-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:min-h-[126px] sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+            <span className="rounded-full bg-emerald-100 p-3 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+              <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
                 <path
                   d="M3 18h18l-6-10-4 6-3-4-5 8Zm9-8 2 3h-4l2-3Z"
                   fill="currentColor"
@@ -1316,10 +1370,10 @@ const TrailPage: React.FunctionComponent = () => {
               </svg>
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-purple-700 dark:text-purple-300">
-                Total ascent
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                Climb
               </p>
-              <p className="text-sm font-semibold">
+              <p className="text-lg font-semibold">
                 {routeData?.elevationGain
                   ? `+${routeData.elevationGain.toFixed(0)} m`
                   : `${trail.elevation_gain_m} m`}
@@ -1327,28 +1381,10 @@ const TrailPage: React.FunctionComponent = () => {
             </div>
           </div>
         )}
-        {routeData?.elevationLoss && (
-          <div className="flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
-            <span className="rounded-full bg-rose-100 p-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-                <path
-                  d="M3 6h18l-6 10-4-6-3 4-5-8Zm9 8-2-3h4l-2 3Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">
-                Descent
-              </p>
-              <p className="text-sm font-semibold">-{routeData.elevationLoss.toFixed(0)} m</p>
-            </div>
-          </div>
-        )}
         {trail.estimated_time_hours && (
-          <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
-            <span className="rounded-full bg-amber-100 p-2 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+          <div className="flex min-h-[106px] items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-gray-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:min-h-[126px] sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+            <span className="rounded-full bg-emerald-100 p-3 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+              <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
                 <path
                   d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 5h-2v6l4.5 2.7 1-1.6-3.5-2.1V7Z"
                   fill="currentColor"
@@ -1356,17 +1392,17 @@ const TrailPage: React.FunctionComponent = () => {
               </svg>
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                Ride time
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                Time
               </p>
-              <p className="text-sm font-semibold">~{trail.estimated_time_hours} hrs</p>
+              <p className="text-lg font-semibold">~{trail.estimated_time_hours} hrs</p>
             </div>
           </div>
         )}
         {trail.difficulty && (
-          <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
-            <span className="rounded-full bg-emerald-100 p-2 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+          <div className="flex min-h-[106px] items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-gray-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:min-h-[126px] sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+            <span className="rounded-full bg-emerald-100 p-3 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+              <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
                 <path
                   d="M4 19h16l-6-10-4 6-3-4-3 8Zm9-7 2 3h-4l2-3Z"
                   fill="currentColor"
@@ -1374,49 +1410,48 @@ const TrailPage: React.FunctionComponent = () => {
               </svg>
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-                Difficulty
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                Level
               </p>
-              <p className="text-sm font-semibold">{trail.difficulty}</p>
-            </div>
-          </div>
-        )}
-        {trail.sport_type && (
-          <div className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sky-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-100">
-            <span className="rounded-full bg-sky-100 p-2 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-                <path
-                  d="M5 12a7 7 0 1 1 14 0 7 7 0 0 1-14 0Zm7-9a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">
-                Sport type
-              </p>
-              <p className="text-sm font-semibold">{getSportLabel(trail.sport_type)}</p>
+              <p className="text-lg font-semibold">{trail.difficulty}</p>
             </div>
           </div>
         )}
       </section>
 
-      {trail.description && (
-        <section
-          id="route-guide"
-          className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-            Route guide
-          </p>
-          <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
-            What to expect on this trail
-          </h2>
-          <p className="mt-3 text-sm leading-8 tracking-[0.01em] text-gray-700 dark:text-slate-200">
-            {trail.description}
-          </p>
-        </section>
-      )}
+      <section
+        id="route-guide"
+        className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      >
+        <div className="grid gap-7 lg:grid-cols-[1.3fr_0.7fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              Route guide
+            </p>
+            <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
+              What to expect on this trail
+            </h2>
+            <p className="mt-3 text-[15px] leading-8 tracking-[0.01em] text-gray-700 dark:text-slate-200">
+              {trail.description?.trim() || 'Route description will be added soon.'}
+            </p>
+          </div>
+          <aside className="space-y-4">
+            <div className="rounded-xl border border-amber-100 bg-amber-50/70 p-5 dark:border-amber-900/60 dark:bg-amber-950/30">
+              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                Considerations
+              </h3>
+              <ul className="mt-2 space-y-2 text-sm text-amber-900/90 dark:text-amber-100/90">
+                {trailConsiderations.slice(0, 4).map((item, index) => (
+                  <li key={`trail-consideration-${index}`} className="flex gap-2">
+                    <span className="mt-0.5">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </section>
 
       <div id="trail-map" className="mt-6">
         <div className="mb-3 flex items-center justify-between">
@@ -1675,31 +1710,9 @@ const TrailPage: React.FunctionComponent = () => {
         )}
         <button
           type="button"
-          onClick={() => {
-            if (loadingCurrentUser) return;
-            if (!currentUser) {
-              const next =
-                typeof window !== 'undefined'
-                  ? `${window.location.pathname}${window.location.search}`
-                  : `/trails/${trail.id}`;
-              window.dispatchEvent(
-                new CustomEvent('open-register', {
-                  detail: {
-                    message: 'Create a participant account to request a trail activity.',
-                    next,
-                  },
-                })
-              );
-              return;
-            }
-            if (hasRequestedTrail) {
-              setRequestMessage('You have already requested this trail.');
-              return;
-            }
-            setRequestMessage(null);
-            setRequestModalOpen(true);
-          }}
-          className="flex-1 rounded-lg border border-green-700 px-3 py-2 text-xs font-semibold text-green-700"
+          onClick={handleOpenRequestRide}
+          disabled={loadingCurrentUser}
+          className="flex-1 rounded-lg border border-green-700 px-3 py-2 text-xs font-semibold text-green-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {hasRequestedTrail ? 'Trail Requested' : 'Want to ride with a local pro?'}
         </button>

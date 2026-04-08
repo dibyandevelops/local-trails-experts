@@ -132,11 +132,10 @@ export default function ExpertJoinPage() {
             </span>
           </div>
           <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
-            Become a Verified Sports Expert
+            Apply as a Local Expert
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300 sm:text-base">
-            Share your local knowledge and host guided MTB rides, hikes, trail runs, and
-            performance training sessions for riders and travelers.
+            Share your local trail knowledge and host rides or training sessions.
           </p>
           {EXPERTS_BETA_ENABLED && (
             <p className="mt-2 max-w-2xl text-xs font-medium text-amber-700 dark:text-amber-300">
@@ -149,20 +148,20 @@ export default function ExpertJoinPage() {
       <section className="grid md:grid-cols-2 gap-8">
         <div className="rounded-2xl border border-hero-border/70 bg-white/90 p-6 shadow-sm dark:bg-slate-900/80">
           <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">
-            Why get a <span className="text-hero-pill-text">Verified Expert Badge</span>?
+            Why apply for a <span className="text-hero-pill-text">Verified badge</span>?
           </h2>
           <ul className="space-y-3 text-sm text-gray-700 dark:text-slate-200">
             <li className="flex gap-2">
               <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
-              <span>Stand out in search results for your city and sport categories.</span>
+              <span>Show up clearly in expert search results.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
-              <span>Build trust with visiting riders, runners, and hikers.</span>
+              <span>Build trust with riders and visitors.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
-              <span>Access upcoming features like expert-only events and group bookings.</span>
+              <span>Get access to expert features as they roll out.</span>
             </li>
           </ul>
         </div>
@@ -171,19 +170,16 @@ export default function ExpertJoinPage() {
           <div>
             <h3 className="text-xl font-semibold mb-3">Who is this for?</h3>
             <p className="text-sm text-green-100 mb-4">
-              Local MTB guides, hiking leaders, trail runners, cycling coaches,
-              and outdoor professionals who:
+              This is for local guides and coaches who:
             </p>
             <ul className="space-y-2 text-sm text-green-100">
-              <li>• Know the local routes, weather, and safety practices</li>
-              <li>• Have guiding, coaching, or competition experience</li>
-              <li>• Want to host paid events and training sessions</li>
+              <li>• Know local trails and weather conditions</li>
+              <li>• Have guiding, coaching, or riding experience</li>
+              <li>• Want to host rides or training sessions</li>
             </ul>
           </div>
           <p className="mt-6 text-xs text-green-200">
-            You can start with a simple application. We may contact you for
-            additional verification (references or links) before granting the
-            badge.
+            Start with this form. We may ask for extra details before approval.
           </p>
         </div>
       </section>
@@ -198,8 +194,7 @@ export default function ExpertJoinPage() {
           )}
         </h2>
         <p className="text-sm text-gray-600 mb-6">
-          Tell us about your experience guiding, coaching, or leading outdoor
-          activities. This helps us keep the community safe and high-quality.
+          Tell us about your experience. This helps us review your profile and keep the community safe.
         </p>
         {EXPERTS_BETA_ENABLED && (
           <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
