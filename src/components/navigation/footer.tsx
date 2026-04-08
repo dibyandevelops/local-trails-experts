@@ -33,7 +33,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
   });
 
   return (
-    <footer className="mt-10 border-t border-gray-200 bg-white/70 py-10 text-gray-700 backdrop-blur dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200">
+    <footer className="border-t border-gray-200 bg-white/70 py-10 text-gray-700 backdrop-blur dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200">
       <div className="container mx-auto grid gap-8 px-4 md:grid-cols-4 md:gap-10">
         <div className="space-y-2">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">

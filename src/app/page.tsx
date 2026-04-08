@@ -7,7 +7,7 @@ import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 export default function Home() {
   return (
-    <div className="space-y-14 md:space-y-16">
+    <div className="space-y-12 md:space-y-12">
       {/* <PhoneVerifyToast /> */}
       <section className="reveal reveal-1 relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-10 shadow-sm md:px-10 md:py-14">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-hero-glow/40 blur-3xl" />
@@ -135,7 +135,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="reveal reveal-2 space-y-6">
+      <section className="reveal reveal-2 grid gap-12">
         <div className="reveal reveal-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
             Riders & Adventurers
@@ -224,6 +224,31 @@ export default function Home() {
         </div>
       </section>
 
+
+
+      <section className="reveal reveal-7 flex flex-col items-center justify-between gap-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:flex-row md:p-10">
+        <div>
+          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+            Training & Performance
+          </span>
+          <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Training rides with local coaches.
+          </h2>
+          <p className="mt-3 max-w-xl text-sm text-gray-600 dark:text-gray-300">
+            Join skill rides, endurance sessions, and guided practice rides.
+          </p>
+          <Link
+            href="/events?sport=training"
+            className="mt-5 inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-800"
+          >
+            See training events
+          </Link>
+        </div>
+        <div className="max-w-xs rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-500 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-400">
+          We are continuously improving safety updates, route quality, and ride planning tools.
+        </div>
+      </section>
+
       <section className="reveal reveal-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:p-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
@@ -264,29 +289,6 @@ export default function Home() {
               Local experts, riders, stores, and supporters working together to keep Nepal trails active and easier to discover.
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="reveal reveal-7 flex flex-col items-center justify-between gap-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:flex-row md:p-10">
-        <div>
-          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-            Training & Performance
-          </span>
-          <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Training rides with local coaches.
-          </h2>
-          <p className="mt-3 max-w-xl text-sm text-gray-600 dark:text-gray-300">
-            Join skill rides, endurance sessions, and guided practice rides.
-          </p>
-          <Link
-            href="/events?sport=training"
-            className="mt-5 inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-800"
-          >
-            See training events
-          </Link>
-        </div>
-        <div className="max-w-xs rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-500 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-400">
-          We are continuously improving safety updates, route quality, and ride planning tools.
         </div>
       </section>
     </div>
