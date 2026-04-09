@@ -78,7 +78,6 @@ const icon = (
     priority
   />
 );
-const PARTICIPANT_ONBOARDING_DISMISSED_KEY = 'participant-onboarding-dismissed-user-id';
 
 function needsParticipantOnboarding(user: User | null) {
   if (!user || user.role !== 'participant') return false;
@@ -126,6 +125,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const hoverCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const searchParamsString = searchParams.toString();
 
   useEffect(() => {
     setMobileOpen(false);
@@ -171,22 +171,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       window.history.replaceState(null, '', nextUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.toString(), user?.id]);
+  }, [searchParams, searchParamsString, user?.id]);
 
   useEffect(() => {
     const onboarding = searchParams.get('onboarding');
     if (onboarding !== '1') return;
-    if (!user || user.role !== 'participant') return;
-
-    setParticipantOnboardingOpen(true);
-
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.delete('onboarding');
       const nextUrl = `${url.pathname}${url.search ? url.search : ''}${url.hash ? url.hash : ''}`;
       window.history.replaceState(null, '', nextUrl);
     }
-  }, [searchParams.toString(), user?.id, user?.role]);
+  }, [searchParams, searchParamsString, user?.id, user?.role]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -199,21 +195,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     window.addEventListener('open-register', handler);
     return () => window.removeEventListener('open-register', handler);
   }, [user]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!needsParticipantOnboarding(user)) return;
-
-    const dismissedForUser = sessionStorage.getItem(PARTICIPANT_ONBOARDING_DISMISSED_KEY);
-    const wasDismissedThisSession = dismissedForUser === user?.id;
-    const pendingFromSignup = localStorage.getItem('participant-onboarding-pending') === '1';
-    if (wasDismissedThisSession && !pendingFromSignup) return;
-
-    const timer = window.setTimeout(() => {
-      setParticipantOnboardingOpen(true);
-    }, 1600);
-    return () => window.clearTimeout(timer);
-  }, [user?.id, user?.role, user?.name, user?.phone, user?.city, user?.sports, user?.availability_weekdays]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -290,6 +271,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     user?.name?.trim()?.charAt(0).toUpperCase() ||
     user?.email?.charAt(0).toUpperCase() ||
     'U';
+  const showProfileReminder = needsParticipantOnboarding(user);
 
   return (
     <nav className="sticky top-0 z-30 border-b border-green-900/70 bg-gradient-to-r from-green-900 via-green-800 to-emerald-800 text-white shadow-lg backdrop-blur">
@@ -632,26 +614,32 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         notice={registerMessage}
         next={registerNext || undefined}
       />
+      {showProfileReminder && (
+        <div className="fixed bottom-3 right-3 z-40 max-w-[220px] rounded-full border border-amber-300/70 bg-amber-50/95 px-2.5 py-1.5 text-[11px] text-amber-900 shadow-lg backdrop-blur sm:bottom-4 sm:right-4 sm:max-w-xs sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs dark:border-amber-500/40 dark:bg-amber-950/90 dark:text-amber-100">
+          <button
+            type="button"
+            onClick={() => setParticipantOnboardingOpen(true)}
+            className="inline-flex items-center gap-1.5 text-left font-semibold hover:opacity-90"
+            aria-label="Complete profile"
+          >
+            <span aria-hidden="true">🧭</span>
+            <span className="line-clamp-1 sm:line-clamp-none">
+              Complete your profile
+            </span>
+          </button>
+        </div>
+      )}
       {user?.role === 'participant' && (
         <ParticipantOnboardingModal
           open={participantOnboardingOpen}
           onOpenChange={(open) => {
             setParticipantOnboardingOpen(open);
-            if (!open && typeof window !== 'undefined') {
-              localStorage.removeItem('participant-onboarding-pending');
-              if (needsParticipantOnboarding(user)) {
-                sessionStorage.setItem(PARTICIPANT_ONBOARDING_DISMISSED_KEY, user.id);
-              } else {
-                sessionStorage.removeItem(PARTICIPANT_ONBOARDING_DISMISSED_KEY);
-              }
-            }
           }}
           user={user}
           onCompleted={(updatedUser) => {
             queryClient.setQueryData(['me'], updatedUser);
             if (typeof window !== 'undefined') {
               localStorage.removeItem('participant-onboarding-pending');
-              sessionStorage.removeItem(PARTICIPANT_ONBOARDING_DISMISSED_KEY);
             }
             window.dispatchEvent(new Event('auth-changed'));
           }}
