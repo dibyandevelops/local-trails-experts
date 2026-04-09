@@ -15,6 +15,7 @@ import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
 import { fetchTrailById, updateTrail, uploadTrailRoute } from '@/services/trails/trails.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { apiClient } from '@/services/api/client';
+import StoreLocationPicker from '@/components/feature-components/store-locator/store-location-picker';
 
 type FormValues = {
   name: string;
@@ -22,6 +23,8 @@ type FormValues = {
   difficulty: Difficulty;
   sport_type: SportType;
   location: string;
+  latitude: string;
+  longitude: string;
   distance_km: string;
   elevation_gain_m: string;
   estimated_time_hours: string;
@@ -81,6 +84,8 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       difficulty: trail?.difficulty ?? 'easy',
       sport_type: (trail?.sport_type as SportType) ?? DEFAULT_TRAIL_SPORT,
       location: trail?.location ?? '',
+      latitude: toStringOrEmpty(trail?.latitude),
+      longitude: toStringOrEmpty(trail?.longitude),
       distance_km: toStringOrEmpty(trail?.distance_km),
       elevation_gain_m: toStringOrEmpty(trail?.elevation_gain_m),
       estimated_time_hours: toStringOrEmpty(trail?.estimated_time_hours),
@@ -122,6 +127,8 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
   const komootValue = watch('komoot_embed_url') || '';
   const nameValue = watch('name') || '';
   const locationValue = watch('location') || '';
+  const latitudeValue = watch('latitude') || '';
+  const longitudeValue = watch('longitude') || '';
   const sportValue = watch('sport_type');
   const difficultyValue = watch('difficulty');
   const distanceValue = watch('distance_km') || '';
@@ -229,6 +236,31 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
     setValue('safety_labels', next, { shouldDirty: true });
   };
 
+  const handlePickTrailLocation = async (next: { lat: string; lng: string }) => {
+    setValue('latitude', next.lat, { shouldDirty: true });
+    setValue('longitude', next.lng, { shouldDirty: true });
+    try {
+      const { data } = await apiClient.get<{ result?: { display_name?: string; address?: any } }>(
+        `/api/geo/nominatim/reverse?lat=${encodeURIComponent(next.lat)}&lon=${encodeURIComponent(next.lng)}`
+      );
+      const address = data?.result?.address || {};
+      const city =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.state ||
+        '';
+      const label =
+        data?.result?.display_name ||
+        [address.road, address.suburb, city].filter(Boolean).join(', ');
+      if (label) {
+        setValue('location', label, { shouldDirty: true });
+      }
+    } catch {
+      // keep the existing typed location if reverse lookup fails
+    }
+  };
+
   const onSubmit = (values: FormValues) => {
     setError(null);
     setNotice(null);
@@ -239,6 +271,8 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       difficulty: values.difficulty,
       sport_type: values.sport_type,
       location: values.location.trim(),
+      latitude: values.latitude ? Number(values.latitude) : null,
+      longitude: values.longitude ? Number(values.longitude) : null,
       // distance_km is derived from GPX; keep read-only on the form.
       elevation_gain_m: values.elevation_gain_m ? Number(values.elevation_gain_m) : null,
       estimated_time_hours: values.estimated_time_hours ? Number(values.estimated_time_hours) : null,
@@ -355,6 +389,22 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400"
             placeholder="City / area"
           />
+          <input type="hidden" {...register('latitude')} />
+          <input type="hidden" {...register('longitude')} />
+          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+            You can type manually or pick from the map.
+          </p>
+          <div className="mt-3">
+            <StoreLocationPicker
+              lat={latitudeValue}
+              lng={longitudeValue}
+              title="Pick trail location"
+              markerLabel="Trail"
+              onChange={(next) => {
+                void handlePickTrailLocation(next);
+              }}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -414,7 +464,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
             placeholder="Paste Komoot embed URL or iframe code"
           />
           <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-            Use Share → Embed in Komoot to get the embed code or URL.
+            Paste Komoot URL or full iframe embed code. We automatically extract the src URL.
           </p>
           {komootPreviewUrl && (
             <p

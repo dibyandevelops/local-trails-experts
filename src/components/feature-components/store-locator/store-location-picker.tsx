@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
@@ -10,15 +9,38 @@ type Props = {
   lat: string;
   lng: string;
   onChange: (next: { lat: string; lng: string }) => void;
+  title?: string;
+  markerLabel?: string;
 };
 
 const DEFAULT_CENTER = { longitude: 85.324, latitude: 27.7172, zoom: 11 };
+const PICKER_LIGHT_MAP_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors',
+    },
+  },
+  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+} as const;
 
-export default function StoreLocationPicker({ lat, lng, onChange }: Props) {
+export default function StoreLocationPicker({
+  lat,
+  lng,
+  onChange,
+  title = 'Pick location on map',
+  markerLabel = 'Store',
+}: Props) {
   const mapRef = useRef<MapRef | null>(null);
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>('map');
 
-  const mapStyle = useMemo(() => getMapStyle(mapStyleMode), [mapStyleMode]);
+  const mapStyle = useMemo(
+    () => (mapStyleMode === 'map' ? PICKER_LIGHT_MAP_STYLE : getMapStyle('satellite')),
+    [mapStyleMode]
+  );
   const markerLat = lat ? Number(lat) : null;
   const markerLng = lng ? Number(lng) : null;
 
@@ -52,7 +74,7 @@ export default function StoreLocationPicker({ lat, lng, onChange }: Props) {
     <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/30">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-          Pick location on map
+          {title}
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -104,7 +126,7 @@ export default function StoreLocationPicker({ lat, lng, onChange }: Props) {
           {markerLat !== null && markerLng !== null && (
             <Marker longitude={markerLng} latitude={markerLat} anchor="bottom">
               <div className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white shadow">
-                Store
+                {markerLabel}
               </div>
             </Marker>
           )}

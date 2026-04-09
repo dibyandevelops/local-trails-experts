@@ -168,7 +168,7 @@ export default function PendingTrailsPanel() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => router.push(`/trails/create?trailId=${trail.id}`)}
+                  onClick={() => router.push(`/upload?trailId=${trail.id}`)}
                   className="px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-800 text-xs font-semibold hover:bg-sky-100"
                 >
                   Edit

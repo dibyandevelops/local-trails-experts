@@ -46,6 +46,7 @@ export interface Trail {
   hazard_updated_at?: string | null;
   average_rating?: number | null;
   review_count?: number | null;
+  distance_from_user_km?: number | null;
   latitude: number | null;
   longitude: number | null;
   distance_km: number | null;

@@ -117,7 +117,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
               </Link>
             </li>
             <li>
-              <Link className="hover:underline" href="/trails/create">
+              <Link className="hover:underline" href="/upload">
                 Create trail
               </Link>
             </li>

@@ -33,6 +33,10 @@ export async function GET(request: NextRequest) {
     const difficulty = searchParams.get('difficulty');
     const location = searchParams.get('location');
     const sport = searchParams.get('sport');
+    const lat = parseOptionalNumber(searchParams.get('lat'));
+    const lng = parseOptionalNumber(searchParams.get('lng'));
+    const radiusKm = parseOptionalNumber(searchParams.get('radiusKm'));
+    const hasUserCoords = lat !== null && lng !== null;
     const sort = (searchParams.get('sort') || '').trim();
     const distanceMinRaw = searchParams.get('distanceMin');
     const distanceMaxRaw = searchParams.get('distanceMax');
@@ -46,6 +50,35 @@ export async function GET(request: NextRequest) {
     let whereClause = ' WHERE 1=1';
     const params: any[] = [];
     let paramIndex = 1;
+    let distanceExpr = 'NULL::double precision';
+    let distanceOrderBy = '';
+
+    if (hasUserCoords) {
+      const latParam = paramIndex++;
+      params.push(lat);
+      const lngParam = paramIndex++;
+      params.push(lng);
+      distanceExpr = `
+        6371 * acos(
+          LEAST(
+            1,
+            GREATEST(
+              -1,
+              cos(radians($${latParam})) * cos(radians(t.latitude)) *
+              cos(radians(t.longitude) - radians($${lngParam})) +
+              sin(radians($${latParam})) * sin(radians(t.latitude))
+            )
+          )
+        )
+      `;
+      distanceOrderBy = 'distance_from_user_km ASC NULLS LAST, t.name ASC';
+
+      if (radiusKm !== null && radiusKm > 0) {
+        whereClause += ` AND t.latitude IS NOT NULL AND t.longitude IS NOT NULL AND (${distanceExpr}) <= $${paramIndex}`;
+        params.push(radiusKm);
+        paramIndex++;
+      }
+    }
 
     // Temporary: hide local tours from the main listing.
     whereClause += ` AND t.sport_type NOT IN ('local_tour')`;
@@ -112,6 +145,8 @@ export async function GET(request: NextRequest) {
 
     const orderBy = (() => {
       switch (sort) {
+        case 'nearest':
+          return hasUserCoords ? distanceOrderBy : 't.name ASC';
         case 'name_desc':
           return 't.name DESC';
         case 'distance_asc':
@@ -140,6 +175,7 @@ export async function GET(request: NextRequest) {
         t.safety_labels,
         NULL::double precision AS latitude,
         NULL::double precision AS longitude,
+        ${distanceExpr} AS distance_from_user_km,
         t.distance_km,
         t.elevation_gain_m,
         t.estimated_time_hours,
@@ -256,6 +292,12 @@ export async function POST(request: NextRequest) {
     const elevationOverride = parseOptionalNumber(
       String(formData.get('elevation_gain_m') || '')
     );
+    const latitudeOverride = parseOptionalNumber(
+      String(formData.get('latitude') || '')
+    );
+    const longitudeOverride = parseOptionalNumber(
+      String(formData.get('longitude') || '')
+    );
 
     const rawSafety = String(formData.get('safety_labels') || '').trim();
     let safetyLabelsInput: unknown = [];
@@ -304,8 +346,8 @@ export async function POST(request: NextRequest) {
 
     const routeData = await parseGPX(await gpxFile.text());
     const firstPoint = routeData.coordinates[0];
-    const latitude = firstPoint?.latitude ?? null;
-    const longitude = firstPoint?.longitude ?? null;
+    const latitude = latitudeOverride ?? firstPoint?.latitude ?? null;
+    const longitude = longitudeOverride ?? firstPoint?.longitude ?? null;
     const distance_km = distanceOverride ?? routeData.totalDistance ?? null;
     const elevation_gain_m =
       elevationOverride ?? routeData.elevationGain ?? null;

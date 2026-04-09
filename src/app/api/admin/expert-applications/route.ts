@@ -239,7 +239,7 @@ export async function PATCH(request: NextRequest) {
           ctas: [
             { label: 'View expert profile', href: `${getAppUrl()}/experts/me`, variant: 'primary' },
             { label: 'Create an event', href: `${getAppUrl()}/events/create`, variant: 'secondary' },
-            { label: 'Create a trail', href: `${getAppUrl()}/trails/create`, variant: 'secondary' },
+            { label: 'Create a trail', href: `${getAppUrl()}/upload`, variant: 'secondary' },
           ],
         });
         await sendEmailSafe({

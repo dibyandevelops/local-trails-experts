@@ -805,7 +805,7 @@ export default function ExpertProfilePage() {
                       )}
                       <button
                         type="button"
-                        onClick={() => router.push(`/trails/create?trailId=${trail.id}`)}
+                        onClick={() => router.push(`/upload?trailId=${trail.id}`)}
                         className="ml-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                       >
                         Edit

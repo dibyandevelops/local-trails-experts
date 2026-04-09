@@ -53,7 +53,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       },
       {
         label: 'Create Trail',
-        href: '/trails/create',
+        href: '/upload',
         showFor: ['admin', 'expert'],
       }
     ],

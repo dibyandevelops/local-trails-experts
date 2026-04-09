@@ -1045,7 +1045,7 @@ function TrailsPageContent() {
             {(user?.role === 'admin' || user?.role === 'expert') && (
               <button
                 type="button"
-                onClick={() => router.push('/trails/create')}
+                onClick={() => router.push('/upload')}
                 className="rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-green-700"
               >
                 Create Trail
@@ -1353,7 +1353,7 @@ function TrailsPageContent() {
             canGroupRequest={canGroupRequest}
             isAdmin={isAdmin}
             onEditTrail={(trail) => {
-              router.push(`/trails/create?trailId=${trail.id}`);
+              router.push(`/upload?trailId=${trail.id}`);
             }}
             onDeleteTrail={(trailId) => deleteMutation.mutate(trailId)}
             onHideTrail={(trailId) => hideMutation.mutate(trailId)}
@@ -1500,7 +1500,7 @@ function TrailsPageContent() {
             </p>
             <button
               type="button"
-              onClick={() => router.push('/trails/create')}
+              onClick={() => router.push('/upload')}
               className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
             >
               Create a trail
