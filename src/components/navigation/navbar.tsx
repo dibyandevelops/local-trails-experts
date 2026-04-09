@@ -10,7 +10,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from '@/types';
 import LoginModal from '@/components/auth/login-modal';
 import RegisterModal from '@/components/auth/register-modal';
-import ParticipantOnboardingModal from '@/components/auth/participant-onboarding-modal';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
@@ -79,17 +78,6 @@ const icon = (
   />
 );
 
-function needsParticipantOnboarding(user: User | null) {
-  if (!user || user.role !== 'participant') return false;
-  const hasName = Boolean(user.name?.trim());
-  const hasPhone = Boolean(user.phone?.trim());
-  const hasCity = Boolean(user.city?.trim());
-  const hasSports = Array.isArray(user.sports) && user.sports.length > 0;
-  const hasWeekdays =
-    Array.isArray(user.availability_weekdays) && user.availability_weekdays.length > 0;
-  return !(hasName && hasPhone && hasCity && hasSports && hasWeekdays);
-}
-
 type NavbarProps = {
   initialUser?: User | null;
 };
@@ -121,7 +109,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerMessage, setRegisterMessage] = useState<string | null>(null);
   const [registerNext, setRegisterNext] = useState<string | null>(null);
-  const [participantOnboardingOpen, setParticipantOnboardingOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const hoverCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -271,7 +258,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     user?.name?.trim()?.charAt(0).toUpperCase() ||
     user?.email?.charAt(0).toUpperCase() ||
     'U';
-  const showProfileReminder = needsParticipantOnboarding(user);
 
   return (
     <nav className="sticky top-0 z-30 border-b border-green-900/70 bg-gradient-to-r from-green-900 via-green-800 to-emerald-800 text-white shadow-lg backdrop-blur">
@@ -614,37 +600,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         notice={registerMessage}
         next={registerNext || undefined}
       />
-      {showProfileReminder && (
-        <div className="fixed bottom-3 right-3 z-40 max-w-[220px] rounded-full border border-amber-300/70 bg-amber-50/95 px-2.5 py-1.5 text-[11px] text-amber-900 shadow-lg backdrop-blur sm:bottom-4 sm:right-4 sm:max-w-xs sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs dark:border-amber-500/40 dark:bg-amber-950/90 dark:text-amber-100">
-          <button
-            type="button"
-            onClick={() => setParticipantOnboardingOpen(true)}
-            className="inline-flex items-center gap-1.5 text-left font-semibold hover:opacity-90"
-            aria-label="Complete profile"
-          >
-            <span aria-hidden="true">🧭</span>
-            <span className="line-clamp-1 sm:line-clamp-none">
-              Complete your profile
-            </span>
-          </button>
-        </div>
-      )}
-      {user?.role === 'participant' && (
-        <ParticipantOnboardingModal
-          open={participantOnboardingOpen}
-          onOpenChange={(open) => {
-            setParticipantOnboardingOpen(open);
-          }}
-          user={user}
-          onCompleted={(updatedUser) => {
-            queryClient.setQueryData(['me'], updatedUser);
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('participant-onboarding-pending');
-            }
-            window.dispatchEvent(new Event('auth-changed'));
-          }}
-        />
-      )}
     </nav>
   );
 }
