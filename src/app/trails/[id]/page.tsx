@@ -307,6 +307,11 @@ const TrailPage: React.FunctionComponent = () => {
   const [sportTypeDraft, setSportTypeDraft] = useState<Trail['sport_type']>('mtb');
   const [sportSafetyModalOpen, setSportSafetyModalOpen] = useState(false);
   const [hazardModalOpen, setHazardModalOpen] = useState(false);
+  const [coverModalOpen, setCoverModalOpen] = useState(false);
+  const [coverUploadBusy, setCoverUploadBusy] = useState(false);
+  const [coverMessage, setCoverMessage] = useState<string | null>(null);
+  const [settingCoverImageUrl, setSettingCoverImageUrl] = useState<string | null>(null);
+  const [deletingTrailImageUrl, setDeletingTrailImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
@@ -680,6 +685,81 @@ const TrailPage: React.FunctionComponent = () => {
     }
   };
 
+  const handleDeleteTrailImage = async (imageUrl: string) => {
+    if (!canManageTrail || !trail) return;
+    setDeletingTrailImageUrl(imageUrl);
+    setPhotoUploadMessage(null);
+    try {
+      const remaining = trailImages.filter((current) => current !== imageUrl);
+      await updateTrailMutation.mutateAsync({
+        image_url: remaining[0] || null,
+        trail_images: remaining,
+      });
+      setPhotoUploadMessage('Trail image removed.');
+    } catch (error) {
+      setPhotoUploadMessage(
+        error instanceof Error ? error.message : 'Failed to remove trail image'
+      );
+    } finally {
+      setDeletingTrailImageUrl(null);
+    }
+  };
+
+  const handleSetCoverImage = async (imageUrl: string) => {
+    if (!canManageTrail || !trail) return;
+    if (trail.image_url === imageUrl) return;
+    setSettingCoverImageUrl(imageUrl);
+    setPhotoUploadMessage(null);
+    try {
+      const merged = [imageUrl, ...trailImages].filter(Boolean);
+      const unique = merged.filter((current, index, arr) => arr.indexOf(current) === index);
+      await updateTrailMutation.mutateAsync({
+        image_url: imageUrl,
+        trail_images: unique,
+      });
+      setPhotoUploadMessage('Cover image updated from gallery.');
+    } catch (error) {
+      setPhotoUploadMessage(
+        error instanceof Error ? error.message : 'Failed to set cover image'
+      );
+    } finally {
+      setSettingCoverImageUrl(null);
+    }
+  };
+
+  const applyTrailCoverImage = async (nextImageUrl: string) => {
+    if (!trail || !nextImageUrl.trim()) return;
+    const cleaned = nextImageUrl.trim();
+    const merged = [cleaned, ...trailImages].filter(Boolean);
+    const unique = merged.filter((image, index, arr) => arr.indexOf(image) === index);
+    await updateTrailMutation.mutateAsync({
+      image_url: cleaned,
+      trail_images: unique,
+    });
+  };
+
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canManageTrail) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setCoverMessage('Please choose a valid image file.');
+      return;
+    }
+    setCoverUploadBusy(true);
+    setCoverMessage(null);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 1400, quality: 0.86 });
+      await applyTrailCoverImage(dataUrl);
+      setCoverMessage('Cover image updated.');
+    } catch (err) {
+      setCoverMessage(err instanceof Error ? err.message : 'Failed to upload cover image.');
+    } finally {
+      setCoverUploadBusy(false);
+      if (event.target) event.target.value = '';
+    }
+  };
+
   // Calculate map bounds from route coordinates
   function getMapBounds(routeData: RouteData) {
     if (!routeData || !routeData.coordinates || routeData.coordinates.length === 0) {
@@ -918,6 +998,27 @@ const TrailPage: React.FunctionComponent = () => {
             >
               Share
             </button>
+            {trailImages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setGalleryInitialIndex(0);
+                  setGalleryModalOpen(true);
+                }}
+                className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                View Trail Photos
+              </button>
+            )}
+            {canManageTrail && (
+              <button
+                type="button"
+                onClick={() => setCoverModalOpen(true)}
+                className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Change Cover
+              </button>
+            )}
             {showActionMenu && (
               <ThemedDropdown
                 label="More"
@@ -968,7 +1069,7 @@ const TrailPage: React.FunctionComponent = () => {
                       },
                       {
                         label: 'Edit Trail',
-                        onSelect: () => router.push(`/trails/create?trailId=${trailId}`),
+                        onSelect: () => router.push(`/upload?trailId=${trailId}`),
                       },
                       {
                         label:
@@ -1004,18 +1105,6 @@ const TrailPage: React.FunctionComponent = () => {
           </div>
         </div>
         <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
-          {trailImages.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setGalleryInitialIndex(0);
-                setGalleryModalOpen(true);
-              }}
-              className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              View Trail Photos
-            </button>
-          )}
           {canRequestTrail && (
             <button
               type="button"
@@ -1659,27 +1748,59 @@ const TrailPage: React.FunctionComponent = () => {
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {trailImages.slice(0, 4).map((imageUrl, index) => (
-              <button
+            {trailImages.map((imageUrl, index) => (
+              <div
                 key={`${imageUrl}-${index}`}
-                type="button"
-                onClick={() => {
-                  setGalleryInitialIndex(index);
-                  setGalleryModalOpen(true);
-                }}
                 className="relative h-32 overflow-hidden rounded-lg ring-offset-2 transition hover:scale-[1.01] hover:ring-2 hover:ring-green-400 dark:ring-offset-slate-900"
               >
-                <Image
-                  src={imageUrl}
-                  alt={`${trail.name} trail photo ${index + 1}`}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-cover transition-transform duration-300 hover:scale-105"
-                />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGalleryInitialIndex(index);
+                    setGalleryModalOpen(true);
+                  }}
+                  className="absolute inset-0"
+                >
+                  <Image
+                    src={imageUrl}
+                    alt={`${trail.name} trail photo ${index + 1}`}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-300 hover:scale-105"
+                  />
+                </button>
+                {canManageTrail && (
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteTrailImage(imageUrl)}
+                    disabled={deletingTrailImageUrl === imageUrl || updateTrailMutation.isPending}
+                    className="absolute right-2 top-2 z-10 rounded-full border border-white/70 bg-black/60 px-2 py-1 text-[11px] font-semibold text-white hover:bg-black/75 disabled:opacity-60"
+                  >
+                    {deletingTrailImageUrl === imageUrl ? 'Removing...' : 'Delete'}
+                  </button>
+                )}
+                {canManageTrail &&
+                  (trail?.image_url === imageUrl ? (
+                    <span className="absolute bottom-2 left-2 z-10 rounded-full border border-emerald-200/70 bg-emerald-600/90 px-2 py-1 text-[11px] font-semibold text-white">
+                      Cover
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void handleSetCoverImage(imageUrl)}
+                      disabled={settingCoverImageUrl === imageUrl || updateTrailMutation.isPending}
+                      className="absolute bottom-2 right-2 z-10 rounded-full border border-white/70 bg-black/60 px-2 py-1 text-[11px] font-semibold text-white hover:bg-black/75 disabled:opacity-60"
+                    >
+                      {settingCoverImageUrl === imageUrl ? 'Setting...' : 'Set Cover'}
+                    </button>
+                  ))}
+              </div>
             ))}
           </div>
+          {photoUploadMessage && (
+            <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">{photoUploadMessage}</p>
+          )}
         </div>
       )}
 
@@ -1888,6 +2009,60 @@ const TrailPage: React.FunctionComponent = () => {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {canManageTrail && (
+        <Dialog.Root open={coverModalOpen} onOpenChange={setCoverModalOpen}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+              <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                Change Cover Image
+              </Dialog.Title>
+              <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                Upload your own cover image for this trail.
+              </p>
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Upload cover image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverUpload}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                  {coverUploadBusy && (
+                    <p className="mt-1 text-xs text-green-700 dark:text-green-300">Processing image...</p>
+                  )}
+                </div>
+                {trail?.image_url && (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-slate-700 dark:bg-slate-950/50">
+                    <div className="relative h-36 overflow-hidden rounded-md">
+                      <Image
+                        src={trail.image_url}
+                        alt={`${trail.name} cover preview`}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 768px) 92vw, 460px"
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+                {coverMessage && (
+                  <p className="text-sm text-gray-700 dark:text-slate-200">{coverMessage}</p>
+                )}
+              </div>
+              <div className="mt-5 flex justify-end">
+                <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                  Close
+                </Dialog.Close>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
 
       <Dialog.Root open={createEventOpen} onOpenChange={setCreateEventOpen}>
         <Dialog.Portal>

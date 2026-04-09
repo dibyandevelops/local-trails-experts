@@ -1,6 +1,7 @@
 'use client';
 
-import { ChangeEventHandler, useMemo, useState } from 'react';
+import { ChangeEventHandler, useState } from 'react';
+import Image from 'next/image';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
@@ -10,11 +11,11 @@ import {
   TRAIL_SAFETY_OPTIONS,
   TrailSafetyLabel,
 } from '@/lib/trail-safety';
+import { resizeImageToDataUrl } from '@/lib/image';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
 import { apiClient } from '@/services/api/client';
 import { ApiPath } from '@/services/api/paths';
-
-const MAX_TRAILS = 5;
+import StoreLocationPicker from '@/components/feature-components/store-locator/store-location-picker';
 
 type TrailCreateForm = {
   name: string;
@@ -22,11 +23,13 @@ type TrailCreateForm = {
   difficulty: Difficulty;
   sport_type: SportType;
   location: string;
+  latitude: string;
+  longitude: string;
   distance_km: string;
   elevation_gain_m: string;
   estimated_time_hours: string;
-  image_url: string;
   komoot_embed_url: string;
+  image_url: string;
   safety_labels: TrailSafetyLabel[];
 };
 
@@ -36,36 +39,21 @@ const createInitialForm = (): TrailCreateForm => ({
   difficulty: 'easy',
   sport_type: DEFAULT_TRAIL_SPORT,
   location: '',
+  latitude: '',
+  longitude: '',
   distance_km: '',
   elevation_gain_m: '',
   estimated_time_hours: '',
-  image_url: '',
   komoot_embed_url: '',
+  image_url: '',
   safety_labels: [...DEFAULT_TRAIL_SAFETY_LABELS],
 });
-
-type TrailFiles = {
-  gpxFile: File | null;
-  trailImages: string[];
-};
 
 type Props = {
   userRole: UserRole;
   onSuccess?: (data: { trail: { id: string }; requiresApproval?: boolean }) => void;
   submitLabel?: string;
 };
-
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === 'string' ? reader.result : '';
-      resolve(result);
-    };
-    reader.onerror = () => reject(new Error('Failed to read image file'));
-    reader.readAsDataURL(file);
-  });
-}
 
 function normalizeKomootEmbedInput(input: string) {
   const raw = input.trim();
@@ -86,14 +74,18 @@ export default function MultiTrailSubmissionForm({
   onSuccess,
   submitLabel = 'Create Trails',
 }: Props) {
+  type FormValues = { trails: TrailCreateForm[]; acceptTerms: boolean };
+  type Step = 1 | 2 | 3;
+
+  const [step, setStep] = useState<Step>(1);
   const [submitting, setSubmitting] = useState(false);
   const [parsingGpxIndex, setParsingGpxIndex] = useState<number | null>(null);
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
-  const [draggingGpxIndex, setDraggingGpxIndex] = useState<number | null>(null);
-  const [draggingImagesIndex, setDraggingImagesIndex] = useState<number | null>(null);
+  const [uploadingImageIndex, setUploadingImageIndex] = useState<number | null>(null);
+  const [isDraggingUpload, setIsDraggingUpload] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [trailFiles, setTrailFiles] = useState<TrailFiles[]>([{ gpxFile: null, trailImages: [] }]);
+  const [gpxFiles, setGpxFiles] = useState<Array<File | null>>([null]);
 
   const isAdmin = userRole === 'admin';
   const canEditSafetyLabels = userRole === 'admin' || userRole === 'expert';
@@ -106,7 +98,7 @@ export default function MultiTrailSubmissionForm({
     watch,
     reset,
     formState: { errors },
-  } = useForm<{ trails: TrailCreateForm[]; acceptTerms: boolean }>({
+  } = useForm<FormValues>({
     defaultValues: { trails: [createInitialForm()], acceptTerms: false },
   });
 
@@ -125,47 +117,92 @@ export default function MultiTrailSubmissionForm({
         distance_km?: number;
         elevation_gain_m?: number;
         estimated_time_hours?: number;
+        mid_latitude?: number | null;
+        mid_longitude?: number | null;
+        last_latitude?: number | null;
+        last_longitude?: number | null;
       };
     },
   });
 
-  const canAddMore = fields.length < MAX_TRAILS;
-
   const addTrail = () => {
-    if (!canAddMore) return;
     append(createInitialForm());
-    setTrailFiles((prev) => [...prev, { gpxFile: null, trailImages: [] }]);
+    setGpxFiles((prev) => [...prev, null]);
   };
 
   const removeTrail = (index: number) => {
     if (fields.length <= 1) return;
     remove(index);
-    setTrailFiles((prev) => prev.filter((_, i) => i !== index));
+    setGpxFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const setTrailFile = (index: number, updater: (prev: TrailFiles) => TrailFiles) => {
-    setTrailFiles((prev) => {
-      const next = [...prev];
-      next[index] = updater(next[index] ?? { gpxFile: null, trailImages: [] });
-      return next;
-    });
+  const ensureRowCount = (count: number) => {
+    const missing = count - fields.length;
+    if (missing <= 0) return;
+    for (let i = 0; i < missing; i += 1) {
+      append(createInitialForm());
+    }
+    setGpxFiles((prev) => [...prev, ...Array.from({ length: missing }, () => null)]);
   };
 
   const processGpxFile = async (index: number, file: File | null) => {
-    setTrailFile(index, () => ({ gpxFile: file, trailImages: trailFiles[index]?.trailImages ?? [] }));
+    setGpxFiles((prev) => {
+      const next = [...prev];
+      next[index] = file;
+      return next;
+    });
+
     setError(null);
     setValue(`trails.${index}.distance_km`, '');
     setValue(`trails.${index}.elevation_gain_m`, '');
     setValue(`trails.${index}.estimated_time_hours`, '');
+
     if (!file) return;
+
     const fileBaseName = file.name.replace(/\.gpx$/i, '').trim();
     if (fileBaseName) setValue(`trails.${index}.name`, fileBaseName, { shouldDirty: true });
+
     setParsingGpxIndex(index);
     try {
       const data = await parseGpxMutation.mutateAsync(file);
       setValue(`trails.${index}.distance_km`, String(data.distance_km ?? ''));
       setValue(`trails.${index}.elevation_gain_m`, String(data.elevation_gain_m ?? ''));
       setValue(`trails.${index}.estimated_time_hours`, String(data.estimated_time_hours ?? ''));
+
+      const midpointLat =
+        typeof data.mid_latitude === 'number' && Number.isFinite(data.mid_latitude)
+          ? String(data.mid_latitude)
+          : typeof data.last_latitude === 'number' && Number.isFinite(data.last_latitude)
+          ? String(data.last_latitude)
+          : '';
+      const midpointLng =
+        typeof data.mid_longitude === 'number' && Number.isFinite(data.mid_longitude)
+          ? String(data.mid_longitude)
+          : typeof data.last_longitude === 'number' && Number.isFinite(data.last_longitude)
+          ? String(data.last_longitude)
+          : '';
+
+      if (midpointLat && midpointLng) {
+        setValue(`trails.${index}.latitude`, midpointLat, { shouldDirty: true });
+        setValue(`trails.${index}.longitude`, midpointLng, { shouldDirty: true });
+
+        const currentLocation = watch(`trails.${index}.location`);
+        if (!currentLocation?.trim()) {
+          try {
+            const { data: reverseData } = await apiClient.get<{ result?: { display_name?: string; address?: any } }>(
+              `/api/geo/nominatim/reverse?lat=${encodeURIComponent(midpointLat)}&lon=${encodeURIComponent(midpointLng)}`
+            );
+            const address = reverseData?.result?.address || {};
+            const city = address.city || address.town || address.village || address.state || '';
+            const label =
+              reverseData?.result?.display_name ||
+              [address.road, address.suburb, city].filter(Boolean).join(', ');
+            if (label) setValue(`trails.${index}.location`, label, { shouldDirty: true });
+          } catch {
+            // keep location empty if reverse geocode fails
+          }
+        }
+      }
     } catch {
       setError('Failed to parse GPX file');
     } finally {
@@ -173,44 +210,101 @@ export default function MultiTrailSubmissionForm({
     }
   };
 
-  const handleGpxChange = (index: number): ChangeEventHandler<HTMLInputElement> => async (event) => {
-    const file = event.target.files?.[0] || null;
-    await processGpxFile(index, file);
+  const clearGpxFile = (index: number) => {
+    setGpxFiles((prev) => {
+      const next = [...prev];
+      next[index] = null;
+      return next;
+    });
+    setValue(`trails.${index}.distance_km`, '');
+    setValue(`trails.${index}.elevation_gain_m`, '');
+    setValue(`trails.${index}.estimated_time_hours`, '');
+    setValue(`trails.${index}.latitude`, '');
+    setValue(`trails.${index}.longitude`, '');
   };
 
-  const getGpxFileFromDrop = (items: FileList | null) => {
-    if (!items || items.length === 0) return null;
-    const file = items[0];
-    if (!file) return null;
-    const isGpx = file.name.toLowerCase().endsWith('.gpx');
-    return isGpx ? file : null;
-  };
-
-  const processTrailImages = async (index: number, files: File[]) => {
-    if (files.length === 0) {
-      setTrailFile(index, (p) => ({ ...p, trailImages: [] }));
-      return;
+  const clearAllGpxFiles = () => {
+    for (let i = 0; i < fields.length; i += 1) {
+      setValue(`trails.${i}.distance_km`, '');
+      setValue(`trails.${i}.elevation_gain_m`, '');
+      setValue(`trails.${i}.estimated_time_hours`, '');
+      setValue(`trails.${i}.latitude`, '');
+      setValue(`trails.${i}.longitude`, '');
     }
-    try {
-      const images = await Promise.all(files.map((file) => fileToDataUrl(file)));
-      setTrailFile(index, (p) => ({ ...p, trailImages: images }));
-      const current = values[index];
-      if (current && !current.image_url && images[0]) {
-        setValue(`trails.${index}.image_url`, images[0]);
+    setGpxFiles((prev) => prev.map(() => null));
+    setStep(1);
+  };
+
+  const addFilesAsTrails = async (startIndex: number, files: File[]) => {
+    if (files.length === 0) return;
+    ensureRowCount(startIndex + files.length);
+    for (let i = 0; i < files.length; i += 1) {
+      await processGpxFile(startIndex + i, files[i]);
+    }
+  };
+
+  const handleGpxChange =
+    (index: number): ChangeEventHandler<HTMLInputElement> => async (event) => {
+      const files = Array.from(event.target.files || []).filter((file) =>
+        file.name.toLowerCase().endsWith('.gpx')
+      );
+      if (files.length === 0) {
+        setError('Please select valid .gpx files.');
+        return;
       }
-    } catch {
-      setError('Failed to process trail images');
-    }
+      await addFilesAsTrails(index, files);
+    };
+
+  const handleBulkGpxUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+    setError(null);
+    const firstEmptyIndex = gpxFiles.findIndex((file) => !file);
+    const startIndex = firstEmptyIndex === -1 ? fields.length : firstEmptyIndex;
+    await addFilesAsTrails(startIndex, files);
   };
 
-  const handleTrailImagesChange = (index: number): ChangeEventHandler<HTMLInputElement> => async (event) => {
-    const files = Array.from(event.target.files || []);
-    await processTrailImages(index, files);
-  };
-
-  const getImageFilesFromDrop = (items: FileList | null) => {
+  const getGpxFilesFromDrop = (items: FileList | null) => {
     if (!items || items.length === 0) return [];
-    return Array.from(items).filter((file) => file.type.startsWith('image/'));
+    return Array.from(items).filter((file) => file.name.toLowerCase().endsWith('.gpx'));
+  };
+
+  const getRowsWithFiles = (formData?: FormValues) => {
+    const source = formData?.trails || values || [];
+    return source
+      .map((trail, index) => ({ trail, file: gpxFiles[index], index }))
+      .filter((row) => !!row.file);
+  };
+
+  const validateReviewStep = () => {
+    const rows = getRowsWithFiles();
+    if (rows.length === 0) {
+      return 'Upload at least one GPX file to continue.';
+    }
+    const invalidRow = rows.find(({ trail }) => {
+      return !trail.name?.trim() || !trail.location?.trim() || !trail.sport_type || !trail.difficulty;
+    });
+    if (invalidRow) {
+      return `Please complete required fields for Trail ${invalidRow.index + 1} (name, location, sport, difficulty).`;
+    }
+    return null;
+  };
+
+  const handlePickTrailLocation = async (index: number, next: { lat: string; lng: string }) => {
+    setValue(`trails.${index}.latitude`, next.lat, { shouldDirty: true });
+    setValue(`trails.${index}.longitude`, next.lng, { shouldDirty: true });
+    try {
+      const { data } = await apiClient.get<{ result?: { display_name?: string; address?: any } }>(
+        `/api/geo/nominatim/reverse?lat=${encodeURIComponent(next.lat)}&lon=${encodeURIComponent(next.lng)}`
+      );
+      const address = data?.result?.address || {};
+      const city = address.city || address.town || address.village || address.state || '';
+      const label =
+        data?.result?.display_name ||
+        [address.road, address.suburb, city].filter(Boolean).join(', ');
+      if (label) setValue(`trails.${index}.location`, label, { shouldDirty: true });
+    } catch {
+      // keep manual location text
+    }
   };
 
   const toggleSafetyLabel = (index: number, value: TrailSafetyLabel) => {
@@ -221,6 +315,24 @@ export default function MultiTrailSubmissionForm({
     setValue(`trails.${index}.safety_labels`, next, { shouldDirty: true });
   };
 
+  const handleImageUpload = async (index: number, file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload a valid image file for cover image.');
+      return;
+    }
+    setUploadingImageIndex(index);
+    setError(null);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 1200, quality: 0.86 });
+      setValue(`trails.${index}.image_url`, dataUrl, { shouldDirty: true });
+    } catch {
+      setError('Failed to process cover image.');
+    } finally {
+      setUploadingImageIndex(null);
+    }
+  };
+
   const handleGenerateDescription = async (index: number) => {
     const current = values[index];
     if (!current) return;
@@ -228,6 +340,7 @@ export default function MultiTrailSubmissionForm({
       setError('Fill in trail name, location, sport type, and difficulty before generating.');
       return;
     }
+
     setError(null);
     setGeneratingIndex(index);
     try {
@@ -244,10 +357,7 @@ export default function MultiTrailSubmissionForm({
       let data: { description?: string } | null = null;
       for (let attempt = 0; attempt <= delays.length; attempt += 1) {
         try {
-          const result = await apiClient.post<{ description?: string }>(
-            '/api/ai/trail-description',
-            payload
-          );
+          const result = await apiClient.post<{ description?: string }>('/api/ai/trail-description', payload);
           data = result.data;
           break;
         } catch (err: any) {
@@ -266,33 +376,38 @@ export default function MultiTrailSubmissionForm({
     } catch (err: any) {
       if (err?.response?.status === 429) {
         setError('AI rate limit hit. Please wait a moment and try again.');
-        return;
+      } else {
+        setError('Failed to generate description.');
       }
-      setError('Failed to generate description.');
     } finally {
       setGeneratingIndex(null);
     }
   };
 
-  const onSubmit = async (formData: { trails: TrailCreateForm[]; acceptTerms: boolean }) => {
+  const onSubmit = async (formData: FormValues) => {
     setError(null);
     setNotice(null);
+
     const trails = formData.trails || [];
-    const valid: { index: number; form: TrailCreateForm; files: TrailFiles }[] = [];
-    for (let i = 0; i < trails.length; i++) {
+    const valid: { index: number; form: TrailCreateForm; file: File }[] = [];
+
+    for (let i = 0; i < trails.length; i += 1) {
       const form = trails[i];
-      const files = trailFiles[i];
-      if (!files?.gpxFile) continue;
+      const file = gpxFiles[i];
+      if (!file) continue;
       if (!form.name?.trim() || !form.difficulty || !form.location?.trim() || !form.sport_type) continue;
-      valid.push({ index: i + 1, form, files });
+      valid.push({ index: i + 1, form, file });
     }
+
     if (valid.length === 0) {
       setError('Add at least one trail with a GPX file and required fields (name, difficulty, location, sport type).');
       return;
     }
+
     setSubmitting(true);
     const results: { index: number; ok: boolean; id?: string; err?: string }[] = [];
-    for (const { index, form, files } of valid) {
+
+    for (const { index, form, file } of valid) {
       try {
         const payload = new FormData();
         payload.append('name', form.name.trim());
@@ -300,59 +415,66 @@ export default function MultiTrailSubmissionForm({
         payload.append('difficulty', form.difficulty);
         payload.append('sport_type', form.sport_type);
         payload.append('location', form.location.trim());
+        payload.append('latitude', (form.latitude || '').trim());
+        payload.append('longitude', (form.longitude || '').trim());
         payload.append('distance_km', (form.distance_km || '').trim());
         payload.append('elevation_gain_m', (form.elevation_gain_m || '').trim());
         payload.append('estimated_time_hours', (form.estimated_time_hours || '').trim());
+        payload.append('komoot_embed_url', normalizeKomootEmbedInput(form.komoot_embed_url || ''));
         payload.append('image_url', (form.image_url || '').trim());
         payload.append(
-          'komoot_embed_url',
-          normalizeKomootEmbedInput(form.komoot_embed_url || '')
+          'trail_images',
+          JSON.stringify((form.image_url || '').trim() ? [(form.image_url || '').trim()] : [])
         );
-        payload.append('trail_images', JSON.stringify(files.trailImages || []));
-        payload.append('gpx_file', files.gpxFile as File);
+        payload.append('gpx_file', file);
         if (form.safety_labels?.length) {
           payload.append('safety_labels', JSON.stringify(form.safety_labels));
         }
-        const { data } = await apiClient.post<{ trail: { id: string }; requiresApproval?: boolean }>(
-          ApiPath.Trails,
-          payload,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
-        );
+
+        const { data } = await apiClient.post<{ trail: { id: string } }>(ApiPath.Trails, payload, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
         results.push({ index, ok: true, id: data.trail?.id });
       } catch (e) {
         let errorMessage = 'Failed to create trail';
         if (axios.isAxiosError(e)) {
           errorMessage =
-            (e.response?.data as { error?: string } | undefined)?.error ||
-            e.message ||
-            errorMessage;
+            (e.response?.data as { error?: string } | undefined)?.error || e.message || errorMessage;
         } else if (e instanceof Error) {
           errorMessage = e.message;
         }
         results.push({ index, ok: false, err: errorMessage });
       }
     }
+
     setSubmitting(false);
+
     const succeeded = results.filter((r) => r.ok);
     const failed = results.filter((r) => !r.ok);
+
     if (failed.length === 0) {
       setNotice(
         succeeded.length === 1
           ? 'Trail created successfully.'
-          : `${succeeded.length} trails created successfully.`,
+          : `${succeeded.length} trails created successfully.`
       );
       if (succeeded.length > 0 && onSuccess) {
         const first = succeeded[0];
-        if (first.id) {
-          onSuccess({ trail: { id: first.id }, requiresApproval: !isAdmin });
-        }
+        if (first.id) onSuccess({ trail: { id: first.id }, requiresApproval: !isAdmin });
       }
-      reset({ trails: [createInitialForm()] });
-      setTrailFiles([{ gpxFile: null, trailImages: [] }]);
+      reset({ trails: [createInitialForm()], acceptTerms: false });
+      setGpxFiles([null]);
+      setStep(1);
       return;
     }
+
     if (succeeded.length > 0) {
-      setNotice(`${succeeded.length} trail(s) created. Some failed: ${failed.map((f) => `Trail ${f.index}: ${f.err}`).join('; ')}`);
+      setNotice(
+        `${succeeded.length} trail(s) created. Some failed: ${failed
+          .map((f) => `Trail ${f.index}: ${f.err}`)
+          .join('; ')}`
+      );
     } else {
       setError(failed.map((f) => `Trail ${f.index}: ${f.err}`).join('. '));
     }
@@ -361,6 +483,13 @@ export default function MultiTrailSubmissionForm({
   const inputClass =
     'w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400';
 
+  const uploadedCount = gpxFiles.filter(Boolean).length;
+  const reviewRows = getRowsWithFiles();
+
+  const canGoToStep2 = uploadedCount > 0;
+  const reviewValidationError = validateReviewStep();
+  const canGoToStep3 = !reviewValidationError;
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {error && (
@@ -368,344 +497,408 @@ export default function MultiTrailSubmissionForm({
           {error}
         </div>
       )}
+
       {notice && (
         <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900/60 dark:bg-green-950/40 dark:text-green-200">
           {notice}
         </div>
       )}
+      <div className="grid grid-cols-3 gap-2 rounded-xl border border-gray-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
+        {[
+          { id: 1, title: 'Upload GPX' },
+          { id: 2, title: 'Review' },
+          { id: 3, title: 'Submit' },
+        ].map((item) => {
+          const active = step === item.id;
+          const complete = step > item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                if (item.id === 2 && !canGoToStep2) {
+                  setError('Upload at least one GPX file to continue.');
+                  return;
+                }
+                if (item.id === 3) {
+                  if (!canGoToStep2) {
+                    setError('Upload at least one GPX file to continue.');
+                    return;
+                  }
+                  if (!canGoToStep3) {
+                    setError(reviewValidationError || 'Please complete required fields before submitting.');
+                    return;
+                  }
+                }
+                setError(null);
+                setStep(item.id as Step);
+              }}
+              disabled={(item.id === 2 && !canGoToStep2) || (item.id === 3 && (!canGoToStep2 || !canGoToStep3))}
+              className={`rounded-lg px-3 py-2 text-left text-sm ${
+                active
+                  ? 'bg-green-600 text-white'
+                  : complete
+                  ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-200'
+                  : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300'
+              } disabled:cursor-not-allowed disabled:opacity-60`}
+            >
+              <span className="block text-[11px] font-semibold uppercase tracking-wide">Step {item.id}</span>
+              <span className="font-medium">{item.title}</span>
+            </button>
+          );
+        })}
+      </div>
 
-      {fields.map((field, index) => (
-        <section
-          key={field.id}
-          className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-4 dark:border-slate-800 dark:bg-slate-950/60"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
-              Trail {index + 1}
-            </h3>
-            {fields.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeTrail(index)}
-                className="text-sm text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
-              >
-                Remove this trail
-              </button>
-            )}
-          </div>
+      {step === 1 && (
+        <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Upload GPX files</h3>
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            Upload one or many GPX files. We auto-create one trail form for each file and prefill distance/elevation/time.
+          </p>
 
           <div
             onDragOver={(event) => {
               event.preventDefault();
-              setDraggingGpxIndex(index);
+              setIsDraggingUpload(true);
             }}
-            onDragLeave={() => setDraggingGpxIndex(null)}
+            onDragLeave={() => setIsDraggingUpload(false)}
             onDrop={async (event) => {
               event.preventDefault();
-              setDraggingGpxIndex(null);
-              const file = getGpxFileFromDrop(event.dataTransfer.files);
-              if (!file) {
-                setError('Please drop a valid .gpx file.');
+              setIsDraggingUpload(false);
+              const files = getGpxFilesFromDrop(event.dataTransfer.files);
+              if (files.length === 0) {
+                setError('Please drop valid .gpx files.');
                 return;
               }
-              await processGpxFile(index, file);
+              await handleBulkGpxUpload(files);
             }}
-            className={`rounded-lg border-2 border-dashed px-3 py-3 ${
-              draggingGpxIndex === index ? 'border-green-500 bg-green-50' : 'border-gray-200'
+            className={`rounded-lg border-2 border-dashed px-4 py-5 ${
+              isDraggingUpload ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-slate-700'
             }`}
           >
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-              GPX File
-            </label>
             <input
               type="file"
               accept=".gpx"
-              onChange={handleGpxChange(index)}
-              className={inputClass}
-            />
-            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              Drag & drop a GPX file here or click to upload. It will auto-fill other fields.
-            </p>
-            {parsingGpxIndex === index && (
-              <p className="text-xs text-green-700 mt-1 dark:text-green-300">
-                Parsing GPX...
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-              Trail Name
-            </label>
-            <input
-              {...register(`trails.${index}.name`, { required: true })}
-              className={inputClass}
-              placeholder="Trail name"
-            />
-          </div>
-
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">
-                Description
-              </label>
-              <button
-                type="button"
-                onClick={() => handleGenerateDescription(index)}
-                disabled={
-                  generatingIndex === index ||
-                  !values[index]?.name?.trim() ||
-                  !values[index]?.location?.trim() ||
-                  !values[index]?.sport_type ||
-                  !values[index]?.difficulty
-                }
-                className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {generatingIndex === index ? 'Generating...' : 'Generate with AI'}
-              </button>
-            </div>
-            <textarea
-              {...register(`trails.${index}.description`)}
-              rows={3}
-              className={inputClass}
-              placeholder="Trail description"
-            />
-            {(!values[index]?.name?.trim() ||
-              !values[index]?.location?.trim() ||
-              !values[index]?.sport_type ||
-              !values[index]?.difficulty) && (
-              <p className="mt-1 text-xs text-gray-500">
-                Fill in trail name, location, sport type, and difficulty to enable AI.
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-                Difficulty
-              </label>
-              <select {...register(`trails.${index}.difficulty`)} className={inputClass}>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-                Sport Type
-              </label>
-              <select {...register(`trails.${index}.sport_type`)} className={inputClass}>
-                {TRAIL_SPORTS.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-              Location
-            </label>
-            <input
-              {...register(`trails.${index}.location`, { required: true })}
-              className={inputClass}
-              placeholder="City / region"
-            />
-          </div>
-
-          <div
-            onDragOver={(event) => {
-              event.preventDefault();
-              setDraggingImagesIndex(index);
-            }}
-            onDragLeave={() => setDraggingImagesIndex(null)}
-            onDrop={async (event) => {
-              event.preventDefault();
-              setDraggingImagesIndex(null);
-              const files = getImageFilesFromDrop(event.dataTransfer.files);
-              if (files.length === 0) {
-                setError('Please drop image files only.');
-                return;
-              }
-              await processTrailImages(index, files);
-            }}
-            className={`rounded-lg border-2 border-dashed px-3 py-3 ${
-              draggingImagesIndex === index ? 'border-green-500 bg-green-50' : 'border-gray-200'
-            }`}
-          >
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-              Trail Pictures
-            </label>
-            <input
-              type="file"
-              accept="image/*"
               multiple
-              onChange={handleTrailImagesChange(index)}
+              onChange={async (event) => {
+                const files = Array.from(event.target.files || []).filter((file) =>
+                  file.name.toLowerCase().endsWith('.gpx')
+                );
+                if (files.length === 0) {
+                  setError('Please select valid .gpx files.');
+                  return;
+                }
+                await handleBulkGpxUpload(files);
+              }}
               className={inputClass}
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              Drag & drop images here or click to upload.
+            <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
+              Tip: You can upload as many GPX files as needed in one batch.
             </p>
-            {(trailFiles[index]?.trailImages?.length ?? 0) > 0 && (
-              <p className="text-xs text-gray-600 mt-1 dark:text-slate-400">
-                {trailFiles[index].trailImages.length} image(s) selected
-              </p>
+            {parsingGpxIndex !== null && (
+              <p className="mt-2 text-xs text-green-700 dark:text-green-300">Parsing GPX files...</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-                Distance (km)
-              </label>
-              <input
-                type="number"
-                step="any"
-                {...register(`trails.${index}.distance_km`)}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-                Elevation Gain (m)
-              </label>
-              <input
-                type="number"
-                step="any"
-                {...register(`trails.${index}.elevation_gain_m`)}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-                Estimated Time (hours)
-              </label>
-              <input
-                type="number"
-                step="any"
-                {...register(`trails.${index}.estimated_time_hours`)}
-                className={inputClass}
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-1 flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                Komoot embed URL (optional)
-              </label>
-              <span className="group relative inline-flex">
+          <div className="rounded-lg border border-gray-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-medium text-gray-800 dark:text-slate-100">Uploaded files: {uploadedCount}</p>
+              {uploadedCount > 0 && (
                 <button
                   type="button"
-                  aria-label="Where to find Komoot embed code"
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-[11px] font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  onClick={clearAllGpxFiles}
+                  className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
-                  i
+                  Clear all GPX files
                 </button>
-                <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-56 -translate-x-1/2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] text-emerald-900 opacity-0 shadow-lg transition group-hover:opacity-100 group-focus-within:opacity-100 dark:border-emerald-900/60 dark:bg-slate-950 dark:text-emerald-100">
-                  Open the route in Komoot → Share → Embed → copy the embed URL or iframe.
-                </span>
-              </span>
+              )}
             </div>
-            <input
-              type="url"
-              {...register(`trails.${index}.komoot_embed_url`)}
-              className={inputClass}
-              placeholder="Paste Komoot embed URL or iframe code"
-            />
-            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              Use Share → Embed in Komoot to get the embed code or URL.
-            </p>
-            {values[index]?.komoot_embed_url?.trim() && (
-              <p
-                className={`mt-2 text-xs ${
-                  isKomootEmbedUrl(
-                    normalizeKomootEmbedInput(values[index].komoot_embed_url || '')
-                  )
-                    ? 'text-emerald-700 dark:text-emerald-300'
-                    : 'text-rose-700 dark:text-rose-300'
-                }`}
+            <ul className="mt-2 space-y-2 text-gray-600 dark:text-slate-300">
+              {gpxFiles.map((file, index) =>
+                file ? (
+                  <li key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-2 py-1.5 dark:border-slate-700">
+                    <span className="truncate text-sm">Trail {index + 1}: {file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => clearGpxFile(index)}
+                      className="shrink-0 rounded-md border border-gray-300 bg-white px-2 py-0.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    >
+                      Clear
+                    </button>
+                  </li>
+                ) : null
+              )}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {step === 2 && (
+        <div className="space-y-4">
+          {fields.map((field, index) => {
+            if (!gpxFiles[index]) return null;
+            return (
+              <section
+                key={field.id}
+                className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/60"
               >
-                {isKomootEmbedUrl(
-                  normalizeKomootEmbedInput(values[index].komoot_embed_url || '')
-                )
-                  ? 'Komoot embed link detected.'
-                  : 'This doesn’t look like a Komoot embed link. Use Share → Embed.'}
-              </p>
-            )}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100">Trail {index + 1}</h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-500 dark:text-slate-400">
+                      Replace GPX
+                      <input type="file" accept=".gpx" onChange={handleGpxChange(index)} className="sr-only" />
+                    </label>
+                    {fields.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeTrail(index)}
+                        className="text-sm text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Trail Name *</label>
+                  <input {...register(`trails.${index}.name`, { required: true })} className={inputClass} placeholder="Trail name" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Difficulty *</label>
+                    <select {...register(`trails.${index}.difficulty`)} className={inputClass}>
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Sport Type *</label>
+                    <select {...register(`trails.${index}.sport_type`)} className={inputClass}>
+                      {TRAIL_SPORTS.map((s) => (
+                        <option key={s.value} value={s.value}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Location *</label>
+                  <input {...register(`trails.${index}.location`, { required: true })} className={inputClass} placeholder="City / region" />
+                  <input type="hidden" {...register(`trails.${index}.latitude`)} />
+                  <input type="hidden" {...register(`trails.${index}.longitude`)} />
+                  <div className="mt-3">
+                    <StoreLocationPicker
+                      lat={watch(`trails.${index}.latitude`) || ''}
+                      lng={watch(`trails.${index}.longitude`) || ''}
+                      title="Pick trail location"
+                      markerLabel="Trail"
+                      onChange={(next) => {
+                        void handlePickTrailLocation(index, next);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <details className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                  <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Optional details
+                  </summary>
+                  <div className="mt-3 space-y-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                        Cover Image (optional)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className={inputClass}
+                        onChange={async (event) => {
+                          const file = event.target.files?.[0] || null;
+                          await handleImageUpload(index, file);
+                          if (event.target) event.target.value = '';
+                        }}
+                      />
+                      {uploadingImageIndex === index && (
+                        <p className="mt-1 text-xs text-green-700 dark:text-green-300">
+                          Processing image...
+                        </p>
+                      )}
+                      {values[index]?.image_url?.trim() && (
+                        <div className="mt-2 rounded-lg border border-gray-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
+                          <div className="relative h-28 w-full overflow-hidden rounded-md">
+                            <Image
+                              src={values[index].image_url}
+                              alt={`Trail ${index + 1} cover preview`}
+                              fill
+                              unoptimized
+                              sizes="(max-width: 768px) 100vw, 420px"
+                              className="object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="mb-1 flex items-center justify-between">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Description</label>
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateDescription(index)}
+                          disabled={
+                            generatingIndex === index ||
+                            !values[index]?.name?.trim() ||
+                            !values[index]?.location?.trim() ||
+                            !values[index]?.sport_type ||
+                            !values[index]?.difficulty
+                          }
+                          className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {generatingIndex === index ? 'Generating...' : 'Generate with AI'}
+                        </button>
+                      </div>
+                      <textarea {...register(`trails.${index}.description`)} rows={3} className={inputClass} placeholder="Trail description" />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Distance (km)</label>
+                        <input type="number" step="any" {...register(`trails.${index}.distance_km`)} className={inputClass} />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Elevation Gain (m)</label>
+                        <input type="number" step="any" {...register(`trails.${index}.elevation_gain_m`)} className={inputClass} />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Estimated Time (hours)</label>
+                        <input type="number" step="any" {...register(`trails.${index}.estimated_time_hours`)} className={inputClass} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Komoot embed URL</label>
+                      <input type="text" {...register(`trails.${index}.komoot_embed_url`)} className={inputClass} placeholder="Paste Komoot embed URL or iframe code" />
+                      {values[index]?.komoot_embed_url?.trim() && (
+                        <p
+                          className={`mt-2 text-xs ${
+                            isKomootEmbedUrl(normalizeKomootEmbedInput(values[index].komoot_embed_url || ''))
+                              ? 'text-emerald-700 dark:text-emerald-300'
+                              : 'text-rose-700 dark:text-rose-300'
+                          }`}
+                        >
+                          {isKomootEmbedUrl(normalizeKomootEmbedInput(values[index].komoot_embed_url || ''))
+                            ? 'Komoot embed link detected.'
+                            : "This doesn’t look like a Komoot embed link. Use Share → Embed."}
+                        </p>
+                      )}
+                    </div>
+
+                    {canEditSafetyLabels && (
+                      <div>
+                        <p className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-200">Safety Labels</p>
+                        <div className="flex flex-wrap gap-2">
+                          {TRAIL_SAFETY_OPTIONS.map((option) => {
+                            const selected = (values[index]?.safety_labels || []).includes(option.value);
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => toggleSafetyLabel(index, option.value)}
+                                className={`rounded-full border px-3 py-1 text-sm ${
+                                  selected
+                                    ? 'border-green-600 bg-green-600 text-white'
+                                    : 'border-gray-300 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100'
+                                }`}
+                              >
+                                {option.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
+      {step === 3 && (
+        <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Ready to submit</h3>
+          <div className="rounded-lg border border-gray-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-gray-700 dark:text-slate-200">Trails to submit: {reviewRows.length}</p>
+            <p className="text-gray-500 dark:text-slate-400">All required fields must be completed before submission.</p>
           </div>
 
-          {canEditSafetyLabels && (
-            <div>
-              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-200">
-                Safety Labels
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {TRAIL_SAFETY_OPTIONS.map((option) => {
-                  const selected = (values[index]?.safety_labels || []).includes(option.value);
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => toggleSafetyLabel(index, option.value)}
-                      className={`rounded-full border px-3 py-1 text-sm ${
-                        selected
-                          ? 'border-green-600 bg-green-600 text-white'
-                          : 'border-gray-300 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <div className="flex flex-col gap-2 text-xs text-gray-600 dark:text-slate-300">
+            <label className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                {...register('acceptTerms', { required: true })}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <span>I confirm these trail details are accurate and ready for review.</span>
+            </label>
+            {errors.acceptTerms && (
+              <span className="text-xs text-red-600 dark:text-red-300">Please acknowledge before submitting trails.</span>
+            )}
+          </div>
         </section>
-      ))}
+      )}
 
-      {canAddMore && (
+      <div className="flex items-center justify-between gap-3">
         <button
           type="button"
-          onClick={addTrail}
-          className="w-full rounded-lg border-2 border-dashed border-green-500 py-3 text-sm font-medium text-green-700 hover:bg-green-50 dark:text-green-200 dark:hover:bg-green-950/40"
+          onClick={() => setStep((prev) => Math.max(1, prev - 1) as Step)}
+          disabled={step === 1 || submitting}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         >
-          Add another trail
+          Back
         </button>
-      )}
-      {!canAddMore && (
-        <p className="text-sm text-gray-500 text-center dark:text-slate-400">
-          Maximum {MAX_TRAILS} trails per submission. Submit to create these, then you can add more.
-        </p>
-      )}
 
-      <div className="flex flex-col gap-2 text-xs text-gray-600 dark:text-slate-300">
-        <label className="flex items-start gap-2">
-          <input
-            type="checkbox"
-            {...register('acceptTerms', { required: true })}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-          />
-          <span>
-            I confirm these trail details are accurate and ready for review.
-          </span>
-        </label>
-        {errors.acceptTerms && (
-          <span className="text-xs text-red-600 dark:text-red-300">
-            Please acknowledge before submitting trails.
-          </span>
+        {step < 3 ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (step === 1) {
+                if (uploadedCount === 0) {
+                  setError('Upload at least one GPX file to continue.');
+                  return;
+                }
+                setStep(2);
+                return;
+              }
+              const reviewError = validateReviewStep();
+              if (reviewError) {
+                setError(reviewError);
+                return;
+              }
+              setStep(3);
+            }}
+            disabled={submitting || parsingGpxIndex !== null}
+            className="rounded-lg bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-70"
+          >
+            Continue
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={submitting || parsingGpxIndex !== null || !acceptTerms}
+            className="rounded-lg bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-70"
+          >
+            {submitting ? 'Submitting...' : submitLabel}
+          </button>
         )}
       </div>
-      <button
-        type="submit"
-        disabled={submitting || parsingGpxIndex !== null || !acceptTerms}
-        className="rounded-lg bg-green-600 px-5 py-2 font-medium text-white hover:bg-green-700 disabled:opacity-70"
-      >
-        {submitting ? 'Submitting...' : submitLabel}
-      </button>
     </form>
   );
 }

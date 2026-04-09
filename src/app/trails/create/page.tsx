@@ -57,7 +57,7 @@ export default function CreateTrailPage() {
           ) : (
             <>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Add up to 5 trails per submission. Fill each section and click &quot;Add another trail&quot; to include more, then submit.
+                Add as many trails as needed in one submission. Fill each section and click &quot;Add another trail&quot; to include more, then submit.
               </p>
               <MultiTrailSubmissionForm
                 userRole={user.role}

@@ -34,9 +34,20 @@ export async function POST(request: NextRequest) {
     const distance_km = Number(routeData.totalDistance.toFixed(2));
     const elevation_gain_m = Math.round(routeData.elevationGain);
     const estimated_time_hours = estimateTimeHours(distance_km, elevation_gain_m);
+    const midpointIndex = Math.floor(routeData.coordinates.length / 2);
+    const midpoint = routeData.coordinates[midpointIndex] ?? null;
+    const lastPoint = routeData.coordinates[routeData.coordinates.length - 1];
 
     return NextResponse.json(
-      { distance_km, elevation_gain_m, estimated_time_hours },
+      {
+        distance_km,
+        elevation_gain_m,
+        estimated_time_hours,
+        mid_latitude: midpoint?.latitude ?? null,
+        mid_longitude: midpoint?.longitude ?? null,
+        last_latitude: lastPoint?.latitude ?? null,
+        last_longitude: lastPoint?.longitude ?? null,
+      },
       { status: 200 }
     );
   } catch (error) {

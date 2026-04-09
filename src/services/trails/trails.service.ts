@@ -8,6 +8,9 @@ export type TrailFilters = {
   difficulty?: Difficulty | '';
   location?: string;
   sport?: string;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
   distanceMin?: string;
   distanceMax?: string;
   sort?: string;
@@ -40,6 +43,10 @@ export async function fetchTrails(
     if (filters.difficulty) params.difficulty = filters.difficulty;
     if (filters.location?.trim()) params.location = filters.location.trim();
     if (filters.sport?.trim()) params.sport = filters.sport.trim();
+    if (typeof filters.lat === 'number' && Number.isFinite(filters.lat)) params.lat = String(filters.lat);
+    if (typeof filters.lng === 'number' && Number.isFinite(filters.lng)) params.lng = String(filters.lng);
+    if (typeof filters.radiusKm === 'number' && Number.isFinite(filters.radiusKm))
+      params.radiusKm = String(filters.radiusKm);
     if (filters.distanceMin?.trim()) params.distanceMin = filters.distanceMin.trim();
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
     if (filters.sort?.trim()) params.sort = filters.sort.trim();
@@ -73,6 +80,10 @@ export async function fetchTrailsPaginated(
     if (filters.difficulty) params.difficulty = filters.difficulty;
     if (filters.location?.trim()) params.location = filters.location.trim();
     if (filters.sport?.trim()) params.sport = filters.sport.trim();
+    if (typeof filters.lat === 'number' && Number.isFinite(filters.lat)) params.lat = filters.lat;
+    if (typeof filters.lng === 'number' && Number.isFinite(filters.lng)) params.lng = filters.lng;
+    if (typeof filters.radiusKm === 'number' && Number.isFinite(filters.radiusKm))
+      params.radiusKm = filters.radiusKm;
     if (filters.distanceMin?.trim()) params.distanceMin = filters.distanceMin.trim();
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
     if (filters.sort?.trim()) params.sort = filters.sort.trim();
@@ -246,5 +257,35 @@ export async function requestTrail(
       throw new Error(apiError?.error || 'Failed to request trail');
     }
     throw new Error('Failed to request trail');
+  }
+}
+
+export async function suggestTrailCoverImage(payload: {
+  trailName?: string;
+  location?: string;
+  sportType?: string;
+  mode?: 'illustration' | 'photo';
+}) {
+  try {
+    const { data } = await apiClient.post<{
+      imageUrl?: string;
+      fallbackImageUrl?: string;
+      keywords?: string;
+      error?: string;
+    }>('/api/ai/trail-cover-suggest', payload);
+    const selectedUrl = data.imageUrl || data.fallbackImageUrl || null;
+    if (!selectedUrl) {
+      throw new Error('No image suggestion received');
+    }
+    return {
+      imageUrl: selectedUrl,
+      keywords: data.keywords || '',
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to suggest trail cover image');
+    }
+    throw new Error('Failed to suggest trail cover image');
   }
 }
