@@ -696,8 +696,6 @@ export default function MultiTrailSubmissionForm({
                     <StoreLocationPicker
                       lat={watch(`trails.${index}.latitude`) || ''}
                       lng={watch(`trails.${index}.longitude`) || ''}
-                      title="Pick trail location"
-                      markerLabel="Trail"
                       onChange={(next) => {
                         void handlePickTrailLocation(index, next);
                       }}

@@ -398,8 +398,6 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
             <StoreLocationPicker
               lat={latitudeValue}
               lng={longitudeValue}
-              title="Pick trail location"
-              markerLabel="Trail"
               onChange={(next) => {
                 void handlePickTrailLocation(next);
               }}

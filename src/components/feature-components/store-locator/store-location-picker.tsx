@@ -32,7 +32,7 @@ export default function StoreLocationPicker({
   lng,
   onChange,
   title = 'Pick location on map',
-  markerLabel = 'Store',
+  markerLabel = 'Location',
 }: Props) {
   const mapRef = useRef<MapRef | null>(null);
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>('map');
