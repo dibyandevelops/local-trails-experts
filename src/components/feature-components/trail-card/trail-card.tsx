@@ -145,45 +145,11 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
         ) : (
           <TrailImagePlaceholder className="h-64 w-full" />
         )}
-        <div className="absolute left-3 top-3 z-20 flex max-w-[80%] flex-wrap gap-2">
-          {trail.sport_type && (
-            <span className="inline-flex items-center justify-center rounded-full border border-emerald-300/70 bg-emerald-500/90 px-2.5 py-1 text-center text-[10px] leading-none font-semibold uppercase tracking-wide text-white">
-              {getSportLabel(trail.sport_type)}
-            </span>
-          )}
-          {distanceKm != null && (
-            <span className="inline-flex items-center justify-center rounded-full border border-slate-200/30 bg-slate-900/60 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white backdrop-blur-sm">
-              {distanceKm.toFixed(1)} km
-            </span>
-          )}
-          {trail.difficulty && (
-            <span
-              className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] leading-none font-semibold capitalize text-white ${
-                trail.difficulty === 'easy'
-                  ? 'border border-emerald-200/60 bg-emerald-600/85'
-                  : trail.difficulty === 'medium'
-                    ? 'border border-amber-200/60 bg-amber-500/90'
-                    : 'border border-rose-200/60 bg-rose-600/85'
-              }`}
-            >
-              {trail.difficulty}
-            </span>
-          )}
-          {estimatedHours != null && (
-            <span className="inline-flex items-center justify-center rounded-full border border-sky-200/60 bg-sky-600/85 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
-              ~{estimatedHours}h
-            </span>
-          )}
-          {elevationGainM != null && (
-            <span className="inline-flex items-center justify-center rounded-full border border-indigo-200/60 bg-indigo-600/85 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
-              ↑ {Math.round(elevationGainM)} m
-            </span>
-          )}
-          {ratingValue != null && (
-            <span className="inline-flex items-center justify-center rounded-full border border-amber-200/70 bg-amber-500/90 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
-              {ratingValue.toFixed(1)}★
-            </span>
-          )}
+        <div className="pointer-events-none absolute left-3 top-3 z-20 max-w-[78%] rounded-xl px-3 py-2">
+          <h3 className="truncate text-base font-bold uppercase tracking-wide text-white">
+            {trail.name}
+          </h3>
+          <p className="mt-0.5 truncate text-xs text-white/90">{trail.location}</p>
         </div>
         {hasActions && (
           <div className="absolute right-3 top-3 z-20">
@@ -211,9 +177,47 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             +{images.length - 1} more
           </div>
         )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[11] bg-gradient-to-t from-black/85 via-black/45 to-transparent px-5 pb-5 pt-7">
-          <h3 className="text-xl font-bold uppercase tracking-wide text-white">{trail.name}</h3>
-          <p className="mt-1.5 truncate text-sm text-white/90">{trail.location}</p>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[11] bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-4 pt-8">
+          <div className="flex max-w-[85%] flex-wrap gap-2">
+            {trail.sport_type && (
+              <span className="inline-flex items-center justify-center rounded-full border border-emerald-300/70 bg-emerald-500/90 px-2.5 py-1 text-center text-[10px] leading-none font-semibold uppercase tracking-wide text-white">
+                {getSportLabel(trail.sport_type)}
+              </span>
+            )}
+            {distanceKm != null && (
+              <span className="inline-flex items-center justify-center rounded-full border border-slate-200/30 bg-slate-900/60 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white backdrop-blur-sm">
+                {distanceKm.toFixed(1)} km
+              </span>
+            )}
+            {trail.difficulty && (
+              <span
+                className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] leading-none font-semibold capitalize text-white ${
+                  trail.difficulty === 'easy'
+                    ? 'border border-emerald-200/60 bg-emerald-600/85'
+                    : trail.difficulty === 'medium'
+                      ? 'border border-amber-200/60 bg-amber-500/90'
+                      : 'border border-rose-200/60 bg-rose-600/85'
+                }`}
+              >
+                {trail.difficulty}
+              </span>
+            )}
+            {estimatedHours != null && (
+              <span className="inline-flex items-center justify-center rounded-full border border-sky-200/60 bg-sky-600/85 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
+                ~{estimatedHours}h
+              </span>
+            )}
+            {elevationGainM != null && (
+              <span className="inline-flex items-center justify-center rounded-full border border-indigo-200/60 bg-indigo-600/85 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
+                ↑ {Math.round(elevationGainM)} m
+              </span>
+            )}
+            {ratingValue != null && (
+              <span className="inline-flex items-center justify-center rounded-full border border-amber-200/70 bg-amber-500/90 px-2 py-0.5 text-center text-[10px] leading-none font-semibold text-white">
+                {ratingValue.toFixed(1)}★
+              </span>
+            )}
+          </div>
         </div>
         </div>
       </div>
