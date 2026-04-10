@@ -41,6 +41,9 @@ function isRetryablePgError(error: unknown) {
   if (
     /terminating connection/i.test(message) ||
     /connection terminated unexpectedly/i.test(message) ||
+    /connection terminated due to connection timeout/i.test(message) ||
+    /connection timeout/i.test(message) ||
+    /timed out/i.test(message) ||
     /server closed the connection unexpectedly/i.test(message) ||
     /socket hang up/i.test(message)
   ) {
@@ -70,13 +73,12 @@ const pool = new Pool({
       : undefined,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
+  keepAlive: true,
 });
 
 // Best-effort retry for read-only queries (safe to repeat) when the DB hiccups.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const originalQuery: any = pool.query.bind(pool);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (pool as any).query = async (...args: any[]) => {
   const firstArg = args[0];
   const sql =
@@ -92,7 +94,7 @@ const originalQuery: any = pool.query.bind(pool);
     return originalQuery(...args);
   }
 
-  const maxAttempts = 3;
+  const maxAttempts = 4;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await originalQuery(...args);

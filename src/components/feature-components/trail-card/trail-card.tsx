@@ -63,6 +63,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const ratingRaw = toFiniteNumber(trail.average_rating);
   const ratingValue = ratingRaw != null && (trail.review_count || 0) > 0 ? ratingRaw : null;
   const ratingDisplay = ratingValue ?? 5;
+  const ratingCount = trail.review_count || 0;
 
   const dropdownItems = [
     ...(trail.onCreateEvent
@@ -225,7 +226,10 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           </div>
           <div>
             <p className={dataLabelClass}>Rating</p>
-            <p className={dataValueClass}>★ {ratingDisplay.toFixed(1)}</p>
+            <p className={dataValueClass}>
+              ★ {ratingDisplay.toFixed(1)}
+              {ratingCount > 0 ? ` (${ratingCount})` : ''}
+            </p>
           </div>
         </div>
 

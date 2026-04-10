@@ -760,6 +760,9 @@ function TrailsPageContent() {
       : undefined;
   const isInitialLoading = isLoading && trails.length === 0;
   const isRefreshingResults = isFetching && !isFetchingNextPage && trails.length > 0;
+  const hasTrailsData = trails.length > 0;
+  const hasInitialError = Boolean(error) && !hasTrailsData;
+  const hasTransientError = Boolean(error) && hasTrailsData;
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
     if (typeof window === 'undefined') return 'map';
     const saved = window.localStorage.getItem('mtb_map_style_mode');
@@ -1309,6 +1312,15 @@ function TrailsPageContent() {
           Updating trails...
         </div>
       )}
+      {hasTransientError && (
+        <div
+          className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200"
+          role="status"
+          aria-live="polite"
+        >
+          Couldn’t refresh trails right now. Showing last available results.
+        </div>
+      )}
 
       {isInitialLoading ? (
         <>
@@ -1317,7 +1329,7 @@ function TrailsPageContent() {
           </p>
           <TrailsPageSkeleton />
         </>
-      ) : error ? (
+      ) : hasInitialError ? (
         <div className="text-center py-12">
           <p className="text-red-600">{(error as Error).message}</p>
         </div>
