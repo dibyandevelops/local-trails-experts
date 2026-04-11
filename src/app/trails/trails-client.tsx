@@ -902,13 +902,12 @@ function TrailsPageContent() {
     }
     const query = params.toString();
     const nextUrl = query ? `/trails?${query}` : '/trails';
-    // Avoid redundant replaces; in production this can trigger a replace loop.
-    const currentUrl =
-      typeof window !== 'undefined'
-        ? `${window.location.pathname}${window.location.search}`
-        : '';
-    if (currentUrl !== nextUrl) {
-      router.replace(nextUrl, { scroll: false });
+    // Use history.replaceState to avoid route transition flicker while keeping URL in sync.
+    if (typeof window !== 'undefined') {
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+      if (currentUrl !== nextUrl) {
+        window.history.replaceState(null, '', nextUrl);
+      }
     }
   }, [
     search,
@@ -921,7 +920,6 @@ function TrailsPageContent() {
     createEventOpen,
     createEventTrailId,
     createEventSport,
-    router,
   ]);
 
   useEffect(() => {
