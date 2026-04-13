@@ -468,7 +468,7 @@ function TrailsPageContent() {
   );
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const initialPageSize = 4;
+  const initialPageSize = 3;
   const nextPageSize = 3;
 
   const getTrailImages = (trail: Trail) =>
