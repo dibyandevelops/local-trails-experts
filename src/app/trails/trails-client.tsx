@@ -662,7 +662,7 @@ function TrailsPageContent() {
       distanceMin,
       distanceMax,
       sort,
-      pageSize,
+      pageSize: initialPageSize,
     });
     const paginatedKey = QUERY_KEYS.trails.paginatedList({
       search,
@@ -673,7 +673,7 @@ function TrailsPageContent() {
       distanceMax,
       sort,
       page: 1,
-      pageSize,
+      pageSize: initialPageSize,
     });
     const listKey = QUERY_KEYS.trails.list({
       search,
