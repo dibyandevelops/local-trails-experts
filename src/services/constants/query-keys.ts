@@ -74,6 +74,7 @@ export const QUERY_KEYS = {
         String(filters?.pageSize || 12),
       ] as const,
     byId: (id?: string | null) => ['trail', id || ''] as const,
+    mapById: (id?: string | null) => ['trail-map', id || ''] as const,
     reviews: (id?: string | null) => ['trail-reviews', id || ''] as const,
   },
   experts: {

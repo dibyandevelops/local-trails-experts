@@ -11,6 +11,7 @@ import ThemedDropdown from '@/components/ui/themed-dropdown';
 
 export type TrailCardProps = Trail & {
   detailsHref?: string;
+  showViewTrailOption?: boolean;
   onBeforeNavigate?: () => void;
   onGroupRequest?: () => void;
   onOpenImageGallery?: () => void;
@@ -66,6 +67,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const ratingCount = trail.review_count || 0;
 
   const dropdownItems = [
+    ...(trail.showViewTrailOption ? [{ label: 'View trail', href: detailsHref }] : []),
     ...(trail.onCreateEvent
       ? [{ label: 'Create event', onSelect: () => trail.onCreateEvent?.() }]
       : []),

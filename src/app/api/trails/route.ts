@@ -6,7 +6,6 @@ import { normalizeSafetyLabels } from '@/lib/trail-safety';
 import { parseGPX } from '@/lib/gpx-parser';
 import { DEFAULT_TRAIL_SPORT } from '@/services/constants/sports';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
-import { COMMUNITY_NAME } from '@/lib/branding';
 
 function parseOptionalNumber(raw: string | null) {
   if (!raw || !raw.trim()) return null;
@@ -26,7 +25,6 @@ function normalizeKomootEmbedInput(raw: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    const communityNameSql = COMMUNITY_NAME.replace(/'/g, "''");
     const auth = getAuthFromRequest(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -43,9 +41,13 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const hazardous = searchParams.get('hazardous') === 'true';
     const page = Math.max(1, Number(searchParams.get('page') || '1') || 1);
+    const offsetParam = parseOptionalNumber(searchParams.get('offset'));
     const pageSizeRaw = Number(searchParams.get('pageSize') || '12') || 12;
     const pageSize = Math.min(50, Math.max(1, pageSizeRaw));
-    const offset = (page - 1) * pageSize;
+    const offset =
+      offsetParam !== null && offsetParam >= 0
+        ? Math.floor(offsetParam)
+        : (page - 1) * pageSize;
 
     let whereClause = ' WHERE 1=1';
     const params: any[] = [];
@@ -168,34 +170,20 @@ export async function GET(request: NextRequest) {
       SELECT
         t.id,
         t.name,
-        t.description,
         t.difficulty,
         t.sport_type,
         t.location,
-        t.safety_labels,
-        NULL::double precision AS latitude,
-        NULL::double precision AS longitude,
-        ${distanceExpr} AS distance_from_user_km,
+        t.is_hazardous,
         t.distance_km,
         t.elevation_gain_m,
         t.estimated_time_hours,
         t.image_url,
         t.trail_images,
         t.komoot_embed_url,
-        NULL::jsonb AS route_data,
-        t.created_at,
-        t.updated_at,
-        t.submitted_by_user_id,
-        t.status,
         t.is_hidden,
         COALESCE(tr.review_count, 0) AS review_count,
-        COALESCE(tr.average_rating, 0) AS average_rating,
-        CASE
-          WHEN u.role = 'admin' THEN '${communityNameSql}'
-          ELSE u.name
-        END as created_by
+        COALESCE(tr.average_rating, 0) AS average_rating
       FROM trails t
-      LEFT JOIN users u ON t.submitted_by_user_id = u.id
       LEFT JOIN (
         SELECT
           trail_id,
@@ -224,7 +212,7 @@ export async function GET(request: NextRequest) {
       {
         trails,
         pagination: {
-          page,
+          page: Math.floor(offset / pageSize) + 1,
           pageSize,
           total,
           totalPages,

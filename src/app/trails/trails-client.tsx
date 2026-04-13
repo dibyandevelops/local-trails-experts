@@ -6,7 +6,14 @@ import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { fetchTrailsPaginated, requestTrail, deleteTrail, hideTrail, unhideTrail, fetchTrailById } from '@/services/trails/trails.service';
+import {
+  fetchTrailsPaginated,
+  requestTrail,
+  deleteTrail,
+  hideTrail,
+  unhideTrail,
+  fetchTrailMapById,
+} from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
@@ -24,7 +31,7 @@ import Map, {
 } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import EventForm from '@/components/feature-components/event-form/event-form';
-import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
+import { getMapLibreCompatibleMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
 import GroupRequestForm from '@/components/feature-components/group-request-form';
@@ -36,6 +43,7 @@ const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
 
 type TrailsViewMode = 'grid' | 'list';
+type TrailsPageParam = { offset: number; limit: number };
 type TrailSort =
   | 'name_asc'
   | 'name_desc'
@@ -460,7 +468,8 @@ function TrailsPageContent() {
   );
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const pageSize = 12;
+  const initialPageSize = 4;
+  const nextPageSize = 3;
 
   const getTrailImages = (trail: Trail) =>
     Array.from(
@@ -502,10 +511,16 @@ function TrailsPageContent() {
     enabled: !EXPERTS_BETA_ENABLED,
   });
   const queryClient = useQueryClient();
-  const { data: mapTrailDetail, isLoading: loadingMapTrail } = useQuery({
-    queryKey: QUERY_KEYS.trails.byId(mapTrailId),
-    queryFn: ({ signal }) => fetchTrailById(mapTrailId as string, signal),
+  const {
+    data: mapTrailDetail,
+    isLoading: loadingMapTrail,
+    error: mapTrailError,
+    refetch: refetchMapTrail,
+  } = useQuery({
+    queryKey: QUERY_KEYS.trails.mapById(mapTrailId),
+    queryFn: ({ signal }) => fetchTrailMapById(mapTrailId as string, signal),
     enabled: Boolean(mapTrailId) && mapOpen,
+    retry: 1,
   });
   const mapTrail = mapTrailDetail || mapTrailSummary;
 
@@ -542,7 +557,7 @@ function TrailsPageContent() {
       distanceMin,
       distanceMax,
       sort,
-      pageSize,
+      pageSize: initialPageSize,
     }),
     queryFn: ({ signal, pageParam }) =>
       fetchTrailsPaginated(
@@ -554,14 +569,17 @@ function TrailsPageContent() {
           distanceMin,
           distanceMax,
           sort,
-          page: Number(pageParam),
-          pageSize,
+          offset: pageParam.offset,
+          pageSize: pageParam.limit,
         },
         signal
       ),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.hasNextPage ? lastPage.pagination.page + 1 : undefined,
+    initialPageParam: { offset: 0, limit: initialPageSize } as TrailsPageParam,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam.offset + lastPage.trails.length;
+      if (nextOffset >= lastPage.pagination.total) return undefined;
+      return { offset: nextOffset, limit: nextPageSize } as TrailsPageParam;
+    },
     placeholderData: (previousData) => previousData,
   });
 
@@ -768,7 +786,7 @@ function TrailsPageContent() {
     const saved = window.localStorage.getItem('mtb_map_style_mode');
     return saved === 'map' || saved === 'satellite' ? saved : 'map';
   });
-  const mapStyle = getMapStyle(mapStyleMode);
+  const mapStyle = getMapLibreCompatibleMapStyle(mapStyleMode);
   useEffect(() => {
     try {
       window.localStorage.setItem('mtb_map_style_mode', mapStyleMode);
@@ -1544,6 +1562,21 @@ function TrailsPageContent() {
             {loadingMapTrail ? (
               <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
                 Loading trail route...
+              </div>
+            ) : mapTrailError ? (
+              <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
+                <div className="space-y-3">
+                  <p>{(mapTrailError as Error).message || 'Failed to load trail map.'}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void refetchMapTrail();
+                    }}
+                    className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+                  >
+                    Retry map
+                  </button>
+                </div>
               </div>
             ) : mapTrailDetail?.route_data?.coordinates?.length ? (
               <Map

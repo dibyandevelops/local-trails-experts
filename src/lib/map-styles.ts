@@ -71,3 +71,11 @@ export function getMapStyle(mode: MapStyleMode) {
   }
   return buildEsriSatelliteWithPlacesOverlayStyle();
 }
+
+export function getMapLibreCompatibleMapStyle(mode: MapStyleMode) {
+  const style = getMapStyle(mode);
+  if (typeof style === 'string' && style.startsWith('mapbox://')) {
+    return mode === 'map' ? buildOsmRasterStyle() : buildEsriSatelliteWithPlacesOverlayStyle();
+  }
+  return style;
+}

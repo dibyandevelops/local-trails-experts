@@ -17,6 +17,7 @@ export type TrailFilters = {
   hazardous?: boolean;
   page?: number;
   pageSize?: number;
+  offset?: number;
 };
 
 export type TrailsPagination = {
@@ -88,7 +89,11 @@ export async function fetchTrailsPaginated(
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
     if (filters.sort?.trim()) params.sort = filters.sort.trim();
     if (filters.hazardous) params.hazardous = 'true';
-    params.page = filters.page || 1;
+    if (typeof filters.offset === 'number' && Number.isFinite(filters.offset)) {
+      params.offset = filters.offset;
+    } else {
+      params.page = filters.page || 1;
+    }
     params.pageSize = filters.pageSize || 12;
 
     const { data } = await apiClient.get<PaginatedTrailsResponse>(ApiPath.Trails, {
@@ -132,6 +137,22 @@ export async function fetchTrailById(trailId: string, signal?: AbortSignal) {
       throw new Error(apiError?.error || 'Failed to fetch trail');
     }
     throw new Error('Failed to fetch trail');
+  }
+}
+
+export async function fetchTrailMapById(trailId: string, signal?: AbortSignal) {
+  try {
+    const { data } = await apiClient.get<{ trail: Trail }>(
+      `${ApiPath.Trails}/${trailId}/map`,
+      { signal }
+    );
+    return data.trail;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to fetch trail map');
+    }
+    throw new Error('Failed to fetch trail map');
   }
 }
 
