@@ -10,6 +10,7 @@ import { getSportLabel } from '@/services/constants/sports';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cancelEvent, leaveEvent } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { ESEWA_ENABLED } from '@/lib/feature-flags';
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -82,6 +83,7 @@ export default function EventDetailPage() {
     user?.role === 'participant' &&
     ((Boolean(booking) && booking?.status !== 'cancelled') || legacyJoined);
   const canStartEsewaPayment =
+    ESEWA_ENABLED &&
     Boolean(booking?.id) &&
     booking?.status !== 'cancelled' &&
     booking?.payment_status !== 'paid' &&
@@ -275,7 +277,7 @@ export default function EventDetailPage() {
     const paymentParam = searchParams?.get('payment');
     if (!paymentParam) return;
     if (paymentParam === 'success') {
-      setPaymentActionStatus('Payment verified successfully via eSewa.');
+      setPaymentActionStatus('Payment verified successfully.');
     } else if (paymentParam === 'failed') {
       setPaymentActionStatus('Payment was not completed. Please try again.');
     }
@@ -369,7 +371,7 @@ export default function EventDetailPage() {
       return false;
     }
     if (!transactionReference.trim()) {
-      setPaymentActionStatus('Please enter the eSewa transaction reference.');
+      setPaymentActionStatus('Please enter the transaction reference.');
       return false;
     }
     if (!paymentProofImage) {
@@ -777,12 +779,12 @@ export default function EventDetailPage() {
                 {event.qr_image_url ? (
                   <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/60">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
-                      Scan to pay (eSewa)
+                      Scan to pay
                     </p>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={event.qr_image_url}
-                      alt="eSewa QR for event payment"
+                      alt="Payment QR for event"
                       className="h-48 w-48 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
                     />
                     <button
@@ -790,7 +792,7 @@ export default function EventDetailPage() {
                       onClick={() =>
                         setImagePreview({
                           src: event.qr_image_url as string,
-                          alt: 'eSewa QR for event payment',
+                          alt: 'Payment QR for event',
                         })
                       }
                       className="mt-2 inline-flex rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
@@ -804,19 +806,21 @@ export default function EventDetailPage() {
                     <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
                       <p className="font-semibold">How payment works</p>
                       <ol className="mt-1 list-decimal space-y-0.5 pl-4">
-                        <li>Choose eSewa redirect or QR + proof.</li>
+                        {ESEWA_ENABLED && <li>Choose online payment or QR + proof.</li>}
                         <li>Pay the exact amount shown for your booking.</li>
                         <li>Your booking confirms once payment is verified.</li>
                       </ol>
                     </div>
-                    <button
-                      type="button"
-                      onClick={initiateEsewaPayment}
-                      disabled={startingPayment}
-                      className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                    >
-                      {startingPayment ? 'Redirecting to eSewa...' : 'Pay with eSewa'}
-                    </button>
+                    {ESEWA_ENABLED && (
+                      <button
+                        type="button"
+                        onClick={initiateEsewaPayment}
+                        disabled={startingPayment}
+                        className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                      >
+                        {startingPayment ? 'Redirecting to payment...' : 'Pay online'}
+                      </button>
+                    )}
                     {event.qr_image_url && (
                       <button
                         type="button"
@@ -1164,7 +1168,7 @@ export default function EventDetailPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={event.qr_image_url}
-                    alt="eSewa QR for event payment"
+                    alt="Payment QR for event"
                     className="h-48 w-48 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
                   />
                   <button
@@ -1172,7 +1176,7 @@ export default function EventDetailPage() {
                     onClick={() =>
                       setImagePreview({
                         src: event.qr_image_url as string,
-                        alt: 'eSewa QR for event payment',
+                        alt: 'Payment QR for event',
                       })
                     }
                     className="mt-2 inline-flex rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
@@ -1192,7 +1196,7 @@ export default function EventDetailPage() {
                 type="text"
                 value={transactionReference}
                 onChange={(event) => setTransactionReference(event.target.value)}
-                placeholder="eSewa transaction reference"
+                placeholder="Transaction reference"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
               />
               <input

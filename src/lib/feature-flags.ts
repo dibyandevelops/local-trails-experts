@@ -10,3 +10,8 @@ export const EXPERTS_BETA_ENABLED = parseBooleanFlag(
   process.env.NEXT_PUBLIC_EXPERTS_BETA_ENABLED,
   false
 );
+
+export const ESEWA_ENABLED = parseBooleanFlag(
+  process.env.NEXT_PUBLIC_ESEWA_ENABLED,
+  false
+);

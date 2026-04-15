@@ -1057,7 +1057,7 @@ export default function EventForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">eSewa QR Payment Image</label>
+            <label className="block text-sm font-medium mb-2">Payment QR Image</label>
             <input
               type="file"
               accept="image/*"
