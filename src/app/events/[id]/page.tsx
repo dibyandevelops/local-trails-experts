@@ -90,7 +90,65 @@ export default function EventDetailPage() {
     Number(booking?.total_price_npr || 0) > 0;
   const isPaidBooking = booking?.payment_status === 'paid';
   const canReviewPayments = Boolean(canCancel);
-  const cancellationRefundNpr = Math.max(0, Number(booking?.total_price_npr || 0));
+  const cancellationRefundNpr = isPaidBooking
+    ? Math.max(0, Number(booking?.total_price_npr || 0))
+    : 0;
+  const isEventPast = event ? new Date(event.event_date).getTime() < Date.now() : false;
+  const isEventFull = event
+    ? Number(event.current_participants) >= Number(event.max_participants)
+    : false;
+  const canGuestRegisterToJoin = !user && !isEventPast && !isEventFull;
+  const canParticipantJoinNow =
+    user?.role === 'participant' && !alreadyJoined && !isEventPast && !isEventFull;
+  const isPaidEvent = Number(event?.price_npr || 0) > 0;
+  const isCancelledBooking = booking?.status === 'cancelled';
+  const hasBookingProofPending = Boolean(
+    booking?.proof_submitted_at && booking?.payment_status !== 'paid' && booking?.payment_status !== 'refunded'
+  );
+  const participantPaymentBadge =
+    booking?.payment_status === 'paid'
+      ? {
+          label: 'Paid',
+          className:
+            'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100',
+        }
+      : booking?.payment_status === 'refunded'
+        ? {
+            label: 'Refunded',
+            className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-100',
+          }
+        : hasBookingProofPending
+          ? {
+              label: 'Proof Submitted',
+              className:
+                'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100',
+            }
+          : isPaidEvent && !isCancelledBooking
+            ? {
+                label: 'Payment Pending',
+                className:
+                  'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100',
+              }
+            : {
+                label: 'Not Required',
+                className: 'bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-100',
+              };
+  const participantBookingBadge = !booking?.status
+    ? null
+    : booking.status === 'cancelled'
+      ? {
+          label: 'Cancelled',
+          className: 'bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200',
+        }
+      : booking.status === 'confirmed' && (!isPaidEvent || booking?.payment_status === 'paid')
+        ? {
+            label: 'Confirmed',
+            className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100',
+          }
+        : {
+            label: 'Booked',
+            className: 'bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-100',
+          };
 
   const refreshBooking = useCallback(async () => {
     if (!eventId || !user || user.role !== 'participant') return;
@@ -139,6 +197,12 @@ export default function EventDetailPage() {
     mutationFn: async (id: string) => {
       if (!user) {
         throw new Error('Please register or login to join this event.');
+      }
+      if (isEventPast) {
+        throw new Error('This event has already ended.');
+      }
+      if (isEventFull) {
+        throw new Error('This event is full.');
       }
       const res = await fetch(`/api/events/${id}/bookings`, {
         method: 'POST',
@@ -547,15 +611,6 @@ export default function EventDetailPage() {
                 View Expert Profile
               </button>
             )}
-            {event.trail?.id && (
-              <button
-                type="button"
-                onClick={() => router.push(`/trails/${event.trail?.id}`)}
-                className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
-              >
-                Open Trail Map
-              </button>
-            )}
             {canCancel && (
               <button
                 type="button"
@@ -589,21 +644,32 @@ export default function EventDetailPage() {
               </p>
             )}
             {event.trail && (
-              <div className="flex flex-wrap gap-2">
-                {event.trail.distance_km && (
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-900 dark:bg-blue-900/60 dark:text-blue-100">
-                    Distance: {event.trail.distance_km} km
-                  </span>
-                )}
-                {event.trail.elevation_gain_m && (
-                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-900 dark:bg-purple-900/60 dark:text-purple-100">
-                    Elevation gain: {event.trail.elevation_gain_m} m
-                  </span>
-                )}
-                {event.trail.estimated_time_hours && (
-                  <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-900 dark:bg-orange-900/60 dark:text-orange-100">
-                    Estimated time: {event.trail.estimated_time_hours} h
-                  </span>
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {event.trail.distance_km && (
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-900 dark:bg-blue-900/60 dark:text-blue-100">
+                      Distance: {event.trail.distance_km} km
+                    </span>
+                  )}
+                  {event.trail.elevation_gain_m && (
+                    <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-900 dark:bg-purple-900/60 dark:text-purple-100">
+                      Elevation gain: {event.trail.elevation_gain_m} m
+                    </span>
+                  )}
+                  {event.trail.estimated_time_hours && (
+                    <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-900 dark:bg-orange-900/60 dark:text-orange-100">
+                      Estimated time: {event.trail.estimated_time_hours} h
+                    </span>
+                  )}
+                </div>
+                {event.trail.id && (
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/trails/${event.trail?.id}`)}
+                    className="inline-flex items-center rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                  >
+                    View Event Route
+                  </button>
                 )}
               </div>
             )}
@@ -648,7 +714,12 @@ export default function EventDetailPage() {
             </h3>
             {canJoin ? (
               <div className="mt-2 space-y-3">
-                {!user && (
+                {isEventPast && !alreadyJoined ? (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                    This event has already ended. You can still view the event details.
+                  </p>
+                ) : null}
+                {canGuestRegisterToJoin && (
                   <button
                     type="button"
                     onClick={() => {
@@ -667,34 +738,59 @@ export default function EventDetailPage() {
                     Register to Join
                   </button>
                 )}
+                {!user && isEventFull && (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                    This event is full. You can still view the event details.
+                  </p>
+                )}
                 {user?.role === 'participant' && (
                   alreadyJoined ? (
-                    <button
-                      type="button"
-                      disabled={cancelBookingMutation.isPending || leaveMutation.isPending}
-                      onClick={() => {
-                        setShowCancelBookingModal(true);
-                      }}
-                      className="w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
-                    >
-                      {cancelBookingMutation.isPending
-                        ? 'Processing...'
-                        : isPaidBooking
-                          ? 'Request Refund / Cancel'
-                          : 'Cancel Booking'}
-                    </button>
+                    <div className="space-y-2">
+                      {booking?.status !== 'cancelled' &&
+                        booking?.payment_status !== 'paid' &&
+                        Number(booking?.total_price_npr || 0) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowPaymentModal(true)}
+                            className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                          >
+                            Submit Payment Proof
+                          </button>
+                        )}
+                      <button
+                        type="button"
+                        disabled={cancelBookingMutation.isPending || leaveMutation.isPending}
+                        onClick={() => {
+                          setShowCancelBookingModal(true);
+                        }}
+                        className="w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+                      >
+                        {cancelBookingMutation.isPending
+                          ? 'Processing...'
+                          : isPaidBooking
+                            ? 'Request Refund / Cancel'
+                            : 'Cancel Booking'}
+                      </button>
+                    </div>
                   ) : (
                     <button
                       type="button"
-                      disabled={joinMutation.isPending}
+                      disabled={!canParticipantJoinNow || joinMutation.isPending}
                       onClick={() => {
+                        if (!canParticipantJoinNow) return;
                         if (!eventId) return;
                         setJoinError(null);
                         joinMutation.mutate(eventId);
                       }}
                       className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {joinMutation.isPending ? 'Joining...' : 'Join Event'}
+                      {joinMutation.isPending
+                        ? 'Joining...'
+                        : isEventPast
+                          ? 'Event Ended'
+                          : isEventFull
+                            ? 'Event Full'
+                            : 'Join Event'}
                     </button>
                   )
                 )}
@@ -721,42 +817,20 @@ export default function EventDetailPage() {
               Payment
             </h3>
             <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-              Price per spot: NPR {event.price_npr || 0}
+              Price per spot: {Number(event.price_npr || 0) > 0 ? `NPR ${event.price_npr}` : 'Free'}
             </p>
             {user?.role === 'participant' && (
               <div className="mt-3 flex flex-wrap gap-2">
                 <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                    booking?.payment_status === 'paid'
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100'
-                      : booking?.payment_status === 'refunded'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-100'
-                      : 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100'
-                  }`}
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${participantPaymentBadge.className}`}
                 >
-                  {booking?.payment_status === 'paid'
-                    ? 'Payment Complete'
-                    : booking?.payment_status === 'refunded'
-                      ? 'Refunded'
-                    : booking?.proof_submitted_at
-                      ? 'Verification Pending'
-                      : 'Payment Pending'}
+                  Payment: {participantPaymentBadge.label}
                 </span>
-                {booking?.status && (
+                {participantBookingBadge && (
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                      booking.status === 'confirmed'
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100'
-                        : booking.status === 'cancelled'
-                          ? 'bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200'
-                          : 'bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-100'
-                    }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${participantBookingBadge.className}`}
                   >
-                    {booking.status === 'confirmed'
-                      ? 'Booking Confirmed'
-                      : booking.status === 'cancelled'
-                        ? 'Cancelled'
-                        : 'Awaiting Payment'}
+                    Booking: {participantBookingBadge.label}
                   </span>
                 )}
                 {booking?.status === 'cancelled' && booking?.refund_status && (
@@ -904,6 +978,66 @@ export default function EventDetailPage() {
                         item.payment_status === 'paid' &&
                         item.refund_status !== 'requested' &&
                         item.refund_status !== 'settled';
+                      const isPaidBookingItem = item.payment_status === 'paid';
+                      const hasProofPending =
+                        Boolean(item.proof_submitted_at) &&
+                        item.payment_status !== 'paid' &&
+                        item.payment_status !== 'refunded';
+                      const bookingBadge =
+                        item.booking_status === 'cancelled'
+                          ? {
+                              label: 'Cancelled',
+                              className:
+                                'bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200',
+                            }
+                          : item.booking_status === 'confirmed' &&
+                              (item.total_price_npr <= 0 || isPaidBookingItem)
+                            ? {
+                                label: 'Confirmed',
+                                className:
+                                  'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100',
+                              }
+                            : {
+                                label: 'Booked',
+                                className:
+                                  'bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-100',
+                              };
+                      const paymentBadge =
+                        item.payment_status === 'paid'
+                          ? {
+                              label: 'Paid',
+                              className:
+                                'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100',
+                            }
+                          : item.payment_status === 'refunded'
+                            ? {
+                                label: 'Refunded',
+                                className:
+                                  'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-100',
+                              }
+                            : item.payment_status === 'failed'
+                              ? {
+                                  label: 'Failed',
+                                  className:
+                                    'bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200',
+                                }
+                              : hasProofPending
+                                ? {
+                                    label: 'Proof Submitted',
+                                    className:
+                                      'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100',
+                                  }
+                                : item.total_price_npr > 0 && item.booking_status !== 'cancelled'
+                                  ? {
+                                      label: 'Pending',
+                                      className:
+                                        'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100',
+                                    }
+                                  : {
+                                      label: 'Not Required',
+                                      className:
+                                        'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+                                    };
                       return (
                         <tr
                           key={item.booking_id}
@@ -925,8 +1059,10 @@ export default function EventDetailPage() {
                             NPR {item.total_price_npr}
                           </td>
                           <td className="px-3 py-2">
-                            <span className="inline-flex rounded-full bg-sky-100 px-2 py-1 text-[11px] font-semibold text-sky-800 dark:bg-sky-900/60 dark:text-sky-100">
-                              {item.booking_status}
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${bookingBadge.className}`}
+                            >
+                              {bookingBadge.label}
                             </span>
                           </td>
                           <td className="px-3 py-2">
@@ -951,15 +1087,9 @@ export default function EventDetailPage() {
                           </td>
                           <td className="px-3 py-2">
                             <span
-                              className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${
-                                item.payment_status === 'paid'
-                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100'
-                                  : item.payment_status === 'failed'
-                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200'
-                                    : 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100'
-                              }`}
+                              className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${paymentBadge.className}`}
                             >
-                              {item.payment_status || 'pending'}
+                              {paymentBadge.label}
                             </span>
                             {item.paid_at && (
                               <div className="mt-1 text-[11px] text-gray-600 dark:text-slate-300">
@@ -1064,7 +1194,9 @@ export default function EventDetailPage() {
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">Cancel booking?</h3>
             <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-              You will receive a full refund after cancellation.
+              {isPaidBooking
+                ? 'You will receive a full refund after cancellation.'
+                : 'This booking is not paid yet. Cancellation will not trigger a refund.'}
             </p>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
               Expected refund: NPR {cancellationRefundNpr}
