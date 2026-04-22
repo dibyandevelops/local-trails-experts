@@ -38,6 +38,13 @@ function toStringOrEmpty(value: number | string | null | undefined) {
   return String(value);
 }
 
+function parseOptionalNumericInput(value: string): number | null {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -271,11 +278,11 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       difficulty: values.difficulty,
       sport_type: values.sport_type,
       location: values.location.trim(),
-      latitude: values.latitude ? Number(values.latitude) : null,
-      longitude: values.longitude ? Number(values.longitude) : null,
-      // distance_km is derived from GPX; keep read-only on the form.
-      elevation_gain_m: values.elevation_gain_m ? Number(values.elevation_gain_m) : null,
-      estimated_time_hours: values.estimated_time_hours ? Number(values.estimated_time_hours) : null,
+      latitude: parseOptionalNumericInput(values.latitude),
+      longitude: parseOptionalNumericInput(values.longitude),
+      distance_km: parseOptionalNumericInput(values.distance_km),
+      elevation_gain_m: parseOptionalNumericInput(values.elevation_gain_m),
+      estimated_time_hours: parseOptionalNumericInput(values.estimated_time_hours),
       image_url: trailImages[0] || null,
       trail_images: trailImages,
       komoot_embed_url: normalizeKomootEmbedInput(values.komoot_embed_url) || null,
@@ -412,8 +419,8 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
             </label>
             <input
               {...register('distance_km')}
-              readOnly
-              className="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              inputMode="decimal"
             />
           </div>
           <div>
