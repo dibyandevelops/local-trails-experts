@@ -44,6 +44,7 @@ import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
 import ThemedDropdown from '@/components/ui/themed-dropdown';
+import AppDialog from '@/components/ui/app-dialog';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -310,6 +311,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [reviewComment, setReviewComment] = useState('');
   const [reviewAcceptTerms, setReviewAcceptTerms] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [sportTypeDraft, setSportTypeDraft] = useState<Trail['sport_type']>('mtb');
   const [sportSafetyModalOpen, setSportSafetyModalOpen] = useState(false);
   const [hazardModalOpen, setHazardModalOpen] = useState(false);
@@ -339,6 +341,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   useEffect(() => {
     const closeTransientUi = () => {
       setRequestModalOpen(false);
+      setReviewModalOpen(false);
       setGalleryModalOpen(false);
       setCreateEventOpen(false);
       setReplaceConfirmOpen(false);
@@ -951,6 +954,35 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     setRequestModalOpen(true);
   };
 
+  const handleOpenReviewModal = () => {
+    if (loadingCurrentUser) {
+      setReviewMessage('Checking your account. Please try again in a second.');
+      return;
+    }
+    if (!currentUser) {
+      const next =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : `/trails/${trail.id}`;
+      window.dispatchEvent(
+        new CustomEvent('open-login', {
+          detail: {
+            message: 'Login to review this trail.',
+            next,
+          },
+        })
+      );
+      return;
+    }
+    if (!canReviewTrail) {
+      setReviewMessage('You can review this trail only after joining a ride.');
+      setReviewModalOpen(true);
+      return;
+    }
+    setReviewMessage(null);
+    setReviewModalOpen(true);
+  };
+
   const handleBackToTrails = () => {
     const lastListUrl = sessionStorage.getItem(TRAILS_LAST_URL_KEY);
     if (lastListUrl) {
@@ -1004,6 +1036,26 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Share
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenReviewModal}
+              title={
+                !currentUser
+                  ? 'Login required to submit a review'
+                  : !canReviewTrail
+                    ? 'Join a ride on this trail first'
+                    : undefined
+              }
+              className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              {!currentUser
+                ? 'Write Review (Login)'
+                : !canReviewTrail
+                  ? 'Write Review (Join First)'
+                  : existingReview
+                    ? 'Update Review'
+                    : 'Write Review'}
             </button>
             {trailImages.length > 0 && (
               <button
@@ -1572,8 +1624,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         />
       </div>
 
-      <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      {(loadingReviews || Boolean(reviewData?.reviews?.length)) && (
+        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
               Reviews
@@ -1589,154 +1641,51 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               <span>({reviewSummary.count} reviews)</span>
             </div>
           </div>
-          {currentUser ? (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-              {canReviewTrail
-                ? existingReview
-                  ? 'Update your review'
-                  : 'Leave a review'
-                : 'Join a ride on this trail to review'}
-            </span>
-          ) : (
-            <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              Log in to review
-            </span>
-          )}
-        </div>
-
-        {currentUser && (
-          <form
-            onSubmit={async (event) => {
-              event.preventDefault();
-              setReviewMessage(null);
-              if (!canReviewTrail) {
-                setReviewMessage(
-                  'You can review this trail only after joining a ride.'
-                );
-                return;
-              }
-              if (!reviewAcceptTerms) {
-                setReviewMessage('Please accept the terms before submitting your review.');
-                return;
-              }
-              await reviewMutation.mutateAsync({
-                rating: reviewRating,
-                comment: reviewComment,
-              });
-            }}
-            className="mt-4 grid gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
-          >
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-                Rating
-              </label>
-              <select
-                value={reviewRating}
-                onChange={(event) => setReviewRating(Number(event.target.value))}
-                disabled={!canReviewTrail}
-                className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
-              >
-                {[5, 4, 3, 2, 1].map((value) => (
-                  <option key={`trail-rating-${value}`} value={value}>
-                    {value} star{value > 1 ? 's' : ''}
-                  </option>
-                ))}
-              </select>
-              {renderStars(reviewRating)}
-            </div>
-            <textarea
-              value={reviewComment}
-              onChange={(event) => setReviewComment(event.target.value)}
-              rows={3}
-              disabled={!canReviewTrail}
-              className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
-              placeholder="Share what riders should expect on this trail."
-            />
-            <label className="flex items-start gap-2 text-xs text-emerald-800 dark:text-emerald-200">
-              <input
-                type="checkbox"
-                checked={reviewAcceptTerms}
-                onChange={(event) => setReviewAcceptTerms(event.target.checked)}
-                disabled={!canReviewTrail}
-                className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <span>
-                I agree to the{' '}
-                <a href="/terms" className="font-semibold text-emerald-700 hover:underline">
-                  Terms &amp; Conditions
-                </a>{' '}
-                and{' '}
-                <a href="/privacy" className="font-semibold text-emerald-700 hover:underline">
-                  Privacy Policy
-                </a>
-                .
-              </span>
-            </label>
-            {reviewMessage && (
-              <p className="text-xs text-emerald-800 dark:text-emerald-200">{reviewMessage}</p>
-            )}
-            <button
-              type="submit"
-              disabled={reviewMutation.isPending || !reviewAcceptTerms || !canReviewTrail}
-              className="w-full rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {reviewMutation.isPending ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}
-            </button>
-          </form>
-        )}
-
-        <div className="mt-4 space-y-3">
-          {loadingReviews ? (
-            <p className="text-sm text-gray-500 dark:text-slate-300">Loading reviews...</p>
-          ) : reviewData?.reviews?.length ? (
-            reviewData.reviews.map((review) => (
-              <div
-                key={review.id}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                      {review.reviewer_photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={review.reviewer_photo_url}
-                          alt={review.reviewer_name || 'Reviewer'}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          {(review.reviewer_name || 'R')
-                            .slice(0, 1)
-                            .toUpperCase()}
-                        </div>
-                      )}
+          <div className="mt-4 space-y-3">
+            {loadingReviews ? (
+              <p className="text-sm text-gray-500 dark:text-slate-300">Loading reviews...</p>
+            ) : (
+              reviewData?.reviews?.map((review) => (
+                <div
+                  key={review.id}
+                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {review.reviewer_photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={review.reviewer_photo_url}
+                            alt={review.reviewer_name || 'Reviewer'}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            {(review.reviewer_name || 'R').slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {review.reviewer_name || 'Anonymous'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                          <DateText value={review.created_at} pattern="PPP" />
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {review.reviewer_name || 'Anonymous'}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">
-                        <DateText value={review.created_at} pattern="PPP" />
-                      </p>
-                    </div>
+                    {renderStars(review.rating)}
                   </div>
-                  {renderStars(review.rating)}
+                  {review.comment && (
+                    <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">{review.comment}</p>
+                  )}
                 </div>
-                {review.comment && (
-                  <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">
-                    {review.comment}
-                  </p>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-slate-300">
-              No reviews yet. Be the first to share your experience.
-            </p>
-          )}
-        </div>
-      </section>
+              ))
+            )}
+          </div>
+        </section>
+      )}
 
       {trailImages.length > 0 && (
         <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -2074,6 +2023,90 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           </Dialog.Portal>
         </Dialog.Root>
       )}
+
+      <AppDialog
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
+        title={existingReview ? 'Update Your Review' : 'Review This Trail'}
+        description="Share your experience to help other riders."
+      >
+            <form
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setReviewMessage(null);
+                if (!canReviewTrail) {
+                  setReviewMessage('You can review this trail only after joining a ride.');
+                  return;
+                }
+                if (!reviewAcceptTerms) {
+                  setReviewMessage('Please accept the terms before submitting your review.');
+                  return;
+                }
+                await reviewMutation.mutateAsync({
+                  rating: reviewRating,
+                  comment: reviewComment,
+                });
+              }}
+              className="mt-4 grid gap-3"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                  Rating
+                </label>
+                <select
+                  value={reviewRating}
+                  onChange={(event) => setReviewRating(Number(event.target.value))}
+                  disabled={!canReviewTrail}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  {[5, 4, 3, 2, 1].map((value) => (
+                    <option key={`trail-rating-${value}`} value={value}>
+                      {value} star{value > 1 ? 's' : ''}
+                    </option>
+                  ))}
+                </select>
+                {renderStars(reviewRating)}
+              </div>
+              <textarea
+                value={reviewComment}
+                onChange={(event) => setReviewComment(event.target.value)}
+                rows={4}
+                disabled={!canReviewTrail}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                placeholder="Share what riders should expect on this trail."
+              />
+              <label className="flex items-start gap-2 text-xs text-gray-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={reviewAcceptTerms}
+                  onChange={(event) => setReviewAcceptTerms(event.target.checked)}
+                  disabled={!canReviewTrail}
+                  className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span>
+                  I agree to the{' '}
+                  <a href="/terms" className="font-semibold text-emerald-700 hover:underline">
+                    Terms &amp; Conditions
+                  </a>{' '}
+                  and{' '}
+                  <a href="/privacy" className="font-semibold text-emerald-700 hover:underline">
+                    Privacy Policy
+                  </a>
+                  .
+                </span>
+              </label>
+              {reviewMessage && (
+                <p className="text-xs text-emerald-800 dark:text-emerald-200">{reviewMessage}</p>
+              )}
+              <button
+                type="submit"
+                disabled={reviewMutation.isPending || !reviewAcceptTerms || !canReviewTrail}
+                className="w-full rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {reviewMutation.isPending ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}
+                </button>
+              </form>
+      </AppDialog>
 
       <Dialog.Root open={createEventOpen} onOpenChange={setCreateEventOpen}>
         <Dialog.Portal>

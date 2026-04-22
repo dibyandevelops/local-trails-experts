@@ -16,9 +16,14 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import VerificationDetailsContent, {
   hasVerificationDetails,
 } from '@/components/ui/verification-details-content';
+import AppDialog from '@/components/ui/app-dialog';
 import { EXPERTS_BETA_ENABLED, STRAVA_ENABLED } from '@/lib/feature-flags';
 import DateText from '@/components/ui/date-text';
-import { fetchExpertReviews, submitExpertReview } from '@/services/reviews/reviews.service';
+import {
+  deleteExpertReview,
+  fetchExpertReviews,
+  submitExpertReview,
+} from '@/services/reviews/reviews.service';
 import { fetchMyParticipantEvents } from '@/services/participants/participants.service';
 
 interface ExpertDetail extends User {
@@ -34,6 +39,7 @@ export default function ExpertDetailPage() {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewAcceptTerms, setReviewAcceptTerms] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
     queryKey: ['expert-detail', expertId || ''],
@@ -85,9 +91,11 @@ export default function ExpertDetailPage() {
       setReviewComment('');
       return;
     }
+    // Keep rating synced for quick update, but start with an empty comment input
+    // so old test/demo text does not auto-populate unexpectedly.
     setReviewRating(existingReview.rating || 5);
-    setReviewComment(existingReview.comment || '');
-  }, [existingReview?.id]);
+    setReviewComment('');
+  }, [existingReview]);
 
   const reviewMutation = useMutation({
     mutationFn: (payload: { rating: number; comment?: string }) =>
@@ -102,10 +110,26 @@ export default function ExpertDetailPage() {
     },
   });
 
+  const deleteReviewMutation = useMutation({
+    mutationFn: () => deleteExpertReview(expertId || ''),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.experts.reviews(expertId || '') });
+      setReviewRating(5);
+      setReviewComment('');
+      setReviewAcceptTerms(false);
+      setReviewMessage('Your review was deleted.');
+    },
+    onError: (error) => {
+      setReviewMessage(error instanceof Error ? error.message : 'Failed to delete review.');
+    },
+  });
+
   if (loading) {
     return (
-      <div className="text-center py-12 text-gray-600 dark:text-slate-300">
-        Loading...
+      <div className="mx-auto max-w-5xl space-y-4 py-6">
+        <div className="h-36 animate-pulse rounded-2xl bg-gray-100 dark:bg-slate-800" />
+        <div className="h-28 animate-pulse rounded-2xl bg-gray-100 dark:bg-slate-800" />
+        <div className="h-48 animate-pulse rounded-2xl bg-gray-100 dark:bg-slate-800" />
       </div>
     );
   }
@@ -154,25 +178,48 @@ export default function ExpertDetailPage() {
     </div>
   );
 
+  const openReviewModal = () => {
+    if (!currentUser) {
+      window.dispatchEvent(
+        new CustomEvent('open-login', {
+          detail: {
+            message: 'Login to review this expert.',
+            next: `/experts/${expert.id}`,
+          },
+        })
+      );
+      return;
+    }
+    if (!canReviewExpert) {
+      setReviewMessage(
+        'You can review this expert only after joining one of their rides. Admins can review directly.'
+      );
+      setReviewModalOpen(true);
+      return;
+    }
+    setReviewMessage(null);
+    setReviewModalOpen(true);
+  };
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <section className="overflow-hidden rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-emerald-100 p-6 shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/60 dark:to-emerald-900/40">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-emerald-200">
-          Expert Showcase
+          Expert Profile
         </p>
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="mb-2 text-xs text-gray-600 dark:text-slate-300">
+          <Link
+            href="/experts"
+            className="underline hover:text-green-700 dark:hover:text-emerald-200"
+          >
+            All experts
+          </Link>{' '}
+          / Profile
+        </div>
+        <div className="grid gap-5 lg:grid-cols-[1fr_auto]">
           <div>
-            <p className="mb-1 text-xs text-gray-600 dark:text-slate-300">
-              <Link
-                href="/experts"
-                className="underline hover:text-green-700 dark:hover:text-emerald-200"
-              >
-                All experts
-              </Link>{' '}
-              / Profile
-            </p>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="h-12 w-12 overflow-hidden rounded-full border border-white/60 bg-white/80 text-gray-700 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
+              <div className="h-14 w-14 overflow-hidden rounded-full border border-white/60 bg-white/80 text-gray-700 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
                 {expert.profile_photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -181,7 +228,7 @@ export default function ExpertDetailPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                  <div className="flex h-full w-full items-center justify-center text-base font-semibold">
                     {initials}
                   </div>
                 )}
@@ -200,20 +247,25 @@ export default function ExpertDetailPage() {
               )}
               {strava?.connected && stravaProfileId && currentUser?.id === expertId && (
                 <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 shadow-sm dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100">
-                  Strava Verified{' '}
+                  Strava Verified
                   <span className="ml-1 text-[10px] font-medium text-orange-700/80 dark:text-orange-200/80">
                     (Powered by Strava)
                   </span>
                 </span>
               )}
             </div>
-            {expert.city && (
-              <p className="mt-1 text-sm text-gray-700 dark:text-slate-200">
-                {expert.city}
-              </p>
-            )}
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-gray-700 dark:text-slate-200">
+              {expert.city && <span>{expert.city}</span>}
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/70 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-100">
+                {reviewSummary.averageRating.toFixed(1)} / 5
+                <span className="text-amber-500">★</span>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-slate-400">
+                  ({reviewSummary.count})
+                </span>
+              </span>
+            </div>
             {expert.bio && (
-              <p className="mt-3 max-w-2xl text-sm text-gray-700 dark:text-slate-200">
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-700 dark:text-slate-200">
                 {expert.bio}
               </p>
             )}
@@ -222,64 +274,82 @@ export default function ExpertDetailPage() {
                 Beta feature: workflows may change.
               </p>
             )}
+            {sports.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {sports.map((sport) => (
+                  <span
+                    key={sport}
+                    className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100"
+                  >
+                    {getSportLabel(sport)}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="flex flex-col items-start gap-2 md:items-end">
-          <div className="flex flex-wrap items-center gap-2">
-              {strava?.connected && stravaProfileId && currentUser?.id === expertId && (
-                <a
-                  href={`https://www.strava.com/athletes/${stravaProfileId}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 shadow-sm transition hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100 dark:hover:bg-orange-900/60"
-                >
-                  Check on Strava
-                </a>
-              )}
-              <Link
-                href={`/events?expert=${expert.id}`}
-                className="rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+          <div className="flex min-w-[220px] flex-col items-start gap-2 lg:items-end">
+            {strava?.connected && stravaProfileId && currentUser?.id === expertId && (
+              <a
+                href={`https://www.strava.com/athletes/${stravaProfileId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 shadow-sm transition hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100 dark:hover:bg-orange-900/60 lg:w-auto"
               >
-                View All Events
-              </Link>
-            </div>
+                Check on Strava
+              </a>
+            )}
+            <Link
+              href={`/events?expert=${expert.id}`}
+              className="inline-flex w-full items-center justify-center rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300 lg:w-auto"
+            >
+              View All Events
+            </Link>
+            <button
+              type="button"
+              onClick={openReviewModal}
+              title={
+                !currentUser
+                  ? 'Login required to submit a review'
+                  : !canReviewExpert
+                    ? 'Join this expert’s event first (admins can review directly)'
+                    : undefined
+              }
+              className="inline-flex w-full items-center justify-center rounded-lg border border-green-700 bg-white px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50 dark:border-emerald-500 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-900/30 lg:w-auto"
+            >
+              {!currentUser
+                ? 'Write Review (Login)'
+                : !canReviewExpert
+                  ? 'Write Review (Join First)'
+                  : existingReview
+                    ? 'Update Review'
+                    : 'Write Review'}
+            </button>
           </div>
         </div>
-        {sports.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {sports.map((sport) => (
-              <span
-                key={sport}
-                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100"
-              >
-                {getSportLabel(sport)}
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
             <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
               Total Events
             </p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {expert.events.length}
-            </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{expert.events.length}</p>
           </div>
           <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
             <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
               Upcoming
             </p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {upcomingEvents.length}
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{upcomingEvents.length}</p>
+          </div>
+          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
+              Reviews
             </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{reviewSummary.count}</p>
           </div>
           <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
             <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
               Sports
             </p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {sports.length}
-            </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{sports.length}</p>
           </div>
         </div>
       </section>
@@ -310,187 +380,86 @@ export default function ExpertDetailPage() {
         </section>
       )}
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-              Reviews
-            </p>
-            <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
-              Expert ratings & feedback
-            </h2>
-            <div className="mt-2 flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
-              <span className="text-xl font-semibold text-gray-900 dark:text-white">
-                {reviewSummary.averageRating.toFixed(1)}
-              </span>
-              {renderStars(reviewSummary.averageRating)}
-              <span>({reviewSummary.count} reviews)</span>
+      {(loadingReviews || Boolean(reviewData?.reviews?.length)) && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                Reviews
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Expert ratings & feedback
+              </h2>
+              <div className="mt-2 flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
+                <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {reviewSummary.averageRating.toFixed(1)}
+                </span>
+                {renderStars(reviewSummary.averageRating)}
+                <span>({reviewSummary.count} reviews)</span>
+              </div>
             </div>
           </div>
-          {currentUser ? (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-              {canReviewExpert
-                ? existingReview
-                  ? 'Update your review'
-                  : 'Leave a review'
-                : 'Join this expert’s event to review (admins can review directly)'}
-            </span>
-          ) : (
-            <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              Log in to review
-            </span>
-          )}
-        </div>
-
-        {currentUser && (
-          <form
-            onSubmit={async (event) => {
-              event.preventDefault();
-              setReviewMessage(null);
-              if (!canReviewExpert) {
-                setReviewMessage(
-                  'You can review this expert only after joining one of their rides. Admins can review directly.'
-                );
-                return;
-              }
-              if (!reviewAcceptTerms) {
-                setReviewMessage('Please accept the terms before submitting your review.');
-                return;
-              }
-              await reviewMutation.mutateAsync({
-                rating: reviewRating,
-                comment: reviewComment,
-              });
-            }}
-            className="mt-4 grid gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
-          >
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-                Rating
-              </label>
-              <select
-                value={reviewRating}
-                onChange={(event) => setReviewRating(Number(event.target.value))}
-                disabled={!canReviewExpert}
-                className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
-              >
-                {[5, 4, 3, 2, 1].map((value) => (
-                  <option key={`expert-rating-${value}`} value={value}>
-                    {value} star{value > 1 ? 's' : ''}
-                  </option>
-                ))}
-              </select>
-              {renderStars(reviewRating)}
-            </div>
-            <textarea
-              value={reviewComment}
-              onChange={(event) => setReviewComment(event.target.value)}
-              rows={3}
-              disabled={!canReviewExpert}
-              className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-slate-100"
-              placeholder="Share how this expert performed during your ride or training."
-            />
-            <label className="flex items-start gap-2 text-xs text-emerald-800 dark:text-emerald-200">
-              <input
-                type="checkbox"
-                checked={reviewAcceptTerms}
-                onChange={(event) => setReviewAcceptTerms(event.target.checked)}
-                disabled={!canReviewExpert}
-                className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <span>
-                I agree to the{' '}
-                <a href="/terms" className="font-semibold text-emerald-700 hover:underline">
-                  Terms &amp; Conditions
-                </a>{' '}
-                and{' '}
-                <a href="/privacy" className="font-semibold text-emerald-700 hover:underline">
-                  Privacy Policy
-                </a>
-                .
-              </span>
-            </label>
-            {reviewMessage && (
-              <p className="text-xs text-emerald-800 dark:text-emerald-200">{reviewMessage}</p>
-            )}
-            <button
-              type="submit"
-              disabled={reviewMutation.isPending || !reviewAcceptTerms || !canReviewExpert}
-              className="w-full rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {reviewMutation.isPending ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}
-            </button>
-          </form>
-        )}
-
-        <div className="mt-4 space-y-3">
-          {loadingReviews ? (
-            <p className="text-sm text-gray-500 dark:text-slate-300">Loading reviews...</p>
-          ) : reviewData?.reviews?.length ? (
-            reviewData.reviews.map((review) => (
-              <div
-                key={review.id}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                      {review.reviewer_photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={review.reviewer_photo_url}
-                          alt={review.reviewer_name || 'Reviewer'}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          {(review.reviewer_name || 'R')
-                            .slice(0, 1)
-                            .toUpperCase()}
-                        </div>
-                      )}
+          <div className="mt-4 space-y-3">
+            {loadingReviews ? (
+              <p className="text-sm text-gray-500 dark:text-slate-300">Loading reviews...</p>
+            ) : (
+              reviewData?.reviews?.map((review) => (
+                <div
+                  key={review.id}
+                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {review.reviewer_photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={review.reviewer_photo_url}
+                            alt={review.reviewer_name || 'Reviewer'}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            {(review.reviewer_name || 'R').slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {review.reviewer_name || 'Anonymous'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                          <DateText value={review.created_at} pattern="PPP" />
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {review.reviewer_name || 'Anonymous'}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">
-                        <DateText value={review.created_at} pattern="PPP" />
-                      </p>
-                    </div>
+                    {renderStars(review.rating)}
                   </div>
-                  {renderStars(review.rating)}
+                  {review.comment && (
+                    <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">{review.comment}</p>
+                  )}
                 </div>
-                {review.comment && (
-                  <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">
-                    {review.comment}
-                  </p>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-slate-300">
-              No reviews yet. Be the first to share your experience.
-            </p>
-          )}
-        </div>
-      </section>
+              ))
+            )}
+          </div>
+        </section>
+      )}
 
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">
+      <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
           Upcoming events with {expert.name || 'this expert'}
         </h2>
         {upcomingEvents.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-slate-300">
+          <p className="rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
             No upcoming events listed yet. Check back soon or browse other
             events.
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {upcomingEvents.map((event) => (
               <div
                 key={event.id}
-                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 dark:border-slate-700 dark:bg-slate-900"
+                className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900/60"
               >
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -511,20 +480,26 @@ export default function ExpertDetailPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  {event.price_npr > 0 && (
-                    <p className="text-xs font-semibold text-gray-900 dark:text-white">
-                      NPR {event.price_npr}
-                    </p>
-                  )}
-                  <Link
-                    href={`/events?city=${encodeURIComponent(
-                      event.city || ''
-                    )}&sport=${encodeURIComponent(event.sport_type || '')}`}
-                    className="inline-flex px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
-                  >
-                    View in events
-                  </Link>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                    {event.price_npr > 0 ? `NPR ${event.price_npr}` : 'Free'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/events/${event.id}`}
+                      className="inline-flex rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      Details
+                    </Link>
+                    <Link
+                      href={`/events?city=${encodeURIComponent(event.city || '')}&sport=${encodeURIComponent(
+                        event.sport_type || ''
+                      )}`}
+                      className="inline-flex rounded-lg bg-green-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+                    >
+                      Explore
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -532,36 +507,158 @@ export default function ExpertDetailPage() {
         )}
       </section>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
           All events by this expert
         </h2>
         {expert.events.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-slate-300">
+          <p className="rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
             No events listed yet for this expert.
           </p>
         ) : (
           <ul className="space-y-2 text-sm text-gray-700 dark:text-slate-200">
             {expert.events.map((event) => (
-              <li key={event.id}>
-                <span className="font-medium">{event.title}</span>
-                {event.city && (
-                  <span className="text-gray-500 dark:text-slate-400">
-                    {' '}
-                    • {event.city}
-                  </span>
-                )}
-                {event.sport_type && (
-                  <span className="text-gray-500 dark:text-slate-400">
-                    {' '}
-                    • {getSportLabel(event.sport_type)}
-                  </span>
-                )}
+              <li
+                key={event.id}
+                className="rounded-lg border border-gray-200 px-3 py-2 dark:border-slate-700"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="font-medium">{event.title}</span>
+                    {event.city && (
+                      <span className="text-gray-500 dark:text-slate-400">
+                        {' '}
+                        • {event.city}
+                      </span>
+                    )}
+                    {event.sport_type && (
+                      <span className="text-gray-500 dark:text-slate-400">
+                        {' '}
+                        • {getSportLabel(event.sport_type)}
+                      </span>
+                    )}
+                  </div>
+                  <Link
+                    href={`/events/${event.id}`}
+                    className="inline-flex rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    View
+                  </Link>
+                </div>
+                <div className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                  <DateText value={event.event_date} pattern="PPP p" />
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <AppDialog
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
+        title={existingReview ? 'Update Your Review' : 'Review This Expert'}
+        description="Share your experience to help other participants."
+      >
+            <form
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setReviewMessage(null);
+                if (!canReviewExpert) {
+                  setReviewMessage(
+                    'You can review this expert only after joining one of their rides. Admins can review directly.'
+                  );
+                  return;
+                }
+                if (!reviewAcceptTerms) {
+                  setReviewMessage('Please accept the terms before submitting your review.');
+                  return;
+                }
+                await reviewMutation.mutateAsync({
+                  rating: reviewRating,
+                  comment: reviewComment,
+                });
+              }}
+              className="mt-4 grid gap-3"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                  Rating
+                </label>
+                <select
+                  value={reviewRating}
+                  onChange={(event) => setReviewRating(Number(event.target.value))}
+                  disabled={!canReviewExpert}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  {[5, 4, 3, 2, 1].map((value) => (
+                    <option key={`expert-rating-${value}`} value={value}>
+                      {value} star{value > 1 ? 's' : ''}
+                    </option>
+                  ))}
+                </select>
+                {renderStars(reviewRating)}
+              </div>
+              <textarea
+                value={reviewComment}
+                onChange={(event) => setReviewComment(event.target.value)}
+                rows={4}
+                disabled={!canReviewExpert}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                placeholder="Share how this expert performed during your ride or training."
+              />
+              <label className="flex items-start gap-2 text-xs text-gray-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={reviewAcceptTerms}
+                  onChange={(event) => setReviewAcceptTerms(event.target.checked)}
+                  disabled={!canReviewExpert}
+                  className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span>
+                  I agree to the{' '}
+                  <a href="/terms" className="font-semibold text-emerald-700 hover:underline">
+                    Terms &amp; Conditions
+                  </a>{' '}
+                  and{' '}
+                  <a href="/privacy" className="font-semibold text-emerald-700 hover:underline">
+                    Privacy Policy
+                  </a>
+                  .
+                </span>
+              </label>
+              {existingReview && (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                  You already reviewed this expert on{' '}
+                  <DateText value={existingReview.created_at} pattern="PPP" />. Submitting again
+                  will update your previous review.
+                </p>
+              )}
+              {reviewMessage && (
+                <p className="text-xs text-emerald-800 dark:text-emerald-200">{reviewMessage}</p>
+              )}
+              <button
+                type="submit"
+                disabled={reviewMutation.isPending || !reviewAcceptTerms || !canReviewExpert}
+                className="w-full rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {reviewMutation.isPending ? 'Saving...' : existingReview ? 'Update Review' : 'Submit Review'}
+              </button>
+              {existingReview && (
+                <button
+                  type="button"
+                  disabled={deleteReviewMutation.isPending}
+                  onClick={() => {
+                    setReviewMessage(null);
+                    deleteReviewMutation.mutate();
+                  }}
+                  className="w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+                >
+                  {deleteReviewMutation.isPending ? 'Deleting...' : 'Delete My Review'}
+                </button>
+              )}
+            </form>
+      </AppDialog>
     </div>
   );
 }
