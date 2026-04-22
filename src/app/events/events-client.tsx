@@ -19,6 +19,7 @@ import { fetchMyParticipantEvents } from '@/services/participants/participants.s
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { useUiStore } from '@/stores/ui.store';
 import { getSportLabel } from '@/services/constants/sports';
+import { getDifficultyLabel } from '@/services/constants/difficulty';
 import DateText from '@/components/ui/date-text';
 
 const EMPTY_EVENTS: Event[] = [];
@@ -760,7 +761,7 @@ function EventCard({
                 Difficulty
               </p>
               <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
-                {event.difficulty}
+                {getDifficultyLabel(event.difficulty)}
               </p>
             </div>
           )}

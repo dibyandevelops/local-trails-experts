@@ -6,6 +6,7 @@ import { useMutation } from '@tanstack/react-query';
 import type { Difficulty, SportType, UserRole } from '@/types';
 import { TRAIL_SAFETY_OPTIONS, TrailSafetyLabel } from '@/lib/trail-safety';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
+import { TRAIL_DIFFICULTY_OPTIONS } from '@/services/constants/difficulty';
 import { apiClient } from '@/services/api/client';
 import { ApiPath } from '@/services/api/paths';
 
@@ -433,9 +434,11 @@ export default function TrailSubmissionForm({
             Difficulty
           </label>
           <select id="trail-difficulty" {...register('difficulty')} className={inputClass}>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
+            {TRAIL_DIFFICULTY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
         <div>

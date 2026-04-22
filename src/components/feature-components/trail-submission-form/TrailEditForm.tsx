@@ -12,6 +12,7 @@ import {
   type TrailSafetyLabel,
 } from '@/lib/trail-safety';
 import { DEFAULT_TRAIL_SPORT, TRAIL_SPORTS } from '@/services/constants/sports';
+import { normalizeDifficulty, TRAIL_DIFFICULTY_OPTIONS } from '@/services/constants/difficulty';
 import { fetchTrailById, updateTrail, uploadTrailRoute } from '@/services/trails/trails.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { apiClient } from '@/services/api/client';
@@ -88,7 +89,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
     return {
       name: trail?.name ?? '',
       description: trail?.description ?? '',
-      difficulty: trail?.difficulty ?? 'easy',
+      difficulty: (normalizeDifficulty(trail?.difficulty) || 'easy') as Difficulty,
       sport_type: (trail?.sport_type as SportType) ?? DEFAULT_TRAIL_SPORT,
       location: trail?.location ?? '',
       latitude: toStringOrEmpty(trail?.latitude),
@@ -380,9 +381,11 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
               {...register('difficulty', { required: true })}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
-              <option value="easy">easy</option>
-              <option value="medium">medium</option>
-              <option value="hard">hard</option>
+              {TRAIL_DIFFICULTY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>

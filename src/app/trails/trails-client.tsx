@@ -38,6 +38,11 @@ import GroupRequestForm from '@/components/feature-components/group-request-form
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import TrailRequestModal from '@/components/feature-components/trail-request/trail-request-modal';
+import {
+  getDifficultyLabel,
+  normalizeDifficulty,
+  TRAIL_DIFFICULTY_OPTIONS,
+} from '@/services/constants/difficulty';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -53,9 +58,9 @@ type TrailSort =
   | 'elevation_desc';
 
 const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
+  { value: 'newest', label: 'Newest' },
   { value: 'name_asc', label: 'Name (A–Z)' },
   { value: 'name_desc', label: 'Name (Z–A)' },
-  { value: 'newest', label: 'Newest' },
   { value: 'distance_asc', label: 'Distance (low → high)' },
   { value: 'distance_desc', label: 'Distance (high → low)' },
   { value: 'elevation_desc', label: 'Elevation gain (high → low)' },
@@ -158,7 +163,8 @@ function TrailGallery({
                 <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                   {trail.distance_km ? `${trail.distance_km} km` : '—'} •{' '}
                   {trail.elevation_gain_m ? `${trail.elevation_gain_m}m` : '—'} •{' '}
-                  {trail.estimated_time_hours ? `${trail.estimated_time_hours}h` : '—'} • {trail.difficulty}
+                  {trail.estimated_time_hours ? `${trail.estimated_time_hours}h` : '—'} •{' '}
+                  {getDifficultyLabel(trail.difficulty)}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   {trail.sport_type && (
@@ -442,7 +448,7 @@ function TrailsPageContent() {
   const [distanceMaxInput, setDistanceMaxInput] = useState('');
   const [distanceMin, setDistanceMin] = useState('');
   const [distanceMax, setDistanceMax] = useState('');
-  const [sort, setSort] = useState<TrailSort>('name_asc');
+  const [sort, setSort] = useState<TrailSort>('newest');
   const [viewMode] = useState<TrailsViewMode>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
@@ -862,7 +868,9 @@ function TrailsPageContent() {
   useEffect(() => {
     if (didInitFromUrl.current) return;
     const urlSearch = (searchParams.get('search') || '').trim();
-    const urlDifficulty = (searchParams.get('difficulty') || '').trim() as Difficulty | '';
+    const urlDifficulty = normalizeDifficulty((searchParams.get('difficulty') || '').trim()) as
+      | Difficulty
+      | '';
     const urlLocation = (searchParams.get('location') || '').trim();
     const urlSport = (searchParams.get('sport') || '').trim();
     const urlDistanceMin = (searchParams.get('distanceMin') || '').trim();
@@ -895,6 +903,8 @@ function TrailsPageContent() {
     }
     if (urlSort && isTrailSort(urlSort)) {
       setSort(urlSort);
+    } else {
+      setSort('newest');
     }
     if (urlCreateTrail) {
       setCreateEventTrailId(urlCreateTrail);
@@ -913,7 +923,7 @@ function TrailsPageContent() {
     if (sport) params.set('sport', sport);
     if (distanceMin) params.set('distanceMin', distanceMin);
     if (distanceMax) params.set('distanceMax', distanceMax);
-    if (sort && sort !== 'name_asc') params.set('sort', sort);
+    if (sort && sort !== 'newest') params.set('sort', sort);
     if (createEventOpen && createEventTrailId) {
       params.set('createEventTrail', createEventTrailId);
       params.set('createEventSport', createEventSport || 'mtb');
@@ -1142,7 +1152,7 @@ function TrailsPageContent() {
                 onClick={() => setDifficulty('')}
                 className="rounded-full border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800"
               >
-                Difficulty: {difficulty} ×
+                Difficulty: {getDifficultyLabel(difficulty)} ×
               </button>
             )}
             {location && (
@@ -1230,9 +1240,11 @@ function TrailsPageContent() {
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   <option value="">All</option>
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
+                  {TRAIL_DIFFICULTY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

@@ -1,4 +1,11 @@
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty =
+  | 'novice'
+  | 'easy'
+  | 'moderate'
+  | 'hard'
+  | 'expert'
+  // legacy value kept for backward compatibility with older rows/data payloads
+  | 'medium';
 export type ExpertiseLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
 export type UserRole = 'participant' | 'expert' | 'admin';

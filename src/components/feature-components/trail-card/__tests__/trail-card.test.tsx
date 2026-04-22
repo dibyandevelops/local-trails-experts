@@ -6,7 +6,7 @@ const baseTrail: Trail = {
   id: 'trail-1',
   name: 'Forest Loop',
   description: 'Fast flowy singletrack through pine forest.',
-  difficulty: 'medium',
+  difficulty: 'moderate',
   location: 'Kathmandu',
   safety_labels: ['helmet_required', 'carry_water'],
   latitude: 27.7,
@@ -27,7 +27,7 @@ describe('TrailCard', () => {
     expect(screen.getByText('Forest Loop')).toBeInTheDocument();
     expect(screen.getByText('Kathmandu')).toBeInTheDocument();
     expect(screen.getByText(/12.3 km/i)).toBeInTheDocument();
-    expect(screen.getByText(/medium/i)).toBeInTheDocument();
+    expect(screen.getByText(/moderate/i)).toBeInTheDocument();
   });
 
   it('triggers onClick when card is clicked', () => {

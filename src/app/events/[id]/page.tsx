@@ -7,6 +7,7 @@ import DateText from '@/components/ui/date-text';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel } from '@/services/constants/sports';
+import { getDifficultyLabel } from '@/services/constants/difficulty';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cancelEvent, leaveEvent } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
@@ -586,7 +587,7 @@ export default function EventDetailPage() {
               )}
               {event.difficulty && (
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
-                  {event.difficulty}
+                  {getDifficultyLabel(event.difficulty)}
                 </span>
               )}
               {event.required_expertise && (

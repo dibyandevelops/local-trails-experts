@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { getSportLabel } from '@/services/constants/sports';
+import { getDifficultyLabel } from '@/services/constants/difficulty';
 import { getSafetyLabelText } from '@/lib/trail-safety';
 import {
   fetchAdminPendingTrails,
@@ -87,7 +88,7 @@ export default function PendingTrailsPanel() {
                     {getSportLabel(trail.sport_type)}
                   </span>
                   <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-700">
-                    {trail.difficulty}
+                    {getDifficultyLabel(trail.difficulty)}
                   </span>
                 </div>
                 <p className="text-xs text-gray-600">{trail.location}</p>

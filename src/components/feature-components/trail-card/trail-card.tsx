@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Trail } from '@/types';
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { getSportLabel } from '@/services/constants/sports';
+import { getDifficultyLabel, normalizeDifficulty } from '@/services/constants/difficulty';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 import ThemedDropdown from '@/components/ui/themed-dropdown';
 
@@ -36,6 +37,7 @@ const dataValueClass = 'mt-1 text-sm font-semibold text-slate-900 dark:text-slat
 
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const detailsHref = trail.detailsHref || `/trails/${trail.id}`;
+  const difficulty = normalizeDifficulty(trail.difficulty);
 
   const images = React.useMemo(() => {
     const list = [
@@ -243,14 +245,18 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${
-                trail.difficulty === 'easy'
+                difficulty === 'novice'
+                  ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-200'
+                  : difficulty === 'easy'
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200'
-                  : trail.difficulty === 'medium'
+                  : difficulty === 'moderate'
                   ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200'
+                  : difficulty === 'expert'
+                  ? 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 dark:border-fuchsia-900/60 dark:bg-fuchsia-950/40 dark:text-fuchsia-200'
                   : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200'
               }`}
             >
-              {trail.difficulty}
+              {getDifficultyLabel(trail.difficulty)}
             </span>
           </div>
           {images.length > 1 && (

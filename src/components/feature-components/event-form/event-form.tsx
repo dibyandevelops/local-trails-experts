@@ -21,6 +21,11 @@ import { fetchExperts } from '@/services/experts/experts.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import TrailSubmissionForm from '@/components/feature-components/trail-submission-form';
 import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
+import {
+  getDifficultyLabel,
+  normalizeDifficulty,
+  TRAIL_DIFFICULTY_OPTIONS,
+} from '@/services/constants/difficulty';
 
 type EventFormValues = {
   title: string;
@@ -272,7 +277,7 @@ export default function EventForm({
       organizer_email: editEvent.organizer_email || '',
       max_participants: editEvent.max_participants || 20,
       meeting_point: editEvent.meeting_point || '',
-      difficulty: editEvent.difficulty || undefined,
+      difficulty: (normalizeDifficulty(editEvent.difficulty) || undefined) as Difficulty | undefined,
       required_expertise: editEvent.required_expertise || 'beginner',
       sport_type: editEvent.sport_type || 'mtb',
       city: editEvent.city || '',
@@ -490,7 +495,10 @@ export default function EventForm({
     }
 
     if (selectedTrail.difficulty) {
-      setValue('difficulty', selectedTrail.difficulty);
+      setValue(
+        'difficulty',
+        (normalizeDifficulty(selectedTrail.difficulty) || undefined) as Difficulty | undefined
+      );
     }
     const trailDescription = (selectedTrail.description || '').trim();
     if (trailDescription) {
@@ -817,7 +825,7 @@ export default function EventForm({
                   <option value="">No specific trail (general event)</option>
                   {trailsBySport.map((trail) => (
                     <option key={trail.id} value={trail.id}>
-                      {trail.name} - {trail.location} ({trail.difficulty})
+                      {trail.name} - {trail.location} ({getDifficultyLabel(trail.difficulty)})
                     </option>
                   ))}
                 </select>
@@ -994,9 +1002,11 @@ export default function EventForm({
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Auto (from trail)</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
+                {TRAIL_DIFFICULTY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
