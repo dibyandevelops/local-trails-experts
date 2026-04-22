@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import * as Dialog from '@radix-ui/react-dialog';
 import type { User } from '@/types';
@@ -21,6 +21,14 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
   const communityWhatsappGroupLink =
     process.env.NEXT_PUBLIC_COMMUNITY_WHATSAPP_GROUP_LINK
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackName, setFeedbackName] = useState(initialUser?.name || '');
+  const [feedbackEmail, setFeedbackEmail] = useState(initialUser?.email || '');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [feedbackAccepted, setFeedbackAccepted] = useState(false);
+  const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackSent, setFeedbackSent] = useState(false);
 
   const contactHref = buildMailto({
     to: contactEmail,
@@ -33,6 +41,43 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
     subject: 'LocoXperts — Feature request',
     body: `Hi LocoXperts team,\n\nFeature request:\n- \n\nWhy it helps:\n- \n\n`,
   });
+
+  async function onSubmitFeedback(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFeedbackError(null);
+    setFeedbackSent(false);
+    if (!feedbackAccepted) {
+      setFeedbackError('Please accept terms before sending feedback.');
+      return;
+    }
+
+    setSendingFeedback(true);
+    try {
+      const response = await fetch('/api/contact/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: feedbackName,
+          email: feedbackEmail,
+          page: typeof window !== 'undefined' ? window.location.pathname : '',
+          message: feedbackMessage,
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setFeedbackError(data.error || 'Failed to send feedback.');
+        return;
+      }
+      setFeedbackSent(true);
+      setFeedbackMessage('');
+      setFeedbackAccepted(false);
+      setTimeout(() => setFeedbackOpen(false), 900);
+    } catch {
+      setFeedbackError('Failed to send feedback.');
+    } finally {
+      setSendingFeedback(false);
+    }
+  }
 
   return (
     <footer className="border-t border-gray-200 bg-white/70 py-10 text-gray-700 backdrop-blur dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200">
@@ -145,6 +190,19 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
               <button
                 type="button"
                 className="text-left hover:underline"
+                onClick={() => {
+                  setFeedbackError(null);
+                  setFeedbackSent(false);
+                  setFeedbackOpen(true);
+                }}
+              >
+                Share platform feedback
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="text-left hover:underline"
                 onClick={() => setGroupRequestOpen(true)}
               >
                 Request a large group ride
@@ -235,6 +293,113 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
                 onSent={() => setGroupRequestOpen(false)}
               />
             </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[94vw] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Share feedback
+                </Dialog.Title>
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  Tell us what works well and what we should improve.
+                </p>
+              </div>
+              <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+                Close
+              </Dialog.Close>
+            </div>
+
+            <form className="mt-5 space-y-4" onSubmit={onSubmitFeedback}>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={feedbackName}
+                    onChange={(event) => setFeedbackName(event.target.value)}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    placeholder="Your name"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={feedbackEmail}
+                    onChange={(event) => setFeedbackEmail(event.target.value)}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    placeholder="you@example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                  Feedback
+                </label>
+                <textarea
+                  value={feedbackMessage}
+                  onChange={(event) => setFeedbackMessage(event.target.value)}
+                  required
+                  minLength={12}
+                  rows={5}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  placeholder="Share your experience, issues, or ideas..."
+                />
+              </div>
+
+              <label className="flex items-start gap-2 text-xs text-gray-600 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={feedbackAccepted}
+                  onChange={(event) => setFeedbackAccepted(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  required
+                />
+                <span>I accept terms and consent to share this feedback with the platform team.</span>
+              </label>
+
+              {feedbackError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+                  {feedbackError}
+                </p>
+              )}
+              {feedbackSent && (
+                <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900/50 dark:bg-green-950/40 dark:text-green-200">
+                  Feedback sent. Thank you.
+                </p>
+              )}
+
+              <div className="flex items-center justify-end gap-2">
+                <Dialog.Close asChild>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+                  >
+                    Cancel
+                  </button>
+                </Dialog.Close>
+                <button
+                  type="submit"
+                  disabled={sendingFeedback}
+                  className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {sendingFeedback ? 'Sending...' : 'Send feedback'}
+                </button>
+              </div>
+            </form>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
