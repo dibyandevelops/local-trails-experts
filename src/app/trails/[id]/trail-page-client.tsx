@@ -43,7 +43,7 @@ import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
-import ThemedDropdown from '@/components/ui/themed-dropdown';
+import ThemedDropdown, { type ThemedDropdownItem } from '@/components/ui/themed-dropdown';
 import AppDialog from '@/components/ui/app-dialog';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
@@ -615,11 +615,9 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const isOwnerExpert =
     currentUser?.role === 'expert' && trail?.submitted_by_user_id === currentUser?.id;
   const canManageTrail = isAdmin || isOwnerExpert;
-  const canUploadRoute = currentUser?.role === 'admin';
   const canFlagHazard = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canUploadPhotos = canManageTrail;
   const canCreateEvent = currentUser?.role === 'admin' || currentUser?.role === 'expert';
-  const showActionMenu = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canRequestTrail = currentUser?.role === 'participant' || !currentUser;
   const existingTrailRequest = participantRequests.find((request) => request.trail_id === trailId);
   const hasRequestedTrail = Boolean(existingTrailRequest);
@@ -1022,159 +1020,198 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     </div>
   );
 
+  const trailActionItems: ThemedDropdownItem[] = [
+    {
+      label: 'Share trail',
+      onSelect: copyTrailLink,
+    },
+    {
+      label: !currentUser
+        ? 'Write Review (Login)'
+        : !canReviewTrail
+          ? 'Write Review (Join First)'
+          : existingReview
+            ? 'Update Review'
+            : 'Write Review',
+      onSelect: handleOpenReviewModal,
+    },
+    {
+      label: 'View map',
+      href: '#trail-map',
+      separatorBefore: true,
+    },
+    ...(komootNavigateUrl
+      ? [
+          {
+            label: 'Navigate in Komoot',
+            href: komootNavigateUrl,
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    {
+      label: 'Route guide',
+      href: '#route-guide',
+    },
+    ...(canRequestTrail && !hasRequestedTrail
+      ? [
+          {
+            label: 'Want to ride with a local pro?',
+            onSelect: handleOpenRequestRide,
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    ...(canRequestTrail && hasRequestedTrail
+      ? [
+          {
+            label: hasCreatedEventForRequestedTrail
+              ? 'Trail Requested (Event Created)'
+              : 'Trail Requested',
+            disabled: true,
+          } as ThemedDropdownItem,
+          {
+            label: cancelRequestMutation.isPending
+              ? 'Cancelling...'
+              : hasCreatedEventForRequestedTrail
+                ? 'Event Created'
+                : 'Cancel Request',
+            onSelect: async () => {
+              if (hasCreatedEventForRequestedTrail) return;
+              if (!existingTrailRequest?.id) return;
+              try {
+                await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
+              } catch (error) {
+                setRequestMessage(
+                  error instanceof Error ? error.message : 'Failed to cancel request'
+                );
+              }
+            },
+            disabled: cancelRequestMutation.isPending || hasCreatedEventForRequestedTrail,
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    ...(trailImages.length > 0
+      ? [
+          {
+            label: 'View Trail Photos',
+            onSelect: () => {
+              setGalleryInitialIndex(0);
+              setGalleryModalOpen(true);
+            },
+            separatorBefore: true,
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    ...(!isAdmin && canFlagHazard
+      ? [
+          {
+            label: 'Manage Hazard',
+            onSelect: () => setHazardModalOpen(true),
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    ...(canManageTrail
+      ? [
+          {
+            label: 'Change Cover',
+            onSelect: () => setCoverModalOpen(true),
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    ...(isAdmin
+      ? [
+          {
+            label: uploading ? 'Uploading route...' : 'Upload GPX Route',
+            onSelect: () => fileInputRef.current?.click(),
+            separatorBefore: true,
+          } as ThemedDropdownItem,
+          ...(hasRoute
+            ? [
+                {
+                  label: removeRouteMutation.isPending ? 'Removing...' : 'Remove GPX Route',
+                  onSelect: async () => {
+                    const confirmed = window.confirm('Remove the GPX route for this trail?');
+                    if (!confirmed) return;
+                    await removeRouteMutation.mutateAsync();
+                  },
+                  disabled: removeRouteMutation.isPending,
+                } as ThemedDropdownItem,
+              ]
+            : []),
+          {
+            label: 'Manage Sport & Safety',
+            onSelect: () => setSportSafetyModalOpen(true),
+          } as ThemedDropdownItem,
+          {
+            label: 'Manage Hazard Status',
+            onSelect: () => setHazardModalOpen(true),
+          } as ThemedDropdownItem,
+          {
+            label: 'Edit Trail',
+            onSelect: () => router.push(`/upload?trailId=${trailId}`),
+          } as ThemedDropdownItem,
+          {
+            label:
+              deleteTrailMutation.isPending || hideTrailMutation.isPending
+                ? 'Deleting...'
+                : 'Delete Trail',
+            onSelect: handleDeleteTrail,
+            disabled: deleteTrailMutation.isPending || hideTrailMutation.isPending,
+            separatorBefore: true,
+            tone: 'danger',
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    ...(canUploadPhotos
+      ? [
+          {
+            label: photoUploading ? 'Uploading photos...' : 'Upload Trail Photos',
+            onSelect: () => photoInputRef.current?.click(),
+            separatorBefore: !isAdmin,
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    ...(canCreateEvent
+      ? [
+          {
+            label: 'Create Event',
+            onSelect: () => setCreateEventOpen(true),
+          } as ThemedDropdownItem,
+        ]
+      : []),
+  ];
+
   return (
     <div className="container mx-auto px-3 py-5 pb-24 sm:px-4 sm:py-8 sm:pb-8">
       <div className="mb-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={handleBackToTrails}
-            className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            aria-label="Back to trails"
+            title="Back to trails"
           >
-            ← Back to trails
+            <svg viewBox="0 0 20 20" className="h-5 w-5 fill-current" aria-hidden="true">
+              <path d="M12.9 15.3a1 1 0 0 0 0-1.4L9 10l3.9-3.9a1 1 0 1 0-1.4-1.4l-4.6 4.6a1 1 0 0 0 0 1.4l4.6 4.6a1 1 0 0 0 1.4 0Z" />
+            </svg>
           </button>
-          <div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
-            <button
-              type="button"
-              onClick={copyTrailLink}
-              className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              Share
-            </button>
-            <button
-              type="button"
-              onClick={handleOpenReviewModal}
-              title={
-                !currentUser
-                  ? 'Login required to submit a review'
-                  : !canReviewTrail
-                    ? 'Join a ride on this trail first'
-                    : undefined
-              }
-              className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              {!currentUser
-                ? 'Write Review (Login)'
-                : !canReviewTrail
-                  ? 'Write Review (Join First)'
-                    : existingReview
-                      ? 'Update Review'
-                      : 'Write Review'}
-            </button>
-            {trailImages.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setGalleryInitialIndex(0);
-                  setGalleryModalOpen(true);
-                }}
-                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          <ThemedDropdown
+            label="Actions"
+            hideCaret
+            triggerContent={
+              <svg
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+                className="h-5 w-5 fill-slate-800 dark:fill-slate-200"
               >
-                View Trail Photos
-              </button>
-            )}
-            {!isAdmin && canFlagHazard && (
-              <button
-                type="button"
-                onClick={() => setHazardModalOpen(true)}
-                className="rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-slate-900 dark:text-rose-200 dark:hover:bg-rose-950/40"
-              >
-                Manage Hazard
-              </button>
-            )}
-            {canManageTrail && (
-              <button
-                type="button"
-                onClick={() => setCoverModalOpen(true)}
-                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                Change Cover
-              </button>
-            )}
-            {showActionMenu && (
-              <ThemedDropdown
-                label="More"
-                hideCaret
-                triggerContent={
-                  <svg
-                    viewBox="0 0 20 20"
-                    aria-hidden="true"
-                    className="h-5 w-5 fill-slate-800 dark:fill-slate-200"
-                  >
-                    <circle cx="10" cy="4" r="1.6" />
-                    <circle cx="10" cy="10" r="1.6" />
-                    <circle cx="10" cy="16" r="1.6" />
-                  </svg>
-                }
-                triggerClassName="shrink-0 h-10 w-10 justify-center rounded-full border border-transparent bg-transparent px-0 py-0 text-xl font-bold text-slate-800 hover:bg-slate-100/70 focus-visible:ring-green-300 dark:text-slate-200 dark:hover:bg-slate-800/60"
-                items={[
-                ...(isAdmin
-                  ? [
-                      {
-                        label: uploading ? 'Uploading route...' : 'Upload GPX Route',
-                        onSelect: () => fileInputRef.current?.click(),
-                      },
-                      ...(hasRoute
-                        ? [
-                            {
-                              label: removeRouteMutation.isPending
-                                ? 'Removing...'
-                                : 'Remove GPX Route',
-                              onSelect: async () => {
-                                const confirmed = window.confirm(
-                                  'Remove the GPX route for this trail?'
-                                );
-                                if (!confirmed) return;
-                                await removeRouteMutation.mutateAsync();
-                              },
-                              disabled: removeRouteMutation.isPending,
-                            },
-                          ]
-                        : []),
-                      {
-                        label: 'Manage Sport & Safety',
-                        onSelect: () => setSportSafetyModalOpen(true),
-                      },
-                      {
-                        label: 'Manage Hazard Status',
-                        onSelect: () => setHazardModalOpen(true),
-                      },
-                      {
-                        label: 'Edit Trail',
-                        onSelect: () => router.push(`/upload?trailId=${trailId}`),
-                      },
-                      {
-                        label:
-                          deleteTrailMutation.isPending || hideTrailMutation.isPending
-                            ? 'Deleting...'
-                            : 'Delete Trail',
-                        onSelect: handleDeleteTrail,
-                        disabled: deleteTrailMutation.isPending || hideTrailMutation.isPending,
-                        separatorBefore: true,
-                        tone: 'danger' as const,
-                      },
-                    ]
-                  : []),
-                ...(canUploadPhotos
-                  ? [
-                      {
-                        label: photoUploading ? 'Uploading photos...' : 'Upload Trail Photos',
-                        onSelect: () => photoInputRef.current?.click(),
-                      },
-                    ]
-                  : []),
-                ...(canCreateEvent
-                  ? [
-                      {
-                        label: 'Create Event',
-                        onSelect: () => setCreateEventOpen(true),
-                      },
-                    ]
-                  : []),
-                ]}
-              />
-            )}
-          </div>
+                <circle cx="10" cy="4" r="1.6" />
+                <circle cx="10" cy="10" r="1.6" />
+                <circle cx="10" cy="16" r="1.6" />
+              </svg>
+            }
+            triggerClassName="h-10 w-10 justify-center rounded-full border border-gray-300 bg-white px-0 py-0 text-xl font-bold text-slate-800 hover:bg-slate-100/70 focus-visible:ring-green-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800/60"
+            items={trailActionItems}
+          />
         </div>
       </div>
       {(uploadSuccess || uploadError || photoUploadMessage || actionMessage) && (
@@ -1233,6 +1270,11 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   Hazardous
                 </span>
               )}
+              {hasRequestedTrail && (
+                <span className="inline-flex items-center rounded-full border border-green-700 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
+                  Trail Requested
+                </span>
+              )}
             </div>
             <h1 className="mt-3 text-3xl font-extrabold text-green-800 sm:text-4xl dark:text-green-200">
               {trail.name}
@@ -1245,75 +1287,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   'LocoXperts'}
               </span>
             </p>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <a
-                href="#trail-map"
-                className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-800"
-              >
-                View map
-              </a>
-              {komootNavigateUrl && (
-                <a
-                  href={komootNavigateUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
-                >
-                  Navigate in Komoot
-                </a>
-              )}
-              <a
-                href="#route-guide"
-                className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-200"
-              >
-                Route guide
-              </a>
-              {canRequestTrail && !hasRequestedTrail && (
-                <button
-                  type="button"
-                  onClick={handleOpenRequestRide}
-                  disabled={loadingCurrentUser}
-                  className="inline-flex items-center justify-center rounded-full border border-green-700 bg-white/90 px-4 py-2 text-xs font-semibold text-green-700 transition duration-200 hover:-translate-y-0.5 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-500 dark:bg-slate-900/70 dark:text-green-200 dark:hover:bg-green-900/30"
-                >
-                  Want to ride with a local pro?
-                </button>
-              )}
-              {canRequestTrail && hasRequestedTrail && (
-                <span className="inline-flex items-center justify-center rounded-full border border-green-700 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
-                  Trail Requested
-                </span>
-              )}
-              {canRequestTrail && hasRequestedTrail && (
-                <button
-                  type="button"
-                  disabled={cancelRequestMutation.isPending || hasCreatedEventForRequestedTrail}
-                  onClick={async () => {
-                    if (hasCreatedEventForRequestedTrail) return;
-                    if (!existingTrailRequest?.id) return;
-                    try {
-                      await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
-                    } catch (error) {
-                      setRequestMessage(
-                        error instanceof Error ? error.message : 'Failed to cancel request'
-                      );
-                    }
-                  }}
-                  className="inline-flex items-center justify-center rounded-full border border-red-300 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 transition duration-200 hover:-translate-y-0.5 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:bg-slate-900/70 dark:text-red-200 dark:hover:bg-red-950/40"
-                  title={
-                    hasCreatedEventForRequestedTrail
-                      ? 'Event already created for this request. Cancellation is disabled.'
-                      : undefined
-                  }
-                >
-                  {cancelRequestMutation.isPending
-                    ? 'Cancelling...'
-                    : hasCreatedEventForRequestedTrail
-                      ? 'Event Created'
-                      : 'Cancel Request'}
-                </button>
-              )}
-            </div>
 
             {trail.is_hazardous && (
               <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
@@ -1707,33 +1680,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           )}
         </div>
       )}
-
-      <div className="fixed bottom-3 left-1/2 z-40 flex w-[94vw] -translate-x-1/2 gap-2 rounded-xl border border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur sm:hidden">
-        {(currentUser?.role === 'admin' || currentUser?.role === 'expert') && (
-          <button
-            type="button"
-            onClick={() => setCreateEventOpen(true)}
-            className="flex-1 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800"
-          >
-            Create
-          </button>
-        )}
-        {trailImages.length > 0 && (
-          <button
-            type="button"
-            onClick={() => {
-              setGalleryInitialIndex(0);
-              setGalleryModalOpen(true);
-            }}
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-800"
-          >
-            Photos
-          </button>
-        )}
-        {hasRoute && routeData && (
-          null
-        )}
-      </div>
 
       <Dialog.Root
         open={requestModalOpen}
