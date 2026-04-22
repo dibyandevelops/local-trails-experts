@@ -151,7 +151,17 @@ function ExpertCard({
     ? [expert.sports]
     : [];
 
-  const upcomingEvents = (expert.events || []).slice(0, 3);
+  const [now] = useState(() => Date.now());
+  const upcomingEvents = (expert.events || [])
+    .filter((event) => {
+      const eventTime = new Date(event.event_date).getTime();
+      return Number.isFinite(eventTime) && eventTime >= now;
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    )
+    .slice(0, 3);
   const initials =
     (expert.name || '')
       .split(' ')
