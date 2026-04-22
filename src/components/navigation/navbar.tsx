@@ -101,7 +101,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     refetchInterval: 30000,
     retry: false,
   });
-  const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
@@ -111,12 +110,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const [registerNext, setRegisterNext] = useState<string | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const hoverCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
   const searchParamsString = searchParams.toString();
 
   useEffect(() => {
     setMobileOpen(false);
-    setMenuOpen(false);
     setOpenGroup(null);
     if (hoverCloseTimeout.current) {
       clearTimeout(hoverCloseTimeout.current);
@@ -196,24 +193,12 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     return () => window.removeEventListener('open-login', handler);
   }, [user]);
 
-  useEffect(() => {
-    const handler = (event: MouseEvent) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
   const handleLogout = async () => {
     try {
       await fetch('/api/logout', { method: 'POST' });
     } catch (error) {
       console.error('Logout failed', error);
     } finally {
-      setMenuOpen(false);
       setMobileOpen(false);
       queryClient.setQueryData(['me'], null);
       window.dispatchEvent(new Event('auth-changed'));
@@ -230,7 +215,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     } else {
       router.push('/participants/me');
     }
-    setMenuOpen(false);
     setMobileOpen(false);
   };
 
@@ -444,44 +428,52 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             )}
 
             {!loadingUser && user && (
-              <div className="relative" ref={menuRef}>
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((open) => !open)}
-                  className="ml-1 inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-green-400/50 bg-white/10 text-sm font-semibold uppercase hover:bg-white/15 self-center leading-none shrink-0 align-middle"
-                  aria-label="User menu"
-                >
-                  {user.profile_photo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.profile_photo_url}
-                      alt={user.name || 'User profile'}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    initial
-                  )}
-                </button>
-
-                {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl z-30">
-                    <button
-                      type="button"
-                      onClick={handleViewProfile}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
-                    >
-                      View profile
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+              <DropdownMenu.Root modal={false}>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    className="ml-1 inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-green-400/50 bg-white/10 text-sm font-semibold uppercase hover:bg-white/15 self-center leading-none shrink-0 align-middle"
+                    aria-label="User menu"
+                  >
+                    {user.profile_photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.profile_photo_url}
+                        alt={user.name || 'User profile'}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      initial
+                    )}
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    sideOffset={8}
+                    align="end"
+                    className="z-30 flex w-48 flex-col gap-1 rounded-xl border border-green-700/60 bg-green-950/95 p-2 text-sm text-white shadow-xl"
+                  >
+                    <DropdownMenu.Item asChild>
+                      <button
+                        type="button"
+                        onClick={handleViewProfile}
+                        className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-green-50 outline-none transition hover:bg-white/15 data-[highlighted]:bg-white/15"
+                      >
+                        View profile
+                      </button>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item asChild>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-200 outline-none transition hover:bg-red-500/15 data-[highlighted]:bg-red-500/20"
+                      >
+                        Logout
+                      </button>
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
             )}
           </div>
         </div>
