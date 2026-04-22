@@ -46,6 +46,7 @@ import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal'
 import ThemedDropdown, { type ThemedDropdownItem } from '@/components/ui/themed-dropdown';
 import AppDialog from '@/components/ui/app-dialog';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
+import { getDifficultyLabel, normalizeDifficulty } from '@/services/constants/difficulty';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
 
@@ -998,15 +999,20 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     router.push('/trails', { scroll: false });
   };
   const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
+  const normalizedDifficulty = normalizeDifficulty(trail.difficulty);
   const trailConsiderations = [
     trail.is_hazardous
       ? `Hazard alert: ${trail.hazard_note || 'check latest conditions before riding.'}`
       : 'No active hazard alert, but ride with normal caution.',
     ...(trail.safety_labels || []).slice(0, 3).map((label) => getSafetyLabelText(label)),
-    trail.difficulty === 'hard'
+    normalizedDifficulty === 'expert'
+      ? 'Expert rating: advanced technical skill, conditioning, and risk planning required.'
+      : normalizedDifficulty === 'hard'
       ? 'Hard rating: expect demanding sections and sustained effort.'
-      : trail.difficulty === 'medium'
-        ? 'Medium rating: suitable for riders with regular off-road experience.'
+      : normalizedDifficulty === 'moderate'
+        ? 'Moderate rating: suitable for riders with regular off-road experience.'
+        : normalizedDifficulty === 'novice'
+          ? 'Novice rating: suitable for first-time riders and guided intro sessions.'
         : 'Easy rating: suitable for most beginners with basic fitness.',
   ];
 
@@ -1246,7 +1252,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
         <div className="pointer-events-none absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
 
-        <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="relative grid gap-6 lg:grid-cols-[1.28fr_0.72fr]">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
@@ -1276,7 +1282,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 </span>
               )}
             </div>
-            <h1 className="mt-3 text-3xl font-extrabold text-green-800 sm:text-4xl dark:text-green-200">
+            <h1 className="mt-3 text-balance text-3xl font-extrabold leading-tight text-green-800 sm:text-4xl lg:text-5xl xl:text-[3.25rem] dark:text-green-200">
               {trail.name}
             </h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
@@ -1382,7 +1388,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       )}
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {(routeData?.totalDistance || trail.distance_km) && (
+        {(trail.distance_km || routeData?.totalDistance) && (
           <div className="flex min-h-[106px] items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-gray-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:min-h-[126px] sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
             <span className="rounded-full bg-emerald-100 p-3 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
               <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
@@ -1397,14 +1403,16 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 Distance
               </p>
               <p className="text-lg font-semibold">
-                {routeData?.totalDistance
-                  ? `${routeData.totalDistance.toFixed(2)} km`
-                  : `${trail.distance_km} km`}
+                {trail.distance_km != null
+                  ? `${Number(trail.distance_km).toFixed(2)} km`
+                  : routeData?.totalDistance != null
+                    ? `${routeData.totalDistance.toFixed(2)} km`
+                    : '—'}
               </p>
             </div>
           </div>
         )}
-        {(routeData?.elevationGain || trail.elevation_gain_m) && (
+        {(trail.elevation_gain_m || routeData?.elevationGain) && (
           <div className="flex min-h-[106px] items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-gray-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:min-h-[126px] sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
             <span className="rounded-full bg-emerald-100 p-3 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
               <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
@@ -1419,9 +1427,11 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 Climb
               </p>
               <p className="text-lg font-semibold">
-                {routeData?.elevationGain
-                  ? `+${routeData.elevationGain.toFixed(0)} m`
-                  : `${trail.elevation_gain_m} m`}
+                {trail.elevation_gain_m != null
+                  ? `+${Math.round(Number(trail.elevation_gain_m))} m`
+                  : routeData?.elevationGain != null
+                    ? `+${routeData.elevationGain.toFixed(0)} m`
+                    : '—'}
               </p>
             </div>
           </div>
@@ -1458,7 +1468,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
                 Level
               </p>
-              <p className="text-lg font-semibold">{trail.difficulty}</p>
+              <p className="text-lg font-semibold">{getDifficultyLabel(trail.difficulty)}</p>
             </div>
           </div>
         )}

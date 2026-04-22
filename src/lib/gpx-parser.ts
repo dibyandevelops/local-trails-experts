@@ -2,7 +2,7 @@ import { RouteData, RoutePoint } from '@/types';
 import { parseString } from 'xml2js';
 
 const MIN_DISTANCE_INCREMENT_KM = 0.002; // ignore sub-2m GPS jitter
-const MIN_ELEVATION_DELTA_M = 2; // ignore tiny vertical noise spikes
+const MIN_ELEVATION_DELTA_M = 0.3; // ignore tiny vertical jitter while preserving real climbs
 
 export async function parseGPX(gpxContent: string): Promise<RouteData> {
   return new Promise((resolve, reject) => {
@@ -37,8 +37,11 @@ export async function parseGPX(gpxContent: string): Promise<RouteData> {
         });
       });
 
-      // Collect route points only if no track points exist.
-      if (pointGroups.length === 0) {
+      const trackPointCount = pointGroups.reduce((sum, group) => sum + group.length, 0);
+
+      // Collect route points when tracks are missing or effectively unusable.
+      if (trackPointCount < 2) {
+        pointGroups.length = 0;
         routes.forEach((route: any) => {
           const rtepts = route.rtept || [];
           if (rtepts.length > 0) pointGroups.push(rtepts);
