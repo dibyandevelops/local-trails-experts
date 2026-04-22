@@ -40,9 +40,17 @@ export async function generateMetadata(props: {
   const resolved = props.searchParams ? await props.searchParams : {};
   const hasFilters = hasAnySearchParams(resolved);
   return listingMetadata({
-    title: 'Events',
-    description: 'Join upcoming outdoor events hosted by local experts.',
+    title: 'MTB & Trail Events in Nepal',
+    description:
+      'Join upcoming mountain bike and trail events in Nepal hosted by local experts and communities.',
     canonicalPath: '/events',
     hasFilters,
+    keywords: [
+      'MTB events Nepal',
+      'cycling events Kathmandu',
+      'trail rides Nepal',
+      'bike community events Nepal',
+      'local guided rides Nepal',
+    ],
   });
 }

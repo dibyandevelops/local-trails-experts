@@ -26,6 +26,16 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: DEFAULT_DESCRIPTION,
+  keywords: [
+    'best MTB trails in Nepal',
+    'mountain bike trails Nepal',
+    'Nepal trail map',
+    'cycling trails Kathmandu',
+    'Pokhara bike trails',
+    'local bike guides Nepal',
+    'trail riding Nepal',
+    'LocoXperts',
+  ],
   applicationName: SITE_NAME,
   alternates: {
     canonical: '/',

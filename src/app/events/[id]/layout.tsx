@@ -66,6 +66,12 @@ export async function generateMetadata(
     return {
       title,
       description,
+      keywords: [
+        `${event.title} Nepal`,
+        `${event.sport_type || 'mtb'} event Nepal`,
+        'bike event Nepal',
+        'trail event Nepal',
+      ],
       alternates: { canonical: `/events/${event.id}` },
       openGraph: {
         title,
@@ -135,4 +141,3 @@ export default async function EventLayout(props: {
     </>
   );
 }
-

@@ -48,6 +48,12 @@ export async function generateMetadata(
     return {
       title,
       description,
+      keywords: [
+        `${displayName} cycling expert`,
+        `${expert.city || 'Nepal'} local trail expert`,
+        'Nepal MTB guide',
+        'bike guide Nepal',
+      ],
       alternates: { canonical: `/experts/${expert.id}` },
       openGraph: {
         title,
@@ -105,4 +111,3 @@ export default async function ExpertLayout(props: {
     </>
   );
 }
-

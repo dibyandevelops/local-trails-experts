@@ -66,6 +66,13 @@ export async function generateMetadata(
     return {
       title,
       description,
+      keywords: [
+        `${trail.name} trail`,
+        `${trail.location} mountain bike trail`,
+        `${trail.sport_type || 'mtb'} trail Nepal`,
+        'Nepal trail guide',
+        'MTB trails Nepal',
+      ],
       alternates: { canonical: `/trails/${trail.id}` },
       robots: { index: true, follow: true },
       openGraph: {

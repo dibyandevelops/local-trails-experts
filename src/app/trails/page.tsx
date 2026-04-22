@@ -10,11 +10,20 @@ export async function generateMetadata(props: {
   const resolved = props.searchParams ? await props.searchParams : {};
   const hasFilters = hasAnySearchParams(resolved);
   return listingMetadata({
-    title: 'Trails in Nepal',
+    title: 'Best MTB Trails in Nepal',
     description:
-      'Browse mountain bike, hiking, running, and cycling trails across Nepal with maps, safety details, and local insights.',
+      'Discover mountain bike trails in Nepal with GPX maps, route details, safety notes, and local recommendations.',
     canonicalPath: '/trails',
     hasFilters,
+    keywords: [
+      'best MTB trails in Nepal',
+      'mountain bike trails Nepal',
+      'Nepal bike trail map',
+      'Kathmandu MTB trails',
+      'Pokhara MTB trails',
+      'Nepal cycling routes',
+      'trail GPX Nepal',
+    ],
   });
 }
 

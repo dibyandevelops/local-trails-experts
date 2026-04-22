@@ -20,11 +20,21 @@ export function listingMetadata(opts: {
   description?: string;
   canonicalPath: string;
   hasFilters: boolean;
+  keywords?: string[];
 }): Metadata {
   const description = opts.description || DEFAULT_DESCRIPTION;
+  const keywords = opts.keywords || [
+    'MTB trails Nepal',
+    'mountain bike trails Nepal',
+    'Nepal trail map',
+    'cycling routes Nepal',
+    'local trail experts Nepal',
+    'LocoXperts',
+  ];
   return {
     title: opts.title,
     description,
+    keywords,
     alternates: { canonical: opts.canonicalPath },
     robots: opts.hasFilters
       ? { index: false, follow: true }

@@ -1,9 +1,9 @@
 const DEFAULT_PROD_URL = 'https://locoxperts.com';
 
 export const SITE_NAME = 'LocoXperts';
-export const DEFAULT_TITLE = `${SITE_NAME} — Trails, experts, and events`;
+export const DEFAULT_TITLE = `${SITE_NAME} — MTB Trails Nepal, Local Experts & Rides`;
 export const DEFAULT_DESCRIPTION =
-  'Discover trails, connect with local experts, and join outdoor events.';
+  'Find mountain bike trails in Nepal, discover route guides, connect with local experts, and join outdoor rides and events.';
 
 export function getPublicAppUrl() {
   const explicit = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || '').trim();
@@ -22,4 +22,3 @@ export function absoluteUrl(pathname: string) {
   const slashPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
   return `${base}${slashPath}`;
 }
-

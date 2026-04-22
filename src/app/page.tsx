@@ -1,13 +1,63 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import JoinAdventureButton from '@/components/home/join-adventure-button';
 import RideWithLocalExpertsCta from '@/components/home/ride-with-local-experts-cta';
 import { COMMUNITY_NAME } from '@/lib/branding';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
+import { absoluteUrl, DEFAULT_DESCRIPTION } from '@/lib/seo';
+import { jsonLdStringify } from '@/lib/jsonld';
 // import PhoneVerifyToast from '@/components/phone-verify-toast';
 
+export const metadata: Metadata = {
+  title: 'Best Site to View MTB Trails in Nepal',
+  description:
+    'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
+  keywords: [
+    'best MTB trails in Nepal',
+    'mountain bike trails Nepal',
+    'Nepal MTB trail map',
+    'bike routes Nepal',
+    'Kathmandu MTB trails',
+    'Pokhara MTB rides',
+    'local trail guides Nepal',
+    'LocoXperts',
+  ],
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'Best Site to View MTB Trails in Nepal',
+    description:
+      'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
+    url: '/',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Best Site to View MTB Trails in Nepal',
+    description:
+      'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
+  },
+};
+
 export default function Home() {
+  const websiteJsonLd = jsonLdStringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'LocoXperts',
+    url: absoluteUrl('/'),
+    description: DEFAULT_DESCRIPTION,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${absoluteUrl('/trails')}?search={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  });
+
   return (
     <div className="space-y-12 md:space-y-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: websiteJsonLd }}
+      />
       {/* <PhoneVerifyToast /> */}
       <section className="reveal reveal-1 relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-10 shadow-sm md:px-10 md:py-14">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-hero-glow/40 blur-3xl" />
