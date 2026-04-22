@@ -190,6 +190,11 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
                 Safety policy
               </Link>
             </li>
+            <li>
+              <Link className="hover:underline" href="/faq">
+                FAQ
+              </Link>
+            </li>
           </ul>
           <p className="text-xs text-gray-500 dark:text-slate-400">
             Prefer email?{' '}
