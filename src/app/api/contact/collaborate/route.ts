@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmailSafe } from '@/lib/email';
+import { getCommunityWhatsappLink } from '@/lib/whatsapp';
 
 export const runtime = 'nodejs';
 
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       `Requested tier: ${sponsorTier}\n` +
       `\n${message}\n`;
 
-    await sendEmailSafe({
+    const emailResult = await sendEmailSafe({
       to: adminEmail,
       subject: `Collaboration: ${subject}`,
       html,
@@ -101,7 +102,18 @@ export async function POST(request: NextRequest) {
       dedupeKey: `collab:${email}:${subject}:${message.slice(0, 80)}`,
     });
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    const whatsappLink = getCommunityWhatsappLink(
+      `Hi LocoXperts, I submitted a collaboration request: ${subject}`
+    );
+
+    return NextResponse.json(
+      {
+        ok: true,
+        notification_channel: emailResult.sent ? 'email' : 'whatsapp',
+        whatsapp_link: !emailResult.sent ? whatsappLink : null,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('collaborate: failed', error);
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });

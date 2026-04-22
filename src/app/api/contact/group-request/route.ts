@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmailSafe } from '@/lib/email';
+import { getCommunityWhatsappLink } from '@/lib/whatsapp';
 
 export const runtime = 'nodejs';
 
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
       (trailId ? `Trail ID: ${trailId}\n` : '') +
       `\n${message}\n`;
 
-    await sendEmailSafe({
+    const emailResult = await sendEmailSafe({
       to: adminEmail,
       subject,
       html,
@@ -125,7 +126,18 @@ export async function POST(request: NextRequest) {
       dedupeKey: `group:${email}:${trailId || trailName}:${preferredDate}:${groupSize || ''}:${message.slice(0, 120)}`,
     });
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    const whatsappLink = getCommunityWhatsappLink(
+      `Hi LocoXperts, I submitted a large group request for ${trailName || 'a trail'}.`
+    );
+
+    return NextResponse.json(
+      {
+        ok: true,
+        notification_channel: emailResult.sent ? 'email' : 'whatsapp',
+        whatsapp_link: !emailResult.sent ? whatsappLink : null,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('group-request: failed', error);
     return NextResponse.json({ error: 'Failed to send request' }, { status: 500 });

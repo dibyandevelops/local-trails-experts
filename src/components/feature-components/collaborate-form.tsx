@@ -63,7 +63,10 @@ export default function CollaborateForm({
   initialTier?: SponsorTier;
 }) {
   const [status, setStatus] = useState<
-    { type: 'idle' } | { type: 'sending' } | { type: 'sent' } | { type: 'error'; message: string }
+    { type: 'idle' } |
+    { type: 'sending' } |
+    { type: 'sent'; channel?: 'email' | 'whatsapp'; whatsappLink?: string | null } |
+    { type: 'error'; message: string }
   >({ type: 'idle' });
 
   const {
@@ -101,7 +104,12 @@ export default function CollaborateForm({
           typeof body?.error === 'string' ? body.error : 'Failed to send message'
         );
       }
-      setStatus({ type: 'sent' });
+      setStatus({
+        type: 'sent',
+        channel: body?.notification_channel === 'whatsapp' ? 'whatsapp' : 'email',
+        whatsappLink:
+          typeof body?.whatsapp_link === 'string' ? body.whatsapp_link : null,
+      });
       reset({
         name: '',
         email: '',
@@ -247,7 +255,17 @@ export default function CollaborateForm({
 
       {status.type === 'sent' && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
-          Message sent — we&apos;ll get back to you soon.
+          <p>Message sent — we&apos;ll get back to you soon.</p>
+          {status.channel === 'whatsapp' && status.whatsappLink && (
+            <a
+              href={status.whatsappLink}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex items-center rounded-full border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-100"
+            >
+              Continue on WhatsApp
+            </a>
+          )}
         </div>
       )}
       {status.type === 'error' && (
@@ -285,7 +303,7 @@ export default function CollaborateForm({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500 dark:text-slate-400">
-          This sends an email to the team mailbox.
+          This notifies the team via email or WhatsApp based on availability.
         </p>
         <button
           type="submit"

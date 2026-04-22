@@ -18,6 +18,8 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
   const year = new Date().getFullYear();
   const brand = 'LocoXperts';
   const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const communityWhatsappGroupLink =
+    process.env.NEXT_PUBLIC_COMMUNITY_WHATSAPP_GROUP_LINK
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
 
   const contactHref = buildMailto({
@@ -147,6 +149,16 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
               >
                 Request a large group ride
               </button>
+            </li>
+            <li>
+              <a
+                className="hover:underline"
+                href={communityWhatsappGroupLink}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Join local trails &amp; experts community
+              </a>
             </li>
             <li>
               <Link className="hover:underline" href="/purpose">

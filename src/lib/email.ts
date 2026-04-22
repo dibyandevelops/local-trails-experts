@@ -1,3 +1,6 @@
+import { EMAIL_NOTIFICATIONS_ENABLED } from '@/lib/feature-flags';
+import { getCommunityWhatsappLink } from '@/lib/whatsapp';
+
 type SendEmailInput = {
   to: string;
   subject: string;
@@ -51,6 +54,19 @@ function parseFrom(from: string) {
 }
 
 export async function sendEmail(input: SendEmailInput) {
+  if (!EMAIL_NOTIFICATIONS_ENABLED) {
+    const whatsappLink = getCommunityWhatsappLink(
+      `Hi LocoXperts team, I need help regarding: ${input.subject}`
+    );
+    return {
+      sent: false as const,
+      skipped: true as const,
+      reason: 'email_notifications_disabled' as const,
+      fallbackChannel: whatsappLink ? ('whatsapp' as const) : null,
+      whatsappLink,
+    };
+  }
+
   const {
     from,
     resendApiKey,
