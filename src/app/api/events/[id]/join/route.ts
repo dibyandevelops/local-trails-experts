@@ -58,6 +58,14 @@ export async function POST(
       host_user_id,
     } = eventCheck.rows[0];
 
+    const eventTimestamp = new Date(event_date).getTime();
+    if (Number.isFinite(eventTimestamp) && eventTimestamp < Date.now()) {
+      return NextResponse.json(
+        { error: 'This event has already ended.' },
+        { status: 400 }
+      );
+    }
+
     if (current_participants >= max_participants) {
       return NextResponse.json(
         { error: 'Event is full' },

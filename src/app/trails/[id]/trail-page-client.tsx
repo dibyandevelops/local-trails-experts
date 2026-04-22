@@ -617,7 +617,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const canUploadPhotos = canManageTrail;
   const canCreateEvent = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const showActionMenu = currentUser?.role === 'admin' || currentUser?.role === 'expert';
-  const canRequestTrail = currentUser?.role === 'participant';
+  const canRequestTrail = currentUser?.role === 'participant' || !currentUser;
   const existingTrailRequest = participantRequests.find((request) => request.trail_id === trailId);
   const hasRequestedTrail = Boolean(existingTrailRequest);
 
@@ -1143,13 +1143,12 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           )}
         </div>
       </div>
-      {(uploadSuccess || uploadError || photoUploadMessage || actionMessage || requestMessage) && (
+      {(uploadSuccess || uploadError || photoUploadMessage || actionMessage) && (
         <div className="mb-5 flex flex-wrap gap-2 text-sm">
           {uploadSuccess && <span className="text-green-600">Route uploaded successfully.</span>}
           {uploadError && <span className="text-red-600">{uploadError}</span>}
           {photoUploadMessage && <span className="text-gray-600">{photoUploadMessage}</span>}
           {actionMessage && <span className="text-gray-600">{actionMessage}</span>}
-          {requestMessage && <span className="text-gray-600">{requestMessage}</span>}
         </div>
       )}
       {isAdmin && (
@@ -1887,6 +1886,11 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 ? 'This sends your request to admin while experts are in beta. Add details to help planning.'
                 : 'This sends your request to experts/admin. Add details to help them.'}
             </p>
+            {requestMessage && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                {requestMessage}
+              </div>
+            )}
             {!EXPERTS_BETA_ENABLED && (
               <div className="mt-4">
                 <label className="mb-1 block text-sm font-medium text-gray-700">

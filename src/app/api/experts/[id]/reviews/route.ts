@@ -72,6 +72,20 @@ export async function POST(
     }
 
     const { id } = await params;
+    const targetUserResult = await pool.query(
+      `
+      SELECT id, role
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [id]
+    );
+    const targetUser = targetUserResult.rows[0];
+    if (!targetUser || targetUser.role !== 'expert') {
+      return NextResponse.json({ error: 'Expert not found.' }, { status: 404 });
+    }
+
     const body = (await request.json()) as { rating?: number; comment?: string };
     const rating = Number(body.rating);
 
@@ -85,11 +99,18 @@ export async function POST(
       const eligibility = await pool.query(
         `
         SELECT 1
-        FROM users u
-        JOIN event_participants ep ON ep.participant_email = u.email
-        JOIN events e ON e.id = ep.event_id
-        WHERE u.id = $1
-          AND e.host_user_id = $2
+        FROM events e
+        LEFT JOIN bookings b
+          ON b.event_id = e.id
+          AND b.user_id = $1
+          AND b.status <> 'cancelled'
+        LEFT JOIN users u
+          ON u.id = $1
+        LEFT JOIN event_participants ep
+          ON ep.event_id = e.id
+          AND ep.participant_email = u.email
+        WHERE e.host_user_id = $2
+          AND (b.id IS NOT NULL OR ep.id IS NOT NULL)
         LIMIT 1
         `,
         [auth.sub, id]

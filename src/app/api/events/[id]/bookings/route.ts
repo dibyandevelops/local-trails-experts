@@ -131,6 +131,15 @@ export async function POST(
         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
       }
 
+      const eventTimestamp = new Date(event.event_date).getTime();
+      if (Number.isFinite(eventTimestamp) && eventTimestamp < Date.now()) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: 'This event has already ended.' },
+          { status: 400 }
+        );
+      }
+
       const existing = await client.query(
         'SELECT id, status FROM bookings WHERE event_id = $1 AND user_id = $2 LIMIT 1',
         [eventId, auth.sub]

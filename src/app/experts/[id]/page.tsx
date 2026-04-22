@@ -139,8 +139,9 @@ export default function ExpertDetailPage() {
       .toUpperCase() || 'EX';
   const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
   const canReviewExpert =
-    currentUser?.role === 'admin' ||
+    (expert.role === 'expert' && currentUser?.role === 'admin') ||
     (currentUser?.role === 'participant' &&
+      expert.role === 'expert' &&
       joinedEvents.some((event) => event.host_user_id === expertId));
 
   const renderStars = (rating: number) => (

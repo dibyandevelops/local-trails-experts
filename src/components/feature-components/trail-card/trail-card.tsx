@@ -21,6 +21,7 @@ export type TrailCardProps = Trail & {
   editLoading?: boolean;
   onEdit?: () => void;
   isRequested?: boolean;
+  onRequestTrail?: () => void;
   onCancelRequest?: () => void;
 };
 
@@ -76,6 +77,9 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       ? [{ label: 'View photos', onSelect: () => trail.onOpenImageGallery?.() }]
       : []),
     ...(komootNavigateUrl ? [{ label: 'Navigate', href: komootNavigateUrl }] : []),
+    ...(trail.onRequestTrail && !trail.isRequested
+      ? [{ label: 'Want to ride with a local pro?', onSelect: () => trail.onRequestTrail?.() }]
+      : []),
     ...(trail.onCancelRequest && trail.isRequested
       ? [
           {

@@ -715,10 +715,10 @@ export default function ParticipantProfilePage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => router.push(`/events`)}
+                  onClick={() => router.push(`/events/${event.id}`)}
                   className="text-xs font-semibold text-green-700 hover:text-green-800"
                 >
-                  View event list
+                  View event
                 </button>
               </div>
             ))}

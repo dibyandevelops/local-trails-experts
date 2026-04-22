@@ -22,6 +22,7 @@ import { getSportLabel } from '@/services/constants/sports';
 import DateText from '@/components/ui/date-text';
 
 const EMPTY_EVENTS: Event[] = [];
+const isPastEvent = (eventDate: string) => new Date(eventDate).getTime() < Date.now();
 
 export default function EventsPageClient() {
   const router = useRouter();
@@ -213,6 +214,9 @@ export default function EventsPageClient() {
   });
 
   const handleJoinEvent = (eventData: Event) => {
+    if (isPastEvent(eventData.event_date)) {
+      return;
+    }
     if (!currentUser) {
       const next =
         typeof window !== 'undefined'
@@ -464,9 +468,11 @@ export default function EventsPageClient() {
                       onLeave={() => handleLeaveEvent(event.id)}
                       onCancel={() => handleCancelEvent(event.id)}
                       canJoin={
+                        !isPastEvent(event.event_date) &&
                         event.current_participants < event.max_participants &&
                         !joinedEventIds.has(event.id)
                       }
+                      isPastEvent={isPastEvent(event.event_date)}
                       hasJoined={joinedEventIds.has(event.id)}
                       isAdminOrExpert={
                         currentUser?.role === 'admin' ||
@@ -502,9 +508,11 @@ export default function EventsPageClient() {
                           onLeave={() => handleLeaveEvent(event.id)}
                           onCancel={() => handleCancelEvent(event.id)}
                           canJoin={
+                            !isPastEvent(event.event_date) &&
                             event.current_participants < event.max_participants &&
                             !joinedEventIds.has(event.id)
                           }
+                          isPastEvent={isPastEvent(event.event_date)}
                           hasJoined={joinedEventIds.has(event.id)}
                           isAdminOrExpert={
                             currentUser?.role === 'admin' ||
@@ -672,6 +680,7 @@ function EventCard({
   onLeave,
   onCancel,
   canJoin,
+  isPastEvent,
   hasJoined,
   isAdminOrExpert,
   canEdit,
@@ -682,6 +691,7 @@ function EventCard({
   onLeave: () => void;
   onCancel: () => void;
   canJoin: boolean;
+  isPastEvent: boolean;
   hasJoined: boolean;
   isAdminOrExpert: boolean;
   canEdit: boolean;
@@ -813,7 +823,7 @@ function EventCard({
                   : 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-slate-700 dark:text-slate-400'
               }`}
             >
-              {hasJoined ? 'Joined' : canJoin ? 'Join Event' : 'Event Full'}
+              {hasJoined ? 'Joined' : canJoin ? 'Join Event' : isPastEvent ? 'Event Ended' : 'Event Full'}
             </button>
           )}
           {hasJoined && (
