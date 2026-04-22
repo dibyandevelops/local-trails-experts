@@ -1280,13 +1280,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               {trail.name}
             </h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
-            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              Added by{' '}
-              <span className="font-semibold text-gray-700 dark:text-slate-200">
-                {(trail.submitted_by_name || trail.expert_name || trail.created_by || '').trim() ||
-                  'LocoXperts'}
-              </span>
-            </p>
 
             {trail.is_hazardous && (
               <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
@@ -1304,23 +1297,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               </div>
             )}
 
-            {!!trail.safety_labels?.length && (
-              <div className="mt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-                  Safety recommendations
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {trail.safety_labels.map((label) => (
-                    <span
-                      key={`${trail.id}-safe-${label}`}
-                      className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-                    >
-                      {getSafetyLabelText(label)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
         </div>
@@ -1487,6 +1463,31 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           </div>
         )}
       </section>
+
+      {!!trail.safety_labels?.length && (
+        <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
+            Safety Recommendations
+          </p>
+          <p className="mt-1 text-sm text-amber-900 dark:text-amber-100">
+            Review these before starting the route.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {trail.safety_labels.map((label) => (
+              <span
+                key={`${trail.id}-safe-${label}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/80 bg-gradient-to-r from-amber-100 to-orange-50 px-3 py-1.5 text-xs font-semibold text-amber-900 shadow-sm dark:border-amber-700/70 dark:bg-gradient-to-r dark:from-amber-900/40 dark:to-orange-900/30 dark:text-amber-100"
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full bg-amber-600 dark:bg-amber-300"
+                  aria-hidden="true"
+                />
+                {getSafetyLabelText(label)}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section
         id="route-guide"

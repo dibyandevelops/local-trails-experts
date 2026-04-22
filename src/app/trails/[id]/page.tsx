@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import type { RouteData, Trail } from '@/types';
 import pool from '@/lib/db';
 import TrailPageClient from './trail-page-client';
@@ -8,31 +7,6 @@ export const revalidate = 300;
 type Params = {
   id: string;
 };
-
-function buildTrailMetadata(trail: Trail): Metadata {
-  const title = `${trail.name} • Trail Guide | LocoXperts`;
-  const description =
-    trail.description?.trim() ||
-    `Explore ${trail.name} in Nepal. View distance, elevation, route guide, and local trail insights.`;
-  const image = trail.image_url || (Array.isArray(trail.trail_images) ? trail.trail_images[0] : null);
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      type: 'article',
-      images: image ? [{ url: image, alt: trail.name }] : undefined,
-    },
-    twitter: {
-      card: image ? 'summary_large_image' : 'summary',
-      title,
-      description,
-      images: image ? [image] : undefined,
-    },
-  };
-}
 
 async function fetchPublicTrailById(id: string): Promise<Trail | null> {
   const result = await pool.query(
@@ -90,24 +64,6 @@ export async function generateStaticParams() {
   } catch {
     return [];
   }
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<Params>;
-}): Promise<Metadata> {
-  const { id } = await params;
-  const trail = await fetchPublicTrailById(id);
-
-  if (!trail) {
-    return {
-      title: 'Trail Not Found | LocoXperts',
-      description: 'The requested trail is unavailable.',
-    };
-  }
-
-  return buildTrailMetadata(trail);
 }
 
 export default async function TrailPage({ params }: { params: Promise<Params> }) {

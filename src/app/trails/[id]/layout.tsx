@@ -6,9 +6,22 @@ import { jsonLdStringify } from '@/lib/jsonld';
 async function getTrailSeo(id: string) {
   const result = await pool.query(
     `
-    SELECT id, name, description, location, latitude, longitude, difficulty, sport_type, updated_at
+    SELECT
+      id,
+      name,
+      description,
+      location,
+      latitude,
+      longitude,
+      difficulty,
+      sport_type,
+      image_url,
+      trail_images,
+      updated_at
     FROM trails
     WHERE id = $1
+      AND status = 'approved'
+      AND is_hidden = FALSE
     LIMIT 1
     `,
     [id]
@@ -23,6 +36,8 @@ async function getTrailSeo(id: string) {
         longitude: number | null;
         difficulty: string;
         sport_type: string | null;
+        image_url: string | null;
+        trail_images: string[] | null;
         updated_at: Date | string | null;
       }
     | undefined;
@@ -41,29 +56,39 @@ export async function generateMetadata(
       };
     }
 
-    const title = `${trail.name} — Trail`;
+    const title = `${trail.name} — Nepal Trail Guide`;
     const description =
       (trail.description || '').trim() ||
       `Explore ${trail.name} in ${trail.location}.`;
+    const image =
+      trail.image_url || (Array.isArray(trail.trail_images) ? trail.trail_images[0] : null);
 
     return {
       title,
       description,
       alternates: { canonical: `/trails/${trail.id}` },
+      robots: { index: true, follow: true },
       openGraph: {
         title,
         description,
         url: `/trails/${trail.id}`,
         siteName: SITE_NAME,
         type: 'article',
+        images: image ? [{ url: image, alt: trail.name }] : undefined,
       },
-      twitter: { title, description },
+      twitter: {
+        card: image ? 'summary_large_image' : 'summary',
+        title,
+        description,
+        images: image ? [image] : undefined,
+      },
     };
   } catch {
     return {
       title: 'Trail',
       description: DEFAULT_DESCRIPTION,
       alternates: { canonical: `/trails/${id}` },
+      robots: { index: false, follow: false },
     };
   }
 }
@@ -81,31 +106,51 @@ export default async function TrailLayout(props: {
   }
 
   const trailUrl = absoluteUrl(`/trails/${id}`);
-  const jsonLd =
+  const image =
+    trail?.image_url || (Array.isArray(trail?.trail_images) ? trail?.trail_images[0] : null);
+  const jsonLdTrail =
     trail &&
     jsonLdStringify({
       '@context': 'https://schema.org',
       '@type': 'Place',
+      additionalType: 'https://schema.org/SportsActivityLocation',
       name: trail.name,
       description: trail.description || undefined,
       url: trailUrl,
+      image: image || undefined,
       geo:
         typeof trail.latitude === 'number' && typeof trail.longitude === 'number'
           ? { '@type': 'GeoCoordinates', latitude: trail.latitude, longitude: trail.longitude }
           : undefined,
       address: trail.location ? { '@type': 'PostalAddress', addressLocality: trail.location } : undefined,
     });
+  const jsonLdBreadcrumb =
+    trail &&
+    jsonLdStringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+        { '@type': 'ListItem', position: 2, name: 'Trails', item: absoluteUrl('/trails') },
+        { '@type': 'ListItem', position: 3, name: trail.name, item: trailUrl },
+      ],
+    });
 
   return (
     <>
-      {jsonLd && (
+      {jsonLdTrail && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: jsonLd }}
+          dangerouslySetInnerHTML={{ __html: jsonLdTrail }}
+        />
+      )}
+      {jsonLdBreadcrumb && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdBreadcrumb }}
         />
       )}
       {props.children}
     </>
   );
 }
-

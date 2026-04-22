@@ -12,6 +12,25 @@ function isoDate(value: unknown) {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
+function normalizeImageUrls(
+  primary?: unknown,
+  gallery?: unknown
+): string[] | undefined {
+  const fromGallery = Array.isArray(gallery) ? gallery : [];
+  const raw = [primary, ...fromGallery]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+
+  const urls = Array.from(
+    new Set(
+      raw.filter(
+        (value) => value.startsWith('https://') || value.startsWith('http://')
+      )
+    )
+  );
+  return urls.length > 0 ? urls : undefined;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const staticUrls: MetadataRoute.Sitemap = [
@@ -32,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const [trailsResult, eventsResult, expertsResult] = await Promise.all([
       pool.query(
         `
-        SELECT id, updated_at
+        SELECT id, updated_at, image_url, trail_images
         FROM trails
         WHERE status = 'approved' AND is_hidden = FALSE
         ORDER BY updated_at DESC
@@ -64,6 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: isoDate(row.updated_at),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
+      images: normalizeImageUrls(row.image_url, row.trail_images),
     }));
 
     const events = (eventsResult.rows || []).map((row: any) => ({
