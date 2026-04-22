@@ -623,6 +623,10 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const canRequestTrail = currentUser?.role === 'participant' || !currentUser;
   const existingTrailRequest = participantRequests.find((request) => request.trail_id === trailId);
   const hasRequestedTrail = Boolean(existingTrailRequest);
+  const hasCreatedEventForRequestedTrail =
+    hasRequestedTrail &&
+    currentUser?.role === 'participant' &&
+    joinedEvents.some((event) => event.trail_id === trailId);
 
   const toggleSafetyLabel = (value: TrailSafetyLabel) => {
     setSafetyDraft((prev) =>
@@ -1020,8 +1024,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
 
   return (
     <div className="container mx-auto px-3 py-5 pb-24 sm:px-4 sm:py-8 sm:pb-8">
-      <div className="mb-5 space-y-2">
-        <div className="flex items-center justify-between gap-2">
+      <div className="mb-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
             onClick={handleBackToTrails}
@@ -1029,11 +1033,11 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           >
             ← Back to trails
           </button>
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
             <button
               type="button"
               onClick={copyTrailLink}
-              className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Share
             </button>
@@ -1053,9 +1057,9 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 ? 'Write Review (Login)'
                 : !canReviewTrail
                   ? 'Write Review (Join First)'
-                  : existingReview
-                    ? 'Update Review'
-                    : 'Write Review'}
+                    : existingReview
+                      ? 'Update Review'
+                      : 'Write Review'}
             </button>
             {trailImages.length > 0 && (
               <button
@@ -1064,16 +1068,25 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   setGalleryInitialIndex(0);
                   setGalleryModalOpen(true);
                 }}
-                className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 View Trail Photos
+              </button>
+            )}
+            {!isAdmin && canFlagHazard && (
+              <button
+                type="button"
+                onClick={() => setHazardModalOpen(true)}
+                className="rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-slate-900 dark:text-rose-200 dark:hover:bg-rose-950/40"
+              >
+                Manage Hazard
               </button>
             )}
             {canManageTrail && (
               <button
                 type="button"
                 onClick={() => setCoverModalOpen(true)}
-                className="shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 Change Cover
               </button>
@@ -1162,37 +1175,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               />
             )}
           </div>
-        </div>
-        <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
-          {canRequestTrail && (
-            <button
-              type="button"
-              disabled={loadingCurrentUser}
-              onClick={handleOpenRequestRide}
-              className="shrink-0 rounded-full border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {hasRequestedTrail ? 'Trail Requested' : 'Want to ride with a local pro?'}
-            </button>
-          )}
-          {canRequestTrail && hasRequestedTrail && (
-            <button
-              type="button"
-              disabled={cancelRequestMutation.isPending}
-              onClick={async () => {
-                if (!existingTrailRequest?.id) return;
-                try {
-                  await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
-                } catch (error) {
-                  setRequestMessage(
-                    error instanceof Error ? error.message : 'Failed to cancel request'
-                  );
-                }
-              }}
-              className="shrink-0 rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {cancelRequestMutation.isPending ? 'Cancelling...' : 'Cancel Request'}
-            </button>
-          )}
         </div>
       </div>
       {(uploadSuccess || uploadError || photoUploadMessage || actionMessage) && (
@@ -1287,14 +1269,48 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               >
                 Route guide
               </a>
-              {canRequestTrail && (
+              {canRequestTrail && !hasRequestedTrail && (
                 <button
                   type="button"
                   onClick={handleOpenRequestRide}
                   disabled={loadingCurrentUser}
                   className="inline-flex items-center justify-center rounded-full border border-green-700 bg-white/90 px-4 py-2 text-xs font-semibold text-green-700 transition duration-200 hover:-translate-y-0.5 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-500 dark:bg-slate-900/70 dark:text-green-200 dark:hover:bg-green-900/30"
                 >
-                  {hasRequestedTrail ? 'Trail Requested' : 'Request Ride with Expert'}
+                  Want to ride with a local pro?
+                </button>
+              )}
+              {canRequestTrail && hasRequestedTrail && (
+                <span className="inline-flex items-center justify-center rounded-full border border-green-700 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
+                  Trail Requested
+                </span>
+              )}
+              {canRequestTrail && hasRequestedTrail && (
+                <button
+                  type="button"
+                  disabled={cancelRequestMutation.isPending || hasCreatedEventForRequestedTrail}
+                  onClick={async () => {
+                    if (hasCreatedEventForRequestedTrail) return;
+                    if (!existingTrailRequest?.id) return;
+                    try {
+                      await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
+                    } catch (error) {
+                      setRequestMessage(
+                        error instanceof Error ? error.message : 'Failed to cancel request'
+                      );
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-full border border-red-300 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 transition duration-200 hover:-translate-y-0.5 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:bg-slate-900/70 dark:text-red-200 dark:hover:bg-red-950/40"
+                  title={
+                    hasCreatedEventForRequestedTrail
+                      ? 'Event already created for this request. Cancellation is disabled.'
+                      : undefined
+                  }
+                >
+                  {cancelRequestMutation.isPending
+                    ? 'Cancelling...'
+                    : hasCreatedEventForRequestedTrail
+                      ? 'Event Created'
+                      : 'Cancel Request'}
                 </button>
               )}
             </div>
@@ -1413,73 +1429,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           {adminMessage && (
             <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">{adminMessage}</p>
           )}
-        </section>
-      )}
-
-      {!isAdmin && canFlagHazard && (
-        <section className="mt-6 rounded-2xl border border-rose-200 bg-rose-50/70 p-5 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/30">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-200">
-                Hazard status
-              </p>
-              <p className="text-sm text-rose-900 dark:text-rose-100">
-                Mark this trail hazardous when conditions are unsafe.
-              </p>
-            </div>
-            <span className="rounded-full border border-rose-200 bg-white/70 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/60 dark:text-rose-200">
-              {hazardousDraft ? 'Currently hazardous' : 'Marked safe'}
-            </span>
-          </div>
-          <label className="mt-3 flex items-start gap-2 text-xs text-rose-900 dark:text-rose-100">
-            <input
-              type="checkbox"
-              checked={hazardousDraft}
-              onChange={(event) => setHazardousDraft(event.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500"
-            />
-            <span>Flag this trail as hazardous</span>
-          </label>
-          <textarea
-            value={hazardNoteDraft}
-            onChange={(event) => setHazardNoteDraft(event.target.value)}
-            rows={2}
-            className="mt-2 w-full rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs text-rose-900 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100"
-            placeholder="Optional: brief hazard details (landslide, damaged bridge, heavy traffic)."
-          />
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await updateTrailMutation.mutateAsync({
-                    is_hazardous: hazardousDraft,
-                    hazard_note: hazardNoteDraft.trim() || null,
-                  });
-                  setAdminMessage('Hazard status updated.');
-                } catch (err) {
-                  setAdminMessage(
-                    err instanceof Error ? err.message : 'Failed to update hazard status.'
-                  );
-                }
-              }}
-              disabled={updateTrailMutation.isPending}
-              className="rounded-lg border border-rose-300 bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {updateTrailMutation.isPending ? 'Saving...' : 'Update Hazard Status'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setHazardousDraft(Boolean(trail.is_hazardous));
-                setHazardNoteDraft(trail.hazard_note || '');
-                setAdminMessage('Hazard status reset.');
-              }}
-              className="rounded-lg border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200"
-            >
-              Reset
-            </button>
-          </div>
         </section>
       )}
 
@@ -1783,33 +1732,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         )}
         {hasRoute && routeData && (
           null
-        )}
-        <button
-          type="button"
-          onClick={handleOpenRequestRide}
-          disabled={loadingCurrentUser}
-          className="flex-1 rounded-lg border border-green-700 px-3 py-2 text-xs font-semibold text-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {hasRequestedTrail ? 'Trail Requested' : 'Want to ride with a local pro?'}
-        </button>
-        {canRequestTrail && hasRequestedTrail && (
-          <button
-            type="button"
-            disabled={cancelRequestMutation.isPending}
-            onClick={async () => {
-              if (!existingTrailRequest?.id) return;
-              try {
-                await cancelRequestMutation.mutateAsync(existingTrailRequest.id);
-              } catch (error) {
-                setRequestMessage(
-                  error instanceof Error ? error.message : 'Failed to cancel request'
-                );
-              }
-            }}
-            className="flex-1 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-60"
-          >
-            {cancelRequestMutation.isPending ? 'Cancelling...' : 'Cancel Request'}
-          </button>
         )}
       </div>
 
@@ -2223,62 +2145,67 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         </Dialog.Root>
       )}
 
-      {isAdmin && (
-        <Dialog.Root open={hazardModalOpen} onOpenChange={setHazardModalOpen}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-              <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-                Manage Hazard Status
-              </Dialog.Title>
-              <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                Mark this trail hazardous when conditions are unsafe.
-              </p>
-              <label className="mt-4 flex items-start gap-2 text-sm text-gray-700 dark:text-slate-200">
-                <input
-                  type="checkbox"
-                  checked={hazardousDraft}
-                  onChange={(event) => setHazardousDraft(event.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
-                />
-                <span>Flag this trail as hazardous</span>
-              </label>
-              <textarea
-                value={hazardNoteDraft}
-                onChange={(event) => setHazardNoteDraft(event.target.value)}
-                rows={3}
-                className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                placeholder="Optional: brief hazard details (landslide, damaged bridge, heavy traffic)."
+      {canFlagHazard && (
+        <AppDialog
+          open={hazardModalOpen}
+          onOpenChange={setHazardModalOpen}
+          title="Manage Hazard Status"
+          description="Mark this trail hazardous when conditions are unsafe."
+          maxWidthClassName="max-w-xl"
+        >
+          <div className="mt-4">
+            <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={hazardousDraft}
+                onChange={(event) => setHazardousDraft(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
               />
-              <div className="mt-5 flex justify-end gap-2">
-                <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-                  Cancel
-                </Dialog.Close>
-                <button
-                  type="button"
-                  disabled={updateTrailMutation.isPending}
-                  onClick={async () => {
-                    try {
-                      await updateTrailMutation.mutateAsync({
-                        is_hazardous: hazardousDraft,
-                        hazard_note: hazardNoteDraft.trim() || null,
-                      });
-                      setAdminMessage('Hazard status updated.');
-                      setHazardModalOpen(false);
-                    } catch (err) {
-                      setAdminMessage(
-                        err instanceof Error ? err.message : 'Failed to update hazard status.'
-                      );
-                    }
-                  }}
-                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
-                >
-                  {updateTrailMutation.isPending ? 'Saving...' : 'Save Hazard Status'}
-                </button>
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+              <span>Flag this trail as hazardous</span>
+            </label>
+            <textarea
+              value={hazardNoteDraft}
+              onChange={(event) => setHazardNoteDraft(event.target.value)}
+              rows={3}
+              className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              placeholder="Optional: brief hazard details (landslide, damaged bridge, heavy traffic)."
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setHazardousDraft(Boolean(trail.is_hazardous));
+                  setHazardNoteDraft(trail.hazard_note || '');
+                  setAdminMessage('Hazard status reset.');
+                }}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                disabled={updateTrailMutation.isPending}
+                onClick={async () => {
+                  try {
+                    await updateTrailMutation.mutateAsync({
+                      is_hazardous: hazardousDraft,
+                      hazard_note: hazardNoteDraft.trim() || null,
+                    });
+                    setAdminMessage('Hazard status updated.');
+                    setHazardModalOpen(false);
+                  } catch (err) {
+                    setAdminMessage(
+                      err instanceof Error ? err.message : 'Failed to update hazard status.'
+                    );
+                  }
+                }}
+                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+              >
+                {updateTrailMutation.isPending ? 'Saving...' : 'Save Hazard Status'}
+              </button>
+            </div>
+          </div>
+        </AppDialog>
       )}
 
       <Dialog.Root
