@@ -42,3 +42,7 @@ export async function submitExpertReview(expertId: string, payload: ReviewPayloa
   );
   return data.review;
 }
+
+export async function deleteExpertReview(expertId: string) {
+  await apiClient.delete(`/api/experts/${expertId}/reviews`);
+}

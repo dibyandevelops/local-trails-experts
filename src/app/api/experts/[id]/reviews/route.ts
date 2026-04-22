@@ -146,3 +146,44 @@ export async function POST(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = getAuthFromRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (auth.role !== 'participant' && auth.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only participants or admins can delete expert reviews.' },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+    const deleteResult = await pool.query(
+      `
+      DELETE FROM expert_reviews
+      WHERE expert_user_id = $1
+        AND reviewer_user_id = $2
+      RETURNING id
+      `,
+      [id, auth.sub]
+    );
+
+    if (deleteResult.rows.length === 0) {
+      return NextResponse.json({ error: 'Review not found.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting expert review:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete expert review' },
+      { status: 500 }
+    );
+  }
+}
