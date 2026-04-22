@@ -15,3 +15,8 @@ export const ESEWA_ENABLED = parseBooleanFlag(
   process.env.NEXT_PUBLIC_ESEWA_ENABLED,
   false
 );
+
+export const EMAIL_NOTIFICATIONS_ENABLED = parseBooleanFlag(
+  process.env.NOTIFICATIONS_EMAIL_ENABLED,
+  true
+);

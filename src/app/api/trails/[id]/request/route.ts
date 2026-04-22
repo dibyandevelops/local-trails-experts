@@ -171,7 +171,7 @@ export async function POST(
     );
 
     const adminRows = await pool.query(
-      `SELECT id, email FROM users WHERE role = 'admin' AND email IS NOT NULL`
+      `SELECT id, email, phone FROM users WHERE role = 'admin'`
     );
     const adminEmails = Array.from(
       new Set(
