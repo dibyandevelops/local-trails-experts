@@ -38,6 +38,7 @@ const dataValueClass = 'mt-1 text-sm font-semibold text-slate-900 dark:text-slat
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const detailsHref = trail.detailsHref || `/trails/${trail.id}`;
   const difficulty = normalizeDifficulty(trail.difficulty);
+  const [shareState, setShareState] = React.useState<'idle' | 'copied' | 'error'>('idle');
 
   const images = React.useMemo(() => {
     const list = [
@@ -140,6 +141,36 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
   const hasActions = dropdownItems.length > 0;
 
+  const handleShare = React.useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    const shareUrl = detailsHref.startsWith('http')
+      ? detailsHref
+      : `${window.location.origin}${detailsHref}`;
+    const shareData = {
+      title: trail.name,
+      text: `Check out this trail: ${trail.name}`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareState('copied');
+        window.setTimeout(() => setShareState('idle'), 1500);
+        return;
+      }
+      setShareState('error');
+      window.setTimeout(() => setShareState('idle'), 1500);
+    } catch {
+      setShareState('error');
+      window.setTimeout(() => setShareState('idle'), 1500);
+    }
+  }, [detailsHref, trail.name]);
+
   return (
     <article
       className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-green-500 dark:border-slate-800 dark:bg-slate-900"
@@ -186,8 +217,19 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
           )}
         </div>
 
-        {hasActions && (
-          <div className="absolute right-7 top-7 z-20">
+        <div className="absolute right-7 top-7 z-20 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-white/85 text-slate-900 shadow-sm transition hover:bg-white dark:border-white/20 dark:bg-black/45 dark:text-white dark:hover:bg-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            aria-label="Share trail"
+            title={shareState === 'copied' ? 'Link copied' : shareState === 'error' ? 'Unable to share' : 'Share'}
+          >
+            <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4 fill-current">
+              <path d="M14 3a3 3 0 0 0-2.76 4.17L7.9 9.1a3 3 0 1 0 .27 1.9l3.1 1.56a3 3 0 1 0 .7-1.43l-3.2-1.6a2.98 2.98 0 0 0-.14-.63l3.38-1.9A3 3 0 1 0 14 3Z" />
+            </svg>
+          </button>
+          {hasActions && (
             <ThemedDropdown
               label="More actions"
               hideCaret
@@ -205,8 +247,8 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
               triggerClassName="h-9 w-9 justify-center rounded-full border border-white/40 bg-white/85 px-0 py-0 text-slate-900 shadow-sm hover:bg-white dark:border-white/20 dark:bg-black/45 dark:text-white dark:hover:bg-black/40 focus-visible:ring-white/60"
               items={dropdownItems}
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="space-y-5 p-5 pt-4">
