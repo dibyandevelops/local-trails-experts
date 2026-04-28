@@ -77,6 +77,8 @@ type MapSectionProps = {
   mapboxToken?: string;
   onStyleModeChange: (mode: MapStyleMode) => void;
   komootEmbedUrl?: string | null;
+  mapProvider: 'internal' | 'komoot';
+  onMapProviderChange: (provider: 'internal' | 'komoot') => void;
 };
 
 const MapSection = React.memo(function MapSection({
@@ -89,6 +91,8 @@ const MapSection = React.memo(function MapSection({
   mapboxToken,
   onStyleModeChange,
   komootEmbedUrl,
+  mapProvider,
+  onMapProviderChange,
 }: MapSectionProps) {
   const mapRef = React.useRef<MapRef | null>(null);
   const komootUrl = (komootEmbedUrl || '').trim();
@@ -96,9 +100,18 @@ const MapSection = React.memo(function MapSection({
   const hasKomootEmbed = Boolean(normalizedKomootEmbedUrl);
   const komootOpenUrl = getKomootNavigateUrl(normalizedKomootEmbedUrl);
 
-  if (hasKomootEmbed) {
+  if (hasKomootEmbed && mapProvider === 'komoot') {
     return (
       <div className="mb-6 overflow-hidden rounded-xl border border-emerald-200/60 bg-white shadow-[0_20px_60px_-25px_rgba(2,6,23,0.5)] dark:border-emerald-900/60 dark:bg-slate-950">
+        <div className="flex items-center justify-end border-b border-emerald-200/60 px-3 py-2 dark:border-emerald-900/60">
+          <button
+            type="button"
+            onClick={() => onMapProviderChange('internal')}
+            className="rounded-full border border-emerald-300 bg-white px-3 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100"
+          >
+            Switch to Local Map
+          </button>
+        </div>
         <div className="h-[360px] w-full sm:h-[460px] lg:h-[600px]">
           <iframe
             src={normalizedKomootEmbedUrl}
@@ -151,7 +164,17 @@ const MapSection = React.memo(function MapSection({
           map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.1 });
         }}
       >
-        <div className="absolute left-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
+        <div className="absolute right-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
+          {hasKomootEmbed && (
+            <button
+              type="button"
+              onClick={() => onMapProviderChange('komoot')}
+              className="px-3 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/10"
+              title="Switch to Komoot route view"
+            >
+              Komoot
+            </button>
+          )}
           <button
             type="button"
             aria-pressed={mapStyleMode === 'satellite'}
@@ -328,6 +351,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     const saved = window.localStorage.getItem('mtb_map_style_mode');
     return saved === 'map' || saved === 'satellite' ? saved : 'map';
   });
+  const [mapProvider, setMapProvider] = useState<'internal' | 'komoot'>('internal');
   const mapStyle = useMemo(() => getMapStyle(mapStyleMode), [mapStyleMode]);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
@@ -425,6 +449,14 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     () => getKomootNavigateUrl(trail?.komoot_embed_url),
     [trail?.komoot_embed_url]
   );
+  const hasKomootEmbed = useMemo(
+    () => Boolean(extractKomootEmbedUrl((trail?.komoot_embed_url || '').trim())),
+    [trail?.komoot_embed_url]
+  );
+
+  useEffect(() => {
+    setMapProvider(hasKomootEmbed ? 'komoot' : 'internal');
+  }, [trailId, hasKomootEmbed]);
   const mapCenter = useMemo(() => {
     if (mapBounds) {
       return {
@@ -1554,6 +1586,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           mapboxToken={mapboxToken}
           onStyleModeChange={setMapStyleMode}
           komootEmbedUrl={trail.komoot_embed_url || null}
+          mapProvider={mapProvider}
+          onMapProviderChange={setMapProvider}
         />
       </div>
 
