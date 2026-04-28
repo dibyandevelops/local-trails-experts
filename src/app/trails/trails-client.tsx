@@ -66,6 +66,15 @@ const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
   { value: 'elevation_desc', label: 'Elevation gain (high → low)' },
 ];
 
+const TRAIL_QUICK_FILTERS: Array<{ label: string; value: Difficulty | '' }> = [
+  { label: 'All levels', value: '' },
+  { label: 'Novice', value: 'novice' },
+  { label: 'Easy', value: 'easy' },
+  { label: 'Moderate', value: 'moderate' },
+  { label: 'Hard', value: 'hard' },
+  { label: 'Expert', value: 'expert' },
+];
+
 function isTrailSort(value: string): value is TrailSort {
   return TRAIL_SORT_OPTIONS.some((option) => option.value === value);
 }
@@ -1130,6 +1139,28 @@ function TrailsPageContent() {
                 ))}
               </select>
             </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+              Quick filters
+            </span>
+            {TRAIL_QUICK_FILTERS.map((quick) => {
+              const active = difficulty === quick.value;
+              return (
+                <button
+                  key={quick.label}
+                  type="button"
+                  onClick={() => setDifficulty(quick.value)}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                    active
+                      ? 'border-emerald-500 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-400 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-500 dark:hover:text-emerald-200'
+                  }`}
+                >
+                  {quick.label}
+                </button>
+              );
+            })}
           </div>
         </div>
         {hasActiveFilters && (
