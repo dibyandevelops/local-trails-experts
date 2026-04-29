@@ -50,6 +50,7 @@ const TRAILS_LAST_URL_KEY = 'trails_last_url';
 type TrailsViewMode = 'grid' | 'list';
 type TrailsPageParam = { offset: number; limit: number };
 type TrailSort =
+  | 'random'
   | 'name_asc'
   | 'name_desc'
   | 'newest'
@@ -58,6 +59,7 @@ type TrailSort =
   | 'elevation_desc';
 
 const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
+  { value: 'random', label: 'Random' },
   { value: 'newest', label: 'Newest' },
   { value: 'name_asc', label: 'Name (A–Z)' },
   { value: 'name_desc', label: 'Name (Z–A)' },
@@ -468,7 +470,10 @@ function TrailsPageContent() {
   const [distanceMaxInput, setDistanceMaxInput] = useState('');
   const [distanceMin, setDistanceMin] = useState('');
   const [distanceMax, setDistanceMax] = useState('');
-  const [sort, setSort] = useState<TrailSort>('newest');
+  const [sort, setSort] = useState<TrailSort>('random');
+  const [randomSeed] = useState(
+    () => `trails-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  );
   const [viewMode] = useState<TrailsViewMode>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
@@ -583,6 +588,7 @@ function TrailsPageContent() {
       distanceMin,
       distanceMax,
       sort,
+      randomSeed,
       pageSize: initialPageSize,
     }),
     queryFn: ({ signal, pageParam }) =>
@@ -595,6 +601,7 @@ function TrailsPageContent() {
           distanceMin,
           distanceMax,
           sort,
+          randomSeed,
           offset: pageParam.offset,
           pageSize: pageParam.limit,
         },
@@ -688,6 +695,7 @@ function TrailsPageContent() {
       distanceMin,
       distanceMax,
       sort,
+      randomSeed,
       pageSize: initialPageSize,
     });
     const paginatedKey = QUERY_KEYS.trails.paginatedList({
@@ -698,6 +706,7 @@ function TrailsPageContent() {
       distanceMin,
       distanceMax,
       sort,
+      randomSeed,
       page: 1,
       pageSize: initialPageSize,
     });
@@ -709,6 +718,7 @@ function TrailsPageContent() {
       distanceMin,
       distanceMax,
       sort,
+      randomSeed,
     });
 
     if (trailId) {
@@ -924,7 +934,7 @@ function TrailsPageContent() {
     if (urlSort && isTrailSort(urlSort)) {
       setSort(urlSort);
     } else {
-      setSort('newest');
+      setSort('random');
     }
     if (urlCreateTrail) {
       setCreateEventTrailId(urlCreateTrail);
@@ -943,7 +953,7 @@ function TrailsPageContent() {
     if (sport) params.set('sport', sport);
     if (distanceMin) params.set('distanceMin', distanceMin);
     if (distanceMax) params.set('distanceMax', distanceMax);
-    if (sort && sort !== 'newest') params.set('sort', sort);
+    if (sort && sort !== 'random') params.set('sort', sort);
     if (createEventOpen && createEventTrailId) {
       params.set('createEventTrail', createEventTrailId);
       params.set('createEventSport', createEventSport || 'mtb');
@@ -965,6 +975,7 @@ function TrailsPageContent() {
     distanceMin,
     distanceMax,
     sort,
+    randomSeed,
     createEventOpen,
     createEventTrailId,
     createEventSport,

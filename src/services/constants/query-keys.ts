@@ -11,6 +11,7 @@ export const QUERY_KEYS = {
       distanceMin?: string;
       distanceMax?: string;
       sort?: string;
+      randomSeed?: string;
       hazardous?: boolean;
     }) =>
       [
@@ -22,6 +23,7 @@ export const QUERY_KEYS = {
         filters?.distanceMin || '',
         filters?.distanceMax || '',
         filters?.sort || '',
+        filters?.randomSeed || '',
         filters?.hazardous ? 'true' : 'false',
       ] as const,
     forEvents: ['trails-for-events'] as const,
@@ -33,6 +35,7 @@ export const QUERY_KEYS = {
       distanceMin?: string;
       distanceMax?: string;
       sort?: string;
+      randomSeed?: string;
       hazardous?: boolean;
       page?: number;
       pageSize?: number;
@@ -46,6 +49,7 @@ export const QUERY_KEYS = {
         filters?.distanceMin || '',
         filters?.distanceMax || '',
         filters?.sort || '',
+        filters?.randomSeed || '',
         filters?.hazardous ? 'true' : 'false',
         String(filters?.page || 1),
         String(filters?.pageSize || 12),
@@ -58,6 +62,7 @@ export const QUERY_KEYS = {
       distanceMin?: string;
       distanceMax?: string;
       sort?: string;
+      randomSeed?: string;
       hazardous?: boolean;
       pageSize?: number;
     }) =>
@@ -70,6 +75,7 @@ export const QUERY_KEYS = {
         filters?.distanceMin || '',
         filters?.distanceMax || '',
         filters?.sort || '',
+        filters?.randomSeed || '',
         filters?.hazardous ? 'true' : 'false',
         String(filters?.pageSize || 12),
       ] as const,

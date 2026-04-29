@@ -14,6 +14,7 @@ export type TrailFilters = {
   distanceMin?: string;
   distanceMax?: string;
   sort?: string;
+  randomSeed?: string;
   hazardous?: boolean;
   page?: number;
   pageSize?: number;
@@ -51,6 +52,7 @@ export async function fetchTrails(
     if (filters.distanceMin?.trim()) params.distanceMin = filters.distanceMin.trim();
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
     if (filters.sort?.trim()) params.sort = filters.sort.trim();
+    if (filters.randomSeed?.trim()) params.randomSeed = filters.randomSeed.trim();
     if (filters.hazardous) params.hazardous = 'true';
 
     const { data } = await apiClient.get<{ trails: Trail[] }>(ApiPath.Trails, {
@@ -88,6 +90,7 @@ export async function fetchTrailsPaginated(
     if (filters.distanceMin?.trim()) params.distanceMin = filters.distanceMin.trim();
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
     if (filters.sort?.trim()) params.sort = filters.sort.trim();
+    if (filters.randomSeed?.trim()) params.randomSeed = filters.randomSeed.trim();
     if (filters.hazardous) params.hazardous = 'true';
     if (typeof filters.offset === 'number' && Number.isFinite(filters.offset)) {
       params.offset = filters.offset;
