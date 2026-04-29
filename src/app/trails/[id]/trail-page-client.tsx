@@ -103,7 +103,17 @@ const MapSection = React.memo(function MapSection({
   if (hasKomootEmbed && mapProvider === 'komoot') {
     return (
       <div className="mb-6 overflow-hidden rounded-xl border border-emerald-200/60 bg-white shadow-[0_20px_60px_-25px_rgba(2,6,23,0.5)] dark:border-emerald-900/60 dark:bg-slate-950">
-        <div className="flex items-center justify-end border-b border-emerald-200/60 px-3 py-2 dark:border-emerald-900/60">
+        <div className="flex items-center justify-end gap-2 border-b border-emerald-200/60 px-3 py-2 dark:border-emerald-900/60">
+          {komootOpenUrl && (
+            <a
+              href={komootOpenUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-emerald-300 bg-white px-3 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100"
+            >
+              Navigate on Komoot
+            </a>
+          )}
           <button
             type="button"
             onClick={() => onMapProviderChange('internal')}

@@ -59,6 +59,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
 ];
 const navItems: NavItem[] = [
+  { label: 'Home', href: '/home', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   { label: 'Explore Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   {
     label: 'For Experts',
@@ -248,7 +249,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       <div className="container mx-auto px-4 py-2">
         <div className="flex min-h-[80px] items-center justify-between gap-4">
           <Link
-            href="/"
+            href="/home"
             className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-2xl font-bold leading-none transition-opacity hover:opacity-95"
           >
             {icon}

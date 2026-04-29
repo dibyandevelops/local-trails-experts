@@ -1161,7 +1161,7 @@ function TrailsPageContent() {
             </div>
           </div>
           <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
-            <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
                 Quick filters
               </p>
@@ -1169,7 +1169,7 @@ function TrailsPageContent() {
                 <button
                   type="button"
                   onClick={resetQuickFilters}
-                  className="rounded-full border border-gray-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="w-full rounded-full border border-gray-300 bg-white px-3 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-100 sm:w-auto dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Reset quick filters
                 </button>
@@ -1177,8 +1177,8 @@ function TrailsPageContent() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
                   Difficulty
                 </span>
                 {TRAIL_QUICK_FILTERS.map((quick) => {
@@ -1188,7 +1188,7 @@ function TrailsPageContent() {
                       key={quick.label}
                       type="button"
                       onClick={() => setDifficulty(quick.value)}
-                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                         active
                           ? 'border-emerald-500 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500'
                           : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-400 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-500 dark:hover:text-emerald-200'
@@ -1200,8 +1200,8 @@ function TrailsPageContent() {
                 })}
               </div>
 
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
                   Distance
                 </span>
                 {DISTANCE_QUICK_FILTERS.map((quick) => {
@@ -1216,7 +1216,7 @@ function TrailsPageContent() {
                         setDistanceMinInput(quick.min);
                         setDistanceMaxInput(quick.max);
                       }}
-                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                         active
                           ? 'border-emerald-500 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500'
                           : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-400 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-500 dark:hover:text-emerald-200'
