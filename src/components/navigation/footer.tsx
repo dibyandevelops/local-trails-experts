@@ -34,7 +34,9 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
   const year = new Date().getFullYear();
   const brand = 'LocoXperts';
   const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  const communityWhatsappGroupLink = process.env.NEXT_PUBLIC_COMMUNITY_WHATSAPP_GROUP_LINK;
+  const communityWhatsappGroupLink =
+    process.env.NEXT_PUBLIC_COMMUNITY_WHATSAPP_GROUP_LINK ||
+    'https://chat.whatsapp.com/BqFfpRR2nc94lf0Un7jlWA';
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
@@ -74,6 +76,28 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
           onOpenGroupRequest={() => setGroupRequestOpen(true)}
         />
       </div>
+      <div className="container mx-auto px-4">
+        <div className="mt-8 rounded-2xl border border-emerald-200/70 bg-emerald-50/80 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+                Join the community trail group
+              </p>
+              <p className="mt-1 text-sm text-emerald-800/90 dark:text-emerald-200/90">
+                For all enthusiasts who want to build, fix, and explore trails together.
+              </p>
+            </div>
+            <a
+              href={communityWhatsappGroupLink}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              Join WhatsApp community
+            </a>
+          </div>
+        </div>
+      </div>
 
       <GroupRequestModal
         open={groupRequestOpen}
@@ -88,4 +112,3 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
     </footer>
   );
 }
-

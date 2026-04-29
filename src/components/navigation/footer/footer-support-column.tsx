@@ -13,7 +13,6 @@ type Props = {
 export default function FooterSupportColumn({
   contactHref,
   featureHref,
-  communityWhatsappGroupLink,
   contactEmail,
   expertsBetaEnabled,
   onOpenFeedback,
@@ -43,13 +42,6 @@ export default function FooterSupportColumn({
             Request a large group ride
           </button>
         </li>
-        {communityWhatsappGroupLink && (
-          <li>
-            <a className="hover:underline" href={communityWhatsappGroupLink} target="_blank" rel="noreferrer">
-              Join local trails &amp; experts community
-            </a>
-          </li>
-        )}
         <li>
           <Link className="hover:underline" href="/purpose">
             Nepal Trail Hub purpose
