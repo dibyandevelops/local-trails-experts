@@ -47,7 +47,7 @@ export async function generateMetadata(props: {
     hasFilters,
     keywords: [
       'MTB events Nepal',
-      'cycling events Kathmandu',
+      'cycling events Nepal',
       'trail rides Nepal',
       'bike community events Nepal',
       'local guided rides Nepal',

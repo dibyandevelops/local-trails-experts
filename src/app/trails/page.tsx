@@ -19,8 +19,8 @@ export async function generateMetadata(props: {
       'best MTB trails in Nepal',
       'mountain bike trails Nepal',
       'Nepal bike trail map',
-      'Kathmandu MTB trails',
-      'Pokhara MTB trails',
+      'Nepal trail discovery',
+      'local trail guides Nepal',
       'Nepal cycling routes',
       'trail GPX Nepal',
     ],
@@ -41,7 +41,7 @@ export default function TrailsPage() {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/home') },
       { '@type': 'ListItem', position: 2, name: 'Trails', item: absoluteUrl('/trails') },
     ],
   });

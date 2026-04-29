@@ -17,17 +17,17 @@ export const metadata: Metadata = {
     'mountain bike trails Nepal',
     'Nepal MTB trail map',
     'bike routes Nepal',
-    'Kathmandu MTB trails',
-    'Pokhara MTB rides',
+    'trail discovery Nepal',
+    'local cycling guides Nepal',
     'local trail guides Nepal',
     'LocoXperts',
   ],
-  alternates: { canonical: '/' },
+  alternates: { canonical: '/home' },
   openGraph: {
     title: 'Best Site to View MTB Trails in Nepal',
     description:
       'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
-    url: '/',
+    url: '/home',
     type: 'website',
   },
   twitter: {
@@ -43,7 +43,7 @@ export default function Home() {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'LocoXperts',
-    url: absoluteUrl('/'),
+    url: absoluteUrl('/home'),
     description: DEFAULT_DESCRIPTION,
     potentialAction: {
       '@type': 'SearchAction',
@@ -121,8 +121,8 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Featured City</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Kathmandu Routes</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Featured Region</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nepal Trails</p>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Nepal Wide</p>

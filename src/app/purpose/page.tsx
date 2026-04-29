@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Purpose',
   description:
-    'The Nepal Trail Hub agenda: map Nepal trails for everyone, support local experts, and fund trail building and signage around Kathmandu hills.',
+    'The Nepal Trail Hub agenda: map Nepal trails for everyone, support local experts, and fund trail building, trail fixes, and signage across Nepal.',
   alternates: { canonical: '/purpose' },
 };
 
@@ -67,8 +67,8 @@ export default function PurposePage() {
         <div className="max-w-3xl">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge tone="emerald">Nepal Trail Hub</Badge>
-            <Badge tone="amber">Map + Build</Badge>
-            <Badge tone="sky">Kathmandu Focus</Badge>
+            <Badge tone="amber">Build + Fix + Explore</Badge>
+            <Badge tone="sky">Nepal Focus</Badge>
             <Badge tone="slate">Tourism & Local Economy</Badge>
           </div>
 
@@ -81,8 +81,8 @@ export default function PurposePage() {
             events and trainings.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            Immediate ground focus: new and improved trail lines around the Kathmandu
-            hills, with clear trail signage and practical maintenance.
+            Immediate ground focus: new and improved trail lines across key riding
+            regions in Nepal, with clear signage and practical maintenance.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
             The model is expert-first and autonomous: experts keep event earnings.
@@ -164,7 +164,7 @@ export default function PurposePage() {
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
             <p>• Free digital map of Nepal trails</p>
             <p>• Expert-led events and trainings</p>
-            <p>• Trail build + signage work in Kathmandu hills</p>
+            <p>• Trail build, fix, and signage work across Nepal routes</p>
           </div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
@@ -177,7 +177,7 @@ export default function PurposePage() {
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
             <p>• Better mapped trails across Nepal</p>
-            <p>• More trail options around Kathmandu</p>
+            <p>• More trail options across Nepal</p>
             <p>• Stronger local guide and community network</p>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function PurposePage() {
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
             <p>• The Map: keep LocoXperts free and usable for riders and guides</p>
-            <p>• The Dirt: tools and local crews for Kathmandu hill trail building</p>
+            <p>• The Dirt: tools and local crews for trail building and trail fixes</p>
             <p>• The Signs: clear, simple direction signage on key routes</p>
             <p>• Platform infrastructure: hosting, storage, maps, and monitoring</p>
           </div>
@@ -279,7 +279,7 @@ export default function PurposePage() {
           <div>
             <p className="font-semibold text-gray-900 dark:text-gray-100">One-sentence summary</p>
             <p className="mt-1">
-              We are building a free digital map for Nepal trails while supporting new and safer trail lines around Kathmandu hills to strengthen local tourism and communities.
+              We are building a free digital map for Nepal trails while supporting new and safer trail lines across Nepal to strengthen local tourism and communities.
             </p>
           </div>
           <div>

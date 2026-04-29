@@ -17,7 +17,7 @@ export async function generateMetadata(props: {
       'MTB guides Nepal',
       'local bike experts Nepal',
       'mountain biking coach Nepal',
-      'trail experts Kathmandu',
+      'trail experts Nepal',
       'Nepal cycling community experts',
     ],
   });

@@ -5,7 +5,7 @@ import { COMMUNITY_NAME } from '@/lib/branding';
 export const metadata: Metadata = {
   title: 'Donate',
   description:
-    `Support ${COMMUNITY_NAME} to map trails across Nepal and build new routes around Kathmandu hills.`,
+    `Support ${COMMUNITY_NAME} to map trails across Nepal and fund trail building, fixes, and route signage.`,
   alternates: { canonical: '/donate' },
 };
 
