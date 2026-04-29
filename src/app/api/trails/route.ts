@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     const radiusKm = parseOptionalNumber(searchParams.get('radiusKm'));
     const hasUserCoords = lat !== null && lng !== null;
     const sort = (searchParams.get('sort') || '').trim();
+    const randomSeed = (searchParams.get('randomSeed') || '').trim();
     const distanceMinRaw = searchParams.get('distanceMin');
     const distanceMaxRaw = searchParams.get('distanceMax');
     const status = searchParams.get('status');
@@ -145,8 +146,18 @@ export async function GET(request: NextRequest) {
       whereClause += ` AND status = 'approved' AND is_hidden = FALSE`;
     }
 
+    const countParams = [...params];
+
     const orderBy = (() => {
       switch (sort) {
+        case 'random': {
+          if (randomSeed) {
+            const seedParam = paramIndex++;
+            params.push(randomSeed);
+            return `md5($${seedParam}::text || t.id::text) ASC`;
+          }
+          return 't.created_at DESC, t.name ASC';
+        }
         case 'nearest':
           return hasUserCoords ? distanceOrderBy : 't.name ASC';
         case 'name_desc':
@@ -202,7 +213,7 @@ export async function GET(request: NextRequest) {
 
     const [result, countResult] = await Promise.all([
       pool.query(listQuery, listParams),
-      pool.query(countQuery, params),
+      pool.query(countQuery, countParams),
     ]);
     const trails: Trail[] = result.rows;
     const total = countResult.rows[0]?.total || 0;
