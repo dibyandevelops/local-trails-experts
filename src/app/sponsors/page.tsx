@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import SponsorInquiryModal from '@/components/feature-components/sponsor-inquiry-modal';
+import SponsorRequestModal from '@/components/feature-components/sponsor-request-modal';
+import SponsorsShowcaseGrid from '@/components/feature-components/sponsors-showcase-grid';
 
 export const metadata: Metadata = {
   title: 'Sponsors',
@@ -8,36 +10,6 @@ export const metadata: Metadata = {
     'Sponsor the Nepal Trail Hub mission: map trails, build and fix routes across Nepal, and support local tourism and communities.',
   alternates: { canonical: '/sponsors' },
 };
-
-function SponsorSlot({ featured = false }: { featured?: boolean }) {
-  return (
-    <div
-      className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition ${
-        featured
-          ? 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-lime-50 dark:border-emerald-900/60 dark:from-emerald-950/60 dark:via-slate-950/70 dark:to-emerald-900/40'
-          : 'border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/60'
-      }`}
-    >
-      <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl opacity-0 transition group-hover:opacity-100 dark:bg-emerald-700/25" />
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dashed border-emerald-300 bg-white/70 text-emerald-800 dark:border-emerald-900/60 dark:bg-slate-950/40 dark:text-emerald-100">
-          <span className="text-xs font-semibold">LOGO</span>
-        </div>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
-          Your company will be here
-        </span>
-      </div>
-      <p className="mt-4 text-sm text-gray-600 dark:text-slate-300">
-        Sponsor mapping, trail building and fixes, signage, or community events. We’ll
-        feature your brand across the platform and partner updates.
-      </p>
-      <div className="mt-4 h-px w-full bg-gray-200/80 dark:bg-slate-800" />
-      <p className="mt-4 text-xs text-gray-500 dark:text-slate-400">
-        Interested? Start a sponsor inquiry from the CTA below.
-      </p>
-    </div>
-  );
-}
 
 const SPONSOR_TIERS = [
   {
@@ -132,14 +104,7 @@ export default function SponsorsPage() {
           </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <SponsorSlot featured />
-          <SponsorSlot />
-          <SponsorSlot />
-          <SponsorSlot />
-          <SponsorSlot />
-          <SponsorSlot />
-        </div>
+        <SponsorsShowcaseGrid />
       </section>
 
       <section className="rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 md:p-10">
@@ -194,6 +159,7 @@ export default function SponsorsPage() {
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <SponsorInquiryModal triggerLabel="Start sponsorship inquiry" />
+          <SponsorRequestModal triggerLabel="Submit sponsor request" />
         </div>
       </section>
     </div>
