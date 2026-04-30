@@ -7,6 +7,7 @@ import Navbar from '@/components/navigation/navbar';
 import Footer from '@/components/navigation/footer';
 import PWARegister from '@/components/pwa-register';
 import PushNotificationPrompt from '@/components/push-notification-prompt';
+import ParticipantBookingsFab from '@/components/navigation/participant-bookings-fab';
 import { getServerCurrentUser } from '@/lib/auth-server';
 import {
   absoluteUrl,
@@ -113,6 +114,7 @@ export default async function RootLayout({
         <MainContent>
           <PushNotificationPrompt initialUser={initialUser} />
           <Navbar initialUser={initialUser} />
+          <ParticipantBookingsFab />
           <main className="container mx-auto flex-grow px-4 py-8">{children}</main>
           <Footer initialUser={initialUser} />
         </MainContent>

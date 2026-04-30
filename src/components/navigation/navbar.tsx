@@ -102,6 +102,17 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     refetchInterval: 30000,
     retry: false,
   });
+  const { data: eventsCount = 0 } = useQuery<number>({
+    queryKey: ['navbar-events-count'],
+    queryFn: async () => {
+      const response = await fetch('/api/events?upcoming=true', { cache: 'no-store' });
+      if (!response.ok) return 0;
+      const data = await response.json().catch(() => ({}));
+      return Array.isArray(data?.events) ? data.events.length : 0;
+    },
+    refetchInterval: 60000,
+    retry: false,
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
@@ -238,6 +249,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     if (hasExactVisibleNavMatch) return false;
     return pathname.startsWith(`${href}/`);
   };
+  const getNavLabel = (item: NavItem) => {
+    if (item.href === '/events') return `Events (${eventsCount})`;
+    return item.label;
+  };
 
   const initial =
     user?.name?.trim()?.charAt(0).toUpperCase() ||
@@ -278,7 +293,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                         : 'text-green-50 hover:bg-white/15 hover:text-white'
                     }`}
                   >
-                    <span className="truncate max-w-[140px]">{item.label}</span>
+                    <span className="truncate max-w-[140px]">{getNavLabel(item)}</span>
                     {item.badge && (
                       <span
                         className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
@@ -361,7 +376,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                                 }`}
                               >
                                 <span className="inline-flex items-center gap-2">
-                                  <span className="block truncate">{item.label}</span>
+                                  <span className="block truncate">{getNavLabel(item)}</span>
                                   {item.badge && (
                                     <span
                                       className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
@@ -496,7 +511,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     onClick={() => setMobileOpen(false)}
                   >
                     <span className="inline-flex items-center gap-2">
-                      <span>{item.label}</span>
+                      <span>{getNavLabel(item)}</span>
                       {item.badge && (
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${

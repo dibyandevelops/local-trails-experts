@@ -8,6 +8,7 @@ import UsersPanel from '@/components/admin/users-panel';
 import HazardousTrailsPanel from '@/components/admin/hazardous-trails-panel';
 import StoreRequestsPanel from '@/components/admin/store-requests-panel';
 import StoresAdminPanel from '@/components/admin/stores-admin-panel';
+import UpcomingEventsPanel from '@/components/admin/upcoming-events-panel';
 
 export default function AdminPage() {
   return (
@@ -17,6 +18,7 @@ export default function AdminPage() {
       <TrailRequestsPanel />
       <StoreRequestsPanel />
       <StoresAdminPanel />
+      <UpcomingEventsPanel />
       <UsersPanel
         role="expert"
         title="Experts"
