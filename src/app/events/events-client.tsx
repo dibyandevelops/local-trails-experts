@@ -24,6 +24,11 @@ import DateText from '@/components/ui/date-text';
 
 const EMPTY_EVENTS: Event[] = [];
 const isPastEvent = (eventDate: string) => new Date(eventDate).getTime() < Date.now();
+type ParticipantBookingLite = {
+  event_id: string;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded' | null;
+};
 
 export default function EventsPageClient() {
   const router = useRouter();
@@ -170,6 +175,26 @@ export default function EventsPageClient() {
     enabled: currentUser?.role === 'participant',
   });
   const joinedEvents = joinedEventsData ?? EMPTY_EVENTS;
+  const { data: myBookings = [] } = useQuery<ParticipantBookingLite[]>({
+    queryKey: ['participant-bookings-events-page'],
+    queryFn: async ({ signal }) => {
+      const response = await fetch('/api/bookings/me', { signal, cache: 'no-store' });
+      if (!response.ok) return [];
+      const data = await response.json().catch(() => ({}));
+      return data.bookings || [];
+    },
+    enabled: currentUser?.role === 'participant',
+    refetchInterval: 30000,
+  });
+  const paidEventIds = useMemo(
+    () =>
+      new Set(
+        myBookings
+          .filter((booking) => booking.status !== 'cancelled' && booking.payment_status === 'paid')
+          .map((booking) => booking.event_id)
+      ),
+    [myBookings]
+  );
 
   useEffect(() => {
     if (currentUser?.role !== 'participant') {
@@ -193,6 +218,7 @@ export default function EventsPageClient() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() }),
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.joinedByParticipant }),
+        queryClient.invalidateQueries({ queryKey: ['participant-bookings-events-page'] }),
       ]);
     },
   });
@@ -203,6 +229,7 @@ export default function EventsPageClient() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() }),
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.joinedByParticipant }),
+        queryClient.invalidateQueries({ queryKey: ['participant-bookings-events-page'] }),
       ]);
     },
   });
@@ -486,7 +513,8 @@ export default function EventsPageClient() {
                       canConfirmPayment={
                         joinedEventIds.has(event.id) &&
                         !isPastEvent(event.event_date) &&
-                        Number(event.price_npr || 0) > 0
+                        Number(event.price_npr || 0) > 0 &&
+                        !paidEventIds.has(event.id)
                       }
                     />
                   ))}
@@ -531,7 +559,8 @@ export default function EventsPageClient() {
                           canConfirmPayment={
                             joinedEventIds.has(event.id) &&
                             !isPastEvent(event.event_date) &&
-                            Number(event.price_npr || 0) > 0
+                            Number(event.price_npr || 0) > 0 &&
+                            !paidEventIds.has(event.id)
                           }
                         />
                       ))}

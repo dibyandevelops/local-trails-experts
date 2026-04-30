@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         e.organizer_name,
         e.organizer_email,
         e.max_participants,
-        e.current_participants,
+        COALESCE(pc.active_participants, 0) as current_participants,
         e.meeting_point,
         e.difficulty,
         e.required_expertise,
@@ -68,6 +68,29 @@ export async function GET(request: NextRequest) {
       FROM events e
       LEFT JOIN trails t ON e.trail_id = t.id
       LEFT JOIN users u ON e.host_user_id = u.id
+      LEFT JOIN LATERAL (
+        SELECT
+          COALESCE(active_bookings.total_spots, 0) + COALESCE(legacy_participants.legacy_count, 0) AS active_participants
+        FROM (
+          SELECT SUM(b.spots)::int AS total_spots
+          FROM bookings b
+          WHERE b.event_id = e.id
+            AND b.status <> 'cancelled'
+        ) active_bookings
+        CROSS JOIN (
+          SELECT COUNT(DISTINCT ep.participant_email)::int AS legacy_count
+          FROM event_participants ep
+          WHERE ep.event_id = e.id
+            AND NOT EXISTS (
+              SELECT 1
+              FROM bookings b2
+              JOIN users u2 ON u2.id = b2.user_id
+              WHERE b2.event_id = e.id
+                AND b2.status <> 'cancelled'
+                AND LOWER(u2.email) = LOWER(ep.participant_email)
+            )
+        ) legacy_participants
+      ) pc ON TRUE
       WHERE 1=1
     `;
     const params: any[] = [];
