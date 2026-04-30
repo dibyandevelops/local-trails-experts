@@ -77,20 +77,20 @@ export default function ExpertApplicationsPanel() {
   }, [status]);
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Expert Applications</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Expert Applications</h2>
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             Review new expert applications and request additional verification.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-gray-500">Filter</label>
+          <label className="text-xs font-semibold text-gray-500 dark:text-slate-400">Filter</label>
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value as typeof status)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700"
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
             {statusOptions.map((option) => (
               <option key={option} value={option}>
@@ -105,36 +105,36 @@ export default function ExpertApplicationsPanel() {
 
       <div className="mt-4">
         {verificationNotice && (
-          <p className="mb-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+          <p className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
             {verificationNotice}
           </p>
         )}
         {isLoading ? (
-          <p className="text-sm text-gray-600">Loading applications...</p>
+          <p className="text-sm text-gray-600 dark:text-slate-300">Loading applications...</p>
         ) : applications.length === 0 ? (
-          <p className="text-sm text-gray-600">No {statusLabel.toLowerCase()}.</p>
+          <p className="text-sm text-gray-600 dark:text-slate-300">No {statusLabel.toLowerCase()}.</p>
         ) : (
           <div className="space-y-3">
             {applications.map((app) => (
               <div
                 key={app.id}
-                className="rounded-lg border border-gray-200 bg-gray-50/60 p-4"
+                className="rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/50"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                       {app.name || 'Expert'}
                     </p>
-                    <p className="text-xs text-gray-500">{app.email}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">{app.email}</p>
                     {app.city && (
-                      <p className="text-xs text-gray-500 mt-1">{app.city}</p>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{app.city}</p>
                     )}
                     {Array.isArray(app.sports) && app.sports.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2 text-xs">
                         {app.sports.map((sport) => (
                           <span
                             key={`${app.id}-${sport}`}
-                            className="rounded-full bg-white px-2 py-0.5 font-semibold text-gray-700"
+                            className="rounded-full border border-gray-200 bg-white px-2 py-0.5 font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                           >
                             {getSportLabel(sport)}
                           </span>
@@ -142,7 +142,7 @@ export default function ExpertApplicationsPanel() {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     {app.status === 'pending' && (
                       <>
                         <button
@@ -165,7 +165,7 @@ export default function ExpertApplicationsPanel() {
                             setActiveApplication(app);
                             setVerificationOpen(true);
                           }}
-                          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                         >
                           Request verification
                         </button>
@@ -175,7 +175,7 @@ export default function ExpertApplicationsPanel() {
                             setActiveApplication(app);
                             setDetailsOpen(true);
                           }}
-                          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                         >
                           View details
                         </button>
@@ -183,7 +183,13 @@ export default function ExpertApplicationsPanel() {
                     )}
                     {app.status !== 'pending' && (
                       <>
-                        <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                            app.status === 'approved'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200'
+                          }`}
+                        >
                           {app.status}
                         </span>
                         {hasVerificationDetails({
@@ -199,7 +205,7 @@ export default function ExpertApplicationsPanel() {
                               setActiveApplication(app);
                               setDetailsOpen(true);
                             }}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                           >
                             View details
                           </button>
@@ -208,10 +214,10 @@ export default function ExpertApplicationsPanel() {
                     )}
                   </div>
                 </div>
-                <p className="mt-3 text-sm text-gray-700 whitespace-pre-line">
+                <p className="mt-3 whitespace-pre-line text-sm text-gray-700 dark:text-slate-200">
                   {app.credentials}
                 </p>
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
                   Submitted <DateText value={app.created_at} pattern="PPP" />
                 </p>
               </div>
@@ -232,21 +238,21 @@ export default function ExpertApplicationsPanel() {
       >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl">
-            <Dialog.Title className="text-sm font-semibold text-gray-900">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+            <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
               Request additional verification
             </Dialog.Title>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
               Send a clear request to {activeApplication?.name || activeApplication?.email}.
             </p>
             <textarea
               value={verificationMessage}
               onChange={(event) => setVerificationMessage(event.target.value)}
               rows={10}
-              className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+              className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
             <div className="mt-4 flex justify-end gap-2">
-              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Dialog.Close>
               <button
@@ -271,11 +277,11 @@ export default function ExpertApplicationsPanel() {
       >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl">
-            <Dialog.Title className="text-sm font-semibold text-gray-900">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+            <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
               Verification details
             </Dialog.Title>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
               {activeApplication?.name || activeApplication?.email}
             </p>
             <div className="mt-4">
@@ -288,7 +294,7 @@ export default function ExpertApplicationsPanel() {
               />
             </div>
             <div className="mt-4 flex justify-end">
-              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
               </Dialog.Close>
             </div>
