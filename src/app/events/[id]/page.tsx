@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cancelEvent, leaveEvent } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { ESEWA_ENABLED } from '@/lib/feature-flags';
+import { resizeImageToDataUrl } from '@/lib/image';
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function EventDetailPage() {
       refund_status?: string | null;
       refund_reference?: string | null;
       proof_submitted_at?: string | null;
+      proof_image_url?: string | null;
       transaction_reference?: string | null;
       payment_provider?: string | null;
     }) | null
@@ -65,16 +67,13 @@ export default function EventDetailPage() {
   const [submittingProof, setSubmittingProof] = useState(false);
   const [reviewingPaymentId, setReviewingPaymentId] = useState<string | null>(null);
   const [requestingPaymentBookingId, setRequestingPaymentBookingId] = useState<string | null>(null);
-  const [refundingBookingId, setRefundingBookingId] = useState<string | null>(null);
-  const [refundTarget, setRefundTarget] = useState<{
-    bookingId: string;
-    participantName: string;
-    amountNpr: number;
-  } | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [showCancelBookingModal, setShowCancelBookingModal] = useState(false);
   const [imagePreview, setImagePreview] = useState<{ src: string; alt: string } | null>(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrDraftImage, setQrDraftImage] = useState<string | null>(null);
+  const [savingQr, setSavingQr] = useState(false);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
   const canCancel =
@@ -89,11 +88,7 @@ export default function EventDetailPage() {
     booking?.status !== 'cancelled' &&
     booking?.payment_status !== 'paid' &&
     Number(booking?.total_price_npr || 0) > 0;
-  const isPaidBooking = booking?.payment_status === 'paid';
   const canReviewPayments = Boolean(canCancel);
-  const cancellationRefundNpr = isPaidBooking
-    ? Math.max(0, Number(booking?.total_price_npr || 0))
-    : 0;
   const isEventPast = event ? new Date(event.event_date).getTime() < Date.now() : false;
   const isEventFull = event
     ? Number(event.current_participants) >= Number(event.max_participants)
@@ -352,7 +347,9 @@ export default function EventDetailPage() {
   useEffect(() => {
     if (!showPaymentModal) return;
     setPaymentRiskAcknowledged(false);
-  }, [showPaymentModal]);
+    setTransactionReference(booking?.transaction_reference || '');
+    setPaymentProofImage(booking?.proof_image_url || null);
+  }, [showPaymentModal, booking?.transaction_reference, booking?.proof_image_url]);
 
   useEffect(() => {
     if (!eventId || !canReviewPayments) return;
@@ -529,34 +526,31 @@ export default function EventDetailPage() {
     }
   };
 
-  const initiateRefundForBooking = async (bookingId: string) => {
+  const uploadOrReplaceQr = async () => {
+    if (!eventId || !qrDraftImage) return;
     try {
-      setReviewActionStatus(null);
-      setRefundingBookingId(bookingId);
-      const res = await fetch(`/api/bookings/${bookingId}/cancel`, {
-        method: 'POST',
+      setActionStatus(null);
+      setSavingQr(true);
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ qr_image_url: qrDraftImage }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to initiate refund.');
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to upload QR.');
       }
-      await Promise.all([refreshReviewBookings(), refreshEventAndBooking()]);
-      const refund = Number(data?.refund_npr || 0);
-      setReviewActionStatus(
-        `Booking cancelled and refund initiated${refund > 0 ? ` (NPR ${refund})` : ''}.`
-      );
-      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.list() });
-      if (eventId) {
-        await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.byId(eventId) });
-      }
+      await refreshEventAndBooking();
+      setActionStatus(event?.qr_image_url ? 'QR updated successfully.' : 'QR uploaded successfully.');
+      setShowQrModal(false);
+      setQrDraftImage(null);
     } catch (error) {
-      setReviewActionStatus(
-        error instanceof Error ? error.message : 'Failed to initiate refund.'
-      );
+      setActionStatus(error instanceof Error ? error.message : 'Failed to upload QR.');
     } finally {
-      setRefundingBookingId(null);
+      setSavingQr(false);
     }
   };
+
 
   return (
     <>
@@ -747,15 +741,23 @@ export default function EventDetailPage() {
                 {user?.role === 'participant' && (
                   alreadyJoined ? (
                     <div className="space-y-2">
+                      {isPaidEvent &&
+                        booking?.status !== 'cancelled' &&
+                        booking?.payment_status !== 'paid' && (
+                          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                            Your participation is not fully confirmed yet. Complete payment to
+                            confirm your event seat.
+                          </p>
+                        )}
                       {booking?.status !== 'cancelled' &&
                         booking?.payment_status !== 'paid' &&
                         Number(booking?.total_price_npr || 0) > 0 && (
                           <button
                             type="button"
                             onClick={() => setShowPaymentModal(true)}
-                            className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                            className="w-full rounded-lg border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
                           >
-                            Submit Payment Proof
+                            Go to Payment
                           </button>
                         )}
                       <button
@@ -766,11 +768,7 @@ export default function EventDetailPage() {
                         }}
                         className="w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
                       >
-                        {cancelBookingMutation.isPending
-                          ? 'Processing...'
-                          : isPaidBooking
-                            ? 'Request Refund / Cancel'
-                            : 'Cancel Booking'}
+                        {cancelBookingMutation.isPending ? 'Processing...' : 'Cancel Booking'}
                       </button>
                     </div>
                   ) : (
@@ -820,8 +818,19 @@ export default function EventDetailPage() {
             <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
               Price per spot: {Number(event.price_npr || 0) > 0 ? `NPR ${event.price_npr}` : 'Free'}
             </p>
-            {user?.role === 'participant' && (
-              <div className="mt-3 flex flex-wrap gap-2">
+            {canCancel && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQrModal(true)}
+                  className="rounded-lg border border-indigo-300 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-200 dark:hover:bg-indigo-900/40"
+                >
+                  {event.qr_image_url ? 'Re-upload QR' : 'Upload QR'}
+                </button>
+              </div>
+            )}
+                {user?.role === 'participant' && (
+                  <div className="mt-3 flex flex-wrap gap-2">
                 <span
                   className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${participantPaymentBadge.className}`}
                 >
@@ -847,11 +856,17 @@ export default function EventDetailPage() {
                     Refund: {booking.refund_status}
                   </span>
                 )}
-              </div>
-            )}
+                  </div>
+                )}
             {event.price_npr && event.price_npr > 0 && (
               <div className="mt-4 space-y-3">
-                {event.qr_image_url ? (
+                {user?.role === 'participant' &&
+                alreadyJoined &&
+                booking?.payment_status === 'paid' ? (
+                  <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+                    Payment confirmed. Your booking is fully secured for this event.
+                  </p>
+                ) : event.qr_image_url ? (
                   <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/60">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
                       Scan to pay
@@ -876,7 +891,10 @@ export default function EventDetailPage() {
                     </button>
                   </div>
                 ) : null}
-                {user?.role === 'participant' && alreadyJoined && canStartEsewaPayment && (
+                {user?.role === 'participant' &&
+                  alreadyJoined &&
+                  booking?.payment_status !== 'paid' &&
+                  canStartEsewaPayment && (
                   <div className="space-y-2">
                     <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
                       <p className="font-semibold">How payment works</p>
@@ -964,7 +982,6 @@ export default function EventDetailPage() {
                       <th className="px-3 py-2 font-semibold">Amount</th>
                       <th className="px-3 py-2 font-semibold">Booking</th>
                       <th className="px-3 py-2 font-semibold">Payment</th>
-                      <th className="px-3 py-2 font-semibold">Refund</th>
                       <th className="px-3 py-2 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -974,11 +991,6 @@ export default function EventDetailPage() {
                         item.booking_status !== 'cancelled' &&
                         item.payment_status !== 'paid' &&
                         item.payment_status !== 'refunded';
-                      const canRefund =
-                        item.booking_status !== 'cancelled' &&
-                        item.payment_status === 'paid' &&
-                        item.refund_status !== 'requested' &&
-                        item.refund_status !== 'settled';
                       const isPaidBookingItem = item.payment_status === 'paid';
                       const hasProofPending =
                         Boolean(item.proof_submitted_at) &&
@@ -1068,26 +1080,6 @@ export default function EventDetailPage() {
                           </td>
                           <td className="px-3 py-2">
                             <span
-                              className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${
-                                item.refund_status === 'settled'
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-100'
-                                  : item.refund_status === 'requested'
-                                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100'
-                                    : item.refund_status === 'failed'
-                                      ? 'bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200'
-                                      : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
-                              }`}
-                            >
-                              {item.refund_status || 'none'}
-                            </span>
-                            {item.refund_reference && (
-                              <div className="mt-1 text-[11px] text-gray-600 dark:text-slate-300">
-                                Ref: {item.refund_reference}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-3 py-2">
-                            <span
                               className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${paymentBadge.className}`}
                             >
                               {paymentBadge.label}
@@ -1113,24 +1105,7 @@ export default function EventDetailPage() {
                                   ? 'Sending...'
                                   : 'Request Payment'}
                               </button>
-                              {canRefund && (
-                                <button
-                                  type="button"
-                                  disabled={refundingBookingId === item.booking_id}
-                                  onClick={() =>
-                                    setRefundTarget({
-                                      bookingId: item.booking_id,
-                                      participantName: item.participant_name || 'Participant',
-                                      amountNpr: Number(item.total_price_npr || 0),
-                                    })
-                                  }
-                                  className="rounded-lg border border-red-300 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
-                                >
-                                  {refundingBookingId === item.booking_id
-                                    ? 'Refunding...'
-                                    : 'Initiate Refund'}
-                                </button>
-                              )}
+                              {/* Refund action is temporarily disabled. */}
                               {item.proof_image_url && (
                                 <button
                                   type="button"
@@ -1195,12 +1170,10 @@ export default function EventDetailPage() {
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">Cancel booking?</h3>
             <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-              {isPaidBooking
-                ? 'You will receive a full refund after cancellation.'
-                : 'This booking is not paid yet. Cancellation will not trigger a refund.'}
+              This action will remove your booking for this event.
             </p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
-              Expected refund: NPR {cancellationRefundNpr}
+            <p className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-200">
+              Any refund (if applicable) will be processed manually by admin/expert.
             </p>
             <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
               For disputes, contact support/admin for manual review.
@@ -1234,50 +1207,7 @@ export default function EventDetailPage() {
               >
                 {cancelBookingMutation.isPending || leaveMutation.isPending
                   ? 'Cancelling...'
-                  : isPaidBooking
-                    ? 'Confirm Refund Request'
-                    : 'Confirm Cancel'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {refundTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              Initiate refund?
-            </h3>
-            <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-              This will cancel the booking for <strong>{refundTarget.participantName}</strong> and
-              start a full refund process.
-            </p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
-              Refund amount: NPR {refundTarget.amountNpr}
-            </p>
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setRefundTarget(null)}
-                disabled={refundingBookingId === refundTarget.bookingId}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                Keep Booking
-              </button>
-              <button
-                type="button"
-                disabled={refundingBookingId === refundTarget.bookingId}
-                onClick={async () => {
-                  const target = refundTarget;
-                  if (!target) return;
-                  await initiateRefundForBooking(target.bookingId);
-                  setRefundTarget(null);
-                }}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {refundingBookingId === refundTarget.bookingId
-                  ? 'Refunding...'
-                  : 'Confirm Refund'}
+                  : 'Confirm Cancel'}
               </button>
             </div>
           </div>
@@ -1319,11 +1249,11 @@ export default function EventDetailPage() {
                 </div>
               ) : (
                 <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
-                  QR is not available for this event.
+                  QR is not available for this event. You can still upload payment reference.
                 </p>
               )}
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
-                2) Add transaction details
+                2) Add or update transaction details
               </p>
               <input
                 type="text"
@@ -1371,6 +1301,11 @@ export default function EventDetailPage() {
                   >
                     View full screenshot
                   </button>
+                  {booking?.proof_image_url && (
+                    <p className="text-xs text-amber-700 dark:text-amber-200">
+                      Submitting again will replace your previously uploaded payment reference.
+                    </p>
+                  )}
                 </div>
               )}
               <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
@@ -1400,12 +1335,79 @@ export default function EventDetailPage() {
                 disabled={!paymentRiskAcknowledged || submittingProof || !booking?.id}
                 className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submittingProof ? 'Submitting...' : 'Submit Screenshot'}
+                {submittingProof
+                  ? 'Submitting...'
+                  : booking?.proof_image_url
+                    ? 'Replace Screenshot'
+                    : 'Submit Screenshot'}
               </button>
             </div>
             {paymentActionStatus && (
               <p className="mt-3 text-xs text-gray-700 dark:text-slate-200">{paymentActionStatus}</p>
             )}
+          </div>
+        </div>
+      )}
+      {showQrModal && canCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+              {event?.qr_image_url ? 'Re-upload event QR' : 'Upload event QR'}
+            </h3>
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+              Participants will use this QR for manual payment screenshots.
+            </p>
+            <div className="mt-4 space-y-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) {
+                    setQrDraftImage(null);
+                    return;
+                  }
+                  try {
+                    const dataUrl = await resizeImageToDataUrl(file, {
+                      maxDimension: 1024,
+                      quality: 0.82,
+                    });
+                    setQrDraftImage(dataUrl);
+                  } catch {
+                    setActionStatus('Unable to process QR image.');
+                  }
+                }}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              />
+              {qrDraftImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={qrDraftImage}
+                  alt="Event QR preview"
+                  className="h-40 w-40 rounded border border-gray-200 object-contain bg-white dark:border-slate-700"
+                />
+              )}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQrModal(false);
+                  setQrDraftImage(null);
+                }}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!qrDraftImage || savingQr}
+                onClick={uploadOrReplaceQr}
+                className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+              >
+                {savingQr ? 'Saving...' : event?.qr_image_url ? 'Replace QR' : 'Upload QR'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -483,6 +483,11 @@ export default function EventsPageClient() {
                         currentUser?.role === 'expert' &&
                         currentUser?.id === event.host_user_id
                       }
+                      canConfirmPayment={
+                        joinedEventIds.has(event.id) &&
+                        !isPastEvent(event.event_date) &&
+                        Number(event.price_npr || 0) > 0
+                      }
                     />
                   ))}
                 </div>
@@ -522,6 +527,11 @@ export default function EventsPageClient() {
                           canEdit={
                             currentUser?.role === 'expert' &&
                             currentUser?.id === event.host_user_id
+                          }
+                          canConfirmPayment={
+                            joinedEventIds.has(event.id) &&
+                            !isPastEvent(event.event_date) &&
+                            Number(event.price_npr || 0) > 0
                           }
                         />
                       ))}
@@ -685,6 +695,7 @@ function EventCard({
   hasJoined,
   isAdminOrExpert,
   canEdit,
+  canConfirmPayment,
 }: {
   event: Event;
   onJoin: () => void;
@@ -696,6 +707,7 @@ function EventCard({
   hasJoined: boolean;
   isAdminOrExpert: boolean;
   canEdit: boolean;
+  canConfirmPayment: boolean;
 }) {
   const descriptionSections = (event.description || '')
     .split('\n\n')
@@ -833,6 +845,14 @@ function EventCard({
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900/60"
             >
               Leave
+            </button>
+          )}
+          {canConfirmPayment && (
+            <button
+              onClick={() => window.location.assign(`/events/${event.id}?pay=1`)}
+              className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+            >
+              Confirm Payment
             </button>
           )}
           {isAdminOrExpert && (
