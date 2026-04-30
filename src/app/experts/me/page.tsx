@@ -67,6 +67,8 @@ export default function ExpertProfilePage() {
   const [unhidingTrailId, setUnhidingTrailId] = useState<string | null>(null);
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
   const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [verificationSaving, setVerificationSaving] = useState(false);
   const [participantsEventTitle, setParticipantsEventTitle] = useState('');
   const [participantsList, setParticipantsList] = useState<EventParticipant[]>([]);
   const bioRef = useRef<HTMLTextAreaElement | null>(null);
@@ -119,6 +121,36 @@ export default function ExpertProfilePage() {
       });
     }
   }, [currentUser]);
+
+  const saveVerificationDetails = async () => {
+    setVerificationSaving(true);
+    setMessage(null);
+    try {
+      const response = await fetch('/api/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          verification_years_experience: editForm.verificationYearsExperience || null,
+          verification_certifications: editForm.verificationCertifications || null,
+          verification_guiding_history: editForm.verificationGuidingHistory || null,
+          verification_safety_training: editForm.verificationSafetyTraining || null,
+          verification_links: editForm.verificationLinks || null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to submit verification details');
+      }
+      setUser(data.user);
+      setMessage('Verification details submitted. We will review and update your status.');
+      setVerificationModalOpen(false);
+    } catch (error) {
+      console.error('Error submitting verification details', error);
+      setMessage('Unable to submit verification details.');
+    } finally {
+      setVerificationSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -297,9 +329,18 @@ export default function ExpertProfilePage() {
             Verified Expert
           </span>
         ) : (
-          <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold mb-4">
-            Pending Verification
-          </span>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+              Pending Verification
+            </span>
+            <button
+              type="button"
+              onClick={() => setVerificationModalOpen(true)}
+              className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+            >
+              Complete verification details
+            </button>
+          </div>
         )}
         {message && (
           <p
@@ -343,15 +384,6 @@ export default function ExpertProfilePage() {
                   sports: selectedSports,
                   phone: editForm.phone,
                   profile_photo_url: editForm.profilePhotoUrl || null,
-                  verification_years_experience:
-                    editForm.verificationYearsExperience || null,
-                  verification_certifications:
-                    editForm.verificationCertifications || null,
-                  verification_guiding_history:
-                    editForm.verificationGuidingHistory || null,
-                  verification_safety_training:
-                    editForm.verificationSafetyTraining || null,
-                  verification_links: editForm.verificationLinks || null,
                 }),
               });
               const data = await response.json();
@@ -450,33 +482,6 @@ export default function ExpertProfilePage() {
               Include years of experience, certifications, guiding history, safety
               training/first-aid, and any portfolio or Strava links.
             </p>
-          </div>
-          <div className="md:col-span-2">
-            <VerificationDetailsForm
-              values={{
-                yearsExperience: editForm.verificationYearsExperience,
-                certifications: editForm.verificationCertifications,
-                guidingHistory: editForm.verificationGuidingHistory,
-                safetyTraining: editForm.verificationSafetyTraining,
-                links: editForm.verificationLinks,
-              }}
-              onChange={(next) =>
-                setEditForm({
-                  ...editForm,
-                  verificationYearsExperience: next.yearsExperience,
-                  verificationCertifications: next.certifications,
-                  verificationGuidingHistory: next.guidingHistory,
-                  verificationSafetyTraining: next.safetyTraining,
-                  verificationLinks: next.links,
-                })
-              }
-              containerClassName="rounded-lg border border-gray-200 bg-white p-4"
-              labelClassName="block text-xs font-medium text-gray-700 mb-1"
-              inputClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              textareaClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              titleClassName="text-sm font-semibold text-gray-900"
-              descriptionClassName="mt-1 text-xs text-gray-500 mb-3"
-            />
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -927,6 +932,79 @@ export default function ExpertProfilePage() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      <Dialog.Root open={verificationModalOpen} onOpenChange={setVerificationModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+              <Dialog.Title className="text-sm font-semibold text-gray-900">
+                Expert verification details
+              </Dialog.Title>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+                Close
+              </Dialog.Close>
+            </div>
+            <p className="mt-3 text-xs text-gray-600">
+              Share clear experience and safety details so admin can review your verification faster.
+            </p>
+            <div className="mt-3">
+              <VerificationDetailsForm
+                values={{
+                  yearsExperience: editForm.verificationYearsExperience,
+                  certifications: editForm.verificationCertifications,
+                  guidingHistory: editForm.verificationGuidingHistory,
+                  safetyTraining: editForm.verificationSafetyTraining,
+                  links: editForm.verificationLinks,
+                }}
+                onChange={(next) =>
+                  setEditForm({
+                    ...editForm,
+                    verificationYearsExperience: next.yearsExperience,
+                    verificationCertifications: next.certifications,
+                    verificationGuidingHistory: next.guidingHistory,
+                    verificationSafetyTraining: next.safetyTraining,
+                    verificationLinks: next.links,
+                  })
+                }
+                containerClassName="rounded-lg border border-gray-200 bg-white p-4"
+                labelClassName="block text-xs font-medium text-gray-700 mb-1"
+                inputClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                textareaClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                titleClassName="text-sm font-semibold text-gray-900"
+                descriptionClassName="mt-1 text-xs text-gray-500 mb-3"
+              />
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setVerificationModalOpen(false)}
+                className="rounded border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveVerificationDetails}
+                disabled={verificationSaving}
+                className="rounded bg-green-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+              >
+                {verificationSaving ? 'Submitting...' : 'Submit verification details'}
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {!user.is_verified_expert && (
+        <button
+          type="button"
+          onClick={() => setVerificationModalOpen(true)}
+          className="fixed bottom-4 right-4 z-40 rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold text-white shadow-lg hover:bg-amber-600"
+        >
+          Complete verification
+        </button>
+      )}
     </div>
   );
 }

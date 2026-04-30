@@ -4,10 +4,6 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
 import { loginUser } from '@/services/auth/auth.service';
-import { resizeImageToDataUrl } from '@/lib/image';
-import VerificationDetailsForm, {
-  VerificationDetailsValues,
-} from '@/components/feature-components/verification-details-form';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 export default function ExpertJoinPage() {
@@ -19,26 +15,10 @@ export default function ExpertJoinPage() {
   const [password, setPassword] = useState('');
   const [selectedSports, setSelectedSports] = useState<string[]>(['mtb']);
   const [credentials, setCredentials] = useState('');
-  const [verificationDetails, setVerificationDetails] = useState<VerificationDetailsValues>({
-    yearsExperience: '',
-    certifications: '',
-    guidingHistory: '',
-    safetyTraining: '',
-    links: '',
-  });
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string>('');
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [generatingBio, setGeneratingBio] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const initials =
-    name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase() || 'EX';
 
   const toggleSport = (value: string) => {
     setSelectedSports((prev) =>
@@ -71,12 +51,6 @@ export default function ExpertJoinPage() {
           password,
           sports: selectedSports,
           credentials,
-          verification_years_experience: verificationDetails.yearsExperience,
-          verification_certifications: verificationDetails.certifications,
-          verification_guiding_history: verificationDetails.guidingHistory,
-          verification_safety_training: verificationDetails.safetyTraining,
-          verification_links: verificationDetails.links,
-          profile_photo_url: profilePhotoUrl || null,
         }),
       });
 
@@ -109,6 +83,35 @@ export default function ExpertJoinPage() {
       setErrorMessage('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleGenerateBio = async () => {
+    setGeneratingBio(true);
+    setErrorMessage(null);
+    try {
+      const response = await fetch('/api/ai/expert-bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          city,
+          sports: selectedSports,
+          language:
+            typeof navigator !== 'undefined'
+              ? navigator.language || 'en'
+              : 'en',
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to generate bio');
+      }
+      setCredentials((data?.bio || '').trim());
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to generate bio.');
+    } finally {
+      setGeneratingBio(false);
     }
   };
 
@@ -186,7 +189,7 @@ export default function ExpertJoinPage() {
 
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Apply for Expert Verification
+          Quick Expert Signup
           {EXPERTS_BETA_ENABLED && (
             <span className="ml-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
               Beta
@@ -194,53 +197,17 @@ export default function ExpertJoinPage() {
           )}
         </h2>
         <p className="text-sm text-gray-600 mb-6">
-          Tell us about your experience. This helps us review your profile and keep the community safe.
+          Create your account in under a minute. You can complete verification details from your profile after signup.
         </p>
         {EXPERTS_BETA_ENABLED && (
           <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Experts onboarding is currently in beta. Applications are open, and review timelines may vary.
           </div>
         )}
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          After signup, we will request a few additional verification details in your profile before approval.
+        </div>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
-              {profilePhotoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profilePhotoUrl} alt="Profile preview" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
-                  {initials}
-                </div>
-              )}
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Profile photo (optional)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={async (event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  setUploadingPhoto(true);
-                  try {
-                    const dataUrl = await resizeImageToDataUrl(file);
-                    setProfilePhotoUrl(dataUrl);
-                  } catch (error) {
-                    console.error(error);
-                    setErrorMessage('Unable to load profile photo. Try a smaller image.');
-                  } finally {
-                    setUploadingPhoto(false);
-                  }
-                }}
-                className="block w-full text-sm text-gray-700"
-              />
-              {uploadingPhoto && (
-                <p className="text-xs text-gray-500 mt-1">Processing photo...</p>
-              )}
-            </div>
-          </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -343,9 +310,19 @@ export default function ExpertJoinPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Bio <span className="text-red-500">*</span>
-            </label>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Bio <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={handleGenerateBio}
+                disabled={generatingBio}
+                className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-60"
+              >
+                {generatingBio ? 'Generating...' : 'Generate with AI'}
+              </button>
+            </div>
             <textarea
               required
               value={credentials}
@@ -357,16 +334,8 @@ export default function ExpertJoinPage() {
           </div>
 
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
-            Formal certificates are optional. If you don’t have certifications,
-            your real riding experience and local route knowledge around your
-            city is enough to apply professionally.
+            Certificates are optional. Real riding experience and local route knowledge are enough to get started.
           </div>
-
-          <VerificationDetailsForm
-            values={verificationDetails}
-            onChange={setVerificationDetails}
-            hideCertifications
-          />
 
           {errorMessage && (
             <p className="text-sm text-red-600">{errorMessage}</p>
