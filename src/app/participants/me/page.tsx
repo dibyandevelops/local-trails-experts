@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import * as Dialog from '@radix-ui/react-dialog';
 import type { User } from '@/types';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
@@ -69,6 +70,7 @@ export default function ParticipantProfilePage() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
     city: '',
@@ -170,6 +172,60 @@ export default function ParticipantProfilePage() {
       .map((part) => part[0])
       .join('')
       .toUpperCase() || 'P';
+  const isProfileComplete = Boolean(
+    editForm.name.trim() &&
+      editForm.city.trim() &&
+      editForm.bio.trim() &&
+      parseSelectedSports().length > 0 &&
+      editForm.availabilityWeekdays.length > 0 &&
+      editForm.phone.trim()
+  );
+
+  const handleSaveProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    try {
+      const selectedSports = parseSelectedSports();
+      if (selectedSports.length === 0) {
+        setMessage('Please select at least one sport.');
+        setSaving(false);
+        return;
+      }
+      if (!acceptTerms) {
+        setMessage('Please accept the terms before saving.');
+        setSaving(false);
+        return;
+      }
+      const response = await fetch('/api/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.name,
+          city: editForm.city,
+          bio: editForm.bio,
+          sports: selectedSports,
+          availability_weekdays: editForm.availabilityWeekdays,
+          phone: editForm.phone,
+          profile_photo_url: editForm.profilePhotoUrl || null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update profile');
+      }
+      setUser(data.user);
+      queryClient.setQueryData(QUERY_KEYS.auth.me, data.user);
+      window.dispatchEvent(new Event('auth-changed'));
+      setMessage('Profile updated.');
+      setProfileModalOpen(false);
+    } catch (error) {
+      console.error('Error updating profile', error);
+      setMessage('Unable to update profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -226,283 +282,63 @@ export default function ParticipantProfilePage() {
         )}
       </section>
 
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
-          Edit Profile
-        </h2>
-        {message && (
-          <p
-            className={`text-sm border rounded-lg px-3 py-2 mb-3 ${
-              message.toLowerCase().includes('select at least one sport') ||
-              message.toLowerCase().includes('accept the terms')
-                ? 'text-red-600 bg-red-50 border-red-100'
-                : 'text-green-700 bg-green-50 border-green-100'
-            }`}
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Profile details</h2>
+            <p className="text-sm text-gray-600 dark:text-slate-300">Keep your profile complete so requests and bookings work smoothly.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setProfileModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
           >
-            {message}
+            Edit profile
+          </button>
+        </div>
+        {!isProfileComplete && (
+          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+            Your profile is incomplete. Add your details to improve matching with local experts.
           </p>
         )}
-        <form
-          onSubmit={async (event) => {
-            event.preventDefault();
-            setSaving(true);
-            setMessage(null);
-            try {
-              const selectedSports = parseSelectedSports();
-              if (selectedSports.length === 0) {
-                setMessage('Please select at least one sport.');
-                setSaving(false);
-                return;
-              }
-              if (!acceptTerms) {
-                setMessage('Please accept the terms before saving.');
-                setSaving(false);
-                return;
-              }
-              const response = await fetch('/api/me', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  name: editForm.name,
-                  city: editForm.city,
-                  bio: editForm.bio,
-                  sports: selectedSports,
-                  availability_weekdays: editForm.availabilityWeekdays,
-                  phone: editForm.phone,
-                  profile_photo_url: editForm.profilePhotoUrl || null,
-                }),
-              });
-              const data = await response.json();
-              if (!response.ok) {
-                throw new Error(data?.error || 'Failed to update profile');
-              }
-              setUser(data.user);
-              queryClient.setQueryData(QUERY_KEYS.auth.me, data.user);
-              window.dispatchEvent(new Event('auth-changed'));
-              setMessage('Profile updated.');
-            } catch (error) {
-              console.error('Error updating profile', error);
-              setMessage('Unable to update profile.');
-            } finally {
-              setSaving(false);
-            }
-          }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-        >
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Profile photo
-            </label>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-14 w-14 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700">
-                  {editForm.profilePhotoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={editForm.profilePhotoUrl}
-                      alt="Profile preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
-                      {initials}
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500">
-                  Upload a clear photo. We compress it for faster loading.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (event) => {
-                      const file = event.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const dataUrl = await resizeImageToDataUrl(file, {
-                          maxDimension: 512,
-                          quality: 0.78,
-                        });
-                        if (dataUrl.length > 350_000) {
-                          setMessage(
-                            'Profile photo is too large. Please choose a smaller image.'
-                          );
-                          return;
-                        }
-                        setEditForm({ ...editForm, profilePhotoUrl: dataUrl });
-                      } catch (uploadError) {
-                        console.error(uploadError);
-                        setMessage('Unable to process the selected image.');
-                      }
-                    }}
-                  />
-                  Upload photo
-                </label>
-                {editForm.profilePhotoUrl && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditForm({ ...editForm, profilePhotoUrl: '' })
-                    }
-                    className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Name</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.name?.trim() || 'Not added'}</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <input
-              type="text"
-              value={editForm.name}
-              onChange={(event) =>
-                setEditForm({ ...editForm, name: event.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            />
+          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Email</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{user.email || 'Not added'}</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
-            </label>
-            <input
-              type="text"
-              value={editForm.city}
-              onChange={(event) =>
-                setEditForm({ ...editForm, city: event.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            />
+          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">City</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.city?.trim() || 'Not added'}</p>
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Bio
-            </label>
-            <textarea
-              value={editForm.bio}
-              onChange={(event) =>
-                setEditForm({ ...editForm, bio: event.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm min-h-[100px]"
-            />
+          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Phone</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.phone?.trim() || 'Not added'}</p>
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sports
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {sportOptions.map((sport) => {
-                const selected = editForm.sports
-                  .split(',')
-                  .map((value) => value.trim())
-                  .filter(Boolean)
-                  .includes(sport.value);
-                return (
-                  <button
-                    key={sport.value}
-                    type="button"
-                    onClick={() => {
-                      const current = editForm.sports
-                        .split(',')
-                        .map((value) => value.trim())
-                        .filter(Boolean);
-                      const updated = selected
-                        ? current.filter((value) => value !== sport.value)
-                        : [...current, sport.value];
-                      setEditForm({ ...editForm, sports: updated.join(', ') });
-                    }}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                      selected
-                        ? 'bg-green-700 text-white border-green-700'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-green-600'
-                    }`}
-                  >
-                    {sport.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone number
-            </label>
-            <input
-              type="tel"
-              value={editForm.phone}
-              onChange={(event) =>
-                setEditForm({ ...editForm, phone: event.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              placeholder="+9779812345678"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Phone number must be unique across all users.
+          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Sports</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
+              {parseSelectedSports().length > 0
+                ? parseSelectedSports().map((sport) => getSportLabel(sport)).join(', ')
+                : 'Not added'}
             </p>
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Availability weekdays
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAYS.map((day) => {
-                const selected = editForm.availabilityWeekdays.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        availabilityWeekdays: selected
-                          ? prev.availabilityWeekdays.filter((value) => value !== day)
-                          : [...prev.availabilityWeekdays, day],
-                      }))
-                    }
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                      selected
-                        ? 'bg-emerald-700 text-white border-emerald-700'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-600'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-1 text-xs text-gray-500">
-              Select days when you are usually free to ride.
+          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60 sm:col-span-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Availability</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
+              {editForm.availabilityWeekdays.length > 0
+                ? editForm.availabilityWeekdays.join(', ')
+                : 'Not added'}
             </p>
           </div>
-          <div className="md:col-span-2">
-            <label className="flex items-start gap-2 text-xs text-gray-600">
-              <input
-                type="checkbox"
-                checked={acceptTerms}
-                onChange={(event) => setAcceptTerms(event.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-              />
-              <span>I confirm these profile details are accurate.</span>
-            </label>
+          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60 sm:col-span-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Bio</p>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{editForm.bio?.trim() || 'Not added'}</p>
           </div>
-          <div className="md:col-span-2">
-            <button
-              type="submit"
-              disabled={saving || !acceptTerms}
-              className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
-            >
-              {saving ? 'Saving...' : 'Save changes'}
-            </button>
-          </div>
-        </form>
+        </div>
       </section>
 
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
@@ -725,6 +561,136 @@ export default function ParticipantProfilePage() {
           </div>
         )}
       </section>
+
+      <Dialog.Root open={profileModalOpen} onOpenChange={setProfileModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 h-[90vh] w-[95vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+            <div className="mb-3 flex items-center justify-between">
+              <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                Edit profile
+              </Dialog.Title>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                Close
+              </Dialog.Close>
+            </div>
+            {message && (
+              <p className="mb-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                {message}
+              </p>
+            )}
+            <form onSubmit={handleSaveProfile} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-200">Profile photo</label>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-14 w-14 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                      {editForm.profilePhotoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={editForm.profilePhotoUrl} alt="Profile preview" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold">{initials}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800">
+                      <input type="file" accept="image/*" className="hidden" onChange={async (event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 512, quality: 0.78 });
+                          if (dataUrl.length > 350_000) {
+                            setMessage('Profile photo is too large. Please choose a smaller image.');
+                            return;
+                          }
+                          setEditForm({ ...editForm, profilePhotoUrl: dataUrl });
+                        } catch (uploadError) {
+                          console.error(uploadError);
+                          setMessage('Unable to process the selected image.');
+                        }
+                      }} />
+                      Upload photo
+                    </label>
+                    {editForm.profilePhotoUrl && (
+                      <button type="button" onClick={() => setEditForm({ ...editForm, profilePhotoUrl: '' })} className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100">
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Name</label>
+                <input type="text" value={editForm.name} onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">City</label>
+                <input type="text" value={editForm.city} onChange={(event) => setEditForm({ ...editForm, city: event.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Bio</label>
+                <textarea value={editForm.bio} onChange={(event) => setEditForm({ ...editForm, bio: event.target.value })} className="min-h-[100px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Sports</label>
+                <div className="flex flex-wrap gap-2">
+                  {sportOptions.map((sport) => {
+                    const selected = editForm.sports.split(',').map((value) => value.trim()).filter(Boolean).includes(sport.value);
+                    return (
+                      <button key={sport.value} type="button" onClick={() => {
+                        const current = editForm.sports.split(',').map((value) => value.trim()).filter(Boolean);
+                        const updated = selected ? current.filter((value) => value !== sport.value) : [...current, sport.value];
+                        setEditForm({ ...editForm, sports: updated.join(', ') });
+                      }} className={`rounded-full border px-3 py-1 text-xs font-semibold ${selected ? 'border-green-700 bg-green-700 text-white' : 'border-gray-300 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100'}`}>
+                        {sport.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Phone number</label>
+                <input type="tel" value={editForm.phone} onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="+9779812345678" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-200">Availability weekdays</label>
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAYS.map((day) => {
+                    const selected = editForm.availabilityWeekdays.includes(day);
+                    return (
+                      <button key={day} type="button" onClick={() => setEditForm((prev) => ({ ...prev, availabilityWeekdays: selected ? prev.availabilityWeekdays.filter((value) => value !== day) : [...prev.availabilityWeekdays, day], }))} className={`rounded-full border px-3 py-1 text-xs font-semibold ${selected ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-gray-300 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100'}`}>
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="flex items-start gap-2 text-xs text-gray-600 dark:text-slate-300">
+                  <input type="checkbox" checked={acceptTerms} onChange={(event) => setAcceptTerms(event.target.checked)} className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                  <span>I confirm these profile details are accurate.</span>
+                </label>
+              </div>
+              <div className="md:col-span-2">
+                <button type="submit" disabled={saving || !acceptTerms} className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60">
+                  {saving ? 'Saving...' : 'Save changes'}
+                </button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {!isProfileComplete && (
+        <button
+          type="button"
+          onClick={() => setProfileModalOpen(true)}
+          className="fixed bottom-4 right-4 z-40 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-lg hover:bg-emerald-700"
+        >
+          Complete profile
+        </button>
+      )}
 
     </div>
   );

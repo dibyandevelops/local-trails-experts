@@ -16,6 +16,7 @@ export default function RegisterForm({
 }) {
   const router = useRouter();
   const [form, setForm] = useState({
+    name: '',
     email: '',
     password: '',
     phone: '',
@@ -42,8 +43,8 @@ export default function RegisterForm({
   };
 
   const validateForm = () => {
-    if (!form.email.trim() || !form.phone.trim()) {
-      return 'Email and phone number are required.';
+    if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
+      return 'Full name, email, and phone number are required.';
     }
     if (!acceptTerms) {
       return 'Please accept the terms and privacy policy.';
@@ -68,6 +69,7 @@ export default function RegisterForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: form.name.trim(),
           email: form.email.trim(),
           password: form.password,
           phone: form.phone.trim(),
@@ -88,6 +90,7 @@ export default function RegisterForm({
       window.dispatchEvent(new Event('auth-changed'));
       onRegistered?.();
       setForm({
+        name: '',
         email: '',
         password: '',
         phone: '',
@@ -137,6 +140,20 @@ export default function RegisterForm({
           </p>
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
+              Full name
+            </label>
+            <input
+              type="text"
+              autoComplete="name"
+              value={form.name}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
+              placeholder="Your full name"
+              required
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-slate-200">
               Email
