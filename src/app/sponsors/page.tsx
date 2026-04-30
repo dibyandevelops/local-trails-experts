@@ -172,6 +172,12 @@ export default function SponsorsPage() {
                   <li key={item}>• {item}</li>
                 ))}
               </ul>
+              <div className="mt-4">
+                <SponsorInquiryModal
+                  triggerLabel={`Choose ${tier.name}`}
+                  initialTier={tier.name.toLowerCase() as 'bronze' | 'silver' | 'gold'}
+                />
+              </div>
             </article>
           ))}
         </div>
@@ -188,9 +194,6 @@ export default function SponsorsPage() {
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <SponsorInquiryModal triggerLabel="Start sponsorship inquiry" />
-          <SponsorInquiryModal triggerLabel="Apply for Bronze tier" initialTier="bronze" />
-          <SponsorInquiryModal triggerLabel="Apply for Silver tier" initialTier="silver" />
-          <SponsorInquiryModal triggerLabel="Apply for Gold tier" initialTier="gold" />
         </div>
       </section>
     </div>

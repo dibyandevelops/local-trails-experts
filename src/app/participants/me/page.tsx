@@ -37,6 +37,18 @@ type ParticipantTrailRequest = {
   created_at: string;
 };
 
+type ParticipantBooking = {
+  id: string;
+  event_id: string;
+  event_title: string;
+  event_date: string;
+  city: string | null;
+  total_price_npr: number;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded' | null;
+  created_at: string;
+};
+
 type ExpertOption = {
   id: string;
   name: string | null;
@@ -59,9 +71,11 @@ export default function ParticipantProfilePage() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<ParticipantEvent[]>([]);
+  const [bookings, setBookings] = useState<ParticipantBooking[]>([]);
   const [trailRequests, setTrailRequests] = useState<ParticipantTrailRequest[]>([]);
   const [experts, setExperts] = useState<ExpertOption[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingBookings, setLoadingBookings] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingRequestId, setSavingRequestId] = useState<string | null>(null);
@@ -124,21 +138,25 @@ export default function ParticipantProfilePage() {
           setLoadingRequests(false);
           return;
         }
-        const [eventsRes, requestsRes, expertsRes] = await Promise.all([
+        const [eventsRes, requestsRes, expertsRes, bookingsRes] = await Promise.all([
           fetch('/api/participants/me/events'),
           fetch('/api/participants/me/trail-requests'),
           fetch('/api/experts?verified=true'),
+          fetch('/api/bookings/me'),
         ]);
         const eventsData = await eventsRes.json();
         const requestsData = await requestsRes.json();
         const expertsData = await expertsRes.json();
+        const bookingsData = await bookingsRes.json();
         setEvents(eventsData.events || []);
         setTrailRequests(requestsData.requests || []);
         setExperts(expertsData.experts || []);
+        setBookings(bookingsData.bookings || []);
       } catch (error) {
         console.error('Error loading participant profile', error);
       } finally {
         setLoadingEvents(false);
+        setLoadingBookings(false);
         setLoadingRequests(false);
       }
     };
@@ -146,7 +164,7 @@ export default function ParticipantProfilePage() {
     fetchData();
   }, [currentUser]);
 
-  if (loadingUser || loadingEvents || loadingRequests) {
+  if (loadingUser || loadingEvents || loadingBookings || loadingRequests) {
     return <div className="text-gray-600">Loading profile...</div>;
   }
 
@@ -180,6 +198,7 @@ export default function ParticipantProfilePage() {
       editForm.availabilityWeekdays.length > 0 &&
       editForm.phone.trim()
   );
+  const paidBookings = bookings.filter((item) => item.payment_status === 'paid');
 
   const handleSaveProfile = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -521,6 +540,12 @@ export default function ParticipantProfilePage() {
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
           Events You Joined
         </h2>
+        {paidBookings.length > 0 && (
+          <p className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+            Great news — you have {paidBookings.length} confirmed paid booking
+            {paidBookings.length > 1 ? 's' : ''}.
+          </p>
+        )}
         {events.length === 0 ? (
           <p className="text-sm text-gray-600">
             You have not joined any events yet.
@@ -686,7 +711,7 @@ export default function ParticipantProfilePage() {
         <button
           type="button"
           onClick={() => setProfileModalOpen(true)}
-          className="fixed bottom-4 right-4 z-40 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-lg hover:bg-emerald-700"
+          className="fixed bottom-20 right-4 z-40 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-lg hover:bg-emerald-700"
         >
           Complete profile
         </button>
