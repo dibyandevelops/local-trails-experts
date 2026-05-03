@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         tir.preferred_time,
         tir.offered_price_npr,
         tir.nearest_point,
+        tir.needs_paid_shuttle,
         tir.assigned_expert_user_id,
         ex.name AS assigned_expert_name,
         ex.email AS assigned_expert_email,
