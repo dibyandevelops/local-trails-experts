@@ -7,6 +7,7 @@ import { Trail } from '@/types';
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { getSportLabel } from '@/services/constants/sports';
 import { getDifficultyLabel, normalizeDifficulty } from '@/services/constants/difficulty';
+import { isShuttleEligibleSport } from '@/lib/shuttle';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 import ThemedDropdown from '@/components/ui/themed-dropdown';
 
@@ -69,6 +70,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const ratingValue = ratingRaw != null && (trail.review_count || 0) > 0 ? ratingRaw : null;
   const ratingDisplay = ratingValue ?? 5;
   const ratingCount = trail.review_count || 0;
+  const isPaidShuttleAvailable = isShuttleEligibleSport(trail.sport_type);
 
   const dropdownItems = [
     ...(trail.showViewTrailOption ? [{ label: 'View trail', href: detailsHref }] : []),
@@ -206,13 +208,18 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
         <div className="absolute left-7 top-7 z-20 flex flex-wrap items-center gap-2">
           {trail.sport_type && (
-            <span className="rounded-full border border-white/40 bg-white/20 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md">
+            <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md">
               {getSportLabel(trail.sport_type)}
             </span>
           )}
           {trail.is_hazardous && (
-            <span className="rounded-full border border-rose-200/60 bg-rose-600/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-white">
+            <span className="rounded-full border border-rose-200/60 bg-rose-600/90 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-white">
               Hazard
+            </span>
+          )}
+          {isPaidShuttleAvailable && (
+            <span className="rounded-full border border-cyan-200/60 bg-cyan-600/90 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-white">
+              Paid Shuttle Available
             </span>
           )}
         </div>

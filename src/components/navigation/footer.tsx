@@ -8,6 +8,7 @@ import FooterLinksColumn from '@/components/navigation/footer/footer-links-colum
 import FooterSupportColumn from '@/components/navigation/footer/footer-support-column';
 import GroupRequestModal from '@/components/navigation/footer/group-request-modal';
 import FeedbackModal from '@/components/navigation/footer/feedback-modal';
+import ShuttleFacilitiesModal from '@/components/navigation/footer/shuttle-facilities-modal';
 
 function buildMailto(params: { to?: string; subject: string; body: string }) {
   const subject = encodeURIComponent(params.subject);
@@ -39,6 +40,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
     'https://chat.whatsapp.com/BqFfpRR2nc94lf0Un7jlWA';
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [shuttleModalOpen, setShuttleModalOpen] = useState(false);
 
   const contactHref = buildMailto({
     to: contactEmail,
@@ -97,6 +99,25 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             </a>
           </div>
         </div>
+        <div className="mt-4 rounded-2xl border border-cyan-200/70 bg-cyan-50/80 p-5 dark:border-cyan-900/60 dark:bg-cyan-950/20">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-cyan-900 dark:text-cyan-100">
+                Need a paid shuttle for enduro or downhill?
+              </p>
+              <p className="mt-1 text-sm text-cyan-800/90 dark:text-cyan-200/90">
+                Check available shuttle contacts before you request your ride.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShuttleModalOpen(true)}
+              className="inline-flex items-center justify-center rounded-full bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
+            >
+              View paid shuttle contacts
+            </button>
+          </div>
+        </div>
       </div>
 
       <GroupRequestModal
@@ -108,6 +129,10 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
         open={feedbackOpen}
         onOpenChange={setFeedbackOpen}
         initialUser={initialUser}
+      />
+      <ShuttleFacilitiesModal
+        open={shuttleModalOpen}
+        onOpenChange={setShuttleModalOpen}
       />
     </footer>
   );
