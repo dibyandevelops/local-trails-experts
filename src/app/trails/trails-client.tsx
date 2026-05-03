@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
 import { TrailCard } from '@/components/feature-components/trail-card';
@@ -43,6 +43,7 @@ import {
   normalizeDifficulty,
   TRAIL_DIFFICULTY_OPTIONS,
 } from '@/services/constants/difficulty';
+import { isShuttleEligibleSport } from '@/lib/shuttle';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -195,6 +196,14 @@ function TrailGallery({
                       title="Trail sport category"
                     >
                       {getSportLabel(trail.sport_type)}
+                    </span>
+                  )}
+                  {isShuttleEligibleSport(trail.sport_type) && (
+                    <span
+                      className="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold text-cyan-800"
+                      title="Paid shuttle support available for this trail type"
+                    >
+                      Paid shuttle available
                     </span>
                   )}
                   {(trail.safety_labels || []).slice(0, 2).map((label) => (
@@ -625,6 +634,7 @@ function TrailsPageContent() {
       preferred_time?: string;
       offered_price_npr?: number | null;
       nearest_point?: string;
+      needs_paid_shuttle?: boolean;
     }) =>
       requestTrail(payload.trailId, {
         description: payload.description,
@@ -633,6 +643,7 @@ function TrailsPageContent() {
         preferred_time: payload.preferred_time,
         offered_price_npr: payload.offered_price_npr,
         nearest_point: payload.nearest_point,
+        needs_paid_shuttle: payload.needs_paid_shuttle,
       }),
     onSuccess: () => {
       setRequestFeedback('Request submitted successfully.');
@@ -800,6 +811,7 @@ function TrailsPageContent() {
     ...trail,
     isRequested: Boolean(requestedByTrailId[trail.id]),
   }));
+  const availableSportOptions = useMemo(() => TRAIL_SPORTS, []);
   const isAdmin = user?.role === 'admin';
   const isParticipant = user?.role === 'participant';
   const canGroupRequest = user?.role !== 'expert';
@@ -1043,7 +1055,7 @@ function TrailsPageContent() {
   const hasActiveFilters = Boolean(
     search || difficulty || location || sport || distanceMin || distanceMax
   );
-  const hasActiveQuickFilters = Boolean(difficulty || distanceMin || distanceMax);
+  const hasActiveQuickFilters = Boolean(sport || difficulty || distanceMin || distanceMax);
   const activeFilterCount = [
     search,
     difficulty,
@@ -1054,6 +1066,7 @@ function TrailsPageContent() {
   ].filter(Boolean).length;
 
   const resetQuickFilters = () => {
+    setSport('');
     setDifficulty('');
     setDistanceMin('');
     setDistanceMax('');
@@ -1163,7 +1176,7 @@ function TrailsPageContent() {
                 className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-emerald-900 dark:bg-slate-950 dark:text-emerald-100"
               >
                 <option value="">All categories</option>
-                {TRAIL_SPORTS.map((sportOption) => (
+                {availableSportOptions.map((sportOption) => (
                   <option key={sportOption.value} value={sportOption.value}>
                     {sportOption.label}
                   </option>
@@ -1188,6 +1201,40 @@ function TrailsPageContent() {
             </div>
 
             <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                  Sport
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSport('')}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    !sport
+                      ? 'border-emerald-500 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-400 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-500 dark:hover:text-emerald-200'
+                  }`}
+                >
+                  All
+                </button>
+                {availableSportOptions.map((sportOption) => {
+                  const active = sport === sportOption.value;
+                  return (
+                    <button
+                      key={sportOption.value}
+                      type="button"
+                      onClick={() => setSport(sportOption.value)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        active
+                          ? 'border-emerald-500 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-400 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-500 dark:hover:text-emerald-200'
+                      }`}
+                    >
+                      {sportOption.label}
+                    </button>
+                  );
+                })}
+              </div>
+
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
                   Difficulty
@@ -1954,8 +2001,18 @@ function TrailsPageContent() {
         }}
         trailOptions={
           requestTrailItem
-            ? [{ id: requestTrailItem.id, name: requestTrailItem.name }]
-            : trails.map((trail) => ({ id: trail.id, name: trail.name }))
+            ? [
+                {
+                  id: requestTrailItem.id,
+                  name: requestTrailItem.name,
+                  sport_type: requestTrailItem.sport_type,
+                },
+              ]
+            : trails.map((trail) => ({
+                id: trail.id,
+                name: trail.name,
+                sport_type: trail.sport_type,
+              }))
         }
         lockedTrailId={requestTrailItem?.id || null}
         experts={experts}

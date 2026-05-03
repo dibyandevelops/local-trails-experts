@@ -368,6 +368,43 @@ export default function EventsPageClient() {
       </section>
 
       <div className="rounded-2xl border border-emerald-200/70 bg-white/80 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70 sm:p-6">
+        {sportTypes.length > 0 && (
+          <div className="mb-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+              Quick filter by sport
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setEventsFilterDraft({ sport: '' })}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  !selectedSport
+                    ? 'border-emerald-700 bg-emerald-700 text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                All
+              </button>
+              {sportTypes.map((sport: { value: SportType; label: string }) => {
+                const active = selectedSport === sport.value;
+                return (
+                  <button
+                    key={sport.value}
+                    type="button"
+                    onClick={() => setEventsFilterDraft({ sport: sport.value })}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                      active
+                        ? 'border-emerald-700 bg-emerald-700 text-white'
+                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {sport.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
             <label className="block text-sm font-medium mb-2">Your Expertise Level</label>

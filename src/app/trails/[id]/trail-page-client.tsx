@@ -47,6 +47,7 @@ import ThemedDropdown, { type ThemedDropdownItem } from '@/components/ui/themed-
 import AppDialog from '@/components/ui/app-dialog';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import { getDifficultyLabel, normalizeDifficulty } from '@/services/constants/difficulty';
+import { isShuttleEligibleSport } from '@/lib/shuttle';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
 
@@ -335,6 +336,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [preferredTime, setPreferredTime] = useState('');
   const [offeredPriceNpr, setOfferedPriceNpr] = useState('');
   const [nearestPoint, setNearestPoint] = useState('');
+  const [needsPaidShuttle, setNeedsPaidShuttle] = useState(false);
   const [requestAcceptTerms, setRequestAcceptTerms] = useState(false);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -586,6 +588,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         offered_price_npr:
           offeredPriceNpr.trim() === '' ? null : Number(offeredPriceNpr),
         nearest_point: nearestPoint.trim() || undefined,
+        needs_paid_shuttle: shuttleEligible ? needsPaidShuttle : false,
       }),
     onSuccess: () => {
       setRequestMessage('Request sent to experts/admin successfully.');
@@ -595,6 +598,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       setPreferredTime('');
       setOfferedPriceNpr('');
       setNearestPoint('');
+      setNeedsPaidShuttle(false);
       setRequestModalOpen(false);
       refetchParticipantRequests();
     },
@@ -659,6 +663,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     currentUser?.role === 'expert' && trail?.submitted_by_user_id === currentUser?.id;
   const canManageTrail = isAdmin || isOwnerExpert;
   const canFlagHazard = currentUser?.role === 'admin' || currentUser?.role === 'expert';
+  const shuttleEligible = isShuttleEligibleSport(trail?.sport_type);
   const canUploadPhotos = canManageTrail;
   const canCreateEvent = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canRequestTrail = currentUser?.role === 'participant' || !currentUser;
@@ -1744,6 +1749,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             setPreferredTime('');
             setOfferedPriceNpr('');
             setNearestPoint('');
+            setNeedsPaidShuttle(false);
           }
         }}
       >
@@ -1840,6 +1846,17 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               placeholder="Share key expectations: fitness level, pace, route preferences, safety needs, and any special requests."
             />
+            {shuttleEligible && (
+              <label className="mt-3 flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                <input
+                  type="checkbox"
+                  checked={needsPaidShuttle}
+                  onChange={(event) => setNeedsPaidShuttle(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-sky-300 text-sky-700 focus:ring-sky-500"
+                />
+                <span>I want to request a paid shuttle facility for this ride.</span>
+              </label>
+            )}
             <label className="mt-3 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
               <input
                 type="checkbox"
