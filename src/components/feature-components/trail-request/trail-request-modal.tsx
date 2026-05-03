@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { isShuttleEligibleSport } from '@/lib/shuttle';
 
 export type TrailRequestTrailOption = {
   id: string;
   name: string;
+  sport_type?: string | null;
 };
 
 export type TrailRequestExpertOption = {
@@ -22,6 +24,7 @@ export type TrailRequestSubmitPayload = {
   offered_price_npr?: number | null;
   nearest_point?: string;
   expert_user_id?: string;
+  needs_paid_shuttle?: boolean;
 };
 
 type TrailRequestModalProps = {
@@ -56,6 +59,7 @@ export default function TrailRequestModal({
   const [offeredPriceNpr, setOfferedPriceNpr] = useState('');
   const [nearestPoint, setNearestPoint] = useState('');
   const [requestDescription, setRequestDescription] = useState('');
+  const [needsPaidShuttle, setNeedsPaidShuttle] = useState(false);
   const [acceptRisk, setAcceptRisk] = useState(false);
 
   const normalizedTrailId = useMemo(() => {
@@ -66,6 +70,9 @@ export default function TrailRequestModal({
 
   const selectedTrailName =
     trailOptions.find((trail) => trail.id === normalizedTrailId)?.name || '';
+  const selectedTrailSportType =
+    trailOptions.find((trail) => trail.id === normalizedTrailId)?.sport_type || null;
+  const shuttleEligible = isShuttleEligibleSport(selectedTrailSportType);
 
   useEffect(() => {
     if (!open) return;
@@ -84,6 +91,7 @@ export default function TrailRequestModal({
     setOfferedPriceNpr('');
     setNearestPoint('');
     setRequestDescription('');
+    setNeedsPaidShuttle(false);
     setAcceptRisk(false);
     onMessageChange?.('');
   };
@@ -122,6 +130,7 @@ export default function TrailRequestModal({
       preferred_time: preferredTime || undefined,
       offered_price_npr: offeredPriceNpr.trim() === '' ? null : Number(offeredPriceNpr),
       nearest_point: nearestPoint.trim() || undefined,
+      needs_paid_shuttle: shuttleEligible ? needsPaidShuttle : false,
     });
   };
 
@@ -244,6 +253,20 @@ export default function TrailRequestModal({
                 placeholder="Share key expectations: fitness level, pace, route preferences, safety needs, and any special requests."
               />
             </div>
+
+            {shuttleEligible && (
+              <label className="flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                <input
+                  type="checkbox"
+                  checked={needsPaidShuttle}
+                  onChange={(event) => setNeedsPaidShuttle(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-sky-300 text-sky-700 focus:ring-sky-500"
+                />
+                <span>
+                  I want to request a paid shuttle facility for this ride.
+                </span>
+              </label>
+            )}
 
             <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
               <input

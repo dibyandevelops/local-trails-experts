@@ -61,6 +61,7 @@ export default function TrailRequestsPanel() {
               <p className="text-xs text-gray-500 mt-1">
                 Preferred time: {request.preferred_time || 'N/A'}
                 {request.offered_price_npr != null ? ` • Offer: NPR ${request.offered_price_npr}` : ''}
+                {request.needs_paid_shuttle ? ' • Paid shuttle requested' : ''}
               </p>
               {request.nearest_point && (
                 <p className="text-xs text-gray-500 mt-1">
