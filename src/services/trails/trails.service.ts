@@ -267,6 +267,7 @@ export async function requestTrail(
     preferred_time?: string;
     offered_price_npr?: number | null;
     nearest_point?: string;
+    needs_paid_shuttle?: boolean;
   }
 ) {
   try {

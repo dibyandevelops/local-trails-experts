@@ -56,6 +56,7 @@ export type TrailInterestRequest = {
   preferred_time: string | null;
   offered_price_npr: number | null;
   nearest_point: string | null;
+  needs_paid_shuttle: boolean;
   description: string | null;
   created_at: string;
 };
