@@ -35,7 +35,13 @@ export default function ParticipantBookingsFab() {
 
   if (!isParticipant) return null;
 
-  const bookedEventsCount = bookings.filter((item) => item.status !== 'cancelled').length;
+  const now = Date.now();
+  const bookedEventsCount = bookings.filter((item) => {
+    if (item.status === 'cancelled') return false;
+    const eventTime = new Date(item.event_date).getTime();
+    if (!Number.isFinite(eventTime)) return false;
+    return eventTime >= now;
+  }).length;
 
   return (
     <Dialog.Root>
@@ -128,4 +134,3 @@ export default function ParticipantBookingsFab() {
     </Dialog.Root>
   );
 }
-

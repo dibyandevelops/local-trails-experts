@@ -8,27 +8,7 @@ type ShuttleContact = {
   area: string;
   service: string;
 };
-
-const MOCK_SHUTTLE_CONTACTS: ShuttleContact[] = [
-  {
-    name: 'Ridge Shuttle Crew',
-    phone: '+977-9810011223',
-    area: 'Kathmandu Valley',
-    service: 'Downhill MTB day shuttles',
-  },
-  {
-    name: 'Enduro Transfer Nepal',
-    phone: '+977-9801122334',
-    area: 'Kathmandu to hill trails',
-    service: 'Enduro drop-offs and bike transport',
-  },
-  {
-    name: 'Pokhara Gravity Shuttle',
-    phone: '+977-9845566778',
-    area: 'Pokhara outskirts',
-    service: 'Weekend downhill shuttle support',
-  },
-];
+const SHUTTLE_CONTACTS: ShuttleContact[] = [];
 
 export default function ShuttleFacilitiesModal({
   open,
@@ -49,25 +29,33 @@ export default function ShuttleFacilitiesModal({
             Contact local shuttle operators for downhill and enduro trail transfers.
           </p>
 
-          <div className="mt-4 space-y-3">
-            {MOCK_SHUTTLE_CONTACTS.map((contact) => (
-              <div
-                key={contact.phone}
-                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/80"
-              >
-                <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                  {contact.name}
-                </p>
-                <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">{contact.service}</p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{contact.area}</p>
-                <a
-                  href={`tel:${contact.phone.replace(/\s+/g, '')}`}
-                  className="mt-2 inline-block text-sm font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
-                >
-                  {contact.phone}
-                </a>
+          <div className="mt-4">
+            {SHUTTLE_CONTACTS.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300">
+                Shuttle contacts will be published soon.
               </div>
-            ))}
+            ) : (
+              <div className="space-y-3">
+                {SHUTTLE_CONTACTS.map((contact) => (
+                  <div
+                    key={contact.phone}
+                    className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/80"
+                  >
+                    <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                      {contact.name}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">{contact.service}</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{contact.area}</p>
+                    <a
+                      href={`tel:${contact.phone.replace(/\s+/g, '')}`}
+                      className="mt-2 inline-block text-sm font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+                    >
+                      {contact.phone}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mt-5 flex justify-end">
@@ -85,4 +73,3 @@ export default function ShuttleFacilitiesModal({
     </Dialog.Root>
   );
 }
-

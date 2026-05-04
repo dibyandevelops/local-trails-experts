@@ -76,10 +76,11 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
           expertsBetaEnabled={EXPERTS_BETA_ENABLED}
           onOpenFeedback={() => setFeedbackOpen(true)}
           onOpenGroupRequest={() => setGroupRequestOpen(true)}
+          onOpenShuttleContacts={() => setShuttleModalOpen(true)}
         />
       </div>
       <div className="container mx-auto px-4">
-        <div className="mt-8 rounded-2xl border border-emerald-200/70 bg-emerald-50/80 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+        <div className="mt-8 rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-5 shadow-sm transition hover:shadow-md dark:border-emerald-900/60 dark:bg-emerald-950/30">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
@@ -92,30 +93,11 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
             <a
               href={communityWhatsappGroupLink}
               target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+              rel="noreferrer noopener"
+              className="inline-flex w-full items-center justify-center rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 md:w-auto"
             >
               Join WhatsApp community
             </a>
-          </div>
-        </div>
-        <div className="mt-4 rounded-2xl border border-cyan-200/70 bg-cyan-50/80 p-5 dark:border-cyan-900/60 dark:bg-cyan-950/20">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-cyan-900 dark:text-cyan-100">
-                Need a paid shuttle for enduro or downhill?
-              </p>
-              <p className="mt-1 text-sm text-cyan-800/90 dark:text-cyan-200/90">
-                Check available shuttle contacts before you request your ride.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShuttleModalOpen(true)}
-              className="inline-flex items-center justify-center rounded-full bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
-            >
-              View paid shuttle contacts
-            </button>
           </div>
         </div>
       </div>

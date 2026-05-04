@@ -8,6 +8,7 @@ type Props = {
   expertsBetaEnabled: boolean;
   onOpenFeedback: () => void;
   onOpenGroupRequest: () => void;
+  onOpenShuttleContacts: () => void;
 };
 
 export default function FooterSupportColumn({
@@ -17,6 +18,7 @@ export default function FooterSupportColumn({
   expertsBetaEnabled,
   onOpenFeedback,
   onOpenGroupRequest,
+  onOpenShuttleContacts,
 }: Props) {
   return (
     <div className="space-y-2">
@@ -40,6 +42,11 @@ export default function FooterSupportColumn({
         <li>
           <button type="button" className="text-left hover:underline" onClick={onOpenGroupRequest}>
             Request a large group ride
+          </button>
+        </li>
+        <li>
+          <button type="button" className="text-left hover:underline" onClick={onOpenShuttleContacts}>
+            View paid shuttle contacts
           </button>
         </li>
         <li>
@@ -92,4 +99,3 @@ export default function FooterSupportColumn({
     </div>
   );
 }
-
