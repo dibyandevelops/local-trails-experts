@@ -340,7 +340,7 @@ function TrailGallery({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {trails.map((trail) => (
         <TrailCard
           key={trail.id}
@@ -412,7 +412,7 @@ function TrailGallery({
 function TrailsPageSkeleton() {
   return (
     <div
-      className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 animate-pulse"
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-pulse"
       aria-hidden="true"
     >
       {Array.from({ length: 6 }).map((_, index) => (
@@ -440,7 +440,7 @@ function TrailsPageSkeleton() {
 function TrailsLoadMoreSkeleton() {
   return (
     <div
-      className="mt-4 grid animate-pulse grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+      className="mt-4 grid animate-pulse grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       aria-hidden="true"
     >
       {Array.from({ length: 3 }).map((_, index) => (

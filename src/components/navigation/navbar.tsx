@@ -11,6 +11,19 @@ import type { User } from '@/types';
 import LoginModal from '@/components/auth/login-modal';
 import RegisterModal from '@/components/auth/register-modal';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import {
+  Bike,
+  CalendarDays,
+  Dumbbell,
+  House,
+  Map,
+  MapPinned,
+  PlusCircle,
+  Sparkles,
+  Store,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 type NavItem = {
@@ -68,6 +81,24 @@ const navItems: NavItem[] = [
     badge: EXPERTS_BETA_ENABLED ? 'Beta' : undefined,
   },
 ];
+
+const NAV_ICON_MAP: Record<string, LucideIcon> = {
+  '/home': House,
+  '/trails': Map,
+  '/events': CalendarDays,
+  '/community-rides': Bike,
+  '/experts': Users,
+  '/store-locator': Store,
+  '/events/create': PlusCircle,
+  '/events/trainings/create': Dumbbell,
+  '/upload': MapPinned,
+  '/experts/join': Sparkles,
+};
+
+const getMobileNavIcon = (href: string) => {
+  const Icon = NAV_ICON_MAP[href] || MapPinned;
+  return <Icon className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />;
+};
 const icon = (
   <Image
     src="/icons/logo-transparent-source.png"
@@ -261,8 +292,8 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
   return (
     <nav className="sticky top-0 z-30 border-b border-green-900/70 bg-gradient-to-r from-green-900 via-green-800 to-emerald-800 text-white shadow-lg backdrop-blur">
-      <div className="container mx-auto px-4 py-2">
-        <div className="flex min-h-[80px] items-center justify-between gap-4">
+      <div className="container mx-auto px-4 py-2.5">
+        <div className="flex min-h-[84px] items-center justify-between gap-4">
           <Link
             href="/home"
             className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-2xl font-bold leading-none transition-opacity hover:opacity-95"
@@ -272,14 +303,14 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           </Link>
           <button
             type="button"
-            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg border border-green-500/70 bg-white/10 hover:bg-white/15"
+            className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-green-400/70 bg-white/10 shadow-sm hover:bg-white/15"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle navigation"
           >
             {mobileOpen ? '✕' : '☰'}
           </button>
 
-          <div className="hidden md:flex items-center gap-3 rounded-full border border-green-500/40 bg-white/10 px-3 py-2 shadow-inner shadow-black/10">
+          <div className="hidden lg:flex items-center gap-2">
             {navItems.map((item) =>
               canSeeItem(item) ? (() => {
                 const itemActive = isNavItemActive(item.href);
@@ -287,12 +318,15 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`inline-flex h-10 items-center rounded-lg px-3 py-1 text-sm font-semibold transition-all ${
+                    className={`inline-flex h-10 items-center rounded-xl px-3 py-1 text-sm font-semibold transition-all ${
                       itemActive
                         ? 'bg-white text-green-900 shadow-sm'
-                        : 'text-green-50 hover:bg-white/15 hover:text-white'
+                        : 'text-green-50 hover:text-white'
                     }`}
                   >
+                    <span aria-hidden="true" className="mr-1">
+                      {getMobileNavIcon(item.href)}
+                    </span>
                     <span className="truncate max-w-[140px]">{getNavLabel(item)}</span>
                     {item.badge && (
                       <span
@@ -323,10 +357,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     <DropdownMenu.Trigger asChild>
                       <button
                         type="button"
-                        className={`inline-flex h-10 items-center gap-1 rounded-lg px-3 py-1 text-sm font-semibold transition-all ${
+                        className={`inline-flex h-10 items-center gap-1 rounded-xl px-3 py-1 text-sm font-semibold transition-all ${
                           groupActive
                             ? 'bg-white text-green-900 shadow-sm'
-                            : 'text-green-50 hover:bg-white/15 hover:text-white'
+                            : 'text-green-50 hover:text-white'
                         }`}
                         aria-label={`${group.label} menu`}
                         onPointerMove={() => {
@@ -376,6 +410,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                                 }`}
                               >
                                 <span className="inline-flex items-center gap-2">
+                                  <span aria-hidden="true">{getMobileNavIcon(item.href)}</span>
                                   <span className="block truncate">{getNavLabel(item)}</span>
                                   {item.badge && (
                                     <span
@@ -407,12 +442,12 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setRegisterNext(null);
                   setRegisterOpen(true);
                 }}
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/30"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/30"
               >
                 Join Adventure
               </button>
             )}
-            <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-lg border border-green-400/50 bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/15" />
+            <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-xl border border-green-400/50 bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/15" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
@@ -437,7 +472,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setLoginNext(null);
                   setLoginOpen(true);
                 }}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-green-800 hover:bg-green-100"
+                className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-green-800 hover:bg-green-100"
               >
                 Login
               </button>
@@ -494,8 +529,12 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           </div>
         </div>
 
-        {mobileOpen && (
-          <div className="md:hidden mt-3 flex flex-col gap-2 rounded-xl border border-green-600/60 bg-green-900/35 p-3">
+        <div
+          className={`lg:hidden mt-3 overflow-hidden rounded-2xl border border-green-600/60 bg-green-900/35 shadow-lg backdrop-blur transition-all duration-300 ease-out ${
+            mobileOpen ? 'max-h-[700px] p-3 opacity-100' : 'max-h-0 p-0 opacity-0 border-transparent'
+          }`}
+        >
+          <div className="flex flex-col gap-2">
             {[...navItems, ...navGroups.flatMap((group) => group.items)].map((item) =>
               canSeeItem(item) ? (() => {
                 const itemActive = isNavItemActive(item.href);
@@ -511,6 +550,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     onClick={() => setMobileOpen(false)}
                   >
                     <span className="inline-flex items-center gap-2">
+                      <span aria-hidden="true">{getMobileNavIcon(item.href)}</span>
                       <span>{getNavLabel(item)}</span>
                       {item.badge && (
                         <span
@@ -588,7 +628,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               </>
             )}
           </div>
-        )}
+        </div>
       </div>
       <LoginModal
         open={loginOpen}
