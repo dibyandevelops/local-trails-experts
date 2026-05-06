@@ -36,7 +36,7 @@ const dataLabelClass =
 const dataValueClass = 'mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100';
 
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
-  const detailsHref = trail.detailsHref || `/trails/${trail.id}`;
+  const detailsHref = trail.detailsHref || `/trails/${trail.slug || trail.id}`;
   const difficulty = normalizeDifficulty(trail.difficulty);
   const [shareState, setShareState] = React.useState<'idle' | 'copied' | 'error'>('idle');
 

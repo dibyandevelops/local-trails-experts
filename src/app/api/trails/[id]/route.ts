@@ -4,6 +4,7 @@ import { Trail } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { normalizeSafetyLabels } from '@/lib/trail-safety';
 import { COMMUNITY_NAME } from '@/lib/branding';
+import { getUniqueTrailSlug } from '@/lib/trail-slug';
 
 function normalizeKomootEmbedInput(raw: string) {
   const value = raw.trim();
@@ -34,7 +35,8 @@ export async function GET(
           u.email AS submitted_by_email
         FROM trails t
         LEFT JOIN users u ON u.id = t.submitted_by_user_id
-        WHERE t.id = $1
+        WHERE t.id::text = $1 OR t.slug = $1
+        ORDER BY CASE WHEN t.id::text = $1 THEN 0 ELSE 1 END
       `,
       [id]
     );
@@ -202,31 +204,38 @@ export async function PATCH(
       body,
       'safety_labels'
     );
+    const nextName = body.name ?? trail.name;
+    const nextSlug =
+      body.name && body.name.trim()
+        ? await getUniqueTrailSlug(pool, body.name.trim(), id)
+        : trail.slug;
 
     const result = await pool.query(
       `
       UPDATE trails
       SET
         name = $1,
-        description = $2,
-        difficulty = $3,
-        sport_type = $4,
-        location = $5,
-        latitude = $6,
-        longitude = $7,
-        distance_km = $8,
-        elevation_gain_m = $9,
-        estimated_time_hours = $10,
-        image_url = $11,
-        trail_images = $12,
-        komoot_embed_url = $13,
-        safety_labels = $14,
+        slug = $2,
+        description = $3,
+        difficulty = $4,
+        sport_type = $5,
+        location = $6,
+        latitude = $7,
+        longitude = $8,
+        distance_km = $9,
+        elevation_gain_m = $10,
+        estimated_time_hours = $11,
+        image_url = $12,
+        trail_images = $13,
+        komoot_embed_url = $14,
+        safety_labels = $15,
         updated_at = NOW()
-      WHERE id = $15
+      WHERE id = $16
       RETURNING *
       `,
       [
-        body.name ?? trail.name,
+        nextName,
+        nextSlug,
         body.description ?? trail.description,
         body.difficulty ?? trail.difficulty,
         body.sport_type ?? trail.sport_type ?? 'mtb',

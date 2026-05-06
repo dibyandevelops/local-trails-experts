@@ -41,6 +41,7 @@ export interface RouteData {
 
 export interface Trail {
   id: string;
+  slug?: string;
   name: string;
   description: string | null;
   difficulty: Difficulty;

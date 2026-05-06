@@ -6,6 +6,7 @@ import { normalizeSafetyLabels } from '@/lib/trail-safety';
 import { parseGPX } from '@/lib/gpx-parser';
 import { DEFAULT_TRAIL_SPORT } from '@/services/constants/sports';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
+import { getUniqueTrailSlug } from '@/lib/trail-slug';
 
 function parseOptionalNumber(raw: string | null) {
   if (!raw || !raw.trim()) return null;
@@ -180,6 +181,7 @@ export async function GET(request: NextRequest) {
     const listQuery = `
       SELECT
         t.id,
+        t.slug,
         t.name,
         t.difficulty,
         t.sport_type,
@@ -342,6 +344,7 @@ export async function POST(request: NextRequest) {
 
     const isAdmin = auth?.role === 'admin';
     const isExpert = auth?.role === 'expert';
+    const slug = await getUniqueTrailSlug(pool, name);
 
     const routeData = await parseGPX(await gpxFile.text());
     const firstPoint = routeData.coordinates[0];
@@ -373,15 +376,16 @@ export async function POST(request: NextRequest) {
     const result = await pool.query(
       `
       INSERT INTO trails (
-        name, description, difficulty, location, latitude, longitude,
+        name, slug, description, difficulty, location, latitude, longitude,
         distance_km, elevation_gain_m, estimated_time_hours, image_url, trail_images, komoot_embed_url, safety_labels, route_data, sport_type,
         status, submitted_by_user_id, approved_by_admin_id, approved_at, is_hidden
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15,$16,$17,$18,$19,$20)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16,$17,$18,$19,$20,$21)
       RETURNING *
       `,
       [
         name,
+        slug,
         description || null,
         difficulty,
         location,

@@ -8,6 +8,7 @@ async function getTrailSeo(id: string) {
     `
     SELECT
       id,
+      slug,
       name,
       description,
       location,
@@ -19,9 +20,10 @@ async function getTrailSeo(id: string) {
       trail_images,
       updated_at
     FROM trails
-    WHERE id = $1
+    WHERE (slug = $1 OR id::text = $1)
       AND status = 'approved'
       AND is_hidden = FALSE
+    ORDER BY CASE WHEN slug = $1 THEN 0 ELSE 1 END
     LIMIT 1
     `,
     [id]
@@ -29,6 +31,7 @@ async function getTrailSeo(id: string) {
   return result.rows[0] as
     | {
         id: string;
+        slug: string | null;
         name: string;
         description: string | null;
         location: string;
@@ -56,6 +59,7 @@ export async function generateMetadata(
       };
     }
 
+    const slug = trail.slug || trail.id;
     const title = `${trail.name} — Nepal Trail Guide`;
     const description =
       (trail.description || '').trim() ||
@@ -73,12 +77,12 @@ export async function generateMetadata(
         'Nepal trail guide',
         'MTB trails Nepal',
       ],
-      alternates: { canonical: `/trails/${trail.id}` },
+      alternates: { canonical: `/trails/${slug}` },
       robots: { index: true, follow: true },
       openGraph: {
         title,
         description,
-        url: `/trails/${trail.id}`,
+        url: `/trails/${slug}`,
         siteName: SITE_NAME,
         type: 'article',
         images: image ? [{ url: image, alt: trail.name }] : undefined,
@@ -112,7 +116,8 @@ export default async function TrailLayout(props: {
     trail = undefined;
   }
 
-  const trailUrl = absoluteUrl(`/trails/${id}`);
+  const trailPath = `/trails/${trail?.slug || trail?.id || id}`;
+  const trailUrl = absoluteUrl(trailPath);
   const image =
     trail?.image_url || (Array.isArray(trail?.trail_images) ? trail?.trail_images[0] : null);
   const jsonLdTrail =

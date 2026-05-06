@@ -159,7 +159,7 @@ function TrailGallery({
               aria-label={trail.name}
             >
               <Link
-                href={`/trails/${trail.id}`}
+                href={`/trails/${trail.slug || trail.id}`}
                 onClick={storeTrailsListState}
                 className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded"
                 aria-label={`View details for ${trail.name}`}

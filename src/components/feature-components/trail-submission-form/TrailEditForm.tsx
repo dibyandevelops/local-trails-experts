@@ -165,7 +165,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
       if (typeof window !== 'undefined' && window.history.length > 1) {
         router.back();
       } else {
-        router.push(`/trails/${trailId}`);
+        router.push(`/trails/${nextTrail.slug || trailId}`);
       }
     },
     onError: (e) => {
@@ -631,7 +631,7 @@ export default function TrailEditForm({ trailId }: { trailId: string }) {
                 router.back();
                 return;
               }
-              router.push(`/trails/${trailId}`);
+              router.push(`/trails/${trail?.slug || trailId}`);
             }}
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 sm:w-auto"
           >
