@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import DateText from '@/components/ui/date-text';
 
@@ -20,6 +21,7 @@ type MyBooking = {
 export default function ParticipantBookingsFab() {
   const { data: user = null } = useCurrentUser();
   const isParticipant = user?.role === 'participant';
+  const [nowMs, setNowMs] = useState<number | null>(null);
 
   const { data: bookings = [] } = useQuery<MyBooking[]>({
     queryKey: ['participant-bookings-fab'],
@@ -33,15 +35,23 @@ export default function ParticipantBookingsFab() {
     refetchInterval: 30000,
   });
 
-  if (!isParticipant) return null;
+  useEffect(() => {
+    setNowMs(Date.now());
+    const timer = window.setInterval(() => setNowMs(Date.now()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const now = Date.now();
-  const bookedEventsCount = bookings.filter((item) => {
-    if (item.status === 'cancelled') return false;
-    const eventTime = new Date(item.event_date).getTime();
-    if (!Number.isFinite(eventTime)) return false;
-    return eventTime >= now;
-  }).length;
+  const bookedEventsCount = useMemo(() => {
+    if (nowMs === null) return 0;
+    return bookings.filter((item) => {
+      if (item.status === 'cancelled') return false;
+      const eventTime = new Date(item.event_date).getTime();
+      if (!Number.isFinite(eventTime)) return false;
+      return eventTime >= nowMs;
+    }).length;
+  }, [bookings, nowMs]);
+
+  if (!isParticipant) return null;
 
   return (
     <Dialog.Root>
