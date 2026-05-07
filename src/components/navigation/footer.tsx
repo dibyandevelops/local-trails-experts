@@ -9,6 +9,7 @@ import FooterSupportColumn from '@/components/navigation/footer/footer-support-c
 import GroupRequestModal from '@/components/navigation/footer/group-request-modal';
 import FeedbackModal from '@/components/navigation/footer/feedback-modal';
 import ShuttleFacilitiesModal from '@/components/navigation/footer/shuttle-facilities-modal';
+import CollaborationRequestModal from '@/components/navigation/footer/collaboration-request-modal';
 
 function buildMailto(params: { to?: string; subject: string; body: string }) {
   const subject = encodeURIComponent(params.subject);
@@ -41,6 +42,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [shuttleModalOpen, setShuttleModalOpen] = useState(false);
+  const [collaborationRequestOpen, setCollaborationRequestOpen] = useState(false);
 
   const contactHref = buildMailto({
     to: contactEmail,
@@ -99,6 +101,15 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
               Join WhatsApp community
             </a>
           </div>
+          <div className="mt-3 border-t border-emerald-200/70 pt-3 dark:border-emerald-900/60">
+            <button
+              type="button"
+              onClick={() => setCollaborationRequestOpen(true)}
+              className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-white dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200"
+            >
+              Looking for collaborators? Contribute your skills
+            </button>
+          </div>
         </div>
       </div>
 
@@ -115,6 +126,11 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
       <ShuttleFacilitiesModal
         open={shuttleModalOpen}
         onOpenChange={setShuttleModalOpen}
+      />
+      <CollaborationRequestModal
+        open={collaborationRequestOpen}
+        onOpenChange={setCollaborationRequestOpen}
+        initialUser={initialUser}
       />
     </footer>
   );
