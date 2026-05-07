@@ -58,6 +58,7 @@ type TrailSort =
   | 'distance_asc'
   | 'distance_desc'
   | 'elevation_desc';
+type RideProfile = '' | 'short' | 'medium' | 'long';
 
 const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
   { value: 'random', label: 'Random' },
@@ -78,15 +79,11 @@ const TRAIL_QUICK_FILTERS: Array<{ label: string; value: Difficulty | '' }> = [
   { label: 'Expert', value: 'expert' },
 ];
 
-const DISTANCE_QUICK_FILTERS: Array<{
-  label: string;
-  min: string;
-  max: string;
-}> = [
-  { label: 'Any distance', min: '', max: '' },
-  { label: '< 10 km', min: '', max: '10' },
-  { label: '10–25 km', min: '10', max: '25' },
-  { label: '25+ km', min: '25', max: '' },
+const RIDE_PROFILE_QUICK_FILTERS: Array<{ label: string; value: RideProfile }> = [
+  { label: 'All rides', value: '' },
+  { label: 'Short ride', value: 'short' },
+  { label: 'Medium ride', value: 'medium' },
+  { label: 'Long ride', value: 'long' },
 ];
 
 function isTrailSort(value: string): value is TrailSort {
@@ -479,6 +476,7 @@ function TrailsPageContent() {
   const [distanceMaxInput, setDistanceMaxInput] = useState('');
   const [distanceMin, setDistanceMin] = useState('');
   const [distanceMax, setDistanceMax] = useState('');
+  const [rideProfile, setRideProfile] = useState<RideProfile>('');
   const [sort, setSort] = useState<TrailSort>('random');
   const [randomSeed] = useState(
     () => `trails-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
@@ -596,6 +594,7 @@ function TrailsPageContent() {
       sport,
       distanceMin,
       distanceMax,
+      rideProfile,
       sort,
       randomSeed,
       pageSize: initialPageSize,
@@ -609,6 +608,7 @@ function TrailsPageContent() {
           sport,
           distanceMin,
           distanceMax,
+          rideProfile,
           sort,
           randomSeed,
           offset: pageParam.offset,
@@ -705,6 +705,7 @@ function TrailsPageContent() {
       sport,
       distanceMin,
       distanceMax,
+      rideProfile,
       sort,
       randomSeed,
       pageSize: initialPageSize,
@@ -716,6 +717,7 @@ function TrailsPageContent() {
       sport,
       distanceMin,
       distanceMax,
+      rideProfile,
       sort,
       randomSeed,
       page: 1,
@@ -728,6 +730,7 @@ function TrailsPageContent() {
       sport,
       distanceMin,
       distanceMax,
+      rideProfile,
       sort,
       randomSeed,
     });
@@ -916,6 +919,7 @@ function TrailsPageContent() {
     const urlSport = (searchParams.get('sport') || '').trim();
     const urlDistanceMin = (searchParams.get('distanceMin') || '').trim();
     const urlDistanceMax = (searchParams.get('distanceMax') || '').trim();
+    const urlRideProfile = (searchParams.get('rideProfile') || '').trim() as RideProfile;
     const urlSort = (searchParams.get('sort') || '').trim();
     const urlCreateTrail = (searchParams.get('createEventTrail') || '').trim();
     const urlCreateSport = (searchParams.get('createEventSport') || '').trim();
@@ -942,6 +946,9 @@ function TrailsPageContent() {
       setDistanceMaxInput(urlDistanceMax);
       setDistanceMax(urlDistanceMax);
     }
+    if (urlRideProfile === 'short' || urlRideProfile === 'medium' || urlRideProfile === 'long') {
+      setRideProfile(urlRideProfile);
+    }
     if (urlSort && isTrailSort(urlSort)) {
       setSort(urlSort);
     } else {
@@ -964,6 +971,7 @@ function TrailsPageContent() {
     if (sport) params.set('sport', sport);
     if (distanceMin) params.set('distanceMin', distanceMin);
     if (distanceMax) params.set('distanceMax', distanceMax);
+    if (rideProfile) params.set('rideProfile', rideProfile);
     if (sort && sort !== 'random') params.set('sort', sort);
     if (createEventOpen && createEventTrailId) {
       params.set('createEventTrail', createEventTrailId);
@@ -985,6 +993,7 @@ function TrailsPageContent() {
     sport,
     distanceMin,
     distanceMax,
+    rideProfile,
     sort,
     randomSeed,
     createEventOpen,
@@ -1052,9 +1061,9 @@ function TrailsPageContent() {
   };
 
   const hasActiveFilters = Boolean(
-    search || difficulty || location || sport || distanceMin || distanceMax
+    search || difficulty || location || sport || distanceMin || distanceMax || rideProfile
   );
-  const hasActiveQuickFilters = Boolean(sport || difficulty || distanceMin || distanceMax);
+  const hasActiveQuickFilters = Boolean(sport || difficulty || rideProfile);
   const activeFilterCount = [
     search,
     difficulty,
@@ -1062,6 +1071,7 @@ function TrailsPageContent() {
     sport,
     distanceMin,
     distanceMax,
+    rideProfile,
   ].filter(Boolean).length;
 
   const resetQuickFilters = () => {
@@ -1071,6 +1081,7 @@ function TrailsPageContent() {
     setDistanceMax('');
     setDistanceMinInput('');
     setDistanceMaxInput('');
+    setRideProfile('');
   };
 
   return (
@@ -1225,20 +1236,15 @@ function TrailsPageContent() {
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-                  Distance
+                  Ride profile
                 </span>
-                {DISTANCE_QUICK_FILTERS.map((quick) => {
-                  const active = distanceMin === quick.min && distanceMax === quick.max;
+                {RIDE_PROFILE_QUICK_FILTERS.map((quick) => {
+                  const active = rideProfile === quick.value;
                   return (
                     <button
                       key={quick.label}
                       type="button"
-                      onClick={() => {
-                        setDistanceMin(quick.min);
-                        setDistanceMax(quick.max);
-                        setDistanceMinInput(quick.min);
-                        setDistanceMaxInput(quick.max);
-                      }}
+                      onClick={() => setRideProfile(quick.value)}
                       className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                         active
                           ? 'border-emerald-500 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500'
@@ -1295,6 +1301,15 @@ function TrailsPageContent() {
                 className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800"
               >
                 Sport: {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport} ×
+              </button>
+            )}
+            {rideProfile && (
+              <button
+                type="button"
+                onClick={() => setRideProfile('')}
+                className="rounded-full border border-cyan-300 bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-800"
+              >
+                Ride: {rideProfile === 'short' ? 'Short' : rideProfile === 'medium' ? 'Medium' : 'Long'} ×
               </button>
             )}
             {distanceMin && (

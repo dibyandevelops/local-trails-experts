@@ -10,6 +10,7 @@ export const QUERY_KEYS = {
       sport?: string;
       distanceMin?: string;
       distanceMax?: string;
+      rideProfile?: string;
       sort?: string;
       randomSeed?: string;
       hazardous?: boolean;
@@ -22,6 +23,7 @@ export const QUERY_KEYS = {
         filters?.sport || '',
         filters?.distanceMin || '',
         filters?.distanceMax || '',
+        filters?.rideProfile || '',
         filters?.sort || '',
         filters?.randomSeed || '',
         filters?.hazardous ? 'true' : 'false',
@@ -34,6 +36,7 @@ export const QUERY_KEYS = {
       sport?: string;
       distanceMin?: string;
       distanceMax?: string;
+      rideProfile?: string;
       sort?: string;
       randomSeed?: string;
       hazardous?: boolean;
@@ -48,6 +51,7 @@ export const QUERY_KEYS = {
         filters?.sport || '',
         filters?.distanceMin || '',
         filters?.distanceMax || '',
+        filters?.rideProfile || '',
         filters?.sort || '',
         filters?.randomSeed || '',
         filters?.hazardous ? 'true' : 'false',
@@ -61,6 +65,7 @@ export const QUERY_KEYS = {
       sport?: string;
       distanceMin?: string;
       distanceMax?: string;
+      rideProfile?: string;
       sort?: string;
       randomSeed?: string;
       hazardous?: boolean;
@@ -74,6 +79,7 @@ export const QUERY_KEYS = {
         filters?.sport || '',
         filters?.distanceMin || '',
         filters?.distanceMax || '',
+        filters?.rideProfile || '',
         filters?.sort || '',
         filters?.randomSeed || '',
         filters?.hazardous ? 'true' : 'false',

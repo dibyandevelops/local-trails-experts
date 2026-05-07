@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
     const randomSeed = (searchParams.get('randomSeed') || '').trim();
     const distanceMinRaw = searchParams.get('distanceMin');
     const distanceMaxRaw = searchParams.get('distanceMax');
+    const rideProfile = (searchParams.get('rideProfile') || '').trim();
     const status = searchParams.get('status');
     const hazardous = searchParams.get('hazardous') === 'true';
     const page = Math.max(1, Number(searchParams.get('page') || '1') || 1);
@@ -127,6 +128,14 @@ export async function GET(request: NextRequest) {
         params.push(max);
         paramIndex++;
       }
+    }
+
+    if (rideProfile === 'short') {
+      whereClause += ` AND COALESCE(t.distance_km, 0) <= 30 AND COALESCE(t.elevation_gain_m, 0) <= 500`;
+    } else if (rideProfile === 'medium') {
+      whereClause += ` AND COALESCE(t.distance_km, 0) > 30 AND COALESCE(t.distance_km, 0) <= 60 AND COALESCE(t.elevation_gain_m, 0) > 500 AND COALESCE(t.elevation_gain_m, 0) <= 1200`;
+    } else if (rideProfile === 'long') {
+      whereClause += ` AND (COALESCE(t.distance_km, 0) > 60 OR COALESCE(t.elevation_gain_m, 0) > 1200)`;
     }
 
     if (hazardous) {

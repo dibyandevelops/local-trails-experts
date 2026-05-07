@@ -13,6 +13,7 @@ export type TrailFilters = {
   radiusKm?: number;
   distanceMin?: string;
   distanceMax?: string;
+  rideProfile?: '' | 'short' | 'medium' | 'long';
   sort?: string;
   randomSeed?: string;
   hazardous?: boolean;
@@ -51,6 +52,7 @@ export async function fetchTrails(
       params.radiusKm = String(filters.radiusKm);
     if (filters.distanceMin?.trim()) params.distanceMin = filters.distanceMin.trim();
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
+    if (filters.rideProfile) params.rideProfile = filters.rideProfile;
     if (filters.sort?.trim()) params.sort = filters.sort.trim();
     if (filters.randomSeed?.trim()) params.randomSeed = filters.randomSeed.trim();
     if (filters.hazardous) params.hazardous = 'true';
@@ -89,6 +91,7 @@ export async function fetchTrailsPaginated(
       params.radiusKm = filters.radiusKm;
     if (filters.distanceMin?.trim()) params.distanceMin = filters.distanceMin.trim();
     if (filters.distanceMax?.trim()) params.distanceMax = filters.distanceMax.trim();
+    if (filters.rideProfile) params.rideProfile = filters.rideProfile;
     if (filters.sort?.trim()) params.sort = filters.sort.trim();
     if (filters.randomSeed?.trim()) params.randomSeed = filters.randomSeed.trim();
     if (filters.hazardous) params.hazardous = 'true';
