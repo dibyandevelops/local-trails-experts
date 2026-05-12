@@ -1,5 +1,3 @@
-import { COMMUNITY_NAME } from '@/lib/branding';
-
 type Props = {
   year: number;
   brand: string;
@@ -18,7 +16,9 @@ export default function FooterInfoColumn({ year, brand }: Props) {
         <li>• Connect riders with verified local experts.</li>
         <li>• Support local tourism and trail communities.</li>
       </ul>
-      <p className="text-xs text-emerald-700 dark:text-emerald-200">Built with {COMMUNITY_NAME}.</p>
+      <p className="text-xs text-emerald-700 dark:text-emerald-200">
+        Built and maintained by Dibyan Maharjan.
+      </p>
       <p className="text-xs text-gray-500 dark:text-slate-400">
         © {year} {brand}. All rights reserved. {brand} are trademarks or registered trademarks of
         their respective owners.
@@ -26,4 +26,3 @@ export default function FooterInfoColumn({ year, brand }: Props) {
     </div>
   );
 }
-
