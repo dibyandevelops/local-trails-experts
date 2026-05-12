@@ -39,10 +39,9 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
   const communityWhatsappGroupLink =
     process.env.NEXT_PUBLIC_COMMUNITY_WHATSAPP_GROUP_LINK ||
     'https://chat.whatsapp.com/BqFfpRR2nc94lf0Un7jlWA';
-  const individualName = 'Dibyan Maharjan';
+  const individualName = 'Dibyan';
   const individualWhatsappNumber = '9810265305';
   const individualWhatsappLink = `https://wa.me/977${individualWhatsappNumber}`;
-  const individualStravaLink = 'https://www.strava.com/athletes/164200038';
   const [groupRequestOpen, setGroupRequestOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [shuttleModalOpen, setShuttleModalOpen] = useState(false);
@@ -93,8 +92,8 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
                 Individual contribution contact
               </p>
               <p className="mt-1 text-sm text-emerald-800/90 dark:text-emerald-200/90">
-                Currently coordinated directly by {individualName}. Reach out for collaboration,
-                trail mapping, and weekend ride planning.
+                Coordinated by {individualName}. Reach out for collaboration, trail mapping, and
+                weekend ride planning.
               </p>
               <p className="mt-2 text-xs text-emerald-900/90 dark:text-emerald-100/90">
                 WhatsApp: {individualWhatsappNumber}
@@ -108,14 +107,6 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
                 className="inline-flex w-full items-center justify-center rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 md:w-auto"
               >
                 Message on WhatsApp
-              </a>
-              <a
-                href={individualStravaLink}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex w-full items-center justify-center rounded-full border border-emerald-300 bg-white/90 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-white dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200 md:w-auto"
-              >
-                View Strava profile
               </a>
             </div>
           </div>
