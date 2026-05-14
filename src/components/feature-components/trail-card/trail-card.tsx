@@ -3,6 +3,16 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {
+  Bike,
+  CircleDot,
+  Footprints,
+  MapPinned,
+  Mountain,
+  PersonStanding,
+  Route,
+  Shield,
+} from 'lucide-react';
 import { Trail } from '@/types';
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { getSportLabel } from '@/services/constants/sports';
@@ -34,6 +44,31 @@ const toFiniteNumber = (value: unknown) => {
 const dataLabelClass =
   'text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400';
 const dataValueClass = 'mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100';
+
+const getSportIconNode = (sportType: string | null | undefined) => {
+  const commonProps = { className: 'h-3 w-3', strokeWidth: 2.2, 'aria-hidden': true as const };
+  switch (sportType) {
+    case 'hiking':
+      return <PersonStanding {...commonProps} />;
+    case 'trail_running':
+      return <Footprints {...commonProps} />;
+    case 'local_tour':
+      return <MapPinned {...commonProps} />;
+    case 'road_cycling':
+    case 'gravel_rides':
+      return <Route {...commonProps} />;
+    case 'xc_trails':
+      return <CircleDot {...commonProps} />;
+    case 'devotion_trail_rides':
+      return <Mountain {...commonProps} />;
+    case 'downhill_mtb':
+    case 'enduro_mtb':
+    case 'mtb':
+      return <Bike {...commonProps} />;
+    default:
+      return <Shield {...commonProps} />;
+  }
+};
 
 export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const detailsHref = trail.detailsHref || `/trails/${trail.slug || trail.id}`;
@@ -206,8 +241,12 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
         <div className="absolute left-7 top-7 z-20 flex flex-wrap items-center gap-2">
           {trail.sport_type && (
-            <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md">
-              {getSportLabel(trail.sport_type)}
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.1em] text-white backdrop-blur-md"
+              title={getSportLabel(trail.sport_type)}
+            >
+              {getSportIconNode(trail.sport_type)}
+              <span className="line-clamp-1">{getSportLabel(trail.sport_type)}</span>
             </span>
           )}
           {trail.is_hazardous && (
