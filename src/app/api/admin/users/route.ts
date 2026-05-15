@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
         verification_certifications,
         verification_guiding_history,
         verification_safety_training,
+        verification_achievements,
+        verification_strava_url,
         verification_links,
         created_at
       FROM users

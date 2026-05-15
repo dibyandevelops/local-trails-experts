@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
       verification_certifications,
       verification_guiding_history,
       verification_safety_training,
+      verification_achievements,
+      verification_strava_url,
       verification_links,
     } = body;
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
@@ -39,6 +41,18 @@ export async function POST(request: NextRequest) {
     if (!password || password.length < 8 || !/\d/.test(password)) {
       return NextResponse.json(
         { error: 'Password must be at least 8 characters and include a number.' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedVerificationStravaUrl =
+      typeof verification_strava_url === 'string' ? verification_strava_url.trim() : '';
+    if (
+      normalizedVerificationStravaUrl &&
+      !/^https?:\/\/(www\.)?strava\.com\/.+/i.test(normalizedVerificationStravaUrl)
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid Strava URL. Use https://www.strava.com/...' },
         { status: 400 }
       );
     }
@@ -104,7 +118,9 @@ export async function POST(request: NextRequest) {
             verification_certifications = COALESCE($8, verification_certifications),
             verification_guiding_history = COALESCE($9, verification_guiding_history),
             verification_safety_training = COALESCE($10, verification_safety_training),
-            verification_links = COALESCE($11, verification_links)
+            verification_achievements = COALESCE($11, verification_achievements),
+            verification_strava_url = COALESCE($12, verification_strava_url),
+            verification_links = COALESCE($13, verification_links)
         WHERE id = $1
       `,
         [
@@ -118,6 +134,8 @@ export async function POST(request: NextRequest) {
           verification_certifications || null,
           verification_guiding_history || null,
           verification_safety_training || null,
+          verification_achievements || null,
+          normalizedVerificationStravaUrl || null,
           verification_links || null,
         ]
       );
@@ -135,10 +153,12 @@ export async function POST(request: NextRequest) {
               verification_certifications = $7,
               verification_guiding_history = $8,
               verification_safety_training = $9,
-              verification_links = $10,
+              verification_achievements = $10,
+              verification_strava_url = $11,
+              verification_links = $12,
               status = 'pending',
               reviewed_at = NULL
-          WHERE id = $11
+          WHERE id = $13
           `,
           [
             name,
@@ -150,6 +170,8 @@ export async function POST(request: NextRequest) {
             verification_certifications || null,
             verification_guiding_history || null,
             verification_safety_training || null,
+            verification_achievements || null,
+            normalizedVerificationStravaUrl || null,
             verification_links || null,
             existingApp.rows[0].id,
           ]
@@ -159,10 +181,10 @@ export async function POST(request: NextRequest) {
           `
           INSERT INTO expert_applications (
             name, email, city, sports, credentials, profile_photo_url,
-            verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+            verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_achievements, verification_strava_url, verification_links,
             status
           )
-          VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, 'pending')
+          VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pending')
           `,
           [
             name,
@@ -175,6 +197,8 @@ export async function POST(request: NextRequest) {
             verification_certifications || null,
             verification_guiding_history || null,
             verification_safety_training || null,
+            verification_achievements || null,
+            normalizedVerificationStravaUrl || null,
             verification_links || null,
           ]
         );
@@ -227,9 +251,9 @@ export async function POST(request: NextRequest) {
     const query = `
       INSERT INTO users (
         name, email, password_hash, role, bio, city, sports, is_verified_expert, phone, profile_photo_url,
-        verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links
+        verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_achievements, verification_strava_url, verification_links
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, FALSE, $8, $9, $10, $11, $12, $13, $14)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, FALSE, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING id, name, email, role, created_at
     `;
 
@@ -247,6 +271,8 @@ export async function POST(request: NextRequest) {
       verification_certifications || null,
       verification_guiding_history || null,
       verification_safety_training || null,
+      verification_achievements || null,
+      normalizedVerificationStravaUrl || null,
       verification_links || null,
     ]);
 
@@ -256,10 +282,10 @@ export async function POST(request: NextRequest) {
       `
       INSERT INTO expert_applications (
         name, email, city, sports, credentials, profile_photo_url,
-        verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+        verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_achievements, verification_strava_url, verification_links,
         status
       )
-      VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, 'pending')
+      VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pending')
       `,
       [
         name,
@@ -272,6 +298,8 @@ export async function POST(request: NextRequest) {
         verification_certifications || null,
         verification_guiding_history || null,
         verification_safety_training || null,
+        verification_achievements || null,
+        normalizedVerificationStravaUrl || null,
         verification_links || null,
       ]
     );

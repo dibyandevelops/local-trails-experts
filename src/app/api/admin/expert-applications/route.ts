@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
         COALESCE(ea.verification_certifications, u.verification_certifications) AS verification_certifications,
         COALESCE(ea.verification_guiding_history, u.verification_guiding_history) AS verification_guiding_history,
         COALESCE(ea.verification_safety_training, u.verification_safety_training) AS verification_safety_training,
+        COALESCE(ea.verification_achievements, u.verification_achievements) AS verification_achievements,
+        COALESCE(ea.verification_strava_url, u.verification_strava_url) AS verification_strava_url,
         COALESCE(ea.verification_links, u.verification_links) AS verification_links,
         ea.status,
         ea.created_at,
@@ -101,7 +103,7 @@ export async function PATCH(request: NextRequest) {
             reviewed_by_admin_id = $3
         WHERE id = $2
         RETURNING id, name, email, city, sports, credentials,
-                  verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+                  verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_achievements, verification_strava_url, verification_links,
                   status, reviewed_at, phone, phone_verified_at
       `,
         [status, id, auth.sub]
@@ -151,9 +153,9 @@ export async function PATCH(request: NextRequest) {
             `
             INSERT INTO users (
               name, email, password_hash, role, bio, city, sports, is_verified_expert, phone, phone_verified_at,
-              verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links
+              verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_achievements, verification_strava_url, verification_links
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE, $8, $9, $10, $11, $12, $13, $14)
+            VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             RETURNING id
           `,
             [
@@ -170,6 +172,8 @@ export async function PATCH(request: NextRequest) {
               application.verification_certifications || null,
               application.verification_guiding_history || null,
               application.verification_safety_training || null,
+              application.verification_achievements || null,
+              application.verification_strava_url || null,
               application.verification_links || null,
             ]
           );
@@ -188,7 +192,9 @@ export async function PATCH(request: NextRequest) {
                 verification_certifications = COALESCE($7, verification_certifications),
                 verification_guiding_history = COALESCE($8, verification_guiding_history),
                 verification_safety_training = COALESCE($9, verification_safety_training),
-                verification_links = COALESCE($10, verification_links)
+                verification_achievements = COALESCE($10, verification_achievements),
+                verification_strava_url = COALESCE($11, verification_strava_url),
+                verification_links = COALESCE($12, verification_links)
             WHERE id = $1
           `,
             [
@@ -203,6 +209,8 @@ export async function PATCH(request: NextRequest) {
               application.verification_certifications || null,
               application.verification_guiding_history || null,
               application.verification_safety_training || null,
+              application.verification_achievements || null,
+              application.verification_strava_url || null,
               application.verification_links || null,
             ]
           );
