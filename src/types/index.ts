@@ -204,6 +204,7 @@ export interface User {
   availability_weekdays?: string[] | null;
   google_sub?: string | null;
   profile_photo_url?: string | null;
+  expert_gallery_photos?: string[] | null;
   verification_years_experience?: string | null;
   verification_certifications?: string | null;
   verification_guiding_history?: string | null;

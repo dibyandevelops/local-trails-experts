@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import Link from 'next/link';
 import { Event, User, ExpertReview } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -40,6 +40,7 @@ export default function ExpertDetailPage() {
   const [reviewAcceptTerms, setReviewAcceptTerms] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [galleryMessage, setGalleryMessage] = useState<string | null>(null);
 
   const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
     queryKey: ['expert-detail', expertId || ''],
@@ -124,6 +125,24 @@ export default function ExpertDetailPage() {
     },
   });
 
+  const galleryMutation = useMutation({
+    mutationFn: async (payload: { action: 'add' | 'delete'; photo_url: string }) => {
+      const response = await fetch(`/api/experts/${expertId}/gallery`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update gallery');
+      }
+      return data as { photos: string[] };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expert-detail', expertId || ''] });
+    },
+  });
+
   if (loading) {
     return (
       <div className="mx-auto max-w-5xl space-y-4 py-6">
@@ -167,6 +186,12 @@ export default function ExpertDetailPage() {
     (currentUser?.role === 'participant' &&
       expert.role === 'expert' &&
       joinedEvents.some((event) => event.host_user_id === expertId));
+  const canManageGallery =
+    Boolean(currentUser?.role === 'admin') ||
+    Boolean(currentUser?.role === 'expert' && currentUser?.id === expertId);
+  const galleryPhotos = Array.isArray(expert.expert_gallery_photos)
+    ? expert.expert_gallery_photos
+    : [];
 
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-0.5 text-amber-500">
@@ -199,6 +224,42 @@ export default function ExpertDetailPage() {
     }
     setReviewMessage(null);
     setReviewModalOpen(true);
+  };
+
+  const handleUploadGalleryPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setGalleryMessage(null);
+
+    if (!file.type.startsWith('image/')) {
+      setGalleryMessage('Please choose an image file.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      setGalleryMessage('Image is too large. Use an image under 4MB.');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      if (!result) {
+        setGalleryMessage('Failed to read image.');
+        return;
+      }
+      try {
+        await galleryMutation.mutateAsync({ action: 'add', photo_url: result });
+        setGalleryMessage('Gallery photo uploaded.');
+      } catch (error) {
+        setGalleryMessage(error instanceof Error ? error.message : 'Failed to upload image.');
+      }
+    };
+    reader.onerror = () => setGalleryMessage('Failed to read image.');
+    reader.readAsDataURL(file);
+    event.target.value = '';
   };
 
   return (
@@ -379,6 +440,80 @@ export default function ExpertDetailPage() {
           </div>
         </section>
       )}
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Career Gallery
+            </h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+              Achievements, race moments, and photos from this expert’s journey.
+            </p>
+          </div>
+          {canManageGallery && (
+            <label className="inline-flex cursor-pointer items-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+              {galleryMutation.isPending ? 'Uploading...' : 'Upload photo'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleUploadGalleryPhoto}
+                disabled={galleryMutation.isPending}
+              />
+            </label>
+          )}
+        </div>
+
+        {galleryMessage && (
+          <p className="mt-3 text-xs text-emerald-700 dark:text-emerald-300">{galleryMessage}</p>
+        )}
+
+        {galleryPhotos.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
+            No gallery photos added yet.
+          </p>
+        ) : (
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+            {galleryPhotos.map((photoUrl, index) => (
+              <div
+                key={`${photoUrl}-${index}`}
+                className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/40"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoUrl}
+                  alt={`Career gallery ${index + 1}`}
+                  className="h-40 w-full object-cover"
+                />
+                {canManageGallery && (
+                  <button
+                    type="button"
+                    disabled={galleryMutation.isPending}
+                    onClick={async () => {
+                      setGalleryMessage(null);
+                      try {
+                        await galleryMutation.mutateAsync({
+                          action: 'delete',
+                          photo_url: photoUrl,
+                        });
+                        setGalleryMessage('Gallery photo removed.');
+                      } catch (error) {
+                        setGalleryMessage(
+                          error instanceof Error ? error.message : 'Failed to delete image.'
+                        );
+                      }
+                    }}
+                    className="absolute right-2 top-2 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {(loadingReviews || Boolean(reviewData?.reviews?.length)) && (
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">

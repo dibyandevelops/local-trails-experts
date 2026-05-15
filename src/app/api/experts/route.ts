@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
         u.sports,
         u.is_verified_expert,
         u.profile_photo_url,
+        u.expert_gallery_photos,
         u.verification_years_experience,
         u.verification_certifications,
         u.verification_guiding_history,
@@ -101,6 +102,9 @@ export async function GET(request: NextRequest) {
         sports: row.sports,
         is_verified_expert: row.is_verified_expert,
         profile_photo_url: row.profile_photo_url,
+        expert_gallery_photos: Array.isArray(row.expert_gallery_photos)
+          ? row.expert_gallery_photos
+          : [],
         verification_years_experience: row.verification_years_experience,
         verification_certifications: row.verification_certifications,
         verification_guiding_history: row.verification_guiding_history,
