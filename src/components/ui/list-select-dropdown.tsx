@@ -29,6 +29,8 @@ export default function ListSelectDropdown({
   const selectedLabel = options.find((option) => option.value === value)?.label || '';
 
   useEffect(() => {
+    if (!open) return;
+
     const onPointerDown = (event: MouseEvent) => {
       if (!rootRef.current) return;
       if (!rootRef.current.contains(event.target as Node)) {
@@ -48,7 +50,7 @@ export default function ListSelectDropdown({
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onEscape);
     };
-  }, []);
+  }, [open]);
 
   return (
     <div ref={rootRef}>

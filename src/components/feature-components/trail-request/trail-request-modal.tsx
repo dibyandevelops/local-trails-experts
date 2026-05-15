@@ -151,7 +151,9 @@ export default function TrailRequestModal({
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 shadow-xl">
+        <Dialog.Content
+          className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 shadow-xl"
+        >
           <Dialog.Title className="text-lg font-semibold text-gray-900">
             Request Trail Activity
           </Dialog.Title>
@@ -205,6 +207,8 @@ export default function TrailRequestModal({
                 value={preferredDate}
                 min={new Date().toISOString().slice(0, 10)}
                 onChange={(event) => setPreferredDate(event.target.value)}
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               />
             </div>

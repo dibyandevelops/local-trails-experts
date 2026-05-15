@@ -62,6 +62,9 @@ export default function ExpertsBrowsePage() {
   const { data: requestTrails = [] } = useQuery({
     queryKey: ['expert-request-trails', sportsFilter],
     enabled: requestOpen,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async ({ signal }) => {
       const query = new URLSearchParams({ purpose: 'request' });
       if (sportsFilter) query.set('sports', sportsFilter);
