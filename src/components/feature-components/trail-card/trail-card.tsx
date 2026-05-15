@@ -24,7 +24,6 @@ export type TrailCardProps = Trail & {
   detailsHref?: string;
   showViewTrailOption?: boolean;
   onBeforeNavigate?: () => void;
-  onGroupRequest?: () => void;
   onOpenImageGallery?: () => void;
   hideLoading?: boolean;
   unhideLoading?: boolean;

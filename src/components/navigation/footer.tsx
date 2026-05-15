@@ -6,7 +6,6 @@ import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import FooterInfoColumn from '@/components/navigation/footer/footer-info-column';
 import FooterLinksColumn from '@/components/navigation/footer/footer-links-column';
 import FooterSupportColumn from '@/components/navigation/footer/footer-support-column';
-import GroupRequestModal from '@/components/navigation/footer/group-request-modal';
 import FeedbackModal from '@/components/navigation/footer/feedback-modal';
 import ShuttleFacilitiesModal from '@/components/navigation/footer/shuttle-facilities-modal';
 import CollaborationRequestModal from '@/components/navigation/footer/collaboration-request-modal';
@@ -42,7 +41,6 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
   const individualName = 'Dibyan';
   const individualWhatsappNumber = '9810265305';
   const individualWhatsappLink = `https://wa.me/977${individualWhatsappNumber}`;
-  const [groupRequestOpen, setGroupRequestOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [shuttleModalOpen, setShuttleModalOpen] = useState(false);
   const [collaborationRequestOpen, setCollaborationRequestOpen] = useState(false);
@@ -80,7 +78,6 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
           contactEmail={contactEmail}
           expertsBetaEnabled={EXPERTS_BETA_ENABLED}
           onOpenFeedback={() => setFeedbackOpen(true)}
-          onOpenGroupRequest={() => setGroupRequestOpen(true)}
           onOpenShuttleContacts={() => setShuttleModalOpen(true)}
         />
       </div>
@@ -122,11 +119,6 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
         </div>
       </div>
 
-      <GroupRequestModal
-        open={groupRequestOpen}
-        onOpenChange={setGroupRequestOpen}
-        initialUser={initialUser}
-      />
       <FeedbackModal
         open={feedbackOpen}
         onOpenChange={setFeedbackOpen}

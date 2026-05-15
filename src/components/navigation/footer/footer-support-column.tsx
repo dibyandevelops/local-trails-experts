@@ -7,7 +7,6 @@ type Props = {
   contactEmail?: string;
   expertsBetaEnabled: boolean;
   onOpenFeedback: () => void;
-  onOpenGroupRequest: () => void;
   onOpenShuttleContacts: () => void;
 };
 
@@ -17,7 +16,6 @@ export default function FooterSupportColumn({
   contactEmail,
   expertsBetaEnabled,
   onOpenFeedback,
-  onOpenGroupRequest,
   onOpenShuttleContacts,
 }: Props) {
   return (
@@ -37,11 +35,6 @@ export default function FooterSupportColumn({
         <li>
           <button type="button" className="text-left hover:underline" onClick={onOpenFeedback}>
             Share platform feedback
-          </button>
-        </li>
-        <li>
-          <button type="button" className="text-left hover:underline" onClick={onOpenGroupRequest}>
-            Request a large group ride
           </button>
         </li>
         <li>
