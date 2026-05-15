@@ -197,6 +197,8 @@ export default function ExpertApplicationsPanel() {
                           certifications: app.verification_certifications,
                           guidingHistory: app.verification_guiding_history,
                           safetyTraining: app.verification_safety_training,
+                          achievements: app.verification_achievements,
+                          stravaUrl: app.verification_strava_url,
                           links: app.verification_links,
                         }) && (
                           <button
@@ -290,6 +292,8 @@ export default function ExpertApplicationsPanel() {
                 certifications={activeApplication?.verification_certifications}
                 guidingHistory={activeApplication?.verification_guiding_history}
                 safetyTraining={activeApplication?.verification_safety_training}
+                achievements={activeApplication?.verification_achievements}
+                stravaUrl={activeApplication?.verification_strava_url}
                 links={activeApplication?.verification_links}
               />
             </div>

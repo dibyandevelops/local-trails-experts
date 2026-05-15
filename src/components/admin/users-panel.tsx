@@ -87,6 +87,8 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                     certifications: user.verification_certifications,
                     guidingHistory: user.verification_guiding_history,
                     safetyTraining: user.verification_safety_training,
+                    achievements: user.verification_achievements,
+                    stravaUrl: user.verification_strava_url,
                     links: user.verification_links,
                   }) && (
                     <button
@@ -168,6 +170,8 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                           certifications: user.verification_certifications,
                           guidingHistory: user.verification_guiding_history,
                           safetyTraining: user.verification_safety_training,
+                          achievements: user.verification_achievements,
+                          stravaUrl: user.verification_strava_url,
                           links: user.verification_links,
                         }) ? (
                           <button
@@ -225,6 +229,8 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                 certifications={activeUser?.verification_certifications}
                 guidingHistory={activeUser?.verification_guiding_history}
                 safetyTraining={activeUser?.verification_safety_training}
+                achievements={activeUser?.verification_achievements}
+                stravaUrl={activeUser?.verification_strava_url}
                 links={activeUser?.verification_links}
               />
             </div>

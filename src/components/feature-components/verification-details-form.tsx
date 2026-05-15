@@ -5,6 +5,8 @@ export type VerificationDetailsValues = {
   certifications: string;
   guidingHistory: string;
   safetyTraining: string;
+  achievements: string;
+  stravaUrl: string;
   links: string;
 };
 
@@ -89,6 +91,28 @@ export default function VerificationDetailsForm({
             }
             className={textareaClassName}
             placeholder="Emergency response skills, route safety process, risk checks."
+          />
+        </div>
+        <div className="md:col-span-2">
+          <label className={labelClassName}>Achievements</label>
+          <textarea
+            rows={3}
+            value={values.achievements}
+            onChange={(event) =>
+              onChange({ ...values, achievements: event.target.value })
+            }
+            className={textareaClassName}
+            placeholder="Race podiums, notable trail efforts, coaching milestones."
+          />
+        </div>
+        <div className="md:col-span-2">
+          <label className={labelClassName}>Strava profile link</label>
+          <input
+            type="url"
+            value={values.stravaUrl}
+            onChange={(event) => onChange({ ...values, stravaUrl: event.target.value })}
+            className={inputClassName}
+            placeholder="https://www.strava.com/athletes/123456"
           />
         </div>
         <div className="md:col-span-2">
