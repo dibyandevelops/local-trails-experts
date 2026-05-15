@@ -182,6 +182,19 @@ function ExpertCard({
       ))}
     </div>
   );
+  const verificationHighlights: string[] = [];
+  if (expert.verification_years_experience) {
+    verificationHighlights.push(`Experience: ${expert.verification_years_experience}`);
+  }
+  if (expert.verification_certifications) {
+    verificationHighlights.push(`Certifications: ${expert.verification_certifications}`);
+  }
+  if (expert.verification_achievements) {
+    verificationHighlights.push(`Achievements: ${expert.verification_achievements}`);
+  }
+  if (expert.verification_strava_url) {
+    verificationHighlights.push('Strava profile linked');
+  }
 
   return (
     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-emerald-200/70 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl dark:border-emerald-900/60 dark:bg-slate-950/60">
@@ -229,8 +242,17 @@ function ExpertCard({
           )}
         </div>
 
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/80 bg-emerald-100/80 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-100">
+            📅 {upcomingEvents.length} upcoming
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/80 bg-emerald-100/80 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-100">
+            ⭐ {averageRating.toFixed(1)}
+          </span>
+        </div>
+
         {primarySports.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {primarySports.map((sport) => (
               <span
                 key={sport}
@@ -247,6 +269,21 @@ function ExpertCard({
         <p className="mb-3 line-clamp-3 px-5 pt-4 text-sm text-gray-700 dark:text-slate-200">
           {expert.bio}
         </p>
+      )}
+
+      {verificationHighlights.length > 0 && (
+        <div className="px-5 pb-2 text-xs text-gray-700 dark:text-slate-300">
+          <p className="mb-1 font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+            Verification details
+          </p>
+          <div className="space-y-1">
+            {verificationHighlights.slice(0, 2).map((line) => (
+              <p key={`${expert.id}-${line}`} className="line-clamp-1">
+                {line}
+              </p>
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="mt-auto px-5 pb-5">

@@ -68,6 +68,7 @@ export default function ExpertProfilePage() {
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
   const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [verificationSaving, setVerificationSaving] = useState(false);
   const [participantsEventTitle, setParticipantsEventTitle] = useState('');
   const [participantsList, setParticipantsList] = useState<EventParticipant[]>([]);
@@ -83,6 +84,8 @@ export default function ExpertProfilePage() {
     verificationCertifications: '',
     verificationGuidingHistory: '',
     verificationSafetyTraining: '',
+    verificationAchievements: '',
+    verificationStravaUrl: '',
     verificationLinks: '',
   });
   const initials =
@@ -93,6 +96,10 @@ export default function ExpertProfilePage() {
       .map((part) => part[0])
       .join('')
       .toUpperCase() || 'EX';
+  const selectedSports = editForm.sports
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
 
   const sportOptions: { value: SportType; label: string }[] = TRAIL_SPORTS;
   const { data: stravaSummary } = useQuery({
@@ -117,6 +124,8 @@ export default function ExpertProfilePage() {
         verificationCertifications: currentUser.verification_certifications || '',
         verificationGuidingHistory: currentUser.verification_guiding_history || '',
         verificationSafetyTraining: currentUser.verification_safety_training || '',
+        verificationAchievements: currentUser.verification_achievements || '',
+        verificationStravaUrl: currentUser.verification_strava_url || '',
         verificationLinks: currentUser.verification_links || '',
       });
     }
@@ -126,6 +135,15 @@ export default function ExpertProfilePage() {
     setVerificationSaving(true);
     setMessage(null);
     try {
+      const stravaUrl = editForm.verificationStravaUrl.trim();
+      if (stravaUrl) {
+        const isValidStravaUrl = /^https?:\/\/(www\.)?strava\.com\/.+/i.test(stravaUrl);
+        if (!isValidStravaUrl) {
+          setMessage('Please enter a valid Strava URL (https://www.strava.com/...).');
+          setVerificationSaving(false);
+          return;
+        }
+      }
       const response = await fetch('/api/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -134,6 +152,8 @@ export default function ExpertProfilePage() {
           verification_certifications: editForm.verificationCertifications || null,
           verification_guiding_history: editForm.verificationGuidingHistory || null,
           verification_safety_training: editForm.verificationSafetyTraining || null,
+          verification_achievements: editForm.verificationAchievements || null,
+          verification_strava_url: stravaUrl || null,
           verification_links: editForm.verificationLinks || null,
         }),
       });
@@ -283,9 +303,30 @@ export default function ExpertProfilePage() {
       </section>
 
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
-          Edit Profile
-        </h2>
+        <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">Profile Details</h2>
+            <p className="text-sm text-gray-600">
+              Keep your public expert information and verification details updated.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setProfileModalOpen(true)}
+              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+            >
+              Edit profile
+            </button>
+            <button
+              type="button"
+              onClick={() => setVerificationModalOpen(true)}
+              className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+            >
+              Update verification
+            </button>
+          </div>
+        </div>
         {STRAVA_ENABLED && (
           <>
             <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -354,210 +395,36 @@ export default function ExpertProfilePage() {
             {message}
           </p>
         )}
-        <form
-          onSubmit={async (event) => {
-            event.preventDefault();
-            setSaving(true);
-            setMessage(null);
-            try {
-              const selectedSports = editForm.sports
-                .split(',')
-                .map((value) => value.trim())
-                .filter(Boolean);
-              if (selectedSports.length === 0) {
-                setMessage('Please select at least one sport.');
-                setSaving(false);
-                return;
-              }
-              if (!acceptTerms) {
-                setMessage('Please accept the terms before saving.');
-                setSaving(false);
-                return;
-              }
-              const response = await fetch('/api/me', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  name: editForm.name,
-                  city: editForm.city,
-                  bio: editForm.bio,
-                  sports: selectedSports,
-                  phone: editForm.phone,
-                  profile_photo_url: editForm.profilePhotoUrl || null,
-                }),
-              });
-              const data = await response.json();
-              if (!response.ok) {
-                throw new Error(data?.error || 'Failed to update profile');
-              }
-              setUser(data.user);
-              setMessage('Profile updated.');
-            } catch (error) {
-              console.error('Error updating profile', error);
-              setMessage('Unable to update profile.');
-            } finally {
-              setSaving(false);
-            }
-          }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-        >
-          <div className="md:col-span-2 flex items-center gap-4">
-            <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
-              {editForm.profilePhotoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={editForm.profilePhotoUrl}
-                  alt="Expert profile"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
-                  {initials}
-                </div>
-              )}
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Profile photo
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={async (event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  try {
-                    const dataUrl = await resizeImageToDataUrl(file);
-                    setEditForm({ ...editForm, profilePhotoUrl: dataUrl });
-                  } catch (error) {
-                    console.error(error);
-                    setMessage('Unable to load profile photo.');
-                  }
-                }}
-                className="block w-full text-sm text-gray-700"
-              />
-            </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Full name</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.name || 'Not added'}</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <input
-              type="text"
-              value={editForm.name}
-              onChange={(event) =>
-                setEditForm({ ...editForm, name: event.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            />
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Email</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{user.email || 'Not added'}</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
-            </label>
-            <input
-              type="text"
-              value={editForm.city}
-              onChange={(event) =>
-                setEditForm({ ...editForm, city: event.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            />
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Phone</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.phone || 'Not added'}</p>
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Bio
-            </label>
-            <textarea
-              id="expert-bio"
-              value={editForm.bio}
-              onChange={(event) =>
-                setEditForm({ ...editForm, bio: event.target.value })
-              }
-              ref={bioRef}
-              placeholder="Tell about yourself."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm min-h-[100px]"
-            />
-            <p className="mt-2 text-xs text-gray-500">
-              Include years of experience, certifications, guiding history, safety
-              training/first-aid, and any portfolio or Strava links.
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">City</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.city || 'Not added'}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:col-span-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Sports</p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
+              {selectedSports.length > 0
+                ? selectedSports.map((sport) => getSportLabel(sport as SportType)).join(', ')
+                : 'Not added'}
             </p>
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sports
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {sportOptions.map((sport) => {
-                const selected = editForm.sports
-                  .split(',')
-                  .map((value) => value.trim())
-                  .filter(Boolean)
-                  .includes(sport.value);
-                return (
-                  <button
-                    key={sport.value}
-                    type="button"
-                    onClick={() => {
-                      const current = editForm.sports
-                        .split(',')
-                        .map((value) => value.trim())
-                        .filter(Boolean);
-                      const updated = selected
-                        ? current.filter((value) => value !== sport.value)
-                        : [...current, sport.value];
-                      setEditForm({ ...editForm, sports: updated.join(', ') });
-                    }}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                      selected
-                        ? 'bg-green-700 text-white border-green-700'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-green-600'
-                    }`}
-                  >
-                    {sport.label}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:col-span-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Bio</p>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{editForm.bio?.trim() || 'Not added'}</p>
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone number
-            </label>
-            <input
-              type="tel"
-              value={editForm.phone}
-              onChange={(event) =>
-                setEditForm({ ...editForm, phone: event.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              placeholder="+9779812345678"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Phone number must be unique across all users.
-            </p>
-          </div>
-          <div className="md:col-span-2">
-            <label className="flex items-start gap-2 text-xs text-gray-600">
-              <input
-                type="checkbox"
-                checked={acceptTerms}
-                onChange={(event) => setAcceptTerms(event.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-              />
-              <span>I confirm these profile details are accurate.</span>
-            </label>
-          </div>
-          <div className="md:col-span-2">
-            <button
-              type="submit"
-              disabled={saving || !acceptTerms}
-              className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
-            >
-              {saving ? 'Saving...' : 'Save changes'}
-            </button>
-          </div>
-        </form>
+        </div>
       </section>
 
       <section id="trail-requests" className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
@@ -879,6 +746,189 @@ export default function ExpertProfilePage() {
         </Dialog.Portal>
       </Dialog.Root>
 
+      <Dialog.Root open={profileModalOpen} onOpenChange={setProfileModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+              <Dialog.Title className="text-sm font-semibold text-gray-900">
+                Edit expert profile
+              </Dialog.Title>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+                Close
+              </Dialog.Close>
+            </div>
+            <form
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setSaving(true);
+                setMessage(null);
+                try {
+                  if (selectedSports.length === 0) {
+                    setMessage('Please select at least one sport.');
+                    setSaving(false);
+                    return;
+                  }
+                  if (!acceptTerms) {
+                    setMessage('Please accept the terms before saving.');
+                    setSaving(false);
+                    return;
+                  }
+                  const response = await fetch('/api/me', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      name: editForm.name,
+                      city: editForm.city,
+                      bio: editForm.bio,
+                      sports: selectedSports,
+                      phone: editForm.phone,
+                      profile_photo_url: editForm.profilePhotoUrl || null,
+                    }),
+                  });
+                  const data = await response.json();
+                  if (!response.ok) {
+                    throw new Error(data?.error || 'Failed to update profile');
+                  }
+                  setUser(data.user);
+                  setMessage('Profile updated.');
+                  setProfileModalOpen(false);
+                  setAcceptTerms(false);
+                } catch (error) {
+                  console.error('Error updating profile', error);
+                  setMessage('Unable to update profile.');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2"
+            >
+              <div className="md:col-span-2 flex items-center gap-4">
+                <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+                  {editForm.profilePhotoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={editForm.profilePhotoUrl}
+                      alt="Expert profile"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
+                      {initials}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Profile photo</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const dataUrl = await resizeImageToDataUrl(file);
+                        setEditForm({ ...editForm, profilePhotoUrl: dataUrl });
+                      } catch (error) {
+                        console.error(error);
+                        setMessage('Unable to load profile photo.');
+                      }
+                    }}
+                    className="block w-full text-sm text-gray-700"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(event) => setEditForm({ ...editForm, name: event.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <input
+                  type="text"
+                  value={editForm.city}
+                  onChange={(event) => setEditForm({ ...editForm, city: event.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                <textarea
+                  id="expert-bio"
+                  value={editForm.bio}
+                  onChange={(event) => setEditForm({ ...editForm, bio: event.target.value })}
+                  ref={bioRef}
+                  placeholder="Tell about yourself."
+                  className="w-full min-h-[100px] rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sports</label>
+                <div className="flex flex-wrap gap-2">
+                  {sportOptions.map((sport) => {
+                    const selected = selectedSports.includes(sport.value);
+                    return (
+                      <button
+                        key={sport.value}
+                        type="button"
+                        onClick={() => {
+                          const updated = selected
+                            ? selectedSports.filter((value) => value !== sport.value)
+                            : [...selectedSports, sport.value];
+                          setEditForm({ ...editForm, sports: updated.join(', ') });
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                          selected
+                            ? 'bg-green-700 text-white border-green-700'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-green-600'
+                        }`}
+                      >
+                        {sport.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone number</label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="+9779812345678"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="flex items-start gap-2 text-xs text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(event) => setAcceptTerms(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span>I confirm these profile details are accurate.</span>
+                </label>
+              </div>
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  disabled={saving || !acceptTerms}
+                  className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+                >
+                  {saving ? 'Saving...' : 'Save changes'}
+                </button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
       <Dialog.Root open={participantsModalOpen} onOpenChange={setParticipantsModalOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
@@ -955,6 +1005,8 @@ export default function ExpertProfilePage() {
                   certifications: editForm.verificationCertifications,
                   guidingHistory: editForm.verificationGuidingHistory,
                   safetyTraining: editForm.verificationSafetyTraining,
+                  achievements: editForm.verificationAchievements,
+                  stravaUrl: editForm.verificationStravaUrl,
                   links: editForm.verificationLinks,
                 }}
                 onChange={(next) =>
@@ -964,6 +1016,8 @@ export default function ExpertProfilePage() {
                     verificationCertifications: next.certifications,
                     verificationGuidingHistory: next.guidingHistory,
                     verificationSafetyTraining: next.safetyTraining,
+                    verificationAchievements: next.achievements,
+                    verificationStravaUrl: next.stravaUrl,
                     verificationLinks: next.links,
                   })
                 }

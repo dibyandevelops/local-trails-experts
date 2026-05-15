@@ -40,6 +40,8 @@ export default function ExpertDetailPage() {
   const [reviewAcceptTerms, setReviewAcceptTerms] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryMessage, setGalleryMessage] = useState<string | null>(null);
 
   const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
@@ -263,8 +265,11 @@ export default function ExpertDetailPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <section className="overflow-hidden rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-emerald-100 p-6 shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/60 dark:to-emerald-900/40">
+    <div className="mx-auto max-w-6xl space-y-8 px-1 pb-8">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-lg shadow-emerald-100/60 dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 dark:shadow-emerald-950/30 md:p-8">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
+        <div className="pointer-events-none absolute -left-16 bottom-0 h-56 w-56 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
+        <div className="relative">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-emerald-200">
           Expert Profile
         </p>
@@ -277,10 +282,10 @@ export default function ExpertDetailPage() {
           </Link>{' '}
           / Profile
         </div>
-        <div className="grid gap-5 lg:grid-cols-[1fr_auto]">
+        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="h-14 w-14 overflow-hidden rounded-full border border-white/60 bg-white/80 text-gray-700 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
+              <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                 {expert.profile_photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -294,7 +299,7 @@ export default function ExpertDetailPage() {
                   </div>
                 )}
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold tracking-tight text-green-800 dark:text-green-200">
                 {expert.name || 'Local Expert'}
               </h1>
               {expert.is_verified_expert ? (
@@ -317,7 +322,7 @@ export default function ExpertDetailPage() {
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-gray-700 dark:text-slate-200">
               {expert.city && <span>{expert.city}</span>}
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/70 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-100">
+              <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                 {reviewSummary.averageRating.toFixed(1)} / 5
                 <span className="text-amber-500">★</span>
                 <span className="text-[11px] font-medium text-gray-500 dark:text-slate-400">
@@ -336,32 +341,98 @@ export default function ExpertDetailPage() {
               </p>
             )}
             {sports.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-wrap gap-2">
                 {sports.map((sport) => (
                   <span
                     key={sport}
-                    className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100"
+                    className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
                     {getSportLabel(sport)}
                   </span>
                 ))}
               </div>
             )}
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-slate-900/60 dark:text-emerald-200">
+                <span aria-hidden="true">📅</span>
+                {upcomingEvents.length > 0
+                  ? `${upcomingEvents.length} upcoming event${upcomingEvents.length > 1 ? 's' : ''}`
+                  : 'No upcoming events yet'}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-slate-900/60 dark:text-emerald-200">
+                <span aria-hidden="true">⭐</span>
+                {reviewSummary.averageRating.toFixed(1)} from {reviewSummary.count} review
+                {reviewSummary.count === 1 ? '' : 's'}
+              </span>
+            </div>
+            {hasVerificationDetails({
+              yearsExperience: expert.verification_years_experience,
+              certifications: expert.verification_certifications,
+              guidingHistory: expert.verification_guiding_history,
+              safetyTraining: expert.verification_safety_training,
+              achievements: expert.verification_achievements,
+              stravaUrl: expert.verification_strava_url,
+              links: expert.verification_links,
+            }) && (
+              <div className="mt-3 space-y-1.5 text-xs text-gray-700 dark:text-slate-300">
+                {expert.verification_years_experience && (
+                  <p>
+                    <span className="font-semibold text-gray-900 dark:text-white">Experience:</span>{' '}
+                    {expert.verification_years_experience}
+                  </p>
+                )}
+                {expert.verification_certifications && (
+                  <p>
+                    <span className="font-semibold text-gray-900 dark:text-white">Certifications:</span>{' '}
+                    {expert.verification_certifications}
+                  </p>
+                )}
+                {expert.verification_achievements && (
+                  <p>
+                    <span className="font-semibold text-gray-900 dark:text-white">Achievements:</span>{' '}
+                    {expert.verification_achievements}
+                  </p>
+                )}
+                {expert.verification_strava_url && (
+                  <p>
+                    <span className="font-semibold text-gray-900 dark:text-white">Strava:</span>{' '}
+                    <a
+                      href={expert.verification_strava_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-emerald-700 underline decoration-emerald-300 underline-offset-2 dark:text-emerald-300"
+                    >
+                      View profile
+                    </a>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
-          <div className="flex min-w-[220px] flex-col items-start gap-2 lg:items-end">
+          <div className="w-full rounded-2xl border border-emerald-200 bg-white/85 p-5 backdrop-blur-sm dark:border-emerald-900 dark:bg-slate-900/70">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
+              Work With This Expert
+            </p>
+            <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
+              Ready to plan your next ride?
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
+              Explore events, connect with this expert, and book guided rides around Nepal.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
             {strava?.connected && stravaProfileId && currentUser?.id === expertId && (
               <a
                 href={`https://www.strava.com/athletes/${stravaProfileId}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 shadow-sm transition hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100 dark:hover:bg-orange-900/60 lg:w-auto"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800 shadow-sm transition hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100 dark:hover:bg-orange-900/60"
               >
                 Check on Strava
               </a>
             )}
             <Link
               href={`/events?expert=${expert.id}`}
-              className="inline-flex w-full items-center justify-center rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300 lg:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
             >
               View All Events
             </Link>
@@ -375,7 +446,7 @@ export default function ExpertDetailPage() {
                     ? 'Join this expert’s event first (admins can review directly)'
                     : undefined
               }
-              className="inline-flex w-full items-center justify-center rounded-lg border border-green-700 bg-white px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50 dark:border-emerald-500 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-900/30 lg:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-lg border border-green-700 bg-white px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50 dark:border-emerald-500 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
             >
               {!currentUser
                 ? 'Write Review (Login)'
@@ -385,136 +456,40 @@ export default function ExpertDetailPage() {
                     ? 'Update Review'
                     : 'Write Review'}
             </button>
-          </div>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
-              Total Events
-            </p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{expert.events.length}</p>
-          </div>
-          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
-              Upcoming
-            </p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{upcomingEvents.length}</p>
-          </div>
-          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
-              Reviews
-            </p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{reviewSummary.count}</p>
-          </div>
-          <div className="rounded-lg border border-white/70 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-slate-950/40">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-300">
-              Sports
-            </p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{sports.length}</p>
-          </div>
-        </div>
-      </section>
-
-      {hasVerificationDetails({
-        yearsExperience: expert.verification_years_experience,
-        certifications: expert.verification_certifications,
-        guidingHistory: expert.verification_guiding_history,
-        safetyTraining: expert.verification_safety_training,
-        links: expert.verification_links,
-      }) && (
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Verification Details
-          </h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-            Additional profile details shared by the expert.
-          </p>
-          <div className="mt-4">
-            <VerificationDetailsContent
-              yearsExperience={expert.verification_years_experience}
-              certifications={expert.verification_certifications}
-              guidingHistory={expert.verification_guiding_history}
-              safetyTraining={expert.verification_safety_training}
-              links={expert.verification_links}
-            />
-          </div>
-        </section>
-      )}
-
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Career Gallery
-            </h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-              Achievements, race moments, and photos from this expert’s journey.
-            </p>
-          </div>
-          {canManageGallery && (
-            <label className="inline-flex cursor-pointer items-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
-              {galleryMutation.isPending ? 'Uploading...' : 'Upload photo'}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleUploadGalleryPhoto}
-                disabled={galleryMutation.isPending}
-              />
-            </label>
-          )}
-        </div>
-
-        {galleryMessage && (
-          <p className="mt-3 text-xs text-emerald-700 dark:text-emerald-300">{galleryMessage}</p>
-        )}
-
-        {galleryPhotos.length === 0 ? (
-          <p className="mt-4 rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
-            No gallery photos added yet.
-          </p>
-        ) : (
-          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
-            {galleryPhotos.map((photoUrl, index) => (
-              <div
-                key={`${photoUrl}-${index}`}
-                className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/40"
+            {hasVerificationDetails({
+              yearsExperience: expert.verification_years_experience,
+              certifications: expert.verification_certifications,
+              guidingHistory: expert.verification_guiding_history,
+              safetyTraining: expert.verification_safety_training,
+              achievements: expert.verification_achievements,
+              stravaUrl: expert.verification_strava_url,
+              links: expert.verification_links,
+            }) && (
+              <button
+                type="button"
+                onClick={() => setVerificationModalOpen(true)}
+                className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photoUrl}
-                  alt={`Career gallery ${index + 1}`}
-                  className="h-40 w-full object-cover"
-                />
-                {canManageGallery && (
-                  <button
-                    type="button"
-                    disabled={galleryMutation.isPending}
-                    onClick={async () => {
-                      setGalleryMessage(null);
-                      try {
-                        await galleryMutation.mutateAsync({
-                          action: 'delete',
-                          photo_url: photoUrl,
-                        });
-                        setGalleryMessage('Gallery photo removed.');
-                      } catch (error) {
-                        setGalleryMessage(
-                          error instanceof Error ? error.message : 'Failed to delete image.'
-                        );
-                      }
-                    }}
-                    className="absolute right-2 top-2 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            ))}
+                View verification details
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setGalleryModalOpen(true)}
+              className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              View career gallery
+            </button>
+            <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
+              {upcomingEvents.length > 0
+                ? `${upcomingEvents.length} upcoming event${upcomingEvents.length > 1 ? 's' : ''} available`
+                : 'No upcoming events yet — check back soon.'}
+            </p>
           </div>
-        )}
+          </div>
+        </div>
+        </div>
       </section>
-
       {(loadingReviews || Boolean(reviewData?.reviews?.length)) && (
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -534,7 +509,7 @@ export default function ExpertDetailPage() {
               </div>
             </div>
           </div>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             {loadingReviews ? (
               <p className="text-sm text-gray-500 dark:text-slate-300">Loading reviews...</p>
             ) : (
@@ -580,7 +555,7 @@ export default function ExpertDetailPage() {
         </section>
       )}
 
-      <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <h2 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
           Upcoming events with {expert.name || 'this expert'}
         </h2>
@@ -642,52 +617,97 @@ export default function ExpertDetailPage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
-          All events by this expert
-        </h2>
-        {expert.events.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
-            No events listed yet for this expert.
-          </p>
-        ) : (
-          <ul className="space-y-2 text-sm text-gray-700 dark:text-slate-200">
-            {expert.events.map((event) => (
-              <li
-                key={event.id}
-                className="rounded-lg border border-gray-200 px-3 py-2 dark:border-slate-700"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="font-medium">{event.title}</span>
-                    {event.city && (
-                      <span className="text-gray-500 dark:text-slate-400">
-                        {' '}
-                        • {event.city}
-                      </span>
-                    )}
-                    {event.sport_type && (
-                      <span className="text-gray-500 dark:text-slate-400">
-                        {' '}
-                        • {getSportLabel(event.sport_type)}
-                      </span>
-                    )}
-                  </div>
-                  <Link
-                    href={`/events/${event.id}`}
-                    className="inline-flex rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    View
-                  </Link>
+      <AppDialog
+        open={verificationModalOpen}
+        onOpenChange={setVerificationModalOpen}
+        title="Verification Details"
+        description="Credentials and experience shared by this expert."
+      >
+        <div className="mt-4 rounded-xl border border-emerald-100 bg-white p-4 dark:border-emerald-900/60 dark:bg-slate-900/60">
+          <VerificationDetailsContent
+            yearsExperience={expert.verification_years_experience}
+            certifications={expert.verification_certifications}
+            guidingHistory={expert.verification_guiding_history}
+            safetyTraining={expert.verification_safety_training}
+            achievements={expert.verification_achievements}
+            stravaUrl={expert.verification_strava_url}
+            links={expert.verification_links}
+          />
+        </div>
+      </AppDialog>
+
+      <AppDialog
+        open={galleryModalOpen}
+        onOpenChange={setGalleryModalOpen}
+        title="Career Gallery"
+        description="Achievements, race moments, and photos from this expert’s journey."
+      >
+        <div className="mt-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {canManageGallery ? (
+              <label className="inline-flex cursor-pointer items-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+                {galleryMutation.isPending ? 'Uploading...' : 'Upload photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleUploadGalleryPhoto}
+                  disabled={galleryMutation.isPending}
+                />
+              </label>
+            ) : (
+              <span />
+            )}
+            {galleryMessage && (
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">{galleryMessage}</p>
+            )}
+          </div>
+          {galleryPhotos.length === 0 ? (
+            <p className="mt-4 rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
+              No gallery photos added yet.
+            </p>
+          ) : (
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+              {galleryPhotos.map((photoUrl, index) => (
+                <div
+                  key={`${photoUrl}-${index}`}
+                  className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/40"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photoUrl}
+                    alt={`Career gallery ${index + 1}`}
+                    className="h-40 w-full object-cover"
+                  />
+                  {canManageGallery && (
+                    <button
+                      type="button"
+                      disabled={galleryMutation.isPending}
+                      onClick={async () => {
+                        setGalleryMessage(null);
+                        try {
+                          await galleryMutation.mutateAsync({
+                            action: 'delete',
+                            photo_url: photoUrl,
+                          });
+                          setGalleryMessage('Gallery photo removed.');
+                        } catch (error) {
+                          setGalleryMessage(
+                            error instanceof Error ? error.message : 'Failed to delete image.'
+                          );
+                        }
+                      }}
+                      className="absolute right-2 top-2 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
-                <div className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                  <DateText value={event.event_date} pattern="PPP p" />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </div>
+      </AppDialog>
 
       <AppDialog
         open={reviewModalOpen}

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import JoinAdventureButton from '@/components/home/join-adventure-button';
-import RideWithLocalExpertsCta from '@/components/home/ride-with-local-experts-cta';
 import { COMMUNITY_NAME } from '@/lib/branding';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import { absoluteUrl, DEFAULT_DESCRIPTION } from '@/lib/seo';
@@ -100,10 +99,10 @@ export default function Home() {
                 Browse Trails
               </Link>
               <Link
-                href="/community-rides"
+                href="/experts"
                 className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-green-700 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 md:text-base"
               >
-                Join Community Rides
+                Browse Experts
               </Link>
               <Link
                 href="/store-locator"
@@ -112,30 +111,6 @@ export default function Home() {
                 Cycle Hubs
               </Link>
               <JoinAdventureButton className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base" />
-              <Link
-                href="/trails"
-                className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-emerald-300 bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/30 md:text-base"
-              >
-                Request Trail Ride
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Featured Region</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nepal Trails</p>
-              </div>
-              <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Nepal Wide</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Popular Routes</p>
-              </div>
-              <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Local Experts</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Guides & Coaches</p>
-              </div>
-              <div className="rounded-xl border border-emerald-200 bg-white/90 px-3 py-3 dark:border-emerald-900 dark:bg-slate-900/90">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Trail Updates</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Latest Conditions</p>
-              </div>
             </div>
           </div>
 
@@ -210,9 +185,12 @@ export default function Home() {
               Training and skill-based rides.
             </div>
           </div>
-          <div className="mt-5">
-            <RideWithLocalExpertsCta />
-          </div>
+          <Link
+            href="/experts"
+            className="mt-5 inline-flex text-sm font-semibold text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-300"
+          >
+            Browse experts →
+          </Link>
         </div>
 
         <div className="reveal reveal-4 rounded-2xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm">
