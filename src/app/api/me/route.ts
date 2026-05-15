@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const result = await pool.query(
       `
       SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, availability_weekdays, google_sub, profile_photo_url,
-             verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+             verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_achievements, verification_strava_url, verification_links,
              created_at, updated_at
       FROM users
       WHERE id = $1
@@ -61,6 +61,8 @@ export async function PATCH(request: NextRequest) {
       verification_certifications,
       verification_guiding_history,
       verification_safety_training,
+      verification_achievements,
+      verification_strava_url,
       verification_links,
     } = body as {
       name?: string;
@@ -74,6 +76,8 @@ export async function PATCH(request: NextRequest) {
       verification_certifications?: string;
       verification_guiding_history?: string;
       verification_safety_training?: string;
+      verification_achievements?: string;
+      verification_strava_url?: string;
       verification_links?: string;
     };
 
@@ -93,7 +97,7 @@ export async function PATCH(request: NextRequest) {
       SELECT
         name, city, bio, sports, phone, availability_weekdays, profile_photo_url,
         verification_years_experience, verification_certifications, verification_guiding_history,
-        verification_safety_training, verification_links
+        verification_safety_training, verification_achievements, verification_strava_url, verification_links
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -144,6 +148,23 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    const nextVerificationStravaUrl =
+      hasOwn('verification_strava_url')
+        ? typeof verification_strava_url === 'string'
+          ? verification_strava_url.trim()
+          : ''
+        : existingUser.verification_strava_url || '';
+
+    if (nextVerificationStravaUrl) {
+      const isValidStravaUrl = /^https?:\/\/(www\.)?strava\.com\/.+/i.test(nextVerificationStravaUrl);
+      if (!isValidStravaUrl) {
+        return NextResponse.json(
+          { error: 'Invalid Strava URL. Use https://www.strava.com/...' },
+          { status: 400 }
+        );
+      }
+    }
+
     const result = await pool.query(
       `
       UPDATE users
@@ -158,11 +179,13 @@ export async function PATCH(request: NextRequest) {
           verification_certifications = $9,
           verification_guiding_history = $10,
           verification_safety_training = $11,
-          verification_links = $12,
+          verification_achievements = $12,
+          verification_strava_url = $13,
+          verification_links = $14,
           updated_at = NOW()
-      WHERE id = $13
+      WHERE id = $15
       RETURNING id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, availability_weekdays, google_sub, profile_photo_url,
-                verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_links,
+                verification_years_experience, verification_certifications, verification_guiding_history, verification_safety_training, verification_achievements, verification_strava_url, verification_links,
                 created_at, updated_at
     `,
       [
@@ -185,6 +208,12 @@ export async function PATCH(request: NextRequest) {
         hasOwn('verification_safety_training')
           ? (verification_safety_training || null)
           : existingUser.verification_safety_training,
+        hasOwn('verification_achievements')
+          ? (verification_achievements || null)
+          : existingUser.verification_achievements,
+        hasOwn('verification_strava_url')
+          ? (nextVerificationStravaUrl || null)
+          : existingUser.verification_strava_url,
         hasOwn('verification_links')
           ? (verification_links || null)
           : existingUser.verification_links,
