@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { isShuttleEligibleSport } from '@/lib/shuttle';
+import ListSelectDropdown from '@/components/ui/list-select-dropdown';
 
 export type TrailRequestTrailOption = {
   id: string;
@@ -32,9 +33,11 @@ type TrailRequestModalProps = {
   onOpenChange: (open: boolean) => void;
   trailOptions: TrailRequestTrailOption[];
   lockedTrailId?: string | null;
+  preselectedExpertId?: string | null;
   experts: TrailRequestExpertOption[];
   expertsBetaEnabled: boolean;
   isSubmitting?: boolean;
+  submitDisabledReason?: string;
   message?: string;
   onMessageChange?: (message: string) => void;
   onSubmit: (payload: TrailRequestSubmitPayload) => void;
@@ -45,9 +48,11 @@ export default function TrailRequestModal({
   onOpenChange,
   trailOptions,
   lockedTrailId,
+  preselectedExpertId,
   experts,
   expertsBetaEnabled,
   isSubmitting = false,
+  submitDisabledReason,
   message = '',
   onMessageChange,
   onSubmit,
@@ -83,9 +88,17 @@ export default function TrailRequestModal({
     }
   }, [open, lockedTrailId, trailOptions, selectedTrailId]);
 
+  useEffect(() => {
+    if (!open) return;
+    if (expertsBetaEnabled) return;
+    if (preselectedExpertId) {
+      setSelectedExpertId(preselectedExpertId);
+    }
+  }, [open, preselectedExpertId, expertsBetaEnabled]);
+
   const resetForm = () => {
     setSelectedTrailId(lockedTrailId || trailOptions[0]?.id || '');
-    setSelectedExpertId('');
+    setSelectedExpertId(preselectedExpertId || '');
     setPreferredDate('');
     setPreferredTime('');
     setOfferedPriceNpr('');
@@ -158,39 +171,31 @@ export default function TrailRequestModal({
             )}
 
             {!lockedTrailId && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Select Trail</label>
-                <select
-                  value={selectedTrailId}
-                  onChange={(event) => setSelectedTrailId(event.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                >
-                  <option value="">Choose trail</option>
-                  {trailOptions.map((trail) => (
-                    <option key={trail.id} value={trail.id}>
-                      {trail.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <ListSelectDropdown
+                label="Select Trail"
+                value={selectedTrailId}
+                placeholder="Choose trail"
+                options={trailOptions.map((trail) => ({
+                  value: trail.id,
+                  label: trail.name,
+                }))}
+                emptyLabel="No trails found."
+                onChange={setSelectedTrailId}
+              />
             )}
 
             {!expertsBetaEnabled && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Select Expert</label>
-                <select
-                  value={selectedExpertId}
-                  onChange={(event) => setSelectedExpertId(event.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                >
-                  <option value="">Choose expert</option>
-                  {experts.map((expert) => (
-                    <option key={expert.id} value={expert.id}>
-                      {expert.name || expert.email || 'Expert'}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <ListSelectDropdown
+                label="Select Expert"
+                value={selectedExpertId}
+                placeholder="Choose expert"
+                options={experts.map((expert) => ({
+                  value: expert.id,
+                  label: expert.name || expert.email || 'Expert',
+                }))}
+                emptyLabel="No experts available."
+                onChange={setSelectedExpertId}
+              />
             )}
 
             <div>
@@ -233,7 +238,7 @@ export default function TrailRequestModal({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Nearest Point</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Nearest Meeting Point</label>
               <input
                 type="text"
                 value={nearestPoint}
@@ -294,12 +299,16 @@ export default function TrailRequestModal({
             <button
               type="button"
               onClick={validateAndSubmit}
-              disabled={isSubmitting || !acceptRisk}
+              disabled={Boolean(submitDisabledReason) || isSubmitting || !acceptRisk}
               className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+              title={submitDisabledReason || undefined}
             >
               {isSubmitting ? 'Submitting...' : 'Submit Request'}
             </button>
           </div>
+          {submitDisabledReason && (
+            <p className="mt-2 text-right text-xs text-amber-700">{submitDisabledReason}</p>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

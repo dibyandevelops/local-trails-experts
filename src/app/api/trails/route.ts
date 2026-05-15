@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     const auth = getAuthFromRequest(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
+    const purpose = (searchParams.get('purpose') || '').trim();
     const difficulty = searchParams.get('difficulty');
     const location = searchParams.get('location');
     const sport = searchParams.get('sport');
@@ -111,6 +112,18 @@ export async function GET(request: NextRequest) {
       params.push(sport);
       paramIndex++;
     }
+    const sportsParam = (searchParams.get('sports') || '').trim();
+    if (sportsParam) {
+      const sports = sportsParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (sports.length > 0) {
+        whereClause += ` AND t.sport_type = ANY($${paramIndex}::text[])`;
+        params.push(sports);
+        paramIndex++;
+      }
+    }
 
     if (distanceMinRaw) {
       const min = Number(distanceMinRaw);
@@ -157,6 +170,17 @@ export async function GET(request: NextRequest) {
     }
 
     const countParams = [...params];
+
+    if (purpose === 'request') {
+      const requestQuery = `
+        SELECT t.id, t.name, t.sport_type
+        FROM trails t
+        ${whereClause}
+        ORDER BY t.name ASC
+      `;
+      const result = await pool.query(requestQuery, params);
+      return NextResponse.json({ trails: result.rows || [] }, { status: 200 });
+    }
 
     const orderBy = (() => {
       switch (sort) {

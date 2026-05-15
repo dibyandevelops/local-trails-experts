@@ -4,10 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SportType, User } from '@/types';
 import { SPORT_OPTIONS, getSportLabel } from '@/services/constants/sports';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { fetchExperts } from '@/services/experts/experts.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import TrailRequestModal, {
+  type TrailRequestSubmitPayload,
+} from '@/components/feature-components/trail-request/trail-request-modal';
 
 type ExpertWithEvents = User & {
   events: {
@@ -24,8 +28,13 @@ const sportOptions = SPORT_OPTIONS;
 
 export default function ExpertsBrowsePage() {
   const router = useRouter();
+  const { data: user } = useCurrentUser();
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedSport, setSelectedSport] = useState<SportType | ''>('');
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestModalMessage, setRequestModalMessage] = useState('');
+  const [requestExpertId, setRequestExpertId] = useState<string | null>(null);
+  const [requestSubmitDisabledReason, setRequestSubmitDisabledReason] = useState('');
   const { data: experts = [], isLoading: loading } = useQuery<ExpertWithEvents[]>(
     {
       queryKey: QUERY_KEYS.experts.list({
@@ -42,6 +51,64 @@ export default function ExpertsBrowsePage() {
         ) as Promise<ExpertWithEvents[]>,
     }
   );
+  const selectedRequestExpert =
+    requestExpertId ? experts.find((expert) => expert.id === requestExpertId) : null;
+  const selectedRequestExpertSports = Array.isArray(selectedRequestExpert?.sports)
+    ? selectedRequestExpert.sports
+    : selectedRequestExpert?.sports
+      ? [selectedRequestExpert.sports]
+      : [];
+  const sportsFilter = selectedRequestExpertSports.join(',');
+  const { data: requestTrails = [] } = useQuery({
+    queryKey: ['expert-request-trails', sportsFilter],
+    enabled: requestOpen,
+    queryFn: async ({ signal }) => {
+      const query = new URLSearchParams({ purpose: 'request' });
+      if (sportsFilter) query.set('sports', sportsFilter);
+      const response = await fetch(`/api/trails?${query.toString()}`, { signal });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to load trails');
+      }
+      return (data?.trails || []) as Array<{ id: string; name: string; sport_type?: string | null }>;
+    },
+  });
+  const requestMutation = useMutation({
+    mutationFn: async (payload: TrailRequestSubmitPayload) => {
+      const response = await fetch(`/api/trails/${payload.trailId}/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: payload.description,
+          preferred_date: payload.preferred_date,
+          preferred_time: payload.preferred_time,
+          offered_price_npr: payload.offered_price_npr ?? null,
+          nearest_point: payload.nearest_point,
+          expert_user_id: payload.expert_user_id,
+          needs_paid_shuttle: payload.needs_paid_shuttle ?? false,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to request trail activity');
+      }
+      return data;
+    },
+    onSuccess: () => {
+      setRequestModalMessage('Trail request submitted successfully.');
+      setRequestOpen(false);
+    },
+    onError: (error) => {
+      setRequestModalMessage(
+        error instanceof Error ? error.message : 'Failed to request trail activity.'
+      );
+    },
+  });
+  const requestTrailOptions = requestTrails.map((trail) => ({
+    id: trail.id,
+    name: trail.name,
+    sport_type: trail.sport_type,
+  }));
 
   return (
     <div className="space-y-6">
@@ -128,10 +195,58 @@ export default function ExpertsBrowsePage() {
               expert={expert}
               onViewExpert={() => router.push(`/experts/${expert.id}`)}
               onViewEvents={() => router.push(`/events?expert=${expert.id}`)}
+              onRequestTrail={() => {
+                if (!user) {
+                  setRequestSubmitDisabledReason(
+                    'Please login as a participant to submit a trail request.'
+                  );
+                  setRequestModalMessage('');
+                  setRequestExpertId(expert.id);
+                  setRequestOpen(true);
+                  return;
+                }
+                if (user.role !== 'participant') {
+                  setRequestSubmitDisabledReason(
+                    'Trail requests are available for participants only.'
+                  );
+                  setRequestModalMessage('');
+                  setRequestExpertId(expert.id);
+                  setRequestOpen(true);
+                  return;
+                }
+                setRequestSubmitDisabledReason('');
+                setRequestModalMessage('');
+                setRequestExpertId(expert.id);
+                setRequestOpen(true);
+              }}
             />
           ))}
         </div>
       )}
+
+      <TrailRequestModal
+        open={requestOpen}
+        onOpenChange={(open) => {
+          setRequestOpen(open);
+          if (!open) {
+            setRequestExpertId(null);
+            setRequestSubmitDisabledReason('');
+          }
+        }}
+        trailOptions={requestTrailOptions}
+        preselectedExpertId={requestExpertId}
+        experts={experts.map((expert) => ({
+          id: expert.id,
+          name: expert.name,
+          email: expert.email,
+        }))}
+        expertsBetaEnabled={EXPERTS_BETA_ENABLED}
+        isSubmitting={requestMutation.isPending}
+        submitDisabledReason={requestSubmitDisabledReason}
+        message={requestModalMessage}
+        onMessageChange={setRequestModalMessage}
+        onSubmit={(payload) => requestMutation.mutate(payload)}
+      />
     </div>
   );
 }
@@ -140,10 +255,12 @@ function ExpertCard({
   expert,
   onViewExpert,
   onViewEvents,
+  onRequestTrail,
 }: {
   expert: ExpertWithEvents;
   onViewExpert: () => void;
   onViewEvents: () => void;
+  onRequestTrail: () => void;
 }) {
   const primarySports = Array.isArray(expert.sports)
     ? expert.sports
@@ -197,7 +314,18 @@ function ExpertCard({
   }
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-emerald-200/70 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl dark:border-emerald-900/60 dark:bg-slate-950/60">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onViewExpert}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onViewExpert();
+        }
+      }}
+      className="group flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-emerald-200/70 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-emerald-900/60 dark:bg-slate-950/60"
+    >
       <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-cyan-50 p-5 dark:border-emerald-900/60 dark:from-emerald-950/40 dark:via-slate-950/20 dark:to-cyan-950/30">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -317,15 +445,31 @@ function ExpertCard({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={onViewExpert}
+            onClick={(event) => {
+              event.stopPropagation();
+              onViewExpert();
+            }}
             className="rounded-lg border border-green-700 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
           >
             View Expert
           </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRequestTrail();
+            }}
+            className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
+          >
+            Request Trail
+          </button>
           {upcomingEvents.length > 0 && (
             <button
               type="button"
-              onClick={onViewEvents}
+              onClick={(event) => {
+                event.stopPropagation();
+                onViewEvents();
+              }}
               className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800"
             >
               View Events
