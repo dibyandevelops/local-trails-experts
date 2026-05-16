@@ -290,9 +290,13 @@ function ExpertCard({
       .map((part) => part[0])
       .join('')
       .toUpperCase() || 'EX';
-  const averageRating =
-    typeof expert.average_rating === 'number' ? expert.average_rating : 0;
   const reviewCount = expert.review_count || 0;
+  const averageRating =
+    typeof expert.average_rating === 'number'
+      ? expert.average_rating
+      : reviewCount > 0
+        ? 0
+        : 5;
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-0.5 text-amber-500">
       {Array.from({ length: 5 }).map((_, index) => (

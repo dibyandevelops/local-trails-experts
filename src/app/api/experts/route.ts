@@ -94,6 +94,9 @@ export async function GET(request: NextRequest) {
     const result = await pool.query(query, params);
 
     const experts = result.rows.map((row: any) => {
+      const reviewCount = Number(row.review_count || 0);
+      const averageRating =
+        reviewCount > 0 ? Number(row.average_rating || 0) : 5;
       const user: User = {
         id: row.id,
         name: row.name,
@@ -114,8 +117,8 @@ export async function GET(request: NextRequest) {
         verification_achievements: row.verification_achievements,
         verification_strava_url: row.verification_strava_url,
         verification_links: row.verification_links,
-        average_rating: row.average_rating,
-        review_count: row.review_count,
+        average_rating: averageRating,
+        review_count: reviewCount,
         created_at: row.created_at,
         updated_at: row.updated_at,
       };

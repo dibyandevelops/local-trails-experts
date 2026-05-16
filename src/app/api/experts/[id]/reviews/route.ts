@@ -35,13 +35,15 @@ export async function GET(
     );
 
     const summaryRow = summaryResult.rows[0] || { average_rating: 0, count: 0 };
+    const summaryCount = Number(summaryRow.count || 0);
+    const summaryAverage = summaryCount > 0 ? Number(summaryRow.average_rating || 0) : 5;
 
     return NextResponse.json(
       {
         reviews: reviewsResult.rows,
         summary: {
-          averageRating: Number(summaryRow.average_rating || 0),
-          count: Number(summaryRow.count || 0),
+          averageRating: summaryAverage,
+          count: summaryCount,
         },
       },
       { status: 200 }

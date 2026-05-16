@@ -25,6 +25,9 @@ import {
   submitExpertReview,
 } from '@/services/reviews/reviews.service';
 import { fetchMyParticipantEvents } from '@/services/participants/participants.service';
+import TrailRequestModal, {
+  type TrailRequestSubmitPayload,
+} from '@/components/feature-components/trail-request/trail-request-modal';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -43,6 +46,9 @@ export default function ExpertDetailPage() {
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryMessage, setGalleryMessage] = useState<string | null>(null);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [requestModalMessage, setRequestModalMessage] = useState('');
+  const [requestSubmitDisabledReason, setRequestSubmitDisabledReason] = useState('');
 
   const { data: expert, isLoading: loading } = useQuery<ExpertDetail | null>({
     queryKey: ['expert-detail', expertId || ''],
@@ -145,6 +151,63 @@ export default function ExpertDetailPage() {
     },
   });
 
+  const expertSports = Array.isArray(expert?.sports)
+    ? expert.sports
+    : expert?.sports
+      ? [expert.sports]
+      : [];
+  const sportsFilter = expertSports.join(',');
+
+  const { data: requestTrails = [] } = useQuery({
+    queryKey: ['expert-detail-request-trails', expertId || '', sportsFilter],
+    enabled: requestModalOpen && Boolean(expertId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ signal }) => {
+      const query = new URLSearchParams({ purpose: 'request' });
+      if (sportsFilter) query.set('sports', sportsFilter);
+      const response = await fetch(`/api/trails?${query.toString()}`, { signal });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to load trails');
+      }
+      return (data?.trails || []) as Array<{ id: string; name: string; sport_type?: string | null }>;
+    },
+  });
+
+  const requestMutation = useMutation({
+    mutationFn: async (payload: TrailRequestSubmitPayload) => {
+      const response = await fetch(`/api/trails/${payload.trailId}/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: payload.description,
+          preferred_date: payload.preferred_date,
+          preferred_time: payload.preferred_time,
+          offered_price_npr: payload.offered_price_npr ?? null,
+          nearest_point: payload.nearest_point,
+          expert_user_id: payload.expert_user_id,
+          needs_paid_shuttle: payload.needs_paid_shuttle ?? false,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to request trail activity');
+      }
+      return data;
+    },
+    onSuccess: () => {
+      setRequestModalMessage('Trail request submitted successfully.');
+      setRequestModalOpen(false);
+    },
+    onError: (error) => {
+      setRequestModalMessage(
+        error instanceof Error ? error.message : 'Failed to request trail activity.'
+      );
+    },
+  });
+
   if (loading) {
     return (
       <div className="mx-auto max-w-5xl space-y-4 py-6">
@@ -182,7 +245,7 @@ export default function ExpertDetailPage() {
       .map((part) => part[0])
       .join('')
       .toUpperCase() || 'EX';
-  const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
+  const reviewSummary = reviewData?.summary || { averageRating: 5, count: 0 };
   const canReviewExpert =
     (expert.role === 'expert' && currentUser?.role === 'admin') ||
     (currentUser?.role === 'participant' &&
@@ -226,6 +289,24 @@ export default function ExpertDetailPage() {
     }
     setReviewMessage(null);
     setReviewModalOpen(true);
+  };
+
+  const openRequestModal = () => {
+    if (!currentUser) {
+      setRequestSubmitDisabledReason('Please login as a participant to submit a trail request.');
+      setRequestModalMessage('');
+      setRequestModalOpen(true);
+      return;
+    }
+    if (currentUser.role !== 'participant') {
+      setRequestSubmitDisabledReason('Trail requests are available for participants only.');
+      setRequestModalMessage('');
+      setRequestModalOpen(true);
+      return;
+    }
+    setRequestSubmitDisabledReason('');
+    setRequestModalMessage('');
+    setRequestModalOpen(true);
   };
 
   const handleUploadGalleryPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -438,6 +519,13 @@ export default function ExpertDetailPage() {
             </Link>
             <button
               type="button"
+              onClick={openRequestModal}
+              className="inline-flex w-full items-center justify-center rounded-lg border border-cyan-600 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 dark:border-cyan-500 dark:bg-cyan-950/30 dark:text-cyan-200 dark:hover:bg-cyan-900/40"
+            >
+              Request Trail Activity
+            </button>
+            <button
+              type="button"
               onClick={openReviewModal}
               title={
                 !currentUser
@@ -490,6 +578,36 @@ export default function ExpertDetailPage() {
         </div>
         </div>
       </section>
+
+      <TrailRequestModal
+        open={requestModalOpen}
+        onOpenChange={(open) => {
+          setRequestModalOpen(open);
+          if (!open) {
+            setRequestSubmitDisabledReason('');
+          }
+        }}
+        trailOptions={requestTrails.map((trail) => ({
+          id: trail.id,
+          name: trail.name,
+          sport_type: trail.sport_type,
+        }))}
+        preselectedExpertId={expert.id}
+        experts={[
+          {
+            id: expert.id,
+            name: expert.name,
+            email: expert.email,
+          },
+        ]}
+        expertsBetaEnabled={EXPERTS_BETA_ENABLED}
+        isSubmitting={requestMutation.isPending}
+        submitDisabledReason={requestSubmitDisabledReason}
+        message={requestModalMessage}
+        onMessageChange={setRequestModalMessage}
+        onSubmit={(payload) => requestMutation.mutate(payload)}
+      />
+
       {(loadingReviews || Boolean(reviewData?.reviews?.length)) && (
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-start justify-between gap-3">
