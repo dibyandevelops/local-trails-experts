@@ -175,7 +175,26 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
   const hasActions = dropdownItems.length > 0;
 
-  const handleShare = React.useCallback(async () => {
+  const copyToClipboard = React.useCallback(async (value: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+    const textArea = document.createElement('textarea');
+    textArea.value = value;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'absolute';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return copied;
+  }, []);
+
+  const handleShare = React.useCallback(async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (typeof window === 'undefined') return;
     const shareUrl = detailsHref.startsWith('http')
       ? detailsHref
@@ -187,14 +206,14 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
     };
 
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        return;
-      }
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
+      const copied = await copyToClipboard(shareUrl);
+      if (copied) {
         setShareState('copied');
         window.setTimeout(() => setShareState('idle'), 1500);
+        return;
+      }
+      if (navigator.share) {
+        await navigator.share(shareData);
         return;
       }
       setShareState('error');
@@ -203,7 +222,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       setShareState('error');
       window.setTimeout(() => setShareState('idle'), 1500);
     }
-  }, [detailsHref, trail.name]);
+  }, [copyToClipboard, detailsHref, trail.name]);
 
   return (
     <article
@@ -263,9 +282,19 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             aria-label="Share trail"
             title={shareState === 'copied' ? 'Link copied' : shareState === 'error' ? 'Unable to share' : 'Share'}
           >
-            <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4 fill-current">
-              <path d="M14 3a3 3 0 0 0-2.76 4.17L7.9 9.1a3 3 0 1 0 .27 1.9l3.1 1.56a3 3 0 1 0 .7-1.43l-3.2-1.6a2.98 2.98 0 0 0-.14-.63l3.38-1.9A3 3 0 1 0 14 3Z" />
-            </svg>
+            {shareState === 'copied' ? (
+              <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4 fill-current text-emerald-600">
+                <path d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.2 7.2a1 1 0 0 1-1.4 0L3.3 9.1a1 1 0 1 1 1.4-1.4l4.1 4.1 6.5-6.5a1 1 0 0 1 1.4 0Z" />
+              </svg>
+            ) : shareState === 'error' ? (
+              <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4 fill-current text-rose-600">
+                <path d="M10 1.5A8.5 8.5 0 1 0 10 18.5 8.5 8.5 0 0 0 10 1.5Zm3.2 10.3a1 1 0 1 1-1.4 1.4L10 11.4l-1.8 1.8a1 1 0 0 1-1.4-1.4L8.6 10 6.8 8.2a1 1 0 1 1 1.4-1.4L10 8.6l1.8-1.8a1 1 0 1 1 1.4 1.4L11.4 10l1.8 1.8Z" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4 fill-current">
+                <path d="M14 3a3 3 0 0 0-2.76 4.17L7.9 9.1a3 3 0 1 0 .27 1.9l3.1 1.56a3 3 0 1 0 .7-1.43l-3.2-1.6a2.98 2.98 0 0 0-.14-.63l3.38-1.9A3 3 0 1 0 14 3Z" />
+              </svg>
+            )}
           </button>
           {hasActions && (
             <ThemedDropdown
