@@ -23,6 +23,12 @@ type TrailRel = {
   relation_type: 'built_by' | 'verified_by' | 'maintained_by';
 };
 
+type OrgGalleryItem = {
+  id: string;
+  image_url: string;
+  caption: string | null;
+};
+
 export default async function OrganizationDetailPage({
   params,
 }: {
@@ -61,6 +67,16 @@ export default async function OrganizationDetailPage({
     [org.id]
   );
   const trails = trailsResult.rows as TrailRel[];
+  const galleryResult = await pool.query(
+    `
+    SELECT id, image_url, caption
+    FROM organization_gallery_items
+    WHERE organization_id = $1
+    ORDER BY sort_order ASC, created_at DESC
+    `,
+    [org.id]
+  );
+  const galleryItems = galleryResult.rows as OrgGalleryItem[];
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -139,6 +155,27 @@ export default async function OrganizationDetailPage({
           </div>
         )}
       </section>
+
+      {galleryItems.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Gallery</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {galleryItems.map((item) => (
+              <article key={item.id} className="overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.image_url}
+                  alt={item.caption || `${org.name} gallery`}
+                  className="h-44 w-full object-cover"
+                />
+                {item.caption && (
+                  <p className="p-3 text-xs text-gray-700 dark:text-slate-300">{item.caption}</p>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

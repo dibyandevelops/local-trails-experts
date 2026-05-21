@@ -78,6 +78,21 @@ type TrailOrganization = {
   organization_website_url?: string | null;
   organization_is_verified?: boolean | null;
 };
+type TrailUpdateLog = {
+  id: string;
+  update_type:
+    | 'condition_update'
+    | 'maintenance_done'
+    | 'hazard_reported'
+    | 'hazard_cleared'
+    | 'route_changed'
+    | 'metadata_updated';
+  title: string;
+  details?: string | null;
+  created_at: string;
+  organization_name?: string | null;
+  actor_name?: string | null;
+};
 type MapSectionProps = {
   hasRoute: boolean;
   routeGeoJSON: GeoJSON;
@@ -426,6 +441,18 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         throw new Error(data?.error || 'Failed to fetch trail organizations');
       }
       return (data?.organizations || []) as TrailOrganization[];
+    },
+    enabled: Boolean(trailId),
+  });
+  const { data: trailUpdates = [] } = useQuery<TrailUpdateLog[]>({
+    queryKey: ['trail-updates', trailId],
+    queryFn: async ({ signal }) => {
+      const response = await fetch(`/api/trails/${trailId}/updates`, { signal });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch trail updates');
+      }
+      return (data?.updates || []) as TrailUpdateLog[];
     },
     enabled: Boolean(trailId),
   });
@@ -1390,6 +1417,40 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
 
         </div>
       </section>
+
+      {trailUpdates.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+            Trail updates
+          </h2>
+          <div className="mt-3 space-y-3">
+            {trailUpdates.slice(0, 6).map((update) => (
+              <article
+                key={update.id}
+                className="rounded-xl border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950/40"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
+                    {update.update_type.replaceAll('_', ' ')}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-slate-400">
+                    <DateText value={update.created_at} pattern="PPP" />
+                  </span>
+                </div>
+                <h3 className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  {update.title}
+                </h3>
+                {update.details && (
+                  <p className="mt-1 text-xs text-gray-700 dark:text-slate-300">{update.details}</p>
+                )}
+                <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">
+                  {(update.organization_name || 'LocoXperts')} · {update.actor_name || 'System'}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {!isAdmin && canManageTrail && (
         <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
