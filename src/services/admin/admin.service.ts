@@ -89,6 +89,21 @@ export type OrganizationOption = {
   is_active: boolean;
 };
 
+export type OrganizationMember = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: 'org_admin' | 'org_editor';
+  status: 'active' | 'invited' | 'disabled';
+  created_at: string;
+  updated_at: string;
+  user_name: string | null;
+  user_email: string;
+  user_role: 'admin' | 'expert' | 'participant';
+  organization_name: string;
+  organization_slug: string;
+};
+
 export type TrailOrganizationRelationType =
   | 'built_by'
   | 'verified_by'
@@ -235,5 +250,63 @@ export async function assignTrailOrganization(input: {
     return data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to assign organization'));
+  }
+}
+
+export async function fetchAdminOrganizationMembers(organizationId: string) {
+  try {
+    const { data } = await apiClient.get<{ members: OrganizationMember[] }>(
+      '/api/admin/organization-members',
+      { params: { organization_id: organizationId } }
+    );
+    return data.members || [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to fetch organization members'));
+  }
+}
+
+export async function upsertAdminOrganizationMember(input: {
+  organization_id: string;
+  user_id: string;
+  role: 'org_admin' | 'org_editor';
+  status?: 'active' | 'invited' | 'disabled';
+}) {
+  try {
+    const { data } = await apiClient.post<{ member: OrganizationMember }>(
+      '/api/admin/organization-members',
+      input
+    );
+    return data.member;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to save organization member'));
+  }
+}
+
+export async function updateAdminOrganizationMember(
+  memberId: string,
+  input: {
+    role?: 'org_admin' | 'org_editor';
+    status?: 'active' | 'invited' | 'disabled';
+  }
+) {
+  try {
+    const { data } = await apiClient.patch<{ member: OrganizationMember }>(
+      `/api/admin/organization-members/${memberId}`,
+      input
+    );
+    return data.member;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update organization member'));
+  }
+}
+
+export async function deleteAdminOrganizationMember(memberId: string) {
+  try {
+    const { data } = await apiClient.delete<{ success: boolean }>(
+      `/api/admin/organization-members/${memberId}`
+    );
+    return data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to delete organization member'));
   }
 }
