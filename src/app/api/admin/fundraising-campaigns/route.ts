@@ -96,6 +96,20 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const startsAt = body.starts_at ? new Date(body.starts_at) : null;
+    const endsAt = body.ends_at ? new Date(body.ends_at) : null;
+    if (
+      (startsAt && Number.isNaN(startsAt.getTime())) ||
+      (endsAt && Number.isNaN(endsAt.getTime()))
+    ) {
+      return NextResponse.json({ error: 'Invalid starts_at or ends_at date' }, { status: 400 });
+    }
+    if (startsAt && endsAt && startsAt.getTime() > endsAt.getTime()) {
+      return NextResponse.json(
+        { error: 'starts_at cannot be later than ends_at' },
+        { status: 400 }
+      );
+    }
 
     const result = await pool.query(
       `
@@ -116,8 +130,8 @@ export async function POST(request: NextRequest) {
         body.qr_image_url?.trim() || null,
         body.payment_note?.trim() || null,
         status,
-        body.starts_at || null,
-        body.ends_at || null,
+        startsAt ? startsAt.toISOString() : null,
+        endsAt ? endsAt.toISOString() : null,
         auth.sub,
       ]
     );
@@ -189,6 +203,29 @@ export async function PATCH(request: NextRequest) {
         updates.push(`${field} = $${idx}`);
         values.push(body[field] ?? null);
         idx += 1;
+      }
+    }
+
+    const startsAtRaw = Object.prototype.hasOwnProperty.call(body, 'starts_at')
+      ? body.starts_at
+      : undefined;
+    const endsAtRaw = Object.prototype.hasOwnProperty.call(body, 'ends_at')
+      ? body.ends_at
+      : undefined;
+    if (startsAtRaw !== undefined || endsAtRaw !== undefined) {
+      const startsAt = startsAtRaw ? new Date(String(startsAtRaw)) : null;
+      const endsAt = endsAtRaw ? new Date(String(endsAtRaw)) : null;
+      if (
+        (startsAt && Number.isNaN(startsAt.getTime())) ||
+        (endsAt && Number.isNaN(endsAt.getTime()))
+      ) {
+        return NextResponse.json({ error: 'Invalid starts_at or ends_at date' }, { status: 400 });
+      }
+      if (startsAt && endsAt && startsAt.getTime() > endsAt.getTime()) {
+        return NextResponse.json(
+          { error: 'starts_at cannot be later than ends_at' },
+          { status: 400 }
+        );
       }
     }
 

@@ -16,6 +16,8 @@ type Campaign = {
   status: CampaignStatus;
   qr_image_url: string | null;
   payment_note: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
 };
 
 export default function FundraisingCampaignsPanel() {
@@ -35,6 +37,8 @@ export default function FundraisingCampaignsPanel() {
   const [editQrImageUrl, setEditQrImageUrl] = useState('');
   const [editPaymentNote, setEditPaymentNote] = useState('');
   const [editStatus, setEditStatus] = useState<CampaignStatus>('draft');
+  const [editStartsAt, setEditStartsAt] = useState('');
+  const [editEndsAt, setEditEndsAt] = useState('');
 
   const { data: organizations = [] } = useQuery<OrganizationOption[]>({
     queryKey: ['admin-organizations'],
@@ -130,6 +134,8 @@ export default function FundraisingCampaignsPanel() {
           qr_image_url: editQrImageUrl.trim() || null,
           payment_note: editPaymentNote.trim() || null,
           status: editStatus,
+          starts_at: editStartsAt || null,
+          ends_at: editEndsAt || null,
         }),
       });
       const data = await response.json();
@@ -154,6 +160,8 @@ export default function FundraisingCampaignsPanel() {
     setEditQrImageUrl(campaign.qr_image_url || '');
     setEditPaymentNote(campaign.payment_note || '');
     setEditStatus(campaign.status);
+    setEditStartsAt(campaign.starts_at ? campaign.starts_at.slice(0, 10) : '');
+    setEditEndsAt(campaign.ends_at ? campaign.ends_at.slice(0, 10) : '');
   };
 
   return (
@@ -335,6 +343,18 @@ export default function FundraisingCampaignsPanel() {
                   onChange={(event) => setEditPaymentNote(event.target.value)}
                   placeholder="Payment note"
                   className="rounded border border-gray-300 px-2 py-1 text-xs md:col-span-2"
+                />
+                <input
+                  type="date"
+                  value={editStartsAt}
+                  onChange={(event) => setEditStartsAt(event.target.value)}
+                  className="rounded border border-gray-300 px-2 py-1 text-xs"
+                />
+                <input
+                  type="date"
+                  value={editEndsAt}
+                  onChange={(event) => setEditEndsAt(event.target.value)}
+                  className="rounded border border-gray-300 px-2 py-1 text-xs"
                 />
                 <div className="md:col-span-2 flex gap-2">
                   <button
