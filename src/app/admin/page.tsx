@@ -12,6 +12,7 @@ import UpcomingEventsPanel from '@/components/admin/upcoming-events-panel';
 import OrganizationMembersPanel from '@/components/admin/organization-members-panel';
 import OrganizationOpsPanel from '@/components/admin/organization-ops-panel';
 import OrganizationsPanel from '@/components/admin/organizations-panel';
+import FundraisingCampaignsPanel from '@/components/admin/fundraising-campaigns-panel';
 
 export default function AdminPage() {
   return (
@@ -24,6 +25,7 @@ export default function AdminPage() {
       <UpcomingEventsPanel />
       <OrganizationMembersPanel />
       <OrganizationsPanel />
+      <FundraisingCampaignsPanel />
       <OrganizationOpsPanel />
       <UsersPanel
         role="expert"
