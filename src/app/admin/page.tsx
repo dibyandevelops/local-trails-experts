@@ -11,6 +11,7 @@ import StoresAdminPanel from '@/components/admin/stores-admin-panel';
 import UpcomingEventsPanel from '@/components/admin/upcoming-events-panel';
 import OrganizationMembersPanel from '@/components/admin/organization-members-panel';
 import OrganizationOpsPanel from '@/components/admin/organization-ops-panel';
+import OrganizationsPanel from '@/components/admin/organizations-panel';
 
 export default function AdminPage() {
   return (
@@ -22,6 +23,7 @@ export default function AdminPage() {
       <StoresAdminPanel />
       <UpcomingEventsPanel />
       <OrganizationMembersPanel />
+      <OrganizationsPanel />
       <OrganizationOpsPanel />
       <UsersPanel
         role="expert"

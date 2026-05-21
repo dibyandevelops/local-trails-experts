@@ -236,6 +236,65 @@ export async function fetchAdminOrganizations() {
   }
 }
 
+export async function createAdminOrganization(input: {
+  slug: string;
+  name: string;
+  tagline?: string;
+  description?: string;
+  city?: string;
+  country?: string;
+  website_url?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  whatsapp_url?: string;
+  instagram_url?: string;
+  facebook_url?: string;
+  logo_url?: string;
+  is_verified?: boolean;
+  is_active?: boolean;
+}) {
+  try {
+    const { data } = await apiClient.post<{ organization: OrganizationOption }>(
+      '/api/organizations',
+      input
+    );
+    return data.organization;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to create organization'));
+  }
+}
+
+export async function updateAdminOrganization(
+  idOrSlug: string,
+  input: Partial<{
+    slug: string;
+    name: string;
+    tagline: string;
+    description: string;
+    city: string;
+    country: string;
+    website_url: string;
+    contact_email: string;
+    contact_phone: string;
+    whatsapp_url: string;
+    instagram_url: string;
+    facebook_url: string;
+    logo_url: string;
+    is_verified: boolean;
+    is_active: boolean;
+  }>
+) {
+  try {
+    const { data } = await apiClient.patch<{ organization: OrganizationOption }>(
+      `/api/organizations/${idOrSlug}`,
+      input
+    );
+    return data.organization;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update organization'));
+  }
+}
+
 export async function assignTrailOrganization(input: {
   trail_id: string;
   organization_id: string;
