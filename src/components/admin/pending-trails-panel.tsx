@@ -6,15 +6,23 @@ import { getSportLabel } from '@/services/constants/sports';
 import { getDifficultyLabel } from '@/services/constants/difficulty';
 import { getSafetyLabelText } from '@/lib/trail-safety';
 import {
+  assignTrailOrganization,
+  fetchAdminOrganizations,
   fetchAdminPendingTrails,
   moderateAdminTrail,
+  type OrganizationOption,
   type PendingTrail,
+  type TrailOrganizationRelationType,
 } from '@/services/admin/admin.service';
 
 export default function PendingTrailsPanel() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [trailModerationMessage, setTrailModerationMessage] = useState<string | null>(null);
+  const [selectedOrgByTrail, setSelectedOrgByTrail] = useState<Record<string, string>>({});
+  const [selectedRelationByTrail, setSelectedRelationByTrail] = useState<
+    Record<string, TrailOrganizationRelationType>
+  >({});
 
   const {
     data: pendingTrails = [],
@@ -22,6 +30,10 @@ export default function PendingTrailsPanel() {
   } = useQuery<PendingTrail[]>({
     queryKey: QUERY_KEYS.admin.pendingTrails,
     queryFn: () => fetchAdminPendingTrails(),
+  });
+  const { data: organizations = [] } = useQuery<OrganizationOption[]>({
+    queryKey: ['admin-organizations'],
+    queryFn: fetchAdminOrganizations,
   });
 
   const moderateTrailMutation = useMutation({
@@ -44,6 +56,29 @@ export default function PendingTrailsPanel() {
       setTrailModerationMessage('Unable to update trail status.');
     },
   });
+  const assignOrgMutation = useMutation({
+    mutationFn: ({
+      trailId,
+      organizationId,
+      relationType,
+    }: {
+      trailId: string;
+      organizationId: string;
+      relationType: TrailOrganizationRelationType;
+    }) =>
+      assignTrailOrganization({
+        trail_id: trailId,
+        organization_id: organizationId,
+        relation_type: relationType,
+        is_primary: true,
+      }),
+    onSuccess: () => {
+      setTrailModerationMessage('Organization linked to trail successfully.');
+    },
+    onError: () => {
+      setTrailModerationMessage('Unable to link organization to trail.');
+    },
+  });
 
   const moderateTrail = async (id: string, status: 'approved' | 'rejected') => {
     try {
@@ -52,6 +87,16 @@ export default function PendingTrailsPanel() {
     } catch (error) {
       console.error('Error moderating trail', error);
     }
+  };
+
+  const handleAssignOrganization = async (trailId: string) => {
+    const organizationId = selectedOrgByTrail[trailId];
+    const relationType = selectedRelationByTrail[trailId] || 'built_by';
+    if (!organizationId) {
+      setTrailModerationMessage('Please select an organization first.');
+      return;
+    }
+    await assignOrgMutation.mutateAsync({ trailId, organizationId, relationType });
   };
 
   return (
@@ -160,6 +205,47 @@ export default function PendingTrailsPanel() {
               )}
 
               <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50/70 px-2 py-1">
+                  <select
+                    value={selectedOrgByTrail[trail.id] || ''}
+                    onChange={(event) =>
+                      setSelectedOrgByTrail((prev) => ({
+                        ...prev,
+                        [trail.id]: event.target.value,
+                      }))
+                    }
+                    className="rounded-md border border-cyan-300 bg-white px-2 py-1 text-xs text-cyan-900"
+                  >
+                    <option value="">Select organization</option>
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedRelationByTrail[trail.id] || 'built_by'}
+                    onChange={(event) =>
+                      setSelectedRelationByTrail((prev) => ({
+                        ...prev,
+                        [trail.id]: event.target.value as TrailOrganizationRelationType,
+                      }))
+                    }
+                    className="rounded-md border border-cyan-300 bg-white px-2 py-1 text-xs text-cyan-900"
+                  >
+                    <option value="built_by">Built by</option>
+                    <option value="verified_by">Verified by</option>
+                    <option value="maintained_by">Maintained by</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => handleAssignOrganization(trail.id)}
+                    disabled={assignOrgMutation.isPending}
+                    className="rounded-md border border-cyan-400 bg-cyan-100 px-2 py-1 text-xs font-semibold text-cyan-900 hover:bg-cyan-200 disabled:opacity-60"
+                  >
+                    {assignOrgMutation.isPending ? 'Linking...' : 'Link org'}
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => router.push(`/trails/${trail.id}`)}

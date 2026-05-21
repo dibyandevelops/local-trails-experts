@@ -81,6 +81,19 @@ export type AdminUser = {
   created_at: string;
 };
 
+export type OrganizationOption = {
+  id: string;
+  slug: string;
+  name: string;
+  is_verified: boolean;
+  is_active: boolean;
+};
+
+export type TrailOrganizationRelationType =
+  | 'built_by'
+  | 'verified_by'
+  | 'maintained_by';
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
     const apiError = error.response?.data as { error?: string } | undefined;
@@ -193,5 +206,34 @@ export async function deleteAdminUser(userId: string) {
     return data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to delete user'));
+  }
+}
+
+export async function fetchAdminOrganizations() {
+  try {
+    const { data } = await apiClient.get<{ organizations: OrganizationOption[] }>(
+      '/api/organizations',
+      { params: { active: true } }
+    );
+    return data.organizations || [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to fetch organizations'));
+  }
+}
+
+export async function assignTrailOrganization(input: {
+  trail_id: string;
+  organization_id: string;
+  relation_type: TrailOrganizationRelationType;
+  is_primary?: boolean;
+}) {
+  try {
+    const { data } = await apiClient.post<{ assignment?: unknown }>(
+      '/api/admin/trail-organizations',
+      input
+    );
+    return data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to assign organization'));
   }
 }
