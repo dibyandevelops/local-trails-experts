@@ -68,6 +68,16 @@ type ParticipantTrailRequest = {
   id: string;
   trail_id: string;
 };
+type TrailOrganization = {
+  id: string;
+  relation_type: 'built_by' | 'verified_by' | 'maintained_by';
+  is_primary: boolean;
+  organization_slug: string;
+  organization_name: string;
+  organization_logo_url?: string | null;
+  organization_website_url?: string | null;
+  organization_is_verified?: boolean | null;
+};
 type MapSectionProps = {
   hasRoute: boolean;
   routeGeoJSON: GeoJSON;
@@ -406,6 +416,18 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
     enabled: !EXPERTS_BETA_ENABLED,
+  });
+  const { data: trailOrganizations = [] } = useQuery<TrailOrganization[]>({
+    queryKey: ['trail-organizations', trailId],
+    queryFn: async ({ signal }) => {
+      const response = await fetch(`/api/trails/${trailId}/organizations`, { signal });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch trail organizations');
+      }
+      return (data?.organizations || []) as TrailOrganization[];
+    },
+    enabled: Boolean(trailId),
   });
 
   const { data: reviewData, isLoading: loadingReviews } = useQuery<{
@@ -1072,6 +1094,11 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       ))}
     </div>
   );
+  const relationTypeLabel = (value: TrailOrganization['relation_type']) => {
+    if (value === 'built_by') return 'Built by';
+    if (value === 'verified_by') return 'Verified by';
+    return 'Maintained by';
+  };
 
   const trailActionItems: ThemedDropdownItem[] = [
     {
@@ -1313,6 +1340,15 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   {getSportLabel(trail.sport_type)}
                 </span>
               )}
+              {trailOrganizations.slice(0, 3).map((relation) => (
+                <span
+                  key={relation.id}
+                  className="rounded-full border border-cyan-200 bg-cyan-50/90 px-3 py-1 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200"
+                  title={`${relationTypeLabel(relation.relation_type)} ${relation.organization_name}`}
+                >
+                  {relationTypeLabel(relation.relation_type)} {relation.organization_name}
+                </span>
+              ))}
               {trail.status === 'pending' && (
                 <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
                   Pending
