@@ -28,6 +28,13 @@ export default function FundraisingCampaignsPanel() {
   const [qrImageUrl, setQrImageUrl] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
   const [status, setStatus] = useState<CampaignStatus>('draft');
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editTargetAmount, setEditTargetAmount] = useState('');
+  const [editRaisedAmount, setEditRaisedAmount] = useState('');
+  const [editQrImageUrl, setEditQrImageUrl] = useState('');
+  const [editPaymentNote, setEditPaymentNote] = useState('');
+  const [editStatus, setEditStatus] = useState<CampaignStatus>('draft');
 
   const { data: organizations = [] } = useQuery<OrganizationOption[]>({
     queryKey: ['admin-organizations'],
@@ -109,6 +116,45 @@ export default function FundraisingCampaignsPanel() {
       setMessage(error instanceof Error ? error.message : 'Failed to update campaign.');
     },
   });
+
+  const updateCampaignMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/fundraising-campaigns', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingCampaignId,
+          title: editTitle.trim(),
+          target_amount_npr: Number(editTargetAmount),
+          raised_amount_npr: Number(editRaisedAmount || 0),
+          qr_image_url: editQrImageUrl.trim() || null,
+          payment_note: editPaymentNote.trim() || null,
+          status: editStatus,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Failed to update campaign');
+      return data;
+    },
+    onSuccess: async () => {
+      await refetchCampaigns();
+      setMessage('Campaign updated.');
+      setEditingCampaignId(null);
+    },
+    onError: (error) => {
+      setMessage(error instanceof Error ? error.message : 'Failed to update campaign.');
+    },
+  });
+
+  const openEdit = (campaign: Campaign) => {
+    setEditingCampaignId(campaign.id);
+    setEditTitle(campaign.title || '');
+    setEditTargetAmount(String(campaign.target_amount_npr || ''));
+    setEditRaisedAmount(String(campaign.raised_amount_npr || '0'));
+    setEditQrImageUrl(campaign.qr_image_url || '');
+    setEditPaymentNote(campaign.payment_note || '');
+    setEditStatus(campaign.status);
+  };
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
@@ -236,8 +282,84 @@ export default function FundraisingCampaignsPanel() {
                 <option value="completed">Completed</option>
                 <option value="paused">Paused</option>
                 <option value="archived">Archived</option>
-              </select>
+                </select>
+              <button
+                type="button"
+                onClick={() => openEdit(campaign)}
+                className="rounded border border-cyan-300 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100"
+              >
+                Edit
+              </button>
             </div>
+            {editingCampaignId === campaign.id && (
+              <div className="mt-3 grid gap-2 rounded-md border border-gray-200 bg-white p-3 md:grid-cols-2">
+                <input
+                  value={editTitle}
+                  onChange={(event) => setEditTitle(event.target.value)}
+                  placeholder="Campaign title"
+                  className="rounded border border-gray-300 px-2 py-1 text-xs"
+                />
+                <select
+                  value={editStatus}
+                  onChange={(event) => setEditStatus(event.target.value as CampaignStatus)}
+                  className="rounded border border-gray-300 px-2 py-1 text-xs"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="paused">Paused</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <input
+                  type="number"
+                  value={editTargetAmount}
+                  onChange={(event) => setEditTargetAmount(event.target.value)}
+                  placeholder="Target amount"
+                  className="rounded border border-gray-300 px-2 py-1 text-xs"
+                />
+                <input
+                  type="number"
+                  value={editRaisedAmount}
+                  onChange={(event) => setEditRaisedAmount(event.target.value)}
+                  placeholder="Raised amount"
+                  className="rounded border border-gray-300 px-2 py-1 text-xs"
+                />
+                <input
+                  value={editQrImageUrl}
+                  onChange={(event) => setEditQrImageUrl(event.target.value)}
+                  placeholder="QR image URL"
+                  className="rounded border border-gray-300 px-2 py-1 text-xs md:col-span-2"
+                />
+                <input
+                  value={editPaymentNote}
+                  onChange={(event) => setEditPaymentNote(event.target.value)}
+                  placeholder="Payment note"
+                  className="rounded border border-gray-300 px-2 py-1 text-xs md:col-span-2"
+                />
+                <div className="md:col-span-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateCampaignMutation.mutate()}
+                    disabled={
+                      updateCampaignMutation.isPending ||
+                      !editTitle.trim() ||
+                      !editTargetAmount ||
+                      Number(editTargetAmount) <= 0
+                    }
+                    className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    {updateCampaignMutation.isPending ? 'Saving...' : 'Save changes'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingCampaignId(null)}
+                    className="rounded border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </article>
         ))}
       </div>

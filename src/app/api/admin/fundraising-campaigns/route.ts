@@ -168,6 +168,24 @@ export async function PATCH(request: NextRequest) {
         if (field === 'status' && !isValidStatus(body[field])) {
           return NextResponse.json({ error: 'Invalid campaign status' }, { status: 400 });
         }
+        if (
+          field === 'target_amount_npr' &&
+          (typeof body[field] !== 'number' || !Number.isFinite(body[field] as number) || (body[field] as number) <= 0)
+        ) {
+          return NextResponse.json(
+            { error: 'target_amount_npr must be a number greater than 0' },
+            { status: 400 }
+          );
+        }
+        if (
+          field === 'raised_amount_npr' &&
+          (typeof body[field] !== 'number' || !Number.isFinite(body[field] as number) || (body[field] as number) < 0)
+        ) {
+          return NextResponse.json(
+            { error: 'raised_amount_npr must be a number >= 0' },
+            { status: 400 }
+          );
+        }
         updates.push(`${field} = $${idx}`);
         values.push(body[field] ?? null);
         idx += 1;
