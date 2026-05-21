@@ -28,6 +28,16 @@ type OrgGalleryItem = {
   image_url: string;
   caption: string | null;
 };
+type FundraisingCampaign = {
+  id: string;
+  title: string;
+  description: string | null;
+  target_amount_npr: string;
+  raised_amount_npr: string;
+  qr_image_url: string | null;
+  payment_note: string | null;
+  status: 'draft' | 'active' | 'completed' | 'paused' | 'archived';
+};
 
 export default async function OrganizationDetailPage({
   params,
@@ -77,6 +87,26 @@ export default async function OrganizationDetailPage({
     [org.id]
   );
   const galleryItems = galleryResult.rows as OrgGalleryItem[];
+  const campaignsResult = await pool.query(
+    `
+    SELECT
+      id,
+      title,
+      description,
+      target_amount_npr::text,
+      raised_amount_npr::text,
+      qr_image_url,
+      payment_note,
+      status
+    FROM fundraising_campaigns
+    WHERE organization_id = $1
+      AND status IN ('active', 'completed')
+    ORDER BY created_at DESC
+    LIMIT 3
+    `,
+    [org.id]
+  );
+  const campaigns = campaignsResult.rows as FundraisingCampaign[];
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -173,6 +203,61 @@ export default async function OrganizationDetailPage({
                 )}
               </article>
             ))}
+          </div>
+        </section>
+      )}
+      {campaigns.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-emerald-200/80 bg-emerald-50/60 p-5 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/20">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Support Campaigns</h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+            Help this organization maintain and improve local trails.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {campaigns.map((campaign) => {
+              const target = Number(campaign.target_amount_npr || 0);
+              const raised = Number(campaign.raised_amount_npr || 0);
+              const progress =
+                target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : 0;
+              return (
+                <article
+                  key={campaign.id}
+                  className="rounded-xl border border-emerald-200 bg-white p-4 dark:border-emerald-900/60 dark:bg-slate-950/40"
+                >
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {campaign.title}
+                  </h3>
+                  {campaign.description && (
+                    <p className="mt-1 text-xs text-gray-700 dark:text-slate-300">
+                      {campaign.description}
+                    </p>
+                  )}
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+                    <div
+                      className="h-full rounded-full bg-emerald-600"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-emerald-900 dark:text-emerald-100">
+                    NPR {raised.toLocaleString()} raised of NPR {target.toLocaleString()} ({progress}%)
+                  </p>
+                  {campaign.qr_image_url && (
+                    <a
+                      href={campaign.qr_image_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                    >
+                      Open payment QR
+                    </a>
+                  )}
+                  {campaign.payment_note && (
+                    <p className="mt-2 text-[11px] text-gray-600 dark:text-slate-400">
+                      {campaign.payment_note}
+                    </p>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </section>
       )}

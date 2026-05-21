@@ -21,6 +21,7 @@ const FEATURE_LINKS = [
   { label: 'Browse events', href: '/events' },
   { label: 'Community rides', href: '/community-rides' },
   { label: 'Find experts', href: '/experts' },
+  { label: 'Trail organizations', href: '/organizations' },
   { label: 'Cycle hubs', href: '/store-locator' },
   { label: 'Organize trainings', href: '/events/trainings/create' },
 ];
