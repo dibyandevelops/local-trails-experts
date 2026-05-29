@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
     let paramIndex = 1;
 
-    let where = 'WHERE u.role = \'expert\'';
+    let where = 'WHERE u.role = \'expert\' AND COALESCE(u.is_hidden, FALSE) = FALSE';
 
     if (id) {
       where += ` AND u.id = $${paramIndex}`;
@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
         u.city,
         u.sports,
         u.is_verified_expert,
+        u.is_hidden,
         u.profile_photo_url,
         u.expert_gallery_photos,
         u.verification_years_experience,
@@ -106,6 +107,7 @@ export async function GET(request: NextRequest) {
         city: row.city,
         sports: row.sports,
         is_verified_expert: row.is_verified_expert,
+        is_hidden: row.is_hidden,
         profile_photo_url: row.profile_photo_url,
         expert_gallery_photos: Array.isArray(row.expert_gallery_photos)
           ? row.expert_gallery_photos

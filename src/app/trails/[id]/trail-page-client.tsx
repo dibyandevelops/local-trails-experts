@@ -43,6 +43,7 @@ import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
+import { getTrailAttributionChipClass, getTrailAttributionLabel } from '@/lib/trail-attribution';
 import ThemedDropdown, { type ThemedDropdownItem } from '@/components/ui/themed-dropdown';
 import AppDialog from '@/components/ui/app-dialog';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
@@ -92,6 +93,18 @@ type TrailUpdateLog = {
   created_at: string;
   organization_name?: string | null;
   actor_name?: string | null;
+};
+type TrailService = {
+  id: string;
+  service_type: 'shuttle' | 'lift' | 'support_vehicle';
+  title: string;
+  description: string | null;
+  contact_phone: string | null;
+  contact_whatsapp: string | null;
+  contact_email: string | null;
+  price_note: string | null;
+  schedule_note: string | null;
+  organization_name?: string | null;
 };
 type MapSectionProps = {
   hasRoute: boolean;
@@ -455,6 +468,19 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       return (data?.updates || []) as TrailUpdateLog[];
     },
     enabled: Boolean(trailId),
+  });
+  const { data: trailServices = [] } = useQuery<TrailService[]>({
+    queryKey: ['trail-services', trailId],
+    queryFn: async ({ signal }) => {
+      const response = await fetch(`/api/trails/${trailId}/services`, { signal });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch trail services');
+      }
+      return (data?.services || []) as TrailService[];
+    },
+    enabled: Boolean(trailId),
+    staleTime: 60_000,
   });
 
   const { data: reviewData, isLoading: loadingReviews } = useQuery<{
@@ -1121,12 +1147,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       ))}
     </div>
   );
-  const relationTypeLabel = (value: TrailOrganization['relation_type']) => {
-    if (value === 'built_by') return 'Built by';
-    if (value === 'verified_by') return 'Verified by';
-    return 'Maintained by';
-  };
-
   const trailActionItems: ThemedDropdownItem[] = [
     {
       label: 'Share trail',
@@ -1370,10 +1390,12 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               {trailOrganizations.slice(0, 3).map((relation) => (
                 <span
                   key={relation.id}
-                  className="rounded-full border border-cyan-200 bg-cyan-50/90 px-3 py-1 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200"
-                  title={`${relationTypeLabel(relation.relation_type)} ${relation.organization_name}`}
+                  className={`inline-flex max-w-[260px] items-center rounded-full border px-3 py-1 text-[11px] font-semibold ${getTrailAttributionChipClass(relation.relation_type)}`}
+                  title={`${getTrailAttributionLabel(relation.relation_type)}: ${relation.organization_name}`}
                 >
-                  {relationTypeLabel(relation.relation_type)} {relation.organization_name}
+                  <span className="truncate">
+                    {getTrailAttributionLabel(relation.relation_type)}: {relation.organization_name}
+                  </span>
                 </span>
               ))}
               {trail.status === 'pending' && (
@@ -1446,6 +1468,45 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">
                   {(update.organization_name || 'LocoXperts')} · {update.actor_name || 'System'}
                 </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+      {trailServices.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+            Trail services
+          </h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {trailServices.map((service) => (
+              <article
+                key={service.id}
+                className="rounded-xl border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950/40"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
+                    {service.service_type.replaceAll('_', ' ')}
+                  </span>
+                  {service.organization_name && (
+                    <span className="text-xs text-gray-500 dark:text-slate-400">
+                      {service.organization_name}
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  {service.title}
+                </h3>
+                {service.description && (
+                  <p className="mt-1 text-xs text-gray-700 dark:text-slate-300">{service.description}</p>
+                )}
+                <div className="mt-2 space-y-1 text-[11px] text-gray-600 dark:text-slate-300">
+                  {service.price_note && <p>Price: {service.price_note}</p>}
+                  {service.schedule_note && <p>Schedule: {service.schedule_note}</p>}
+                  {service.contact_phone && <p>Phone: {service.contact_phone}</p>}
+                  {service.contact_whatsapp && <p>WhatsApp: {service.contact_whatsapp}</p>}
+                  {service.contact_email && <p>Email: {service.contact_email}</p>}
+                </div>
               </article>
             ))}
           </div>

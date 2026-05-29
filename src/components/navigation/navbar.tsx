@@ -14,6 +14,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
   Bike,
   CalendarDays,
+  CircleDollarSign,
   Dumbbell,
   House,
   Map,
@@ -47,7 +48,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         showFor: ['anonymous', 'participant', 'expert', 'admin'],
         badge: EXPERTS_BETA_ENABLED ? 'Beta' : undefined,
       },
-      { label: 'Organizations', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Trail Builders', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Campaigns', href: '/campaigns', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Cycle Hubs', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
     ],
   },
@@ -90,6 +92,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/community-rides': Bike,
   '/experts': Users,
   '/organizations': Users,
+  '/campaigns': CircleDollarSign,
   '/store-locator': Store,
   '/events/create': PlusCircle,
   '/events/trainings/create': Dumbbell,
@@ -262,6 +265,8 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     }
     setMobileOpen(false);
   };
+
+  const accountActionLabel = user?.role === 'admin' ? 'Admin Panel' : 'View profile';
 
   const canSeeItem = (item: NavItem) => {
     if (item.showFor) {
@@ -512,7 +517,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                         onClick={handleViewProfile}
                         className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-green-50 outline-none transition hover:bg-white/15 data-[highlighted]:bg-white/15"
                       >
-                        View profile
+                        {accountActionLabel}
                       </button>
                     </DropdownMenu.Item>
                     <DropdownMenu.Item asChild>
@@ -618,7 +623,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   onClick={handleViewProfile}
                   className="rounded-lg px-3 py-2.5 text-left text-green-50 hover:bg-white/15"
                 >
-                  View profile
+                  {accountActionLabel}
                 </button>
                 <button
                   type="button"

@@ -8,11 +8,11 @@ import {
 } from '@/services/admin/admin.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { getSportLabel } from '@/services/constants/sports';
-import * as Dialog from '@radix-ui/react-dialog';
 import VerificationDetailsContent, {
   hasVerificationDetails,
 } from '@/components/ui/verification-details-content';
 import DateText from '@/components/ui/date-text';
+import AppDialog from '@/components/ui/app-dialog';
 
 const statusOptions = ['all', 'pending', 'approved', 'rejected'] as const;
 
@@ -228,7 +228,7 @@ export default function ExpertApplicationsPanel() {
         )}
       </div>
 
-      <Dialog.Root
+      <AppDialog
         open={verificationOpen}
         onOpenChange={(open) => {
           setVerificationOpen(open);
@@ -237,74 +237,57 @@ export default function ExpertApplicationsPanel() {
             setVerificationNotice(null);
           }
         }}
+        title="Request additional verification"
+        description={`Send a clear request to ${activeApplication?.name || activeApplication?.email || 'the applicant'}.`}
+        maxWidthClassName="max-w-lg"
       >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-900">
-            <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-              Request additional verification
-            </Dialog.Title>
-            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              Send a clear request to {activeApplication?.name || activeApplication?.email}.
-            </p>
-            <textarea
-              value={verificationMessage}
-              onChange={(event) => setVerificationMessage(event.target.value)}
-              rows={10}
-              className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-                Cancel
-              </Dialog.Close>
-              <button
-                type="button"
-                onClick={handleRequestVerification}
-                disabled={verificationMutation.isPending}
-                className="rounded-lg bg-green-700 px-4 py-2 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60"
-              >
-                {verificationMutation.isPending ? 'Sending...' : 'Send request'}
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+        <textarea
+          value={verificationMessage}
+          onChange={(event) => setVerificationMessage(event.target.value)}
+          rows={10}
+          className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        />
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setVerificationOpen(false)}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleRequestVerification}
+            disabled={verificationMutation.isPending}
+            className="rounded-lg bg-green-700 px-4 py-2 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+          >
+            {verificationMutation.isPending ? 'Sending...' : 'Send request'}
+          </button>
+        </div>
+      </AppDialog>
 
-      <Dialog.Root
+      <AppDialog
         open={detailsOpen}
         onOpenChange={(open) => {
           setDetailsOpen(open);
           if (!open) setActiveApplication(null);
         }}
+        title="Verification details"
+        description={activeApplication?.name || activeApplication?.email || undefined}
+        maxWidthClassName="max-w-2xl"
       >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-900">
-            <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-              Verification details
-            </Dialog.Title>
-            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              {activeApplication?.name || activeApplication?.email}
-            </p>
-            <div className="mt-4">
-              <VerificationDetailsContent
-                yearsExperience={activeApplication?.verification_years_experience}
-                certifications={activeApplication?.verification_certifications}
-                guidingHistory={activeApplication?.verification_guiding_history}
-                safetyTraining={activeApplication?.verification_safety_training}
-                achievements={activeApplication?.verification_achievements}
-                stravaUrl={activeApplication?.verification_strava_url}
-                links={activeApplication?.verification_links}
-              />
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-                Close
-              </Dialog.Close>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+        <div className="mt-4">
+          <VerificationDetailsContent
+            yearsExperience={activeApplication?.verification_years_experience}
+            certifications={activeApplication?.verification_certifications}
+            guidingHistory={activeApplication?.verification_guiding_history}
+            safetyTraining={activeApplication?.verification_safety_training}
+            achievements={activeApplication?.verification_achievements}
+            stravaUrl={activeApplication?.verification_strava_url}
+            links={activeApplication?.verification_links}
+          />
+        </div>
+      </AppDialog>
     </section>
   );
 }

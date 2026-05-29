@@ -227,6 +227,9 @@ export async function GET(request: NextRequest) {
         t.trail_images,
         t.komoot_embed_url,
         t.is_hidden,
+        built_org.organization_name AS built_by_org_name,
+        verified_org.organization_name AS verified_by_org_name,
+        maintained_org.organization_name AS maintained_by_org_name,
         COALESCE(tr.review_count, 0) AS review_count,
         COALESCE(tr.average_rating, 0) AS average_rating
       FROM trails t
@@ -238,6 +241,33 @@ export async function GET(request: NextRequest) {
         FROM trail_reviews
         GROUP BY trail_id
       ) tr ON tr.trail_id = t.id
+      LEFT JOIN LATERAL (
+        SELECT o.name AS organization_name
+        FROM trail_organizations to2
+        JOIN organizations o ON o.id = to2.organization_id
+        WHERE to2.trail_id = t.id
+          AND to2.relation_type = 'built_by'
+        ORDER BY to2.is_primary DESC, to2.created_at DESC
+        LIMIT 1
+      ) built_org ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT o.name AS organization_name
+        FROM trail_organizations to2
+        JOIN organizations o ON o.id = to2.organization_id
+        WHERE to2.trail_id = t.id
+          AND to2.relation_type = 'verified_by'
+        ORDER BY to2.is_primary DESC, to2.created_at DESC
+        LIMIT 1
+      ) verified_org ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT o.name AS organization_name
+        FROM trail_organizations to2
+        JOIN organizations o ON o.id = to2.organization_id
+        WHERE to2.trail_id = t.id
+          AND to2.relation_type = 'maintained_by'
+        ORDER BY to2.is_primary DESC, to2.created_at DESC
+        LIMIT 1
+      ) maintained_org ON TRUE
       ${whereClause}
       ORDER BY ${orderBy}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}

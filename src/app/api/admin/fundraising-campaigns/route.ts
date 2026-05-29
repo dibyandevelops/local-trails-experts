@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
     };
 
     const organizationId = (body.organization_id || '').trim();
+    const trailId = (body.trail_id || '').trim();
     const title = (body.title || '').trim();
     const targetAmount = Number(body.target_amount_npr || 0);
     const status = body.status || 'draft';
@@ -111,6 +112,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const organization = await pool.query(
+      `SELECT 1 FROM organizations WHERE id = $1 LIMIT 1`,
+      [organizationId]
+    );
+    if (!organization.rows.length) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+    if (trailId) {
+      const trail = await pool.query(`SELECT 1 FROM trails WHERE id = $1 LIMIT 1`, [trailId]);
+      if (!trail.rows.length) {
+        return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+      }
+    }
+
     const result = await pool.query(
       `
       INSERT INTO fundraising_campaigns (
@@ -122,7 +137,7 @@ export async function POST(request: NextRequest) {
       `,
       [
         organizationId,
-        body.trail_id || null,
+        trailId || null,
         title,
         body.description?.trim() || null,
         targetAmount,
@@ -201,7 +216,22 @@ export async function PATCH(request: NextRequest) {
           );
         }
         updates.push(`${field} = $${idx}`);
-        values.push(body[field] ?? null);
+        if (field === 'title' && typeof body[field] === 'string') {
+          const title = String(body[field]).trim();
+          if (!title) {
+            return NextResponse.json({ error: 'title cannot be empty' }, { status: 400 });
+          }
+          values.push(title);
+        } else if (
+          ['description', 'qr_image_url', 'payment_note', 'trail_id'].includes(field) &&
+          typeof body[field] === 'string'
+        ) {
+          values.push(String(body[field]).trim() || null);
+        } else if (field === 'organization_id' && typeof body[field] === 'string') {
+          values.push(String(body[field]).trim());
+        } else {
+          values.push(body[field] ?? null);
+        }
         idx += 1;
       }
     }
@@ -226,6 +256,36 @@ export async function PATCH(request: NextRequest) {
           { error: 'starts_at cannot be later than ends_at' },
           { status: 400 }
         );
+      }
+    }
+
+    const organizationIdRaw = Object.prototype.hasOwnProperty.call(body, 'organization_id')
+      ? body.organization_id
+      : undefined;
+    if (organizationIdRaw !== undefined && organizationIdRaw !== null) {
+      const organizationId = String(organizationIdRaw).trim();
+      if (!organizationId) {
+        return NextResponse.json({ error: 'organization_id cannot be empty' }, { status: 400 });
+      }
+      const organization = await pool.query(
+        `SELECT 1 FROM organizations WHERE id = $1 LIMIT 1`,
+        [organizationId]
+      );
+      if (!organization.rows.length) {
+        return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+      }
+    }
+
+    const trailIdRaw = Object.prototype.hasOwnProperty.call(body, 'trail_id')
+      ? body.trail_id
+      : undefined;
+    if (trailIdRaw !== undefined && trailIdRaw !== null) {
+      const trailId = String(trailIdRaw).trim();
+      if (trailId) {
+        const trail = await pool.query(`SELECT 1 FROM trails WHERE id = $1 LIMIT 1`, [trailId]);
+        if (!trail.rows.length) {
+          return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+        }
       }
     }
 
@@ -254,6 +314,42 @@ export async function PATCH(request: NextRequest) {
     console.error('Error updating fundraising campaign:', error);
     return NextResponse.json(
       { error: 'Failed to update fundraising campaign' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as { id?: string };
+    const id = (body.id || '').trim();
+    if (!id) {
+      return NextResponse.json({ error: 'id is required' }, { status: 400 });
+    }
+
+    const result = await pool.query(
+      `
+      DELETE FROM fundraising_campaigns
+      WHERE id = $1
+      RETURNING id, title
+      `,
+      [id]
+    );
+
+    if (!result.rows.length) {
+      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ campaign: result.rows[0] }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting fundraising campaign:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete fundraising campaign' },
       { status: 500 }
     );
   }

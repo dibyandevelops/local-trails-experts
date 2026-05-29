@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import pool from '@/lib/db';
+import { getTrailAttributionChipClass, getTrailAttributionLabel } from '@/lib/trail-attribution';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,7 +101,7 @@ export default async function OrganizationDetailPage({
       status
     FROM fundraising_campaigns
     WHERE organization_id = $1
-      AND status IN ('active', 'completed')
+      AND status IN ('active', 'completed', 'paused')
     ORDER BY created_at DESC
     LIMIT 3
     `,
@@ -159,12 +160,13 @@ export default async function OrganizationDetailPage({
                 key={`${trail.trail_id}-${trail.relation_type}`}
                 className="rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/40"
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">
-                  {trail.relation_type === 'built_by'
-                    ? 'Built by'
-                    : trail.relation_type === 'verified_by'
-                      ? 'Verified by'
-                      : 'Maintained by'}
+                <p
+                  className={`inline-flex max-w-[220px] items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${getTrailAttributionChipClass(trail.relation_type)}`}
+                  title={`${getTrailAttributionLabel(trail.relation_type)}: ${trail.trail_name}`}
+                >
+                  <span className="truncate">
+                    {getTrailAttributionLabel(trail.relation_type)}
+                  </span>
                 </p>
                 <h3 className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
                   {trail.trail_name}
@@ -250,6 +252,14 @@ export default async function OrganizationDetailPage({
                       Open payment QR
                     </a>
                   )}
+                  <div className="mt-2">
+                    <Link
+                      href={`/campaigns/${campaign.id}`}
+                      className="inline-flex rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      View campaign details
+                    </Link>
+                  </div>
                   {campaign.payment_note && (
                     <p className="mt-2 text-[11px] text-gray-600 dark:text-slate-400">
                       {campaign.payment_note}

@@ -12,13 +12,13 @@ function buildLookup(idOrSlug: string) {
   return { clause: 'o.slug = $1', value: idOrSlug.toLowerCase() };
 }
 
-async function resolveOrganizationId(idOrSlug: string) {
+async function resolveOrganization(idOrSlug: string) {
   const { clause, value } = buildLookup(idOrSlug);
   const result = await pool.query(
-    `SELECT o.id FROM organizations o WHERE ${clause} LIMIT 1`,
+    `SELECT o.id, o.is_active FROM organizations o WHERE ${clause} LIMIT 1`,
     [value]
   );
-  return result.rows[0]?.id as string | undefined;
+  return result.rows[0] as { id: string; is_active: boolean } | undefined;
 }
 
 async function canManageOrganizationGallery(userId: string, organizationId: string) {
@@ -43,8 +43,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const organizationId = await resolveOrganizationId(id);
-    if (!organizationId) {
+    const organization = await resolveOrganization(id);
+    if (!organization) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
@@ -55,7 +55,7 @@ export async function GET(
       WHERE organization_id = $1
       ORDER BY sort_order ASC, created_at DESC
       `,
-      [organizationId]
+      [organization.id]
     );
     return NextResponse.json({ items: result.rows }, { status: 200 });
   } catch (error) {
@@ -77,14 +77,20 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id } = await params;
-    const organizationId = await resolveOrganizationId(id);
-    if (!organizationId) {
+    const organization = await resolveOrganization(id);
+    if (!organization) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+    if (!organization.is_active) {
+      return NextResponse.json(
+        { error: 'Trail builder must be visible before adding gallery items' },
+        { status: 400 }
+      );
     }
 
     const allowed =
       auth.role === 'admin' ||
-      (await canManageOrganizationGallery(auth.sub, organizationId));
+      (await canManageOrganizationGallery(auth.sub, organization.id));
     if (!allowed) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -105,7 +111,7 @@ export async function POST(
       VALUES ($1, $2, $3, $4, $5)
       RETURNING id, organization_id, image_url, caption, sort_order, created_at
       `,
-      [organizationId, imageUrl, body.caption?.trim() || null, body.sort_order ?? 0, auth.sub]
+      [organization.id, imageUrl, body.caption?.trim() || null, body.sort_order ?? 0, auth.sub]
     );
 
     return NextResponse.json({ item: result.rows[0] }, { status: 201 });

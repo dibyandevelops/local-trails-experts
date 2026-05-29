@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         role,
         city,
         sports,
+        is_hidden,
         phone,
         verification_years_experience,
         verification_certifications,
@@ -49,6 +50,52 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching admin users:', error);
     return NextResponse.json(
       { error: 'Failed to fetch users' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as {
+      id?: string;
+      is_hidden?: boolean;
+    };
+    const id = (body.id || '').trim();
+
+    if (!id || typeof body.is_hidden !== 'boolean') {
+      return NextResponse.json(
+        { error: 'id and is_hidden are required' },
+        { status: 400 }
+      );
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET is_hidden = $2,
+          updated_at = NOW()
+      WHERE id = $1
+        AND role = 'expert'
+      RETURNING id, is_hidden
+      `,
+      [id, body.is_hidden]
+    );
+
+    if (!result.rows.length) {
+      return NextResponse.json({ error: 'Expert not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ user: result.rows[0] }, { status: 200 });
+  } catch (error) {
+    console.error('Error updating admin user:', error);
+    return NextResponse.json(
+      { error: 'Failed to update user' },
       { status: 500 }
     );
   }

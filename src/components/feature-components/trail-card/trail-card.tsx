@@ -19,6 +19,7 @@ import { getSportLabel } from '@/services/constants/sports';
 import { getDifficultyLabel, normalizeDifficulty } from '@/services/constants/difficulty';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 import ThemedDropdown from '@/components/ui/themed-dropdown';
+import { getTrailAttributionChipClass, getTrailAttributionLabel } from '@/lib/trail-attribution';
 
 export type TrailCardProps = Trail & {
   detailsHref?: string;
@@ -367,6 +368,36 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             >
               {getDifficultyLabel(trail.difficulty)}
             </span>
+            {trail.built_by_org_name && (
+              <span
+                className={`inline-flex max-w-[210px] items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getTrailAttributionChipClass('built_by')}`}
+                title={`Built: ${trail.built_by_org_name}`}
+              >
+                <span className="truncate">
+                  {getTrailAttributionLabel('built_by')}: {trail.built_by_org_name}
+                </span>
+              </span>
+            )}
+            {trail.verified_by_org_name && (
+              <span
+                className={`inline-flex max-w-[210px] items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getTrailAttributionChipClass('verified_by')}`}
+                title={`Verified: ${trail.verified_by_org_name}`}
+              >
+                <span className="truncate">
+                  {getTrailAttributionLabel('verified_by')}: {trail.verified_by_org_name}
+                </span>
+              </span>
+            )}
+            {trail.maintained_by_org_name && (
+              <span
+                className={`inline-flex max-w-[210px] items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getTrailAttributionChipClass('maintained_by')}`}
+                title={`Maintained: ${trail.maintained_by_org_name}`}
+              >
+                <span className="truncate">
+                  {getTrailAttributionLabel('maintained_by')}: {trail.maintained_by_org_name}
+                </span>
+              </span>
+            )}
           </div>
           {images.length > 1 && (
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">

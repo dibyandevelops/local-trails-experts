@@ -1,12 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/services/api/client';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import type { Store } from '@/types';
 import StoreRequestForm from '@/components/feature-components/store-locator/store-request-form';
+import AppDialog from '@/components/ui/app-dialog';
 
 type EditState = {
   open: boolean;
@@ -15,6 +15,7 @@ type EditState = {
 
 export default function StoresAdminPanel() {
   const queryClient = useQueryClient();
+  const [createOpen, setCreateOpen] = useState(false);
   const [editState, setEditState] = useState<EditState>({ open: false, store: null });
   const [message, setMessage] = useState<string | null>(null);
 
@@ -39,6 +40,7 @@ export default function StoresAdminPanel() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.stores.all() });
       setMessage('Store updated.');
+      setEditState({ open: false, store: null });
     },
     onError: (error) => {
       setMessage(error instanceof Error ? error.message : 'Failed to update store.');
@@ -99,34 +101,13 @@ export default function StoresAdminPanel() {
             Manage store listings and remove outdated entries.
           </p>
         </div>
-        <Dialog.Root>
-          <Dialog.Trigger asChild>
-            <button className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
-              Add store
-            </button>
-          </Dialog.Trigger>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Add store
-                  </Dialog.Title>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                    This will auto-approve and show in the locator.
-                  </p>
-                </div>
-                <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
-                  Close
-                </Dialog.Close>
-              </div>
-              <div className="mt-5">
-                <StoreRequestForm />
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800"
+        >
+          Add store
+        </button>
       </div>
 
       {message && (
@@ -228,61 +209,58 @@ export default function StoresAdminPanel() {
         )}
       </div>
 
-      {editState.store && (
-        <Dialog.Root
-          open={editState.open}
-          onOpenChange={(open) =>
-            setEditState((prev) => ({ ...prev, open, store: open ? prev.store : null }))
-          }
-        >
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Edit store
-                  </Dialog.Title>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                    Update the store details and save.
-                  </p>
-                </div>
-                <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
-                  Close
-                </Dialog.Close>
-              </div>
-              <div className="mt-5">
-                <StoreRequestForm
-                  initialStore={{
-                    storeName: editState.store.name,
-                    city: editState.store.city,
-                    location: editState.store.location,
-                    locationLat: String(editState.store.latitude),
-                    locationLng: String(editState.store.longitude),
-                    phone: editState.store.phone || '',
-                    services: editState.store.services || '',
-                    website: editState.store.website || '',
-                  }}
-                  onSubmitOverride={(payload) => {
-                    updateMutation.mutate({
-                      ...editState.store!,
-                      name: payload.store_name,
-                      city: payload.city,
-                      location: payload.location,
-                      latitude: payload.latitude,
-                      longitude: payload.longitude,
-                      phone: payload.phone || null,
-                      services: payload.services || null,
-                      website: payload.website || null,
-                      hours: editState.store?.hours || null,
-                    } as Store);
-                  }}
-                />
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-      )}
+      <AppDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="Add store"
+        description="This will auto-approve and show in the locator."
+        maxWidthClassName="max-w-2xl"
+      >
+        <div className="mt-5">
+          <StoreRequestForm />
+        </div>
+      </AppDialog>
+
+      <AppDialog
+        open={editState.open && Boolean(editState.store)}
+        onOpenChange={(open) =>
+          setEditState((prev) => ({ ...prev, open, store: open ? prev.store : null }))
+        }
+        title="Edit store"
+        description="Update the store details and save."
+        maxWidthClassName="max-w-2xl"
+      >
+        {editState.store && (
+          <div className="mt-5">
+            <StoreRequestForm
+              initialStore={{
+                storeName: editState.store.name,
+                city: editState.store.city,
+                location: editState.store.location,
+                locationLat: String(editState.store.latitude),
+                locationLng: String(editState.store.longitude),
+                phone: editState.store.phone || '',
+                services: editState.store.services || '',
+                website: editState.store.website || '',
+              }}
+              onSubmitOverride={(payload) => {
+                updateMutation.mutate({
+                  ...editState.store!,
+                  name: payload.store_name,
+                  city: payload.city,
+                  location: payload.location,
+                  latitude: payload.latitude,
+                  longitude: payload.longitude,
+                  phone: payload.phone || null,
+                  services: payload.services || null,
+                  website: payload.website || null,
+                  hours: editState.store?.hours || null,
+                } as Store);
+              }}
+            />
+          </div>
+        )}
+      </AppDialog>
     </section>
   );
 }

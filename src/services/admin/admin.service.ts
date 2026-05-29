@@ -70,6 +70,7 @@ export type AdminUser = {
   role: 'expert' | 'participant' | 'admin';
   city: string | null;
   sports: string[] | null;
+  is_hidden?: boolean | null;
   phone: string | null;
   verification_years_experience?: string | null;
   verification_certifications?: string | null;
@@ -85,8 +86,21 @@ export type OrganizationOption = {
   id: string;
   slug: string;
   name: string;
+  tagline?: string | null;
+  description?: string | null;
+  logo_url?: string | null;
+  website_url?: string | null;
+  instagram_url?: string | null;
+  facebook_url?: string | null;
+  whatsapp_url?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  city?: string | null;
+  country?: string | null;
   is_verified: boolean;
   is_active: boolean;
+  member_count?: number;
+  trail_count?: number;
 };
 
 export type OrganizationMember = {
@@ -224,11 +238,22 @@ export async function deleteAdminUser(userId: string) {
   }
 }
 
+export async function updateAdminExpertVisibility(userId: string, isHidden: boolean) {
+  try {
+    const { data } = await apiClient.patch<{ user: Pick<AdminUser, 'id' | 'is_hidden'> }>(
+      '/api/admin/users',
+      { id: userId, is_hidden: isHidden }
+    );
+    return data.user;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update expert visibility'));
+  }
+}
+
 export async function fetchAdminOrganizations() {
   try {
     const { data } = await apiClient.get<{ organizations: OrganizationOption[] }>(
-      '/api/organizations',
-      { params: { active: true } }
+      '/api/organizations'
     );
     return data.organizations || [];
   } catch (error) {
@@ -292,6 +317,17 @@ export async function updateAdminOrganization(
     return data.organization;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to update organization'));
+  }
+}
+
+export async function deleteAdminOrganization(idOrSlug: string) {
+  try {
+    const { data } = await apiClient.delete<{ organization: Pick<OrganizationOption, 'id' | 'name'> }>(
+      `/api/organizations/${idOrSlug}`
+    );
+    return data.organization;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to delete organization'));
   }
 }
 

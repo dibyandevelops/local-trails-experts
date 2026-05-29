@@ -87,14 +87,27 @@ export async function PATCH(
 
     for (const field of allowedFields) {
       if (Object.prototype.hasOwnProperty.call(body, field)) {
-        updates.push(`${field} = $${idx}`);
         const raw = body[field];
         if (field === 'slug' && typeof raw === 'string') {
-          values.push(raw.trim().toLowerCase());
+          const slug = raw.trim().toLowerCase();
+          if (!slug) {
+            return NextResponse.json({ error: 'slug cannot be empty' }, { status: 400 });
+          }
+          updates.push(`${field} = $${idx}`);
+          values.push(slug);
+        } else if (field === 'name' && typeof raw === 'string') {
+          const name = raw.trim();
+          if (!name) {
+            return NextResponse.json({ error: 'name cannot be empty' }, { status: 400 });
+          }
+          updates.push(`${field} = $${idx}`);
+          values.push(name);
+        } else if (field === 'country' && typeof raw === 'string') {
+          updates.push(`${field} = $${idx}`);
+          values.push(raw.trim() || 'Nepal');
         } else if (
           typeof raw === 'string' &&
           [
-            'name',
             'tagline',
             'description',
             'logo_url',
@@ -105,11 +118,12 @@ export async function PATCH(
             'contact_email',
             'contact_phone',
             'city',
-            'country',
           ].includes(field)
         ) {
-          values.push(raw.trim());
+          updates.push(`${field} = $${idx}`);
+          values.push(raw.trim() || null);
         } else {
+          updates.push(`${field} = $${idx}`);
           values.push(raw);
         }
         idx += 1;
@@ -146,5 +160,38 @@ export async function PATCH(
     }
     console.error('Error updating organization:', error);
     return NextResponse.json({ error: 'Failed to update organization' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const { clause, value } = buildLookup(id);
+
+    const result = await pool.query(
+      `
+      DELETE FROM organizations o
+      WHERE ${clause}
+      RETURNING o.id, o.name
+      `,
+      [value]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ organization: result.rows[0] }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting organization:', error);
+    return NextResponse.json({ error: 'Failed to delete organization' }, { status: 500 });
   }
 }

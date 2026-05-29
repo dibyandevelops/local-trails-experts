@@ -11,6 +11,7 @@ import {
   type OrganizationMember,
   type OrganizationOption,
 } from '@/services/admin/admin.service';
+import AppDialog from '@/components/ui/app-dialog';
 
 export default function OrganizationMembersPanel() {
   const queryClient = useQueryClient();
@@ -18,6 +19,7 @@ export default function OrganizationMembersPanel() {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [newRole, setNewRole] = useState<'org_admin' | 'org_editor'>('org_editor');
   const [message, setMessage] = useState<string | null>(null);
+  const [memberFormOpen, setMemberFormOpen] = useState(false);
 
   const { data: organizations = [] } = useQuery<OrganizationOption[]>({
     queryKey: ['admin-organizations'],
@@ -56,10 +58,11 @@ export default function OrganizationMembersPanel() {
       }),
     onSuccess: async () => {
       await invalidateMembers();
-      setMessage('Organization member saved.');
+      setMessage('Trail builder member saved.');
       setSelectedUserId('');
+      setMemberFormOpen(false);
     },
-    onError: () => setMessage('Failed to save organization member.'),
+    onError: () => setMessage('Failed to save trail builder member.'),
   });
 
   const updateMutation = useMutation({
@@ -74,79 +77,116 @@ export default function OrganizationMembersPanel() {
     }) => updateAdminOrganizationMember(memberId, { role, status }),
     onSuccess: async () => {
       await invalidateMembers();
-      setMessage('Organization member updated.');
+      setMessage('Trail builder member updated.');
     },
-    onError: () => setMessage('Failed to update organization member.'),
+    onError: () => setMessage('Failed to update trail builder member.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (memberId: string) => deleteAdminOrganizationMember(memberId),
     onSuccess: async () => {
       await invalidateMembers();
-      setMessage('Organization member removed.');
+      setMessage('Trail builder member removed.');
     },
-    onError: () => setMessage('Failed to remove organization member.'),
+    onError: () => setMessage('Failed to remove trail builder member.'),
   });
+
+  const memberForm = (
+    <div className="mt-5 space-y-3">
+      <select
+        value={selectedOrganizationId}
+        onChange={(event) => setSelectedOrganizationId(event.target.value)}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+      >
+        <option value="">Select trail builder</option>
+        {organizations.map((org) => (
+          <option key={org.id} value={org.id}>
+            {org.name}
+          </option>
+        ))}
+      </select>
+      <select
+        value={selectedUserId}
+        onChange={(event) => setSelectedUserId(event.target.value)}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        disabled={!selectedOrganizationId}
+      >
+        <option value="">Select user</option>
+        {memberCandidates.map((user) => (
+          <option key={user.id} value={user.id}>
+            {(user.name || user.email) + ` (${user.role})`}
+          </option>
+        ))}
+      </select>
+      <select
+        value={newRole}
+        onChange={(event) => setNewRole(event.target.value as 'org_admin' | 'org_editor')}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        disabled={!selectedOrganizationId}
+      >
+        <option value="org_editor">Builder editor</option>
+        <option value="org_admin">Builder admin</option>
+      </select>
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setMemberFormOpen(false)}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => upsertMutation.mutate()}
+          disabled={!selectedOrganizationId || !selectedUserId || upsertMutation.isPending}
+          className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+        >
+          {upsertMutation.isPending ? 'Saving...' : 'Add / Update'}
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Members</h2>
-      <p className="text-sm text-gray-600 mb-5">
-        Assign experts/participants to organizations with admin or editor roles.
-      </p>
+      <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Trail Builder Members</h2>
+          <p className="text-sm text-gray-600">
+            Assign experts/participants to trail builders with admin or editor roles.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMemberFormOpen(true)}
+          className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+        >
+          Add member
+        </button>
+      </div>
       {message && (
         <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">
           {message}
         </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+      <div className="mb-5">
         <select
           value={selectedOrganizationId}
           onChange={(event) => setSelectedOrganizationId(event.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">Select organization</option>
+          <option value="">Select trail builder</option>
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>
               {org.name}
             </option>
           ))}
         </select>
-        <select
-          value={selectedUserId}
-          onChange={(event) => setSelectedUserId(event.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          disabled={!selectedOrganizationId}
-        >
-          <option value="">Select user</option>
-          {memberCandidates.map((user) => (
-            <option key={user.id} value={user.id}>
-              {(user.name || user.email) + ` (${user.role})`}
-            </option>
-          ))}
-        </select>
-        <select
-          value={newRole}
-          onChange={(event) => setNewRole(event.target.value as 'org_admin' | 'org_editor')}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          disabled={!selectedOrganizationId}
-        >
-          <option value="org_editor">Org editor</option>
-          <option value="org_admin">Org admin</option>
-        </select>
-        <button
-          type="button"
-          onClick={() => upsertMutation.mutate()}
-          disabled={!selectedOrganizationId || !selectedUserId || upsertMutation.isPending}
-          className="rounded-lg bg-green-700 text-white px-4 py-2 text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
-        >
-          {upsertMutation.isPending ? 'Saving...' : 'Add / Update'}
-        </button>
       </div>
 
       {!selectedOrganizationId ? (
-        <p className="text-sm text-gray-600">Select an organization to manage its members.</p>
+        <p className="text-sm text-gray-600">Select a trail builder to manage its members.</p>
       ) : isLoading ? (
         <p className="text-sm text-gray-600">Loading members...</p>
       ) : members.length === 0 ? (
@@ -179,8 +219,8 @@ export default function OrganizationMembersPanel() {
                       }
                       className="rounded border border-gray-300 px-2 py-1 text-xs"
                     >
-                      <option value="org_admin">Org admin</option>
-                      <option value="org_editor">Org editor</option>
+                      <option value="org_admin">Builder admin</option>
+                      <option value="org_editor">Builder editor</option>
                     </select>
                   </td>
                   <td className="py-2 pr-4">
@@ -214,6 +254,15 @@ export default function OrganizationMembersPanel() {
           </table>
         </div>
       )}
+      <AppDialog
+        open={memberFormOpen}
+        onOpenChange={setMemberFormOpen}
+        title="Add trail builder member"
+        description="Assign a user to a trail builder and choose their role."
+        maxWidthClassName="max-w-xl"
+      >
+        {memberForm}
+      </AppDialog>
     </section>
   );
 }

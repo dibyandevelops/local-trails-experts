@@ -21,6 +21,22 @@ function isValidUpdateType(value: unknown): value is TrailUpdateType {
   );
 }
 
+async function isActiveOrgMember(userId: string, organizationId: string) {
+  const result = await pool.query(
+    `
+    SELECT 1
+    FROM organization_members
+    WHERE organization_id = $1
+      AND user_id = $2
+      AND status = 'active'
+      AND role IN ('org_admin', 'org_editor')
+    LIMIT 1
+    `,
+    [organizationId, userId]
+  );
+  return result.rows.length > 0;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -82,12 +98,29 @@ export async function POST(
       );
     }
 
+    const trailResult = await pool.query(
+      `
+      SELECT id, submitted_by_user_id
+      FROM trails
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [id]
+    );
+    if (!trailResult.rows.length) {
+      return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+    }
+    const trail = trailResult.rows[0] as { id: string; submitted_by_user_id: string | null };
+
     if (body.organization_id) {
       const relation = await pool.query(
         `
         SELECT 1
         FROM trail_organizations
-        WHERE trail_id = $1 AND organization_id = $2
+        JOIN organizations o ON o.id = trail_organizations.organization_id
+        WHERE trail_organizations.trail_id = $1
+          AND trail_organizations.organization_id = $2
+          AND o.is_active = TRUE
         LIMIT 1
         `,
         [id, body.organization_id]
@@ -95,6 +128,37 @@ export async function POST(
       if (relation.rows.length === 0 && auth.role !== 'admin') {
         return NextResponse.json(
           { error: 'Organization is not linked to this trail' },
+          { status: 403 }
+        );
+      }
+      if (auth.role === 'expert') {
+        const canUseOrg = await isActiveOrgMember(auth.sub, body.organization_id);
+        if (!canUseOrg) {
+          return NextResponse.json(
+            { error: 'You are not allowed to post updates for this organization' },
+            { status: 403 }
+          );
+        }
+      }
+    } else if (auth.role === 'expert') {
+      const isTrailOwner = trail.submitted_by_user_id === auth.sub;
+      const linkedOrgMember = await pool.query(
+        `
+        SELECT 1
+        FROM trail_organizations to2
+        JOIN organization_members om
+          ON om.organization_id = to2.organization_id
+         AND om.user_id = $2
+         AND om.status = 'active'
+         AND om.role IN ('org_admin', 'org_editor')
+        WHERE to2.trail_id = $1
+        LIMIT 1
+        `,
+        [id, auth.sub]
+      );
+      if (!isTrailOwner && linkedOrgMember.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'You can only post updates for your trail or linked organizations' },
           { status: 403 }
         );
       }

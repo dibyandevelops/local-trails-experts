@@ -71,6 +71,9 @@ export interface Trail {
   submitted_by_email?: string | null;
   created_by?: string | null;
   expert_name?: string | null;
+  built_by_org_name?: string | null;
+  verified_by_org_name?: string | null;
+  maintained_by_org_name?: string | null;
   status?: string | null;
   is_hidden?: boolean | null;
   onClick?: () => void;
@@ -197,6 +200,7 @@ export interface User {
   city: string | null;
   sports: string[] | null;
   is_verified_expert: boolean;
+  is_hidden?: boolean | null;
   average_rating?: number | null;
   review_count?: number | null;
   phone?: string | null;

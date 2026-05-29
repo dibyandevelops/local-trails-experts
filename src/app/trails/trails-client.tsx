@@ -43,6 +43,7 @@ import {
   TRAIL_DIFFICULTY_OPTIONS,
 } from '@/services/constants/difficulty';
 import { isShuttleEligibleSport } from '@/lib/shuttle';
+import { getTrailAttributionChipClass, getTrailAttributionLabel } from '@/lib/trail-attribution';
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
@@ -162,6 +163,36 @@ function TrailGallery({
                     ? `${elevationM} m`
                     : 'Elevation —'}
                 </span>
+                {trail.built_by_org_name && (
+                  <span
+                    className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('built_by')}`}
+                    title={`Built: ${trail.built_by_org_name}`}
+                  >
+                    <span className="truncate">
+                      {getTrailAttributionLabel('built_by')}: {trail.built_by_org_name}
+                    </span>
+                  </span>
+                )}
+                {trail.verified_by_org_name && (
+                  <span
+                    className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('verified_by')}`}
+                    title={`Verified: ${trail.verified_by_org_name}`}
+                  >
+                    <span className="truncate">
+                      {getTrailAttributionLabel('verified_by')}: {trail.verified_by_org_name}
+                    </span>
+                  </span>
+                )}
+                {trail.maintained_by_org_name && (
+                  <span
+                    className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('maintained_by')}`}
+                    title={`Maintained: ${trail.maintained_by_org_name}`}
+                  >
+                    <span className="truncate">
+                      {getTrailAttributionLabel('maintained_by')}: {trail.maintained_by_org_name}
+                    </span>
+                  </span>
+                )}
               </div>
             </Link>
           );

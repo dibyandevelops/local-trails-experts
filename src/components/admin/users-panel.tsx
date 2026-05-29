@@ -1,23 +1,38 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { getSportLabel } from '@/services/constants/sports';
 import {
   deleteAdminUser,
   fetchAdminUsers,
   type AdminUser,
+  updateAdminExpertVisibility,
 } from '@/services/admin/admin.service';
 import VerificationDetailsContent, {
   hasVerificationDetails,
 } from '@/components/ui/verification-details-content';
 import DateText from '@/components/ui/date-text';
+import AppDialog from '@/components/ui/app-dialog';
 
 type UsersPanelProps = {
   role: 'expert' | 'participant';
   title: string;
   description: string;
 };
+
+function ExpertVisibilityBadge({ isHidden }: { isHidden?: boolean | null }) {
+  return (
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+        isHidden
+          ? 'bg-slate-100 text-slate-700'
+          : 'bg-emerald-50 text-emerald-700'
+      }`}
+    >
+      {isHidden ? 'Hidden' : 'Visible'}
+    </span>
+  );
+}
 
 export default function UsersPanel({ role, title, description }: UsersPanelProps) {
   const queryClient = useQueryClient();
@@ -37,6 +52,29 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
       await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.users(role) });
     },
   });
+
+  const visibilityMutation = useMutation({
+    mutationFn: ({ userId, isHidden }: { userId: string; isHidden: boolean }) =>
+      updateAdminExpertVisibility(userId, isHidden),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.users(role) }),
+        queryClient.invalidateQueries({ queryKey: ['experts'] }),
+      ]);
+    },
+  });
+
+  const handleToggleExpertVisibility = async (user: AdminUser) => {
+    try {
+      await visibilityMutation.mutateAsync({
+        userId: user.id,
+        isHidden: !user.is_hidden,
+      });
+    } catch (error) {
+      console.error('Error updating expert visibility', error);
+      alert(error instanceof Error ? error.message : 'Failed to update expert visibility');
+    }
+  };
 
   const handleDeleteUser = async (user: AdminUser) => {
     if (
@@ -69,7 +107,10 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
               <div key={user.id} className="rounded-lg border border-gray-200 p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{user.name || 'Unnamed'}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900">{user.name || 'Unnamed'}</p>
+                      {role === 'expert' && <ExpertVisibilityBadge isHidden={user.is_hidden} />}
+                    </div>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <button
@@ -81,6 +122,18 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                     Delete
                   </button>
                 </div>
+                {role === 'expert' && (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleExpertVisibility(user)}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      disabled={visibilityMutation.isPending}
+                    >
+                      {user.is_hidden ? 'Show on experts page' : 'Hide from experts page'}
+                    </button>
+                  </div>
+                )}
                 {role === 'expert' &&
                   hasVerificationDetails({
                     yearsExperience: user.verification_years_experience,
@@ -146,7 +199,10 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                 {users.map((user) => (
                   <tr key={user.id} className="border-t border-gray-200">
                     <td className="px-3 py-3 text-sm text-gray-900">
-                      <div className="font-semibold">{user.name || 'Unnamed'}</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">{user.name || 'Unnamed'}</span>
+                        {role === 'expert' && <ExpertVisibilityBadge isHidden={user.is_hidden} />}
+                      </div>
                       <div className="text-xs text-gray-500">{user.email}</div>
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-600">
@@ -190,14 +246,26 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                       </td>
                     )}
                     <td className="px-3 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteUser(user)}
-                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
-                        disabled={deleteUserMutation.isPending}
-                      >
-                        Delete
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        {role === 'expert' && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleExpertVisibility(user)}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                            disabled={visibilityMutation.isPending}
+                          >
+                            {user.is_hidden ? 'Show' : 'Hide'}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteUser(user)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                          disabled={deleteUserMutation.isPending}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -207,41 +275,28 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
         </>
       )}
 
-      <Dialog.Root
+      <AppDialog
         open={detailsOpen}
         onOpenChange={(open) => {
           setDetailsOpen(open);
           if (!open) setActiveUser(null);
         }}
+        title="Expert verification details"
+        description={activeUser?.name || activeUser?.email || undefined}
+        maxWidthClassName="max-w-2xl"
       >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl">
-            <Dialog.Title className="text-sm font-semibold text-gray-900">
-              Expert verification details
-            </Dialog.Title>
-            <p className="mt-1 text-xs text-gray-500">
-              {activeUser?.name || activeUser?.email}
-            </p>
-            <div className="mt-4">
-              <VerificationDetailsContent
-                yearsExperience={activeUser?.verification_years_experience}
-                certifications={activeUser?.verification_certifications}
-                guidingHistory={activeUser?.verification_guiding_history}
-                safetyTraining={activeUser?.verification_safety_training}
-                achievements={activeUser?.verification_achievements}
-                stravaUrl={activeUser?.verification_strava_url}
-                links={activeUser?.verification_links}
-              />
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
-                Close
-              </Dialog.Close>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+        <div className="mt-4">
+          <VerificationDetailsContent
+            yearsExperience={activeUser?.verification_years_experience}
+            certifications={activeUser?.verification_certifications}
+            guidingHistory={activeUser?.verification_guiding_history}
+            safetyTraining={activeUser?.verification_safety_training}
+            achievements={activeUser?.verification_achievements}
+            stravaUrl={activeUser?.verification_strava_url}
+            links={activeUser?.verification_links}
+          />
+        </div>
+      </AppDialog>
     </section>
   );
 }

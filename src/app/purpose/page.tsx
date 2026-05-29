@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getImpactStats } from '@/lib/impact-stats';
 
 export const metadata: Metadata = {
   title: 'Purpose',
@@ -57,7 +58,8 @@ function Card({
   );
 }
 
-export default function PurposePage() {
+export default async function PurposePage() {
+  const stats = await getImpactStats();
   return (
     <div className="space-y-12">
       <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-6 py-10 shadow-sm dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 md:px-10 md:py-14">
@@ -103,6 +105,23 @@ export default function PurposePage() {
               Browse events
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Current impact</h2>
+        <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+          Live metrics from the platform today.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <ImpactPill label="Published trails" value={stats.totalTrails} />
+          <ImpactPill label="Riders reached" value={stats.totalRiders} />
+          <ImpactPill label="Upcoming events" value={stats.upcomingEvents} />
+          <ImpactPill label="Active organizations" value={stats.activeOrganizations} />
+          <ImpactPill label="Active campaigns" value={stats.activeCampaigns} />
+          <ImpactPill label="Funded (NPR)" value={stats.fundedAmountNpr} />
+          <ImpactPill label="Funding target (NPR)" value={stats.targetAmountNpr} />
+          <ImpactPill label="Hazard-marked trails" value={stats.hazardousTrails} />
         </div>
       </section>
 
@@ -296,6 +315,19 @@ export default function PurposePage() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function ImpactPill({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/80">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-bold text-gray-900 dark:text-gray-100">
+        {value.toLocaleString()}
+      </p>
     </div>
   );
 }
