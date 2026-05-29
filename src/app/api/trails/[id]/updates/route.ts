@@ -91,7 +91,9 @@ export async function POST(
       media_urls?: string[] | null;
     };
 
-    if (!isValidUpdateType(body.update_type) || !(body.title || '').trim()) {
+    const title = (body.title || '').trim();
+
+    if (!isValidUpdateType(body.update_type) || !title) {
       return NextResponse.json(
         { error: 'update_type and title are required' },
         { status: 400 }
@@ -177,7 +179,7 @@ export async function POST(
         body.organization_id || null,
         auth.sub,
         body.update_type,
-        body.title.trim(),
+        title,
         body.details?.trim() || null,
         JSON.stringify(
           Array.isArray(body.media_urls)
