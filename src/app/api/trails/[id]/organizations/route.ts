@@ -26,6 +26,7 @@ export async function GET(
       FROM trail_organizations to2
       JOIN organizations o ON o.id = to2.organization_id
       WHERE to2.trail_id = $1
+        AND o.is_active = TRUE
       ORDER BY
         to2.is_primary DESC,
         CASE to2.relation_type

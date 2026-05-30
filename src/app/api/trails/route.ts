@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
     const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get('search') || '';
+    const search = (searchParams.get('search') || '').trim();
     const purpose = (searchParams.get('purpose') || '').trim();
     const difficulty = searchParams.get('difficulty');
     const location = searchParams.get('location');
@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     let paramIndex = 1;
     let distanceExpr = 'NULL::double precision';
     let distanceOrderBy = '';
+    let searchRelevanceOrder = '';
 
     if (hasUserCoords) {
       const latParam = paramIndex++;
@@ -90,9 +91,41 @@ export async function GET(request: NextRequest) {
     whereClause += ` AND t.sport_type NOT IN ('local_tour')`;
 
     if (search) {
-      whereClause += ` AND (t.name ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex} OR t.location ILIKE $${paramIndex})`;
+      const searchPatternParam = paramIndex++;
+      const searchTermParam = paramIndex++;
+      whereClause += ` AND (
+        t.name ILIKE $${searchPatternParam}
+        OR COALESCE(t.description, '') ILIKE $${searchPatternParam}
+        OR t.location ILIKE $${searchPatternParam}
+        OR t.difficulty ILIKE $${searchPatternParam}
+        OR t.sport_type ILIKE $${searchPatternParam}
+        OR EXISTS (
+          SELECT 1
+          FROM trail_organizations search_to
+          JOIN organizations search_org ON search_org.id = search_to.organization_id
+          WHERE search_to.trail_id = t.id
+            AND search_org.is_active = TRUE
+            AND search_org.name ILIKE $${searchPatternParam}
+        )
+        OR similarity(lower(COALESCE(t.name, '')), lower($${searchTermParam})) >= 0.28
+        OR word_similarity(lower($${searchTermParam}), lower(COALESCE(t.name, ''))) >= 0.45
+        OR similarity(lower(COALESCE(t.location, '')), lower($${searchTermParam})) >= 0.28
+        OR word_similarity(lower($${searchTermParam}), lower(COALESCE(t.location, ''))) >= 0.45
+        OR similarity(lower(COALESCE(t.description, '')), lower($${searchTermParam})) >= 0.18
+      )`;
       params.push(`%${search}%`);
-      paramIndex++;
+      params.push(search);
+      searchRelevanceOrder = `
+        GREATEST(
+          CASE WHEN t.name ILIKE $${searchPatternParam} THEN 1.0 ELSE 0.0 END,
+          CASE WHEN t.location ILIKE $${searchPatternParam} THEN 0.9 ELSE 0.0 END,
+          similarity(lower(COALESCE(t.name, '')), lower($${searchTermParam}))::double precision,
+          word_similarity(lower($${searchTermParam}), lower(COALESCE(t.name, '')))::double precision,
+          similarity(lower(COALESCE(t.location, '')), lower($${searchTermParam}))::double precision,
+          word_similarity(lower($${searchTermParam}), lower(COALESCE(t.location, '')))::double precision,
+          similarity(lower(COALESCE(t.description, '')), lower($${searchTermParam}))::double precision
+        ) DESC,
+      `;
     }
 
     if (difficulty) {
@@ -182,7 +215,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ trails: result.rows || [] }, { status: 200 });
     }
 
-    const orderBy = (() => {
+    const baseOrderBy = (() => {
       switch (sort) {
         case 'random': {
           if (randomSeed) {
@@ -210,6 +243,9 @@ export async function GET(request: NextRequest) {
           return 't.name ASC';
       }
     })();
+    const orderBy = searchRelevanceOrder
+      ? `${searchRelevanceOrder} ${baseOrderBy}`
+      : baseOrderBy;
 
     const listQuery = `
       SELECT
@@ -247,6 +283,7 @@ export async function GET(request: NextRequest) {
         JOIN organizations o ON o.id = to2.organization_id
         WHERE to2.trail_id = t.id
           AND to2.relation_type = 'built_by'
+          AND o.is_active = TRUE
         ORDER BY to2.is_primary DESC, to2.created_at DESC
         LIMIT 1
       ) built_org ON TRUE
@@ -256,6 +293,7 @@ export async function GET(request: NextRequest) {
         JOIN organizations o ON o.id = to2.organization_id
         WHERE to2.trail_id = t.id
           AND to2.relation_type = 'verified_by'
+          AND o.is_active = TRUE
         ORDER BY to2.is_primary DESC, to2.created_at DESC
         LIMIT 1
       ) verified_org ON TRUE
@@ -265,6 +303,7 @@ export async function GET(request: NextRequest) {
         JOIN organizations o ON o.id = to2.organization_id
         WHERE to2.trail_id = t.id
           AND to2.relation_type = 'maintained_by'
+          AND o.is_active = TRUE
         ORDER BY to2.is_primary DESC, to2.created_at DESC
         LIMIT 1
       ) maintained_org ON TRUE

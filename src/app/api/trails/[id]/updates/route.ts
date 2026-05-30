@@ -62,6 +62,7 @@ export async function GET(
       LEFT JOIN organizations o ON o.id = tul.organization_id
       LEFT JOIN users u ON u.id = tul.actor_user_id
       WHERE tul.trail_id = $1
+        AND (tul.organization_id IS NULL OR o.is_active = TRUE)
       ORDER BY tul.created_at DESC
       `,
       [id]
