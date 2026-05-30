@@ -209,7 +209,7 @@ function TrailGallery({
           {...{
             ...trail,
             isRequested: trail.isRequested,
-            detailsHref: `/trails/${trail.id}`,
+            detailsHref: `/trails/${trail.slug || trail.id}`,
             onBeforeNavigate: storeTrailsListState,
             onViewMap() {
               onViewMap(trail);
