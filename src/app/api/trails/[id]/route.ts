@@ -32,9 +32,47 @@ export async function GET(
             WHEN u.role = 'admin' THEN '${communityNameSql}'
             ELSE u.name
           END AS submitted_by_name,
-          u.email AS submitted_by_email
+          u.email AS submitted_by_email,
+          COALESCE(associated_experts.expert_count, 0)::int AS associated_expert_count,
+          COALESCE(associated_experts.experts, '[]'::json) AS associated_experts
         FROM trails t
         LEFT JOIN users u ON u.id = t.submitted_by_user_id
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*)::int AS expert_count,
+            json_agg(
+              json_build_object(
+                'id', expert.id,
+                'name', expert.name,
+                'email', expert.email,
+                'city', expert.city,
+                'profile_photo_url', expert.profile_photo_url,
+                'is_verified_expert', expert.is_verified_expert,
+                'average_rating', COALESCE(er.average_rating, 0),
+                'review_count', COALESCE(er.review_count, 0)
+              )
+              ORDER BY
+                expert.is_verified_expert DESC,
+                COALESCE(er.average_rating, 0) DESC,
+                COALESCE(er.review_count, 0) DESC,
+                (expert.profile_photo_url IS NOT NULL) DESC,
+                et.sort_order ASC,
+                et.created_at DESC
+            ) AS experts
+          FROM expert_trails et
+          JOIN users expert ON expert.id = et.expert_user_id
+          LEFT JOIN (
+            SELECT
+              expert_user_id,
+              AVG(rating)::float AS average_rating,
+              COUNT(*)::int AS review_count
+            FROM expert_reviews
+            GROUP BY expert_user_id
+          ) er ON er.expert_user_id = expert.id
+          WHERE et.trail_id = t.id
+            AND expert.role = 'expert'
+            AND COALESCE(expert.is_hidden, FALSE) = FALSE
+        ) associated_experts ON TRUE
         WHERE t.id::text = $1 OR t.slug = $1
         ORDER BY CASE WHEN t.id::text = $1 THEN 0 ELSE 1 END
       `,

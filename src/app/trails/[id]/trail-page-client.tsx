@@ -15,6 +15,7 @@ import Map, {
 } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as Toast from '@radix-ui/react-toast';
 import { Trail, RouteData, User, SportType, TrailReview } from '@/types';
 import {
   getSafetyLabelText,
@@ -51,6 +52,7 @@ import { getDifficultyLabel, normalizeDifficulty } from '@/services/constants/di
 import { isShuttleEligibleSport } from '@/lib/shuttle';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
+const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
 
 type TrailPageClientProps = {
   trailId: string;
@@ -68,6 +70,9 @@ type GeoJSON = {
 type ParticipantTrailRequest = {
   id: string;
   trail_id: string;
+};
+type ExpertTrailsResponse = {
+  associated_trails?: Trail[];
 };
 type TrailOrganization = {
   id: string;
@@ -365,6 +370,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [pendingGpxFile, setPendingGpxFile] = useState<File | null>(null);
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [allAssociatedExpertsOpen, setAllAssociatedExpertsOpen] = useState(false);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -378,6 +384,9 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [requestAcceptTerms, setRequestAcceptTerms] = useState(false);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastTitle, setToastTitle] = useState('Trail updated');
+  const [toastDescription, setToastDescription] = useState('');
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
   const [hazardousDraft, setHazardousDraft] = useState(false);
   const [hazardNoteDraft, setHazardNoteDraft] = useState('');
@@ -510,6 +519,23 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     },
     enabled: currentUser?.role === 'participant' && Boolean(trailId),
   });
+  const { data: expertTrailsData, isLoading: loadingExpertTrails } =
+    useQuery<ExpertTrailsResponse>({
+      queryKey: EXPERT_ASSOCIATED_TRAILS_QUERY_KEY,
+      enabled: currentUser?.role === 'expert',
+      queryFn: async ({ signal }) => {
+        const response = await fetch('/api/experts/me/trails', { signal });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to load associated trails');
+        }
+        return data as ExpertTrailsResponse;
+      },
+    });
+  const associatedTrailIds = useMemo(
+    () => new Set((expertTrailsData?.associated_trails || []).map((item) => item.id)),
+    [expertTrailsData?.associated_trails]
+  );
 
   const hasLocation = trail?.latitude != null && trail?.longitude != null;
   const routeData = (trail?.route_data as RouteData | null) ?? null;
@@ -580,6 +606,39 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     currentUser?.role === 'admin' ||
     (currentUser?.role === 'participant' &&
       joinedEvents.some((event) => event.trail_id === trailId));
+  const canonicalTrailId = trail?.id || trailId;
+  const associatedExperts = useMemo(
+    () =>
+      (Array.isArray(trail?.associated_experts) ? trail.associated_experts : [])
+        .slice()
+        .sort((a, b) => {
+          if (Boolean(a.is_verified_expert) !== Boolean(b.is_verified_expert)) {
+            return a.is_verified_expert ? -1 : 1;
+          }
+          const ratingDiff = Number(b.average_rating || 0) - Number(a.average_rating || 0);
+          if (ratingDiff !== 0) return ratingDiff;
+          const reviewDiff = Number(b.review_count || 0) - Number(a.review_count || 0);
+          if (reviewDiff !== 0) return reviewDiff;
+          if (Boolean(a.profile_photo_url) !== Boolean(b.profile_photo_url)) {
+            return a.profile_photo_url ? -1 : 1;
+          }
+          return (a.name || a.email || '').localeCompare(b.name || b.email || '');
+        }),
+    [trail?.associated_experts]
+  );
+  const visibleAssociatedExperts = associatedExperts.slice(0, 3);
+  const hiddenAssociatedExpertCount = Math.max(0, associatedExperts.length - visibleAssociatedExperts.length);
+  const associatedExpertIds = useMemo(
+    () => new Set(associatedExperts.map((expert) => expert.id)),
+    [associatedExperts]
+  );
+  const requestExpertOptions = useMemo(
+    () => [
+      ...associatedExperts.filter((expert) => expert.is_verified_expert),
+      ...experts.filter((expert) => !associatedExpertIds.has(expert.id)),
+    ],
+    [associatedExperts, associatedExpertIds, experts]
+  );
 
   useEffect(() => {
     if (!existingReview) {
@@ -694,6 +753,56 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       refetchParticipantRequests();
     },
   });
+  const expertTrailAssociationMutation = useMutation({
+    mutationFn: async (payload: { isAssociated: boolean }) => {
+      if (!canonicalTrailId) {
+        throw new Error('Trail is not ready yet.');
+      }
+      const currentIds = Array.from(associatedTrailIds);
+      const nextIds = payload.isAssociated
+        ? currentIds.filter((id) => id !== canonicalTrailId)
+        : [...currentIds, canonicalTrailId];
+
+      if (!payload.isAssociated && currentIds.length >= 12) {
+        throw new Error('You can associate up to 12 trails.');
+      }
+
+      const response = await fetch('/api/experts/me/trails', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trail_ids: nextIds }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update associated trails');
+      }
+      return data as ExpertTrailsResponse;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData<ExpertTrailsResponse>(
+        EXPERT_ASSOCIATED_TRAILS_QUERY_KEY,
+        (current) => ({
+          ...(current || {}),
+          associated_trails: data.associated_trails || [],
+        })
+      );
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
+      setToastTitle(isAssociatedToExpert ? 'Trail removed from profile' : 'Trail pinned');
+      setToastDescription(
+        isAssociatedToExpert
+          ? 'This trail was removed from your expert profile.'
+          : 'This trail now appears on your expert profile.'
+      );
+      setToastOpen(true);
+    },
+    onError: (error) => {
+      setToastTitle('Update failed');
+      setToastDescription(
+        error instanceof Error ? error.message : 'Failed to update expert profile trails.'
+      );
+      setToastOpen(true);
+    },
+  });
 
   const performRouteUpload = async (file: File) => {
     setUploading(true);
@@ -742,6 +851,9 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const canUploadPhotos = canManageTrail;
   const canCreateEvent = currentUser?.role === 'admin' || currentUser?.role === 'expert';
   const canRequestTrail = currentUser?.role === 'participant' || !currentUser;
+  const canAssociateExpertTrail =
+    currentUser?.role === 'expert' && !loadingExpertTrails && Boolean(expertTrailsData);
+  const isAssociatedToExpert = associatedTrailIds.has(canonicalTrailId);
   const existingTrailRequest = participantRequests.find((request) => request.trail_id === trailId);
   const hasRequestedTrail = Boolean(existingTrailRequest);
   const hasCreatedEventForRequestedTrail =
@@ -1216,6 +1328,25 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           } as ThemedDropdownItem,
         ]
       : []),
+    ...(canAssociateExpertTrail
+      ? [
+          {
+            label: expertTrailAssociationMutation.isPending
+              ? isAssociatedToExpert
+                ? 'Removing...'
+                : 'Pinning...'
+              : isAssociatedToExpert
+                ? 'Remove from my expert profile'
+                : 'Pin to my expert profile',
+            onSelect: () =>
+              expertTrailAssociationMutation.mutate({
+                isAssociated: isAssociatedToExpert,
+              }),
+            disabled: expertTrailAssociationMutation.isPending,
+            separatorBefore: true,
+          } as ThemedDropdownItem,
+        ]
+      : []),
     ...(trailImages.length > 0
       ? [
           {
@@ -1592,6 +1723,99 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         </section>
       )}
 
+      {associatedExperts.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50/70 p-5 shadow-sm dark:border-cyan-900/60 dark:bg-cyan-950/30">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
+                Experts who know this trail
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Local familiarity available
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm text-cyan-900/80 dark:text-cyan-100/80">
+                These experts selected this trail on their profile, meaning they ride,
+                guide, or know this route well.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {hiddenAssociatedExpertCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setAllAssociatedExpertsOpen(true)}
+                  className="inline-flex rounded-lg border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-50"
+                >
+                  View all {associatedExperts.length} experts
+                </button>
+              )}
+              {canRequestTrail && !hasRequestedTrail && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedExpertId(
+                      associatedExperts.find((expert) => expert.is_verified_expert)?.id || ''
+                    );
+                    handleOpenRequestRide();
+                  }}
+                  className="inline-flex rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
+                >
+                  Request with local expert
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {visibleAssociatedExperts.map((expert) => {
+              const initials =
+                (expert.name || expert.email || 'Expert')
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join('')
+                  .toUpperCase() || 'EX';
+              return (
+                <div
+                  key={expert.id}
+                  className="rounded-xl border border-cyan-100 bg-white p-4 shadow-sm dark:border-cyan-900/60 dark:bg-slate-900"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-cyan-100 bg-cyan-50 text-sm font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/50 dark:text-cyan-100">
+                      {expert.profile_photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={expert.profile_photo_url}
+                          alt={expert.name || 'Expert'}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          {initials}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <a
+                        href={`/experts/${expert.id}`}
+                        className="line-clamp-1 text-sm font-semibold text-gray-900 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300"
+                      >
+                        {expert.name || expert.email || 'Local expert'}
+                      </a>
+                      <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
+                        {expert.city || 'Nepal'}
+                      </p>
+                      <p className="mt-2 text-xs text-cyan-800 dark:text-cyan-200">
+                        Associated with this trail
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {(trail.distance_km || routeData?.totalDistance) && (
           <div className="flex min-h-[106px] items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-gray-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:min-h-[126px] sm:px-6 sm:py-5 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
@@ -1938,12 +2162,18 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 >
                   <option value="">Choose expert</option>
-                  {experts.map((expert) => (
+                  {requestExpertOptions.map((expert) => (
                     <option key={expert.id} value={expert.id}>
                       {expert.name || expert.email}
+                      {associatedExpertIds.has(expert.id) ? ' — knows this trail' : ''}
                     </option>
                   ))}
                 </select>
+                {associatedExperts.length > 0 && (
+                  <p className="mt-1 text-xs text-cyan-700">
+                    Experts familiar with this trail are shown first.
+                  </p>
+                )}
               </div>
             )}
             <div className="mt-3">
@@ -2437,6 +2667,81 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         images={trailImages}
         initialIndex={galleryInitialIndex}
       />
+
+      <AppDialog
+        open={allAssociatedExpertsOpen}
+        onOpenChange={setAllAssociatedExpertsOpen}
+        title="Experts who know this trail"
+        description="Experts who selected this trail on their profile."
+        maxWidthClassName="max-w-3xl"
+      >
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {associatedExperts.map((expert) => {
+            const initials =
+              (expert.name || expert.email || 'Expert')
+                .split(' ')
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part[0])
+                .join('')
+                .toUpperCase() || 'EX';
+            return (
+              <a
+                key={`all-associated-${expert.id}`}
+                href={`/experts/${expert.id}`}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-cyan-800"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-cyan-100 bg-cyan-50 text-sm font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/50 dark:text-cyan-100">
+                    {expert.profile_photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={expert.profile_photo_url}
+                        alt={expert.name || 'Expert'}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        {initials}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-white">
+                      {expert.name || expert.email || 'Local expert'}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
+                      {expert.city || 'Nepal'}
+                    </p>
+                    {(expert.review_count || 0) > 0 && (
+                      <p className="mt-2 text-xs text-cyan-800 dark:text-cyan-200">
+                        {Number(expert.average_rating || 0).toFixed(1)} rating · {expert.review_count} review
+                        {expert.review_count === 1 ? '' : 's'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </AppDialog>
+
+      <Toast.Provider swipeDirection="right">
+        <Toast.Root
+          open={toastOpen}
+          onOpenChange={setToastOpen}
+          className="rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-lg"
+        >
+          <Toast.Title className="text-sm font-semibold text-gray-900">
+            {toastTitle}
+          </Toast.Title>
+          <Toast.Description className="mt-1 text-xs text-gray-600">
+            {toastDescription}
+          </Toast.Description>
+        </Toast.Root>
+        <Toast.Viewport className="fixed bottom-4 right-4 z-50" />
+      </Toast.Provider>
 
     </div>
   );

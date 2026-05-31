@@ -74,6 +74,17 @@ export interface Trail {
   built_by_org_name?: string | null;
   verified_by_org_name?: string | null;
   maintained_by_org_name?: string | null;
+  associated_expert_count?: number | null;
+  associated_experts?: Array<{
+    id: string;
+    name: string | null;
+    email?: string | null;
+    city?: string | null;
+    profile_photo_url?: string | null;
+    is_verified_expert?: boolean | null;
+    average_rating?: number | null;
+    review_count?: number | null;
+  }> | null;
   status?: string | null;
   is_hidden?: boolean | null;
   onClick?: () => void;

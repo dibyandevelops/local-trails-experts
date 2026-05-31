@@ -34,6 +34,10 @@ export type TrailCardProps = Trail & {
   isRequested?: boolean;
   onRequestTrail?: () => void;
   onCancelRequest?: () => void;
+  isAssociatedToExpert?: boolean;
+  associationLoading?: boolean;
+  onAssociateTrail?: () => void;
+  onRemoveAssociation?: () => void;
 };
 
 const toFiniteNumber = (value: unknown) => {
@@ -124,6 +128,24 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             label: 'Cancel request',
             onSelect: () => trail.onCancelRequest?.(),
             tone: 'danger' as const,
+          },
+        ]
+      : []),
+    ...(trail.onAssociateTrail && !trail.isAssociatedToExpert
+      ? [
+          {
+            label: trail.associationLoading ? 'Pinning...' : 'Pin to my expert profile',
+            disabled: trail.associationLoading,
+            onSelect: () => trail.onAssociateTrail?.(),
+          },
+        ]
+      : []),
+    ...(trail.onRemoveAssociation && trail.isAssociatedToExpert
+      ? [
+          {
+            label: trail.associationLoading ? 'Removing...' : 'Remove from my expert profile',
+            disabled: trail.associationLoading,
+            onSelect: () => trail.onRemoveAssociation?.(),
           },
         ]
       : []),
@@ -396,6 +418,11 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
                 <span className="truncate">
                   {getTrailAttributionLabel('maintained_by')}: {trail.maintained_by_org_name}
                 </span>
+              </span>
+            )}
+            {(trail.associated_expert_count || 0) > 0 && (
+              <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-medium text-cyan-700 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
+                Local expert available
               </span>
             )}
           </div>

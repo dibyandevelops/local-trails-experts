@@ -47,6 +47,7 @@ import { getTrailAttributionChipClass, getTrailAttributionLabel } from '@/lib/tr
 
 const TRAILS_SCROLL_KEY = 'trails_scroll_y';
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
+const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
 
 type TrailsViewMode = 'grid' | 'quick';
 type TrailsPageParam = { offset: number; limit: number };
@@ -59,6 +60,9 @@ type TrailSort =
   | 'distance_desc'
   | 'elevation_desc';
 type RideProfile = '' | 'short' | 'medium' | 'long';
+type ExpertTrailsResponse = {
+  associated_trails?: Trail[];
+};
 
 const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
   { value: 'random', label: 'Random' },
@@ -96,9 +100,13 @@ function TrailGallery({
   onDeleteTrail,
   onHideTrail,
   onUnhideTrail,
+  onToggleExpertTrail,
+  canAssociateExpertTrail,
+  associatedTrailIds,
   deletingTrailId,
   hidingTrailId,
   unhidingTrailId,
+  associatingTrailId,
 }: {
   trails: Array<Trail & { isRequested?: boolean }>;
   viewMode: TrailsViewMode;
@@ -114,9 +122,13 @@ function TrailGallery({
   onDeleteTrail?: (trailId: string) => void;
   onHideTrail?: (trailId: string) => void;
   onUnhideTrail?: (trailId: string) => void;
+  onToggleExpertTrail?: (trail: Trail, isAssociated: boolean) => void;
+  canAssociateExpertTrail: boolean;
+  associatedTrailIds: Set<string>;
   deletingTrailId?: string | null;
   hidingTrailId?: string | null;
   unhidingTrailId?: string | null;
+  associatingTrailId?: string | null;
 }) {
   const router = useRouter();
   const storeTrailsListState = () => {
@@ -134,67 +146,94 @@ function TrailGallery({
           const distanceKm = Number(trail.distance_km);
           const elevationM = Number(trail.elevation_gain_m);
           return (
-            <Link
+            <div
               key={trail.id}
-              href={`/trails/${trail.slug || trail.id}`}
-              onClick={storeTrailsListState}
               className="group rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 dark:border-slate-800 dark:bg-slate-900/70"
-              aria-label={`View details for ${trail.name}`}
             >
-              <div className="flex items-start justify-between gap-1.5">
-                <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900 dark:text-white">
-                  {trail.name}
+              <Link
+                href={`/trails/${trail.slug || trail.id}`}
+                onClick={storeTrailsListState}
+                aria-label={`View details for ${trail.name}`}
+                className="block"
+              >
+                <div className="flex items-start justify-between gap-1.5">
+                  <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900 dark:text-white">
+                    {trail.name}
+                  </p>
+                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+                    {getDifficultyLabel(trail.difficulty)}
+                  </span>
+                </div>
+                <p className="mt-1 truncate text-[11px] text-gray-600 dark:text-slate-300">
+                  {trail.location || 'Nepal'}
                 </p>
-                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
-                  {getDifficultyLabel(trail.difficulty)}
-                </span>
-              </div>
-              <p className="mt-1 truncate text-[11px] text-gray-600 dark:text-slate-300">
-                {trail.location || 'Nepal'}
-              </p>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
-                  {Number.isFinite(distanceKm) && distanceKm > 0
-                    ? `${distanceKm.toFixed(1)} km`
-                    : 'Distance —'}
-                </span>
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
-                  {Number.isFinite(elevationM) && elevationM > 0
-                    ? `${elevationM} m`
-                    : 'Elevation —'}
-                </span>
-                {trail.built_by_org_name && (
-                  <span
-                    className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('built_by')}`}
-                    title={`Built: ${trail.built_by_org_name}`}
-                  >
-                    <span className="truncate">
-                      {getTrailAttributionLabel('built_by')}: {trail.built_by_org_name}
-                    </span>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                    {Number.isFinite(distanceKm) && distanceKm > 0
+                      ? `${distanceKm.toFixed(1)} km`
+                      : 'Distance —'}
                   </span>
-                )}
-                {trail.verified_by_org_name && (
-                  <span
-                    className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('verified_by')}`}
-                    title={`Verified: ${trail.verified_by_org_name}`}
-                  >
-                    <span className="truncate">
-                      {getTrailAttributionLabel('verified_by')}: {trail.verified_by_org_name}
-                    </span>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                    {Number.isFinite(elevationM) && elevationM > 0
+                      ? `${elevationM} m`
+                      : 'Elevation —'}
                   </span>
-                )}
-                {trail.maintained_by_org_name && (
-                  <span
-                    className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('maintained_by')}`}
-                    title={`Maintained: ${trail.maintained_by_org_name}`}
-                  >
-                    <span className="truncate">
-                      {getTrailAttributionLabel('maintained_by')}: {trail.maintained_by_org_name}
+                  {trail.built_by_org_name && (
+                    <span
+                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('built_by')}`}
+                      title={`Built: ${trail.built_by_org_name}`}
+                    >
+                      <span className="truncate">
+                        {getTrailAttributionLabel('built_by')}: {trail.built_by_org_name}
+                      </span>
                     </span>
-                  </span>
-                )}
-              </div>
-            </Link>
+                  )}
+                  {trail.verified_by_org_name && (
+                    <span
+                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('verified_by')}`}
+                      title={`Verified: ${trail.verified_by_org_name}`}
+                    >
+                      <span className="truncate">
+                        {getTrailAttributionLabel('verified_by')}: {trail.verified_by_org_name}
+                      </span>
+                    </span>
+                  )}
+                  {trail.maintained_by_org_name && (
+                    <span
+                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('maintained_by')}`}
+                      title={`Maintained: ${trail.maintained_by_org_name}`}
+                    >
+                      <span className="truncate">
+                        {getTrailAttributionLabel('maintained_by')}: {trail.maintained_by_org_name}
+                      </span>
+                    </span>
+                  )}
+                  {(trail.associated_expert_count || 0) > 0 && (
+                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-700">
+                      Local expert
+                    </span>
+                  )}
+                </div>
+              </Link>
+              {canAssociateExpertTrail && (
+                <button
+                  type="button"
+                  onClick={() => onToggleExpertTrail?.(trail, associatedTrailIds.has(trail.id))}
+                  disabled={Boolean(associatingTrailId)}
+                  className={`mt-2 w-full rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    associatedTrailIds.has(trail.id)
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {associatingTrailId === trail.id
+                    ? 'Saving...'
+                    : associatedTrailIds.has(trail.id)
+                      ? 'Pinned to profile'
+                      : 'Pin to expert profile'}
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
@@ -235,6 +274,18 @@ function TrailGallery({
               ? {
                   onOpenImageGallery() {
                     onOpenImageGallery(trail);
+                  },
+                }
+              : {}),
+            ...(canAssociateExpertTrail && onToggleExpertTrail
+              ? {
+                  isAssociatedToExpert: associatedTrailIds.has(trail.id),
+                  associationLoading: Boolean(associatingTrailId),
+                  onAssociateTrail() {
+                    onToggleExpertTrail(trail, false);
+                  },
+                  onRemoveAssociation() {
+                    onToggleExpertTrail(trail, true);
                   },
                 }
               : {}),
@@ -407,6 +458,23 @@ function TrailsPageContent() {
     enabled: !EXPERTS_BETA_ENABLED,
   });
   const queryClient = useQueryClient();
+  const { data: expertTrailsData, isLoading: loadingExpertTrails } =
+    useQuery<ExpertTrailsResponse>({
+    queryKey: EXPERT_ASSOCIATED_TRAILS_QUERY_KEY,
+    enabled: user?.role === 'expert',
+    queryFn: async ({ signal }) => {
+      const response = await fetch('/api/experts/me/trails', { signal });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to load associated trails');
+      }
+      return data as ExpertTrailsResponse;
+    },
+  });
+  const associatedTrailIds = useMemo(
+    () => new Set((expertTrailsData?.associated_trails || []).map((trail) => trail.id)),
+    [expertTrailsData?.associated_trails]
+  );
   const {
     data: mapTrailDetail,
     isLoading: loadingMapTrail,
@@ -555,6 +623,49 @@ function TrailsPageContent() {
     },
   });
 
+  const expertTrailAssociationMutation = useMutation({
+    mutationFn: async (payload: { trailId: string; isAssociated: boolean }) => {
+      const currentIds = Array.from(associatedTrailIds);
+      const nextIds = payload.isAssociated
+        ? currentIds.filter((trailId) => trailId !== payload.trailId)
+        : [...currentIds, payload.trailId];
+
+      if (!payload.isAssociated && currentIds.length >= 12) {
+        throw new Error('You can associate up to 12 trails.');
+      }
+
+      const response = await fetch('/api/experts/me/trails', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trail_ids: nextIds }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update associated trails');
+      }
+      return data as ExpertTrailsResponse;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData<ExpertTrailsResponse>(
+        EXPERT_ASSOCIATED_TRAILS_QUERY_KEY,
+        (current) => ({
+          ...(current || {}),
+          associated_trails: data.associated_trails || [],
+        })
+      );
+      setToastTitle('Expert trails updated');
+      setToastDescription('Your expert profile trail list has been updated.');
+      setToastOpen(true);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update associated trails.';
+      setToastTitle('Update failed');
+      setToastDescription(message);
+      setToastOpen(true);
+    },
+  });
+
   const invalidateTrailsQueries = (trailId?: string) => {
     const infiniteKey = QUERY_KEYS.trails.infiniteList({
       search,
@@ -677,6 +788,9 @@ function TrailsPageContent() {
   const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
   const hidingTrailId = hideMutation.isPending ? hideMutation.variables : null;
   const unhidingTrailId = unhideMutation.isPending ? unhideMutation.variables : null;
+  const associatingTrailId = expertTrailAssociationMutation.isPending
+    ? expertTrailAssociationMutation.variables?.trailId
+    : null;
   const selectedCreateEventTrail =
     trails.find((trail) => trail.id === createEventTrailId) ?? null;
   const pagination =
@@ -945,9 +1059,9 @@ function TrailsPageContent() {
             <h1 className="mt-2 text-3xl font-bold text-green-800 dark:text-green-200">
               Find a Trail
             </h1>
-          <p className="mt-2 max-w-xl text-sm text-gray-600 dark:text-slate-300">
-            Pick a place, open a trail, and ride with confidence.
-          </p>
+            <p className="mt-2 max-w-xl text-sm text-gray-600 dark:text-slate-300">
+              Pick a place, open a trail, and ride with confidence.
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center rounded-full border border-gray-300 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -1061,7 +1175,8 @@ function TrailsPageContent() {
                 onClick={() => setSport('')}
                 className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800"
               >
-                Sport: {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport} ×
+                Sport:{' '}
+                {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport} ×
               </button>
             )}
             {rideProfile && (
@@ -1070,7 +1185,13 @@ function TrailsPageContent() {
                 onClick={() => setRideProfile('')}
                 className="rounded-full border border-cyan-300 bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-800"
               >
-                Ride: {rideProfile === 'short' ? 'Short' : rideProfile === 'medium' ? 'Medium' : 'Long'} ×
+                Ride:{' '}
+                {rideProfile === 'short'
+                  ? 'Short'
+                  : rideProfile === 'medium'
+                    ? 'Medium'
+                    : 'Long'}{' '}
+                ×
               </button>
             )}
             {sort !== 'random' && (
@@ -1079,7 +1200,10 @@ function TrailsPageContent() {
                 onClick={() => setSort('random')}
                 className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-800"
               >
-                Sort: {TRAIL_SORT_OPTIONS.find((option) => option.value === sort)?.label || sort} ×
+                Sort:{' '}
+                {TRAIL_SORT_OPTIONS.find((option) => option.value === sort)
+                  ?.label || sort}{' '}
+                ×
               </button>
             )}
             {distanceMin && (
@@ -1120,7 +1244,8 @@ function TrailsPageContent() {
                   Filter trails
                 </Dialog.Title>
                 <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                  Narrow results by difficulty, location, sport type, and distance.
+                  Narrow results by difficulty, location, sport type, and
+                  distance.
                 </p>
               </div>
               <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
@@ -1144,13 +1269,18 @@ function TrailsPageContent() {
               aria-label="Trail filters"
             >
               <div>
-                <label htmlFor="trails-difficulty" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="trails-difficulty"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Difficulty
                 </label>
                 <select
                   id="trails-difficulty"
                   value={draftDifficulty}
-                  onChange={(e) => setDraftDifficulty(e.target.value as Difficulty | '')}
+                  onChange={(e) =>
+                    setDraftDifficulty(e.target.value as Difficulty | '')
+                  }
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   <option value="">All</option>
@@ -1162,7 +1292,10 @@ function TrailsPageContent() {
                 </select>
               </div>
               <div>
-                <label htmlFor="trails-location" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="trails-location"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Location
                 </label>
                 <input
@@ -1175,7 +1308,10 @@ function TrailsPageContent() {
                 />
               </div>
               <div>
-                <label htmlFor="trails-distance-min" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="trails-distance-min"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Min distance (km)
                 </label>
                 <input
@@ -1189,7 +1325,10 @@ function TrailsPageContent() {
                 />
               </div>
               <div>
-                <label htmlFor="trails-distance-max" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="trails-distance-max"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Max distance (km)
                 </label>
                 <input
@@ -1203,7 +1342,10 @@ function TrailsPageContent() {
                 />
               </div>
               <div>
-                <label htmlFor="trails-sport-modal" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="trails-sport-modal"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Category
                 </label>
                 <select
@@ -1221,13 +1363,18 @@ function TrailsPageContent() {
                 </select>
               </div>
               <div>
-                <label htmlFor="trails-sort-modal" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="trails-sort-modal"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Sort
                 </label>
                 <select
                   id="trails-sort-modal"
                   value={draftSort}
-                  onChange={(event) => setDraftSort(event.target.value as TrailSort)}
+                  onChange={(event) =>
+                    setDraftSort(event.target.value as TrailSort)
+                  }
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   {TRAIL_SORT_OPTIONS.map((option) => (
@@ -1238,17 +1385,25 @@ function TrailsPageContent() {
                 </select>
               </div>
               <div>
-                <label htmlFor="trails-ride-profile-modal" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="trails-ride-profile-modal"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Ride profile
                 </label>
                 <select
                   id="trails-ride-profile-modal"
                   value={draftRideProfile}
-                  onChange={(event) => setDraftRideProfile(event.target.value as RideProfile)}
+                  onChange={(event) =>
+                    setDraftRideProfile(event.target.value as RideProfile)
+                  }
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   {RIDE_PROFILE_QUICK_FILTERS.map((option) => (
-                    <option key={option.value || 'all-rides'} value={option.value}>
+                    <option
+                      key={option.value || 'all-rides'}
+                      value={option.value}
+                    >
                       {option.label}
                     </option>
                   ))}
@@ -1375,10 +1530,11 @@ function TrailsPageContent() {
                 window.dispatchEvent(
                   new CustomEvent('open-register', {
                     detail: {
-                      message: 'Create a participant account to request a trail activity.',
+                      message:
+                        'Create a participant account to request a trail activity.',
                       next,
                     },
-                  })
+                  }),
                 );
                 return;
               }
@@ -1408,6 +1564,18 @@ function TrailsPageContent() {
               setCreateEventSport(trail.sport_type || 'mtb');
               setCreateEventOpen(true);
             }}
+            canAssociateExpertTrail={
+              user?.role === 'expert' && !loadingExpertTrails && Boolean(expertTrailsData)
+            }
+            associatedTrailIds={associatedTrailIds}
+            associatingTrailId={associatingTrailId}
+            onToggleExpertTrail={(trail, isAssociated) => {
+              if (user?.role !== 'expert') return;
+              expertTrailAssociationMutation.mutate({
+                trailId: trail.id,
+                isAssociated,
+              });
+            }}
           />
 
           {isFetchingNextPage && (
@@ -1435,7 +1603,7 @@ function TrailsPageContent() {
       )}
 
       <div className="mt-10 grid gap-4 md:grid-cols-2">
-        {(user?.role !== 'expert') && (
+        {user?.role !== 'expert' && (
           <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
             <div className="mb-2 flex items-center gap-2">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-200">
@@ -1448,8 +1616,9 @@ function TrailsPageContent() {
               </p>
             </div>
             <p>
-              Discover local trails with safety tags, distance, and difficulty. Request a guided
-              outing from verified experts when you&apos;re ready.
+              Discover local trails with safety tags, distance, and difficulty.
+              Request a guided outing from verified experts when you&apos;re
+              ready.
             </p>
             <button
               type="button"
@@ -1461,7 +1630,7 @@ function TrailsPageContent() {
             </button>
           </div>
         )}
-        {(user?.role !== 'participant') && (
+        {user?.role !== 'participant' && (
           <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
             <div className="mb-2 flex items-center gap-2">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
@@ -1484,8 +1653,8 @@ function TrailsPageContent() {
               )}
             </div>
             <p>
-              Publish your best trails, manage safety labels, and showcase routes that help your
-              community discover guided experiences.
+              Publish your best trails, manage safety labels, and showcase
+              routes that help your community discover guided experiences.
             </p>
             <button
               type="button"
@@ -1527,7 +1696,10 @@ function TrailsPageContent() {
             ) : mapTrailError ? (
               <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
                 <div className="space-y-3">
-                  <p>{(mapTrailError as Error).message || 'Failed to load trail map.'}</p>
+                  <p>
+                    {(mapTrailError as Error).message ||
+                      'Failed to load trail map.'}
+                  </p>
                   <button
                     type="button"
                     onClick={() => {
@@ -1594,7 +1766,11 @@ function TrailsPageContent() {
                 <Source
                   id="modal-route"
                   type="geojson"
-                  data={getRouteGeoJSON(mapTrailDetail.route_data as RouteData) as any}
+                  data={
+                    getRouteGeoJSON(
+                      mapTrailDetail.route_data as RouteData,
+                    ) as any
+                  }
                 >
                   <Layer
                     id="modal-route-glow"
@@ -1640,8 +1816,14 @@ function TrailsPageContent() {
                   />
                 ) : null}
                 <Marker
-                  longitude={(mapTrailDetail.route_data as RouteData).coordinates[0].longitude}
-                  latitude={(mapTrailDetail.route_data as RouteData).coordinates[0].latitude}
+                  longitude={
+                    (mapTrailDetail.route_data as RouteData).coordinates[0]
+                      .longitude
+                  }
+                  latitude={
+                    (mapTrailDetail.route_data as RouteData).coordinates[0]
+                      .latitude
+                  }
                   anchor="bottom"
                 >
                   <div className="rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
@@ -1651,12 +1833,14 @@ function TrailsPageContent() {
                 <Marker
                   longitude={
                     (mapTrailDetail.route_data as RouteData).coordinates[
-                      (mapTrailDetail.route_data as RouteData).coordinates.length - 1
+                      (mapTrailDetail.route_data as RouteData).coordinates
+                        .length - 1
                     ].longitude
                   }
                   latitude={
                     (mapTrailDetail.route_data as RouteData).coordinates[
-                      (mapTrailDetail.route_data as RouteData).coordinates.length - 1
+                      (mapTrailDetail.route_data as RouteData).coordinates
+                        .length - 1
                     ].latitude
                   }
                   anchor="bottom"

@@ -266,6 +266,7 @@ export async function GET(request: NextRequest) {
         built_org.organization_name AS built_by_org_name,
         verified_org.organization_name AS verified_by_org_name,
         maintained_org.organization_name AS maintained_by_org_name,
+        COALESCE(associated_experts.expert_count, 0)::int AS associated_expert_count,
         COALESCE(tr.review_count, 0) AS review_count,
         COALESCE(tr.average_rating, 0) AS average_rating
       FROM trails t
@@ -307,6 +308,14 @@ export async function GET(request: NextRequest) {
         ORDER BY to2.is_primary DESC, to2.created_at DESC
         LIMIT 1
       ) maintained_org ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS expert_count
+        FROM expert_trails et
+        JOIN users u ON u.id = et.expert_user_id
+        WHERE et.trail_id = t.id
+          AND u.role = 'expert'
+          AND COALESCE(u.is_hidden, FALSE) = FALSE
+      ) associated_experts ON TRUE
       ${whereClause}
       ORDER BY ${orderBy}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
