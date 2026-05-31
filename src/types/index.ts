@@ -216,6 +216,7 @@ export interface User {
   verification_achievements?: string | null;
   verification_strava_url?: string | null;
   verification_links?: string | null;
+  associated_trails?: Trail[] | null;
   created_at: string;
   updated_at: string;
   last_login_at?: string | null;

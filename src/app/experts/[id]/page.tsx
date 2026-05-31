@@ -257,6 +257,9 @@ export default function ExpertDetailPage() {
   const galleryPhotos = Array.isArray(expert.expert_gallery_photos)
     ? expert.expert_gallery_photos
     : [];
+  const associatedTrails = Array.isArray(expert.associated_trails)
+    ? expert.associated_trails
+    : [];
 
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-0.5 text-amber-500">
@@ -578,6 +581,67 @@ export default function ExpertDetailPage() {
         </div>
         </div>
       </section>
+
+      {associatedTrails.length > 0 && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                Expert Trails
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Trails associated with {expert.name || 'this expert'}
+              </h2>
+            </div>
+            <Link
+              href="/trails"
+              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+            >
+              Browse all trails
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {associatedTrails.map((trail) => (
+              <Link
+                key={trail.id}
+                href={`/trails/${trail.slug || trail.id}`}
+                className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900/60 dark:hover:border-emerald-700"
+              >
+                <div className="h-28 bg-gradient-to-br from-emerald-100 to-lime-100 dark:from-emerald-950 dark:to-slate-800">
+                  {trail.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={trail.image_url}
+                      alt={trail.name}
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    />
+                  ) : null}
+                </div>
+                <div className="p-3">
+                  <h3 className="line-clamp-1 text-sm font-semibold text-gray-900 group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
+                    {trail.name}
+                  </h3>
+                  <p className="mt-1 line-clamp-1 text-xs text-gray-500 dark:text-slate-400">
+                    {trail.location || 'Nepal'}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {trail.sport_type && (
+                      <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+                        {getSportLabel(trail.sport_type)}
+                      </span>
+                    )}
+                    {trail.difficulty && (
+                      <span className="rounded-full bg-gray-100 px-2 py-1 text-[11px] font-semibold text-gray-600 dark:bg-slate-800 dark:text-slate-200">
+                        {trail.difficulty}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <TrailRequestModal
         open={requestModalOpen}

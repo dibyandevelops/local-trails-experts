@@ -34,12 +34,14 @@ type ExpertTrailRequest = {
 
 type ExpertTrail = {
   id: string;
+  slug?: string | null;
   name: string;
   location: string | null;
   sport_type: string | null;
   difficulty: string | null;
   created_at: string;
   is_hidden: boolean;
+  sort_order?: number | null;
 };
 
 type ExpertEventWithParticipants = Event & {
@@ -53,11 +55,16 @@ export default function ExpertProfilePage() {
   const [events, setEvents] = useState<ExpertEventWithParticipants[]>([]);
   const [trailRequests, setTrailRequests] = useState<ExpertTrailRequest[]>([]);
   const [createdTrails, setCreatedTrails] = useState<ExpertTrail[]>([]);
+  const [associatedTrails, setAssociatedTrails] = useState<ExpertTrail[]>([]);
+  const [availableTrails, setAvailableTrails] = useState<ExpertTrail[]>([]);
+  const [selectedAssociatedTrailIds, setSelectedAssociatedTrailIds] = useState<string[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTrailRequests, setLoadingTrailRequests] = useState(true);
   const [loadingTrails, setLoadingTrails] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingAssociatedTrails, setSavingAssociatedTrails] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [trailAssociationMessage, setTrailAssociationMessage] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [requestForEvent, setRequestForEvent] = useState<ExpertTrailRequest | null>(
@@ -220,7 +227,12 @@ export default function ExpertProfilePage() {
         const trailsData = await trailsRes.json();
         setEvents(eventsData.events || []);
         setTrailRequests(requestsData.requests || []);
-        setCreatedTrails(trailsData.trails || []);
+        setCreatedTrails(trailsData.created_trails || trailsData.trails || []);
+        setAssociatedTrails(trailsData.associated_trails || []);
+        setAvailableTrails(trailsData.available_trails || []);
+        setSelectedAssociatedTrailIds(
+          (trailsData.associated_trails || []).map((trail: ExpertTrail) => trail.id)
+        );
       } catch (error) {
         console.error('Error loading expert profile', error);
       } finally {
@@ -232,6 +244,47 @@ export default function ExpertProfilePage() {
 
     fetchEventsAndRequests();
   }, [currentUser]);
+
+  const toggleAssociatedTrail = (trailId: string) => {
+    setTrailAssociationMessage(null);
+    setSelectedAssociatedTrailIds((prev) => {
+      if (prev.includes(trailId)) {
+        return prev.filter((id) => id !== trailId);
+      }
+      if (prev.length >= 12) {
+        setTrailAssociationMessage('You can associate up to 12 trails.');
+        return prev;
+      }
+      return [...prev, trailId];
+    });
+  };
+
+  const saveAssociatedTrails = async () => {
+    setSavingAssociatedTrails(true);
+    setTrailAssociationMessage(null);
+    try {
+      const response = await fetch('/api/experts/me/trails', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trail_ids: selectedAssociatedTrailIds }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update associated trails');
+      }
+      setAssociatedTrails(data.associated_trails || []);
+      setSelectedAssociatedTrailIds(
+        (data.associated_trails || []).map((trail: ExpertTrail) => trail.id)
+      );
+      setTrailAssociationMessage('Associated trails updated.');
+    } catch (error) {
+      setTrailAssociationMessage(
+        error instanceof Error ? error.message : 'Failed to update associated trails.'
+      );
+    } finally {
+      setSavingAssociatedTrails(false);
+    }
+  };
 
   if (loadingUser || loadingEvents || loadingTrailRequests || loadingTrails) {
     return <div className="text-gray-600">Loading profile...</div>;
@@ -578,6 +631,106 @@ export default function ExpertProfilePage() {
       </section>
 
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Trails Associated With You
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Pin public trails you guide, ride, or know well. These appear on your public expert profile.
+            </p>
+          </div>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            {selectedAssociatedTrailIds.length}/12 selected
+          </span>
+        </div>
+
+        {associatedTrails.length > 0 && (
+          <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Currently shown on profile
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {associatedTrails.map((trail) => (
+                <Link
+                  key={`associated-${trail.id}`}
+                  href={`/trails/${trail.slug || trail.id}`}
+                  className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                >
+                  {trail.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {availableTrails.length === 0 ? (
+          <p className="text-sm text-gray-600">
+            No approved visible trails are available to associate yet.
+          </p>
+        ) : (
+          <div className="max-h-80 overflow-y-auto rounded-xl border border-gray-200">
+            <table className="w-full text-left text-sm">
+              <thead className="sticky top-0 bg-gray-50 text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-3 py-2">Select</th>
+                  <th className="px-3 py-2">Trail</th>
+                  <th className="px-3 py-2">Location</th>
+                  <th className="px-3 py-2">Sport</th>
+                </tr>
+              </thead>
+              <tbody>
+                {availableTrails.map((trail) => {
+                  const checked = selectedAssociatedTrailIds.includes(trail.id);
+                  return (
+                    <tr key={`available-${trail.id}`} className="border-t border-gray-200">
+                      <td className="px-3 py-3">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleAssociatedTrail(trail.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
+                          aria-label={`Associate ${trail.name}`}
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        <Link
+                          href={`/trails/${trail.slug || trail.id}`}
+                          className="text-sm font-semibold text-gray-900 hover:text-green-700"
+                        >
+                          {trail.name}
+                        </Link>
+                      </td>
+                      <td className="px-3 py-3 text-xs text-gray-600">
+                        {trail.location || '—'}
+                      </td>
+                      <td className="px-3 py-3 text-xs text-gray-600">
+                        {trail.sport_type ? getSportLabel(trail.sport_type as SportType) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={saveAssociatedTrails}
+            disabled={savingAssociatedTrails}
+            className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {savingAssociatedTrails ? 'Saving...' : 'Save associated trails'}
+          </button>
+          {trailAssociationMessage && (
+            <p className="text-sm text-gray-600">{trailAssociationMessage}</p>
+          )}
+        </div>
+      </section>
+
+      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
           Trails You Created
         </h2>
@@ -603,7 +756,7 @@ export default function ExpertProfilePage() {
                     <td className="px-3 py-3">
                       <button
                         type="button"
-                        onClick={() => router.push(`/trails/${trail.id}`)}
+                        onClick={() => router.push(`/trails/${trail.slug || trail.id}`)}
                         className="text-sm font-semibold text-gray-900 hover:text-green-700"
                       >
                         {trail.name}
