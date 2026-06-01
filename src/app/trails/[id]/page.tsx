@@ -25,9 +25,47 @@ async function fetchPublicTrailByIdentifier(identifier: string): Promise<Fetched
       END AS created_by,
       u.name AS submitted_by_name,
       u.email AS submitted_by_email,
+      COALESCE(associated_experts.expert_count, 0)::int AS associated_expert_count,
+      COALESCE(associated_experts.experts, '[]'::json) AS associated_experts,
       CASE WHEN t.slug = $1 THEN 'slug' ELSE 'id' END AS matched_by
     FROM trails t
     LEFT JOIN users u ON t.submitted_by_user_id = u.id
+    LEFT JOIN LATERAL (
+      SELECT
+        COUNT(*)::int AS expert_count,
+        json_agg(
+          json_build_object(
+            'id', expert.id,
+            'name', expert.name,
+            'email', expert.email,
+            'city', expert.city,
+            'profile_photo_url', expert.profile_photo_url,
+            'is_verified_expert', expert.is_verified_expert,
+            'average_rating', COALESCE(er.average_rating, 0),
+            'review_count', COALESCE(er.review_count, 0)
+          )
+          ORDER BY
+            expert.is_verified_expert DESC,
+            COALESCE(er.average_rating, 0) DESC,
+            COALESCE(er.review_count, 0) DESC,
+            (expert.profile_photo_url IS NOT NULL) DESC,
+            et.sort_order ASC,
+            et.created_at DESC
+        ) AS experts
+      FROM expert_trails et
+      JOIN users expert ON expert.id = et.expert_user_id
+      LEFT JOIN (
+        SELECT
+          expert_user_id,
+          AVG(rating)::float AS average_rating,
+          COUNT(*)::int AS review_count
+        FROM expert_reviews
+        GROUP BY expert_user_id
+      ) er ON er.expert_user_id = expert.id
+      WHERE et.trail_id = t.id
+        AND expert.role = 'expert'
+        AND COALESCE(expert.is_hidden, FALSE) = FALSE
+    ) associated_experts ON TRUE
     WHERE (t.slug = $1 OR t.id::text = $1)
       AND t.status = 'approved'
       AND t.is_hidden = FALSE
@@ -53,6 +91,10 @@ async function fetchPublicTrailByIdentifier(identifier: string): Promise<Fetched
 
   if (!Array.isArray(trail.trail_images)) {
     trail.trail_images = [];
+  }
+
+  if (!Array.isArray(trail.associated_experts)) {
+    trail.associated_experts = [];
   }
 
   return trail;
@@ -86,4 +128,3 @@ export default async function TrailPage({ params }: { params: Promise<Params> })
 
   return <TrailPageClient trailId={initialTrail?.id || identifier} initialTrail={initialTrail} />;
 }
-
