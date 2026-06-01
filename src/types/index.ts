@@ -77,6 +77,15 @@ export interface Trail {
   associated_expert_count?: number | null;
   trail_builder_count?: number | null;
   campaign_count?: number | null;
+  active_campaigns?: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    target_amount_npr?: string | number | null;
+    raised_amount_npr?: string | number | null;
+    organization_name?: string | null;
+    organization_slug?: string | null;
+  }> | null;
   associated_experts?: Array<{
     id: string;
     name: string | null;

@@ -44,7 +44,7 @@ import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
-import { getTrailAttributionChipClass, getTrailAttributionLabel } from '@/lib/trail-attribution';
+import { getTrailAttributionLabel } from '@/lib/trail-attribution';
 import ThemedDropdown, { type ThemedDropdownItem } from '@/components/ui/themed-dropdown';
 import AppDialog from '@/components/ui/app-dialog';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
@@ -1237,6 +1237,16 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   };
   const reviewSummary = reviewData?.summary || { averageRating: 0, count: 0 };
   const normalizedDifficulty = normalizeDifficulty(trail.difficulty);
+  const activeCampaigns = Array.isArray(trail.active_campaigns) ? trail.active_campaigns : [];
+  const primaryCampaign = activeCampaigns[0] || null;
+  const primaryCampaignTarget = Number(primaryCampaign?.target_amount_npr || 0);
+  const primaryCampaignRaised = Number(primaryCampaign?.raised_amount_npr || 0);
+  const primaryCampaignProgress =
+    primaryCampaignTarget > 0
+      ? Math.min(100, Math.round((primaryCampaignRaised / primaryCampaignTarget) * 100))
+      : 0;
+  const hasRightRail =
+    trailOrganizations.length > 0 || Boolean(primaryCampaign) || associatedExperts.length > 0;
   const trailConsiderations = [
     trail.is_hazardous
       ? `Hazard alert: ${trail.hazard_note || 'check latest conditions before riding.'}`
@@ -1277,10 +1287,27 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             : 'Write Review',
       onSelect: handleOpenReviewModal,
     },
+    ...(trailUpdates.length > 0
+      ? [
+          {
+            label: `Trail alerts (${trailUpdates.length})`,
+            onSelect: () => setTrailAlertsOpen(true),
+            separatorBefore: true,
+          } as ThemedDropdownItem,
+        ]
+      : []),
+    ...(trailServices.length > 0
+      ? [
+          {
+            label: `Facilities (${trailServices.length})`,
+            onSelect: () => setTrailFacilitiesOpen(true),
+          } as ThemedDropdownItem,
+        ]
+      : []),
     {
       label: 'View map',
       href: '#trail-map',
-      separatorBefore: true,
+      separatorBefore: trailUpdates.length === 0 && trailServices.length === 0,
     },
     ...(komootNavigateUrl
       ? [
@@ -1456,23 +1483,25 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               <path d="M12.9 15.3a1 1 0 0 0 0-1.4L9 10l3.9-3.9a1 1 0 1 0-1.4-1.4l-4.6 4.6a1 1 0 0 0 0 1.4l4.6 4.6a1 1 0 0 0 1.4 0Z" />
             </svg>
           </button>
-          <ThemedDropdown
-            label="Actions"
-            hideCaret
-            triggerContent={
-              <svg
-                viewBox="0 0 20 20"
-                aria-hidden="true"
-                className="h-5 w-5 fill-slate-800 dark:fill-slate-200"
-              >
-                <circle cx="10" cy="4" r="1.6" />
-                <circle cx="10" cy="10" r="1.6" />
-                <circle cx="10" cy="16" r="1.6" />
-              </svg>
-            }
-            triggerClassName="h-10 w-10 justify-center rounded-full border border-gray-300 bg-white px-0 py-0 text-xl font-bold text-slate-800 hover:bg-slate-100/70 focus-visible:ring-green-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800/60"
-            items={trailActionItems}
-          />
+          <div className="flex items-center gap-2">
+            <ThemedDropdown
+              label="Actions"
+              hideCaret
+              triggerContent={
+                <svg
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                  className="h-5 w-5 fill-slate-800 dark:fill-slate-200"
+                >
+                  <circle cx="10" cy="4" r="1.6" />
+                  <circle cx="10" cy="10" r="1.6" />
+                  <circle cx="10" cy="16" r="1.6" />
+                </svg>
+              }
+              triggerClassName="h-10 w-10 justify-center rounded-full border border-gray-300 bg-white px-0 py-0 text-xl font-bold text-slate-800 hover:bg-slate-100/70 focus-visible:ring-green-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800/60"
+              items={trailActionItems}
+            />
+          </div>
         </div>
       </div>
       {(uploadSuccess || uploadError || photoUploadMessage || actionMessage) && (
@@ -1503,65 +1532,150 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         />
       )}
 
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-lg shadow-emerald-100/60 dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 dark:shadow-emerald-950/30">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-4 shadow-lg shadow-emerald-100/60 sm:p-5 dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 dark:shadow-emerald-950/30">
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
         <div className="pointer-events-none absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
 
-        <div className="relative grid gap-6 lg:grid-cols-[1.28fr_0.72fr]">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
-                Nepal Trail Network
-              </span>
-              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
-                Trail profile
-              </span>
-              {trail.sport_type && (
-                <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
-                  {getSportLabel(trail.sport_type)}
+        <div
+          className={`relative grid gap-5 ${
+            hasRightRail ? 'xl:grid-cols-[minmax(0,1fr)_360px]' : ''
+          }`}
+        >
+          <div className="min-w-0">
+            <div className="mb-4 rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-950/70">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
+                  Nepal Trail Network
                 </span>
-              )}
-              {trailOrganizations.slice(0, 3).map((relation) => (
-                <span
-                  key={relation.id}
-                  className={`inline-flex max-w-[260px] items-center rounded-full border px-3 py-1 text-[11px] font-semibold ${getTrailAttributionChipClass(relation.relation_type)}`}
-                  title={`${getTrailAttributionLabel(relation.relation_type)}: ${relation.organization_name}`}
-                >
-                  <span className="truncate">
-                    {getTrailAttributionLabel(relation.relation_type)}: {relation.organization_name}
+                {trail.sport_type && (
+                  <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
+                    {getSportLabel(trail.sport_type)}
                   </span>
-                </span>
-              ))}
-              {trail.status === 'pending' && (
-                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-                  Pending
-                </span>
-              )}
-              {trail.is_hazardous && (
-                <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
-                  Hazardous
-                </span>
-              )}
-              {hasRequestedTrail && (
-                <span className="inline-flex items-center rounded-full border border-green-700 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
-                  Trail Requested
-                </span>
-              )}
-            </div>
-            <h1 className="mt-3 text-balance text-3xl font-extrabold leading-tight text-green-800 sm:text-4xl lg:text-5xl xl:text-[3.25rem] dark:text-green-200">
-              {trail.name}
-            </h1>
-            <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
-
-            {trailOrganizations.length > 0 && (
-              <div className="mt-4 rounded-2xl border border-emerald-200/80 bg-white/75 p-4 shadow-sm backdrop-blur dark:border-emerald-900/60 dark:bg-slate-900/60">
+                )}
+                {trail.status === 'pending' && (
+                  <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                    Pending
+                  </span>
+                )}
+                {trail.is_hazardous && (
+                  <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
+                    Hazardous
+                  </span>
+                )}
+                {hasRequestedTrail && (
+                  <span className="inline-flex items-center rounded-full border border-green-700 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
+                    Trail Requested
+                  </span>
+                )}
+              </div>
+              <h1 className="mt-3 text-balance text-3xl font-extrabold leading-tight text-green-900 sm:text-4xl lg:text-5xl dark:text-green-100">
+                {trail.name}
+              </h1>
+              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
+              <div
+                id="route-guide"
+                className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+              >
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                  Trail builders
+                  Route guide
                 </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <p className="mt-2 text-sm leading-7 text-gray-700 dark:text-slate-200">
+                  {trail.description?.trim() || 'Route description will be added soon.'}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {trailConsiderations.slice(0, 3).map((item, index) => (
+                    <span
+                      key={`trail-consideration-chip-${index}`}
+                      className="rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div id="trail-map" className="[&>div]:mb-0">
+              <MapSection
+                hasRoute={hasRoute}
+                routeGeoJSON={routeGeoJSON}
+                routeData={routeData}
+                mapCenter={mapCenter}
+                mapStyle={mapStyle}
+                mapStyleMode={mapStyleMode}
+                mapboxToken={mapboxToken}
+                onStyleModeChange={setMapStyleMode}
+                komootEmbedUrl={trail.komoot_embed_url || null}
+                mapProvider={mapProvider}
+                onMapProviderChange={setMapProvider}
+              />
+            </div>
+          </div>
+
+          {hasRightRail && (
+          <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
+            {(trailUpdates.length > 0 || trailServices.length > 0) && (
+              <div className="rounded-2xl border border-gray-200 bg-white/85 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/75">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-slate-400">
+                  Trail operations
+                </p>
+                <div className="mt-3 grid gap-2">
+                  {trailUpdates.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTrailAlertsOpen(true)}
+                      className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-amber-900 transition hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-100"
+                    >
+                      <span>
+                        <span className="block text-sm font-semibold">Trail alerts</span>
+                        <span className="block text-xs opacity-80">
+                          {trailUpdates.length} update{trailUpdates.length === 1 ? '' : 's'}
+                        </span>
+                      </span>
+                      <span className="rounded-full bg-amber-600 px-2 py-1 text-xs font-semibold text-white">
+                        !
+                      </span>
+                    </button>
+                  )}
+                  {trailServices.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTrailFacilitiesOpen(true)}
+                      className="flex items-center justify-between rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-3 text-left text-cyan-900 transition hover:bg-cyan-100 dark:border-cyan-900/60 dark:bg-cyan-950/35 dark:text-cyan-100"
+                    >
+                      <span>
+                        <span className="block text-sm font-semibold">Facilities</span>
+                        <span className="block text-xs opacity-80">
+                          {trailServices.length} service{trailServices.length === 1 ? '' : 's'}
+                        </span>
+                      </span>
+                      <span className="rounded-full bg-cyan-700 px-2 py-1 text-xs font-semibold text-white">
+                        i
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {trailOrganizations.length > 0 && (
+              <div className="rounded-2xl border border-emerald-200/80 bg-white/85 p-4 shadow-sm backdrop-blur dark:border-emerald-900/60 dark:bg-slate-900/75">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                      Trail builders
+                    </p>
+                    <h2 className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
+                      Built and managed by
+                    </h2>
+                  </div>
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-100">
+                    {trailOrganizations.length}
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
                   {trailOrganizations.slice(0, 4).map((relation) => (
                     <a
-                      key={`builder-card-${relation.id}`}
+                      key={relation.id}
                       href={`/organizations/${relation.organization_slug}`}
                       className="flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:hover:border-emerald-700"
                     >
@@ -1592,8 +1706,60 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               </div>
             )}
 
+            {primaryCampaign && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/35">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
+                      Active campaign
+                    </p>
+                    <h2 className="mt-1 line-clamp-2 text-base font-semibold text-gray-900 dark:text-white">
+                      {primaryCampaign.title}
+                    </h2>
+                  </div>
+                  <span className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-800 dark:bg-slate-900 dark:text-amber-100">
+                    {activeCampaigns.length}
+                  </span>
+                </div>
+                {primaryCampaign.description && (
+                  <p className="mt-2 line-clamp-3 text-sm text-amber-900/80 dark:text-amber-100/80">
+                    {primaryCampaign.description}
+                  </p>
+                )}
+                {primaryCampaignTarget > 0 && (
+                  <div className="mt-4">
+                    <div className="h-2 overflow-hidden rounded-full bg-amber-100 dark:bg-amber-900/50">
+                      <div
+                        className="h-full rounded-full bg-amber-600"
+                        style={{ width: `${primaryCampaignProgress}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-amber-900 dark:text-amber-100">
+                      NPR {primaryCampaignRaised.toLocaleString()} / NPR {primaryCampaignTarget.toLocaleString()} ({primaryCampaignProgress}%)
+                    </p>
+                  </div>
+                )}
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <a
+                    href={`/campaigns/${primaryCampaign.id}`}
+                    className="inline-flex rounded-lg bg-amber-700 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-800"
+                  >
+                    View campaign
+                  </a>
+                  {primaryCampaign.organization_slug && (
+                    <a
+                      href={`/organizations/${primaryCampaign.organization_slug}`}
+                      className="text-xs font-semibold text-amber-800 hover:underline dark:text-amber-200"
+                    >
+                      {primaryCampaign.organization_name || 'Trail builder'}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             {trail.is_hazardous && (
-              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
                 <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-200">
                   Hazard alert
                 </p>
@@ -1608,47 +1774,96 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               </div>
             )}
 
-          </div>
-
+            {associatedExperts.length > 0 && (
+              <div className="rounded-2xl border border-cyan-200 bg-cyan-50/80 p-4 shadow-sm dark:border-cyan-900/60 dark:bg-cyan-950/30">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
+                      Associated experts
+                    </p>
+                    <h2 className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
+                      Local familiarity
+                    </h2>
+                  </div>
+                  <span className="rounded-full border border-cyan-300 bg-white px-2.5 py-1 text-xs font-semibold text-cyan-800 dark:border-cyan-800 dark:bg-slate-900 dark:text-cyan-100">
+                    {associatedExperts.length}
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {visibleAssociatedExperts.map((expert) => {
+                    const initials =
+                      (expert.name || expert.email || 'Expert')
+                        .split(' ')
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part[0])
+                        .join('')
+                        .toUpperCase() || 'EX';
+                    return (
+                      <a
+                        key={expert.id}
+                        href={`/experts/${expert.id}`}
+                        className="flex items-center gap-3 rounded-xl border border-cyan-100 bg-white p-3 transition hover:border-cyan-300 hover:bg-cyan-50 dark:border-cyan-900/60 dark:bg-slate-900 dark:hover:border-cyan-700"
+                      >
+                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-cyan-100 bg-cyan-50 text-xs font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/50 dark:text-cyan-100">
+                          {expert.profile_photo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={expert.profile_photo_url}
+                              alt={expert.name || 'Expert'}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              {initials}
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                            {expert.name || expert.email || 'Local expert'}
+                          </p>
+                          <p className="text-xs text-cyan-700 dark:text-cyan-300">
+                            {expert.city || 'Nepal'}
+                          </p>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+                {(hiddenAssociatedExpertCount > 0 || (canRequestTrail && !hasRequestedTrail)) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {hiddenAssociatedExpertCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setAllAssociatedExpertsOpen(true)}
+                        className="rounded-lg border border-cyan-300 bg-white px-3 py-2 text-xs font-semibold text-cyan-800 hover:bg-cyan-50"
+                      >
+                        View all
+                      </button>
+                    )}
+                    {canRequestTrail && !hasRequestedTrail && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedExpertId(
+                            associatedExperts.find((expert) => expert.is_verified_expert)?.id || ''
+                          );
+                          handleOpenRequestRide();
+                        }}
+                        className="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-semibold text-white hover:bg-cyan-800"
+                      >
+                        Request expert
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </aside>
+          )}
         </div>
       </section>
-
-      {(trailUpdates.length > 0 || trailServices.length > 0) && (
-        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-wrap items-center gap-3">
-            {trailUpdates.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setTrailAlertsOpen(true)}
-                className="inline-flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-amber-900 transition hover:border-amber-300 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200 text-lg dark:bg-amber-900/70">
-                  !
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold">Trail alerts</span>
-                  <span className="block text-xs opacity-80">{trailUpdates.length} update{trailUpdates.length === 1 ? '' : 's'}</span>
-                </span>
-              </button>
-            )}
-            {trailServices.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setTrailFacilitiesOpen(true)}
-                className="inline-flex items-center gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-left text-cyan-900 transition hover:border-cyan-300 hover:bg-cyan-100 dark:border-cyan-900/60 dark:bg-cyan-950/30 dark:text-cyan-100"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-200 text-lg dark:bg-cyan-900/70">
-                  i
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold">Facilities</span>
-                  <span className="block text-xs opacity-80">{trailServices.length} service{trailServices.length === 1 ? '' : 's'}</span>
-                </span>
-              </button>
-            )}
-          </div>
-        </section>
-      )}
 
       {!isAdmin && canManageTrail && (
         <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -1726,99 +1941,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           {adminMessage && (
             <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">{adminMessage}</p>
           )}
-        </section>
-      )}
-
-      {associatedExperts.length > 0 && (
-        <section className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50/70 p-5 shadow-sm dark:border-cyan-900/60 dark:bg-cyan-950/30">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
-                Experts who know this trail
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
-                Local familiarity available
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm text-cyan-900/80 dark:text-cyan-100/80">
-                These experts selected this trail on their profile, meaning they ride,
-                guide, or know this route well.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {hiddenAssociatedExpertCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setAllAssociatedExpertsOpen(true)}
-                  className="inline-flex rounded-lg border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-50"
-                >
-                  View all {associatedExperts.length} experts
-                </button>
-              )}
-              {canRequestTrail && !hasRequestedTrail && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedExpertId(
-                      associatedExperts.find((expert) => expert.is_verified_expert)?.id || ''
-                    );
-                    handleOpenRequestRide();
-                  }}
-                  className="inline-flex rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
-                >
-                  Request with local expert
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {visibleAssociatedExperts.map((expert) => {
-              const initials =
-                (expert.name || expert.email || 'Expert')
-                  .split(' ')
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((part) => part[0])
-                  .join('')
-                  .toUpperCase() || 'EX';
-              return (
-                <div
-                  key={expert.id}
-                  className="rounded-xl border border-cyan-100 bg-white p-4 shadow-sm dark:border-cyan-900/60 dark:bg-slate-900"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-cyan-100 bg-cyan-50 text-sm font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/50 dark:text-cyan-100">
-                      {expert.profile_photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={expert.profile_photo_url}
-                          alt={expert.name || 'Expert'}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          {initials}
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <a
-                        href={`/experts/${expert.id}`}
-                        className="line-clamp-1 text-sm font-semibold text-gray-900 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300"
-                      >
-                        {expert.name || expert.email || 'Local expert'}
-                      </a>
-                      <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
-                        {expert.city || 'Nepal'}
-                      </p>
-                      <p className="mt-2 text-xs text-cyan-800 dark:text-cyan-200">
-                        Associated with this trail
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </section>
       )}
 
@@ -1933,66 +2055,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           </div>
         </section>
       )}
-
-      <section
-        id="route-guide"
-        className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-      >
-        <div className="grid gap-7 lg:grid-cols-[1.3fr_0.7fr]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-              Route guide
-            </p>
-            <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-              What to expect on this trail
-            </h2>
-            <p className="mt-3 text-[15px] leading-8 tracking-[0.01em] text-gray-700 dark:text-slate-200">
-              {trail.description?.trim() || 'Route description will be added soon.'}
-            </p>
-          </div>
-          <aside className="space-y-4">
-            <div className="rounded-xl border border-amber-100 bg-amber-50/70 p-5 dark:border-amber-900/60 dark:bg-amber-950/30">
-              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                Considerations
-              </h3>
-              <ul className="mt-2 space-y-2 text-sm text-amber-900/90 dark:text-amber-100/90">
-                {trailConsiderations.slice(0, 4).map((item, index) => (
-                  <li key={`trail-consideration-${index}`} className="flex gap-2">
-                    <span className="mt-0.5">•</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <div id="trail-map" className="mt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-              Trail route
-            </p>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Map & elevation context
-            </h2>
-          </div>
-        </div>
-        <MapSection
-          hasRoute={hasRoute}
-          routeGeoJSON={routeGeoJSON}
-          routeData={routeData}
-          mapCenter={mapCenter}
-          mapStyle={mapStyle}
-          mapStyleMode={mapStyleMode}
-          mapboxToken={mapboxToken}
-          onStyleModeChange={setMapStyleMode}
-          komootEmbedUrl={trail.komoot_embed_url || null}
-          mapProvider={mapProvider}
-          onMapProviderChange={setMapProvider}
-        />
-      </div>
 
       {(loadingReviews || Boolean(reviewData?.reviews?.length)) && (
         <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">

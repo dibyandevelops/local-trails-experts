@@ -34,7 +34,9 @@ export async function GET(
           END AS submitted_by_name,
           u.email AS submitted_by_email,
           COALESCE(associated_experts.expert_count, 0)::int AS associated_expert_count,
-          COALESCE(associated_experts.experts, '[]'::json) AS associated_experts
+          COALESCE(associated_experts.experts, '[]'::json) AS associated_experts,
+          COALESCE(active_campaigns.campaign_count, 0)::int AS campaign_count,
+          COALESCE(active_campaigns.campaigns, '[]'::json) AS active_campaigns
         FROM trails t
         LEFT JOIN users u ON u.id = t.submitted_by_user_id
         LEFT JOIN LATERAL (
@@ -73,6 +75,27 @@ export async function GET(
             AND expert.role = 'expert'
             AND COALESCE(expert.is_hidden, FALSE) = FALSE
         ) associated_experts ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*)::int AS campaign_count,
+            json_agg(
+              json_build_object(
+                'id', fc.id,
+                'title', fc.title,
+                'description', fc.description,
+                'target_amount_npr', fc.target_amount_npr::text,
+                'raised_amount_npr', fc.raised_amount_npr::text,
+                'organization_name', org.name,
+                'organization_slug', org.slug
+              )
+              ORDER BY fc.created_at DESC
+            ) AS campaigns
+          FROM fundraising_campaigns fc
+          JOIN organizations org ON org.id = fc.organization_id
+          WHERE fc.trail_id = t.id
+            AND fc.status = 'active'
+            AND org.is_active = TRUE
+        ) active_campaigns ON TRUE
         WHERE t.id::text = $1 OR t.slug = $1
         ORDER BY CASE WHEN t.id::text = $1 THEN 0 ELSE 1 END
       `,
