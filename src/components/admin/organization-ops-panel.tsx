@@ -36,6 +36,20 @@ type TrailService = {
   is_active: boolean;
 };
 
+type TrailOrganizationRelationType = 'built_by' | 'verified_by' | 'maintained_by';
+
+type TrailOrganizationAssignment = {
+  id: string;
+  trail_id: string;
+  organization_id: string;
+  relation_type: TrailOrganizationRelationType;
+  is_primary: boolean;
+  created_at: string;
+  trail_name?: string | null;
+  organization_name?: string | null;
+  organization_slug?: string | null;
+};
+
 type TrailUpdateType =
   | 'condition_update'
   | 'maintenance_done'
@@ -66,6 +80,26 @@ const UPDATE_TYPE_OPTIONS: Array<{ value: TrailUpdateType; label: string }> = [
   { value: 'route_changed', label: 'Route changed' },
   { value: 'metadata_updated', label: 'Metadata updated' },
 ];
+
+const RELATION_TYPE_OPTIONS: Array<{
+  value: TrailOrganizationRelationType;
+  label: string;
+}> = [
+  { value: 'built_by', label: 'Built by' },
+  { value: 'maintained_by', label: 'Maintained by' },
+  { value: 'verified_by', label: 'Verified by' },
+];
+
+const relationLabelByValue = RELATION_TYPE_OPTIONS.reduce<
+  Record<TrailOrganizationRelationType, string>
+>((acc, option) => {
+  acc[option.value] = option.label;
+  return acc;
+}, {
+  built_by: 'Built by',
+  maintained_by: 'Maintained by',
+  verified_by: 'Verified by',
+});
 
 function readImageFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -102,13 +136,23 @@ export default function OrganizationOpsPanel() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [deleteGalleryTarget, setDeleteGalleryTarget] = useState<GalleryItem | null>(null);
   const [deleteServiceTarget, setDeleteServiceTarget] = useState<TrailService | null>(null);
   const [deleteUpdateTarget, setDeleteUpdateTarget] = useState<TrailUpdate | null>(null);
+  const [deleteAssignmentTarget, setDeleteAssignmentTarget] =
+    useState<TrailOrganizationAssignment | null>(null);
   const [editUpdateTarget, setEditUpdateTarget] = useState<TrailUpdate | null>(null);
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [selectedTrailId, setSelectedTrailId] = useState('');
   const [selectedUpdateOrgId, setSelectedUpdateOrgId] = useState('');
+  const [assignmentTrailFilterId, setAssignmentTrailFilterId] = useState('');
+  const [assignmentOrgFilterId, setAssignmentOrgFilterId] = useState('');
+  const [assignmentTrailId, setAssignmentTrailId] = useState('');
+  const [assignmentOrgId, setAssignmentOrgId] = useState('');
+  const [assignmentRelationType, setAssignmentRelationType] =
+    useState<TrailOrganizationRelationType>('built_by');
+  const [assignmentIsPrimary, setAssignmentIsPrimary] = useState(false);
   const [updateType, setUpdateType] = useState<TrailUpdateType>('condition_update');
   const [updateTitle, setUpdateTitle] = useState('');
   const [updateDetails, setUpdateDetails] = useState('');
@@ -161,6 +205,26 @@ export default function OrganizationOpsPanel() {
         throw new Error(data?.error || 'Failed to load gallery');
       }
       return data?.items || [];
+    },
+  });
+  const { data: trailOrganizationAssignments = [], refetch: refetchAssignments } = useQuery<
+    TrailOrganizationAssignment[]
+  >({
+    queryKey: [
+      'admin-trail-organization-assignments',
+      assignmentTrailFilterId,
+      assignmentOrgFilterId,
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (assignmentTrailFilterId) params.set('trail_id', assignmentTrailFilterId);
+      if (assignmentOrgFilterId) params.set('organization_id', assignmentOrgFilterId);
+      const response = await fetch(`/api/admin/trail-organizations?${params.toString()}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch trail builder assignments');
+      }
+      return data?.assignments || [];
     },
   });
   const { data: trailServices = [], refetch: refetchTrailServices } = useQuery<TrailService[]>({
@@ -240,6 +304,91 @@ export default function OrganizationOpsPanel() {
     },
     onError: (error) => {
       setMessage(error instanceof Error ? error.message : 'Failed to delete gallery item.');
+    },
+  });
+
+  const createAssignmentMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/trail-organizations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trail_id: assignmentTrailId,
+          organization_id: assignmentOrgId,
+          relation_type: assignmentRelationType,
+          is_primary: assignmentIsPrimary,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to assign trail builder');
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      await refetchAssignments();
+      setAssignmentTrailId('');
+      setAssignmentOrgId('');
+      setAssignmentRelationType('built_by');
+      setAssignmentIsPrimary(false);
+      setAssignmentOpen(false);
+      setMessage('Trail builder assigned.');
+    },
+    onError: (error) => {
+      setMessage(error instanceof Error ? error.message : 'Failed to assign trail builder.');
+    },
+  });
+
+  const toggleAssignmentPrimaryMutation = useMutation({
+    mutationFn: async ({
+      id,
+      is_primary,
+    }: {
+      id: string;
+      is_primary: boolean;
+    }) => {
+      const response = await fetch(`/api/admin/trail-organizations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_primary }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update trail builder assignment');
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      await refetchAssignments();
+      setMessage('Trail builder assignment updated.');
+    },
+    onError: (error) => {
+      setMessage(
+        error instanceof Error ? error.message : 'Failed to update trail builder assignment.'
+      );
+    },
+  });
+
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: async (assignment: TrailOrganizationAssignment) => {
+      const response = await fetch(`/api/admin/trail-organizations/${assignment.id}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to delete trail builder assignment');
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      await refetchAssignments();
+      setDeleteAssignmentTarget(null);
+      setMessage('Trail builder assignment deleted.');
+    },
+    onError: (error) => {
+      setMessage(
+        error instanceof Error ? error.message : 'Failed to delete trail builder assignment.'
+      );
     },
   });
 
@@ -421,9 +570,12 @@ export default function OrganizationOpsPanel() {
   });
 
   const canAddGallery = Boolean(selectedOrgId && galleryImageUrl.trim());
+  const canCreateAssignment = Boolean(assignmentTrailId && assignmentOrgId);
   const canPostUpdate = Boolean(selectedTrailId && updateTitle.trim());
   const canCreateService = Boolean(serviceTrailId && serviceTitle.trim());
   const isSavingUpdate = createUpdateMutation.isPending || editUpdateMutation.isPending;
+  const togglingAssignmentId = toggleAssignmentPrimaryMutation.variables?.id;
+  const deletingAssignmentId = deleteAssignmentMutation.variables?.id;
   const togglingServiceId = toggleTrailServiceMutation.variables?.id;
   const deletingGalleryId = deleteGalleryMutation.variables?.id;
   const deletingServiceId = deleteTrailServiceMutation.variables;
@@ -491,6 +643,76 @@ export default function OrganizationOpsPanel() {
       setMessage(error instanceof Error ? error.message : 'Failed to upload images.');
     }
   };
+
+  const assignmentForm = (
+    <div className="mt-5 space-y-4">
+      <div className="grid gap-3 md:grid-cols-2">
+        <select
+          value={assignmentTrailId}
+          onChange={(event) => setAssignmentTrailId(event.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">Select trail</option>
+          {trails.map((trail) => (
+            <option key={trail.id} value={trail.id}>
+              {trail.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={assignmentOrgId}
+          onChange={(event) => setAssignmentOrgId(event.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">Select trail builder</option>
+          {orgOptions.map((org) => (
+            <option key={org.value} value={org.value}>
+              {org.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={assignmentRelationType}
+          onChange={(event) =>
+            setAssignmentRelationType(event.target.value as TrailOrganizationRelationType)
+          }
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        >
+          {RELATION_TYPE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <label className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={assignmentIsPrimary}
+            onChange={(event) => setAssignmentIsPrimary(event.target.checked)}
+          />
+          Primary for this relation
+        </label>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setAssignmentOpen(false)}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => createAssignmentMutation.mutate()}
+          disabled={!canCreateAssignment || createAssignmentMutation.isPending}
+          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+        >
+          {createAssignmentMutation.isPending && <LoadingSpinner />}
+          {createAssignmentMutation.isPending ? 'Assigning...' : 'Assign trail builder'}
+        </button>
+      </div>
+    </div>
+  );
 
   const galleryForm = (
     <div className="mt-5 space-y-3">
@@ -865,6 +1087,139 @@ export default function OrganizationOpsPanel() {
         <section className="rounded-xl border border-gray-200 p-4">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Trail Builder Assignments
+              </h3>
+              <p className="mt-1 text-xs text-gray-600">
+                Link active trail builders to trails for builder, maintainer, and verifier roles.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAssignmentOpen(true)}
+              className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+            >
+              Assign trail builder
+            </button>
+          </div>
+          <div className="mb-3 grid gap-3 md:grid-cols-2">
+            <select
+              value={assignmentTrailFilterId}
+              onChange={(event) => setAssignmentTrailFilterId(event.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="">All trails</option>
+              {trails.map((trail) => (
+                <option key={trail.id} value={trail.id}>
+                  {trail.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={assignmentOrgFilterId}
+              onChange={(event) => setAssignmentOrgFilterId(event.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="">All trail builders</option>
+              {orgOptions.map((org) => (
+                <option key={org.value} value={org.value}>
+                  {org.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {trailOrganizationAssignments.length === 0 ? (
+            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+              No trail builder assignments found.
+            </p>
+          ) : (
+            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200">
+              <table className="min-w-[950px] w-full text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th className="px-4 py-3">Trail</th>
+                    <th className="px-4 py-3">Trail Builder</th>
+                    <th className="px-4 py-3">Relation</th>
+                    <th className="px-4 py-3">Primary</th>
+                    <th className="px-4 py-3">Created</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {trailOrganizationAssignments.map((assignment) => (
+                    <tr key={assignment.id}>
+                      <td className="px-4 py-3 align-top font-semibold text-gray-900">
+                        {assignment.trail_name || 'Unknown trail'}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <p className="font-semibold text-gray-900">
+                          {assignment.organization_name || 'Unknown trail builder'}
+                        </p>
+                        {assignment.organization_slug && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            {assignment.organization_slug}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                        {relationLabelByValue[assignment.relation_type]}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase ${
+                            assignment.is_primary
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {assignment.is_primary ? 'Primary' : 'Secondary'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                        {new Date(assignment.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              toggleAssignmentPrimaryMutation.mutate({
+                                id: assignment.id,
+                                is_primary: !assignment.is_primary,
+                              })
+                            }
+                            disabled={toggleAssignmentPrimaryMutation.isPending}
+                            className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                          >
+                            {togglingAssignmentId === assignment.id && <LoadingSpinner />}
+                            {togglingAssignmentId === assignment.id
+                              ? 'Saving...'
+                              : assignment.is_primary
+                                ? 'Make secondary'
+                                : 'Make primary'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteAssignmentTarget(assignment)}
+                            disabled={deleteAssignmentMutation.isPending}
+                            className="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                          >
+                            {deletingAssignmentId === assignment.id && <LoadingSpinner />}
+                            {deletingAssignmentId === assignment.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-gray-200 p-4">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <div>
               <h3 className="text-sm font-semibold text-gray-900">Trail Builder Gallery</h3>
               <p className="mt-1 text-xs text-gray-600">Gallery assets grouped by trail builder.</p>
             </div>
@@ -1145,6 +1500,15 @@ export default function OrganizationOpsPanel() {
         </section>
       </div>
       <AppDialog
+        open={assignmentOpen}
+        onOpenChange={setAssignmentOpen}
+        title="Assign trail builder"
+        description="Connect a trail builder organization to a trail."
+        maxWidthClassName="max-w-2xl"
+      >
+        {assignmentForm}
+      </AppDialog>
+      <AppDialog
         open={galleryOpen}
         onOpenChange={setGalleryOpen}
         title="Add gallery item"
@@ -1177,6 +1541,48 @@ export default function OrganizationOpsPanel() {
         maxWidthClassName="max-w-xl"
       >
         {trailUpdateForm}
+      </AppDialog>
+      <AppDialog
+        open={Boolean(deleteAssignmentTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteAssignmentTarget(null);
+        }}
+        title="Delete trail builder assignment"
+        description="This action cannot be undone."
+        maxWidthClassName="max-w-lg"
+      >
+        {deleteAssignmentTarget && (
+          <div className="mt-5 space-y-4">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+              <p className="font-semibold">
+                Remove {deleteAssignmentTarget.organization_name || 'this trail builder'} from{' '}
+                {deleteAssignmentTarget.trail_name || 'this trail'}?
+              </p>
+              <p className="mt-2 text-xs leading-5">
+                This removes the builder relation used by trail detail pages and trail builder
+                operations access.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteAssignmentTarget(null)}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteAssignmentMutation.mutate(deleteAssignmentTarget)}
+                disabled={deleteAssignmentMutation.isPending}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleteAssignmentMutation.isPending && <LoadingSpinner />}
+                {deleteAssignmentMutation.isPending ? 'Deleting...' : 'Delete assignment'}
+              </button>
+            </div>
+          </div>
+        )}
       </AppDialog>
       <AppDialog
         open={Boolean(deleteGalleryTarget)}
