@@ -75,6 +75,8 @@ export interface Trail {
   verified_by_org_name?: string | null;
   maintained_by_org_name?: string | null;
   associated_expert_count?: number | null;
+  trail_builder_count?: number | null;
+  campaign_count?: number | null;
   associated_experts?: Array<{
     id: string;
     name: string | null;

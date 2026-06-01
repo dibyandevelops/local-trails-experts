@@ -70,6 +70,15 @@ const updateTypeOptions = [
   'metadata_updated',
 ];
 
+function LoadingSpinner() {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
+    />
+  );
+}
+
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { cache: 'no-store', ...init });
   const data = await response.json().catch(() => ({}));
@@ -93,6 +102,7 @@ export default function TrailBuilderDashboardClient() {
   const [updateType, setUpdateType] = useState(updateTypeOptions[0]);
   const [updateTitle, setUpdateTitle] = useState('');
   const [updateDetails, setUpdateDetails] = useState('');
+  const [editingUpdateId, setEditingUpdateId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const accessQuery = useQuery({
@@ -210,6 +220,43 @@ export default function TrailBuilderDashboardClient() {
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Failed to post update.'),
   });
+  const editUpdate = useMutation({
+    mutationFn: () => fetchJson('/api/admin/trail-updates', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: editingUpdateId,
+        update_type: updateType,
+        title: updateTitle,
+        details: updateDetails,
+      }),
+    }),
+    onSuccess: async () => {
+      setEditingUpdateId(null);
+      setUpdateTrailId('');
+      setUpdateTitle('');
+      setUpdateDetails('');
+      setMessage('Trail update updated.');
+      await queryClient.invalidateQueries({ queryKey: ['builder-updates', effectiveOrgId] });
+    },
+    onError: (error) => setMessage(error instanceof Error ? error.message : 'Failed to update trail update.'),
+  });
+  const togglingServiceId = toggleService.variables?.id;
+  const isSavingUpdate = addUpdate.isPending || editUpdate.isPending;
+  const startEditingUpdate = (update: TrailUpdate) => {
+    setEditingUpdateId(update.id);
+    setUpdateTrailId(update.trail_id);
+    setUpdateType(update.update_type);
+    setUpdateTitle(update.title);
+    setUpdateDetails(update.details || '');
+  };
+  const cancelEditingUpdate = () => {
+    setEditingUpdateId(null);
+    setUpdateTrailId('');
+    setUpdateType(updateTypeOptions[0]);
+    setUpdateTitle('');
+    setUpdateDetails('');
+  };
 
   if (accessQuery.isLoading) {
     return <main className="container mx-auto px-4 py-10 text-sm text-gray-600">Loading trail builder access...</main>;
@@ -265,7 +312,14 @@ export default function TrailBuilderDashboardClient() {
           <div className="mt-4 space-y-3">
             <input value={galleryUrl} onChange={(event) => setGalleryUrl(event.target.value)} placeholder="Image URL" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
             <input value={galleryCaption} onChange={(event) => setGalleryCaption(event.target.value)} placeholder="Caption" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <button onClick={() => addGallery.mutate()} disabled={!galleryUrl || addGallery.isPending} className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">Add image</button>
+            <button
+              onClick={() => addGallery.mutate()}
+              disabled={!galleryUrl || addGallery.isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {addGallery.isPending && <LoadingSpinner />}
+              {addGallery.isPending ? 'Adding...' : 'Add image'}
+            </button>
           </div>
           <div className="mt-5 max-h-72 space-y-2 overflow-y-auto pr-1">
             {(galleryQuery.data?.items || []).map((item) => (
@@ -306,18 +360,36 @@ export default function TrailBuilderDashboardClient() {
             </select>
             <input value={serviceTitle} onChange={(event) => setServiceTitle(event.target.value)} placeholder="Service title" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
             <input value={serviceContact} onChange={(event) => setServiceContact(event.target.value)} placeholder="Contact phone" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <button onClick={() => addService.mutate()} disabled={!serviceTrailId || !serviceTitle || addService.isPending} className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">Add service</button>
+            <button
+              onClick={() => addService.mutate()}
+              disabled={!serviceTrailId || !serviceTitle || addService.isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {addService.isPending && <LoadingSpinner />}
+              {addService.isPending ? 'Adding...' : 'Add service'}
+            </button>
           </div>
           <div className="mt-5 max-h-72 space-y-2 overflow-y-auto pr-1">
             {(servicesQuery.data?.services || []).map((service) => (
               <div key={service.id} className="rounded-lg border border-gray-100 p-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium text-gray-900">{service.title}</p>
-                  <button onClick={() => toggleService.mutate(service)} className="rounded-full border border-gray-300 px-2 py-1 text-xs text-gray-700">
-                    {service.is_active ? 'Hide' : 'Show'}
+                  <button
+                    onClick={() => toggleService.mutate(service)}
+                    disabled={toggleService.isPending}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-2 py-1 text-xs text-gray-700 disabled:opacity-60"
+                  >
+                    {togglingServiceId === service.id && <LoadingSpinner />}
+                    {togglingServiceId === service.id
+                      ? 'Saving...'
+                      : service.is_active
+                        ? 'Mark out'
+                        : 'Mark available'}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">{service.trail_name || 'Trail'} · {service.service_type}</p>
+                <p className="text-xs text-gray-500">
+                  {service.trail_name || 'Trail'} · {service.service_type} · {service.is_active ? 'Available' : 'Out of service'}
+                </p>
               </div>
             ))}
           </div>
@@ -326,7 +398,12 @@ export default function TrailBuilderDashboardClient() {
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">Trail Updates</h2>
           <div className="mt-4 space-y-3">
-            <select value={updateTrailId} onChange={(event) => setUpdateTrailId(event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <select
+              value={updateTrailId}
+              onChange={(event) => setUpdateTrailId(event.target.value)}
+              disabled={Boolean(editingUpdateId)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
+            >
               <option value="">Select linked trail</option>
               {orgTrails.map((trail) => <option key={trail.id} value={trail.id}>{trail.name}</option>)}
             </select>
@@ -335,13 +412,47 @@ export default function TrailBuilderDashboardClient() {
             </select>
             <input value={updateTitle} onChange={(event) => setUpdateTitle(event.target.value)} placeholder="Update title" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
             <textarea value={updateDetails} onChange={(event) => setUpdateDetails(event.target.value)} placeholder="Details" rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <button onClick={() => addUpdate.mutate()} disabled={!updateTrailId || !updateTitle || addUpdate.isPending} className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">Post update</button>
+            {editingUpdateId && (
+              <button
+                type="button"
+                onClick={cancelEditingUpdate}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel edit
+              </button>
+            )}
+            <button
+              onClick={() => (editingUpdateId ? editUpdate.mutate() : addUpdate.mutate())}
+              disabled={!updateTrailId || !updateTitle || isSavingUpdate}
+              className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {isSavingUpdate && <LoadingSpinner />}
+              {editingUpdateId
+                ? editUpdate.isPending
+                  ? 'Saving...'
+                  : 'Save update'
+                : addUpdate.isPending
+                  ? 'Posting...'
+                  : 'Post update'}
+            </button>
           </div>
           <div className="mt-5 max-h-72 space-y-2 overflow-y-auto pr-1">
             {(updatesQuery.data?.updates || []).map((update) => (
               <div key={update.id} className="rounded-lg border border-gray-100 p-3 text-sm">
-                <p className="font-medium text-gray-900">{update.title}</p>
-                <p className="text-xs text-gray-500">{update.trail_name || 'Trail'} · {update.update_type.replaceAll('_', ' ')}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-gray-900">{update.title}</p>
+                    <p className="text-xs text-gray-500">{update.trail_name || 'Trail'} · {update.update_type.replaceAll('_', ' ')}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => startEditingUpdate(update)}
+                    disabled={isSavingUpdate}
+                    className="rounded border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
             ))}
           </div>

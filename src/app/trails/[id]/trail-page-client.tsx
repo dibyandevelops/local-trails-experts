@@ -109,6 +109,7 @@ type TrailService = {
   contact_email: string | null;
   price_note: string | null;
   schedule_note: string | null;
+  is_active: boolean;
   organization_name?: string | null;
 };
 type MapSectionProps = {
@@ -371,6 +372,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [allAssociatedExpertsOpen, setAllAssociatedExpertsOpen] = useState(false);
+  const [trailAlertsOpen, setTrailAlertsOpen] = useState(false);
+  const [trailFacilitiesOpen, setTrailFacilitiesOpen] = useState(false);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -1550,6 +1553,45 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             </h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
 
+            {trailOrganizations.length > 0 && (
+              <div className="mt-4 rounded-2xl border border-emerald-200/80 bg-white/75 p-4 shadow-sm backdrop-blur dark:border-emerald-900/60 dark:bg-slate-900/60">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                  Trail builders
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {trailOrganizations.slice(0, 4).map((relation) => (
+                    <a
+                      key={`builder-card-${relation.id}`}
+                      href={`/organizations/${relation.organization_slug}`}
+                      className="flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:hover:border-emerald-700"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 bg-white text-xs font-bold text-emerald-800 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100">
+                        {relation.organization_logo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={relation.organization_logo_url}
+                            alt={relation.organization_name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          relation.organization_name.slice(0, 2).toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                          {relation.organization_name}
+                        </p>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                          {getTrailAttributionLabel(relation.relation_type)}
+                          {relation.is_primary ? ' · Primary' : ''}
+                        </p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {trail.is_hazardous && (
               <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
                 <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-200">
@@ -1571,75 +1613,39 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         </div>
       </section>
 
-      {trailUpdates.length > 0 && (
-        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Trail updates
-          </h2>
-          <div className="mt-3 space-y-3">
-            {trailUpdates.slice(0, 6).map((update) => (
-              <article
-                key={update.id}
-                className="rounded-xl border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950/40"
+      {(trailUpdates.length > 0 || trailServices.length > 0) && (
+        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-3">
+            {trailUpdates.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTrailAlertsOpen(true)}
+                className="inline-flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-amber-900 transition hover:border-amber-300 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
-                    {update.update_type.replaceAll('_', ' ')}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-slate-400">
-                    <DateText value={update.created_at} pattern="PPP" />
-                  </span>
-                </div>
-                <h3 className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
-                  {update.title}
-                </h3>
-                {update.details && (
-                  <p className="mt-1 text-xs text-gray-700 dark:text-slate-300">{update.details}</p>
-                )}
-                <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">
-                  {(update.organization_name || 'LocoXperts')} · {update.actor_name || 'System'}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-      {trailServices.length > 0 && (
-        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Trail services
-          </h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {trailServices.map((service) => (
-              <article
-                key={service.id}
-                className="rounded-xl border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950/40"
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200 text-lg dark:bg-amber-900/70">
+                  !
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold">Trail alerts</span>
+                  <span className="block text-xs opacity-80">{trailUpdates.length} update{trailUpdates.length === 1 ? '' : 's'}</span>
+                </span>
+              </button>
+            )}
+            {trailServices.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTrailFacilitiesOpen(true)}
+                className="inline-flex items-center gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-left text-cyan-900 transition hover:border-cyan-300 hover:bg-cyan-100 dark:border-cyan-900/60 dark:bg-cyan-950/30 dark:text-cyan-100"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
-                    {service.service_type.replaceAll('_', ' ')}
-                  </span>
-                  {service.organization_name && (
-                    <span className="text-xs text-gray-500 dark:text-slate-400">
-                      {service.organization_name}
-                    </span>
-                  )}
-                </div>
-                <h3 className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
-                  {service.title}
-                </h3>
-                {service.description && (
-                  <p className="mt-1 text-xs text-gray-700 dark:text-slate-300">{service.description}</p>
-                )}
-                <div className="mt-2 space-y-1 text-[11px] text-gray-600 dark:text-slate-300">
-                  {service.price_note && <p>Price: {service.price_note}</p>}
-                  {service.schedule_note && <p>Schedule: {service.schedule_note}</p>}
-                  {service.contact_phone && <p>Phone: {service.contact_phone}</p>}
-                  {service.contact_whatsapp && <p>WhatsApp: {service.contact_whatsapp}</p>}
-                  {service.contact_email && <p>Email: {service.contact_email}</p>}
-                </div>
-              </article>
-            ))}
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-200 text-lg dark:bg-cyan-900/70">
+                  i
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold">Facilities</span>
+                  <span className="block text-xs opacity-80">{trailServices.length} service{trailServices.length === 1 ? '' : 's'}</span>
+                </span>
+              </button>
+            )}
           </div>
         </section>
       )}
@@ -2724,6 +2730,103 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               </a>
             );
           })}
+        </div>
+      </AppDialog>
+
+      <AppDialog
+        open={trailAlertsOpen}
+        onOpenChange={setTrailAlertsOpen}
+        title="Trail alerts"
+        description="Recent condition, maintenance, route, and hazard updates for this trail."
+        maxWidthClassName="max-w-2xl"
+      >
+        <div className="mt-4 space-y-3">
+          {trailUpdates.length === 0 ? (
+            <p className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              No trail alerts yet.
+            </p>
+          ) : (
+            trailUpdates.map((update) => (
+              <article
+                key={`alert-modal-${update.id}`}
+                className="rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/40"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
+                    {update.update_type.replaceAll('_', ' ')}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-slate-400">
+                    <DateText value={update.created_at} pattern="PPP" />
+                  </span>
+                </div>
+                <h3 className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  {update.title}
+                </h3>
+                {update.details && (
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{update.details}</p>
+                )}
+                <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">
+                  {(update.organization_name || 'LocoXperts')} · {update.actor_name || 'System'}
+                </p>
+              </article>
+            ))
+          )}
+        </div>
+      </AppDialog>
+
+      <AppDialog
+        open={trailFacilitiesOpen}
+        onOpenChange={setTrailFacilitiesOpen}
+        title="Trail facilities"
+        description="Available shuttle, lift, and support vehicle options for this trail."
+        maxWidthClassName="max-w-3xl"
+      >
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {trailServices.length === 0 ? (
+            <p className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              No facilities listed yet.
+            </p>
+          ) : (
+            trailServices.map((service) => (
+              <article
+                key={`facility-modal-${service.id}`}
+                className="rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/40"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
+                    {service.service_type.replaceAll('_', ' ')}
+                  </span>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                      service.is_active
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200'
+                        : 'border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                    }`}
+                  >
+                    {service.is_active ? 'Available' : 'Out of service'}
+                  </span>
+                  {service.organization_name && (
+                    <span className="text-xs text-gray-500 dark:text-slate-400">
+                      {service.organization_name}
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  {service.title}
+                </h3>
+                {service.description && (
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{service.description}</p>
+                )}
+                <div className="mt-3 space-y-1 text-xs text-gray-600 dark:text-slate-300">
+                  {service.price_note && <p>Price: {service.price_note}</p>}
+                  {service.schedule_note && <p>Schedule: {service.schedule_note}</p>}
+                  {service.contact_phone && <p>Phone: {service.contact_phone}</p>}
+                  {service.contact_whatsapp && <p>WhatsApp: {service.contact_whatsapp}</p>}
+                  {service.contact_email && <p>Email: {service.contact_email}</p>}
+                </div>
+              </article>
+            ))
+          )}
         </div>
       </AppDialog>
 

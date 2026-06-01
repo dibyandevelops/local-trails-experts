@@ -267,6 +267,8 @@ export async function GET(request: NextRequest) {
         verified_org.organization_name AS verified_by_org_name,
         maintained_org.organization_name AS maintained_by_org_name,
         COALESCE(associated_experts.expert_count, 0)::int AS associated_expert_count,
+        COALESCE(trail_builders.builder_count, 0)::int AS trail_builder_count,
+        COALESCE(active_campaigns.campaign_count, 0)::int AS campaign_count,
         COALESCE(tr.review_count, 0) AS review_count,
         COALESCE(tr.average_rating, 0) AS average_rating
       FROM trails t
@@ -316,6 +318,21 @@ export async function GET(request: NextRequest) {
           AND u.role = 'expert'
           AND COALESCE(u.is_hidden, FALSE) = FALSE
       ) associated_experts ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT COUNT(DISTINCT to2.organization_id)::int AS builder_count
+        FROM trail_organizations to2
+        JOIN organizations o ON o.id = to2.organization_id
+        WHERE to2.trail_id = t.id
+          AND o.is_active = TRUE
+      ) trail_builders ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS campaign_count
+        FROM fundraising_campaigns fc
+        JOIN organizations o ON o.id = fc.organization_id
+        WHERE fc.trail_id = t.id
+          AND fc.status = 'active'
+          AND o.is_active = TRUE
+      ) active_campaigns ON TRUE
       ${whereClause}
       ORDER BY ${orderBy}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}

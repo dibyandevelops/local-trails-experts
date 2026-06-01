@@ -54,6 +54,7 @@ type TrailUpdate = {
   update_type: TrailUpdateType;
   title: string;
   details: string | null;
+  media_urls?: string[] | null;
   created_at: string;
 };
 
@@ -87,6 +88,15 @@ function readImageFileAsDataUrl(file: File) {
   });
 }
 
+function LoadingSpinner() {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
+    />
+  );
+}
+
 export default function OrganizationOpsPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -95,6 +105,7 @@ export default function OrganizationOpsPanel() {
   const [deleteGalleryTarget, setDeleteGalleryTarget] = useState<GalleryItem | null>(null);
   const [deleteServiceTarget, setDeleteServiceTarget] = useState<TrailService | null>(null);
   const [deleteUpdateTarget, setDeleteUpdateTarget] = useState<TrailUpdate | null>(null);
+  const [editUpdateTarget, setEditUpdateTarget] = useState<TrailUpdate | null>(null);
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [selectedTrailId, setSelectedTrailId] = useState('');
   const [selectedUpdateOrgId, setSelectedUpdateOrgId] = useState('');
@@ -266,6 +277,44 @@ export default function OrganizationOpsPanel() {
       setMessage(error instanceof Error ? error.message : 'Failed to post trail update.');
     },
   });
+  const editUpdateMutation = useMutation({
+    mutationFn: async () => {
+      if (!editUpdateTarget) throw new Error('No trail update selected.');
+      const response = await fetch('/api/admin/trail-updates', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editUpdateTarget.id,
+          trail_id: selectedTrailId,
+          organization_id: selectedUpdateOrgId || null,
+          update_type: updateType,
+          title: updateTitle.trim(),
+          details: updateDetails.trim() || null,
+          media_urls: updateMediaUrls
+            .split('\n')
+            .map((value) => value.trim())
+            .filter(Boolean),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update trail update');
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      await refetchTrailUpdates();
+      setEditUpdateTarget(null);
+      setUpdateOpen(false);
+      setUpdateTitle('');
+      setUpdateDetails('');
+      setUpdateMediaUrls('');
+      setMessage('Trail update updated.');
+    },
+    onError: (error) => {
+      setMessage(error instanceof Error ? error.message : 'Failed to update trail update.');
+    },
+  });
   const createTrailServiceMutation = useMutation({
     mutationFn: async () => {
       const response = await fetch('/api/admin/trail-services', {
@@ -374,6 +423,11 @@ export default function OrganizationOpsPanel() {
   const canAddGallery = Boolean(selectedOrgId && galleryImageUrl.trim());
   const canPostUpdate = Boolean(selectedTrailId && updateTitle.trim());
   const canCreateService = Boolean(serviceTrailId && serviceTitle.trim());
+  const isSavingUpdate = createUpdateMutation.isPending || editUpdateMutation.isPending;
+  const togglingServiceId = toggleTrailServiceMutation.variables?.id;
+  const deletingGalleryId = deleteGalleryMutation.variables?.id;
+  const deletingServiceId = deleteTrailServiceMutation.variables;
+  const deletingUpdateId = deleteTrailUpdateMutation.variables?.id;
   const orgOptions = useMemo(
     () =>
       organizations
@@ -396,6 +450,33 @@ export default function OrganizationOpsPanel() {
         .filter((value) => value && value !== url)
         .join('\n')
     );
+  };
+  const resetTrailUpdateForm = () => {
+    setEditUpdateTarget(null);
+    setUpdateType('condition_update');
+    setUpdateTitle('');
+    setUpdateDetails('');
+    setUpdateMediaUrls('');
+  };
+  const getUpdateMediaText = (update: TrailUpdate) =>
+    Array.isArray(update.media_urls)
+      ? update.media_urls
+          .filter((value) => typeof value === 'string' && value.trim())
+          .join('\n')
+      : '';
+  const openCreateUpdate = () => {
+    resetTrailUpdateForm();
+    setUpdateOpen(true);
+  };
+  const openEditUpdate = (update: TrailUpdate) => {
+    setEditUpdateTarget(update);
+    setSelectedTrailId(update.trail_id);
+    setSelectedUpdateOrgId(update.organization_id || '');
+    setUpdateType(update.update_type);
+    setUpdateTitle(update.title);
+    setUpdateDetails(update.details || '');
+    setUpdateMediaUrls(getUpdateMediaText(update));
+    setUpdateOpen(true);
   };
   const handleUpdateMediaUpload = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -517,8 +598,9 @@ export default function OrganizationOpsPanel() {
           type="button"
           onClick={() => addGalleryMutation.mutate()}
           disabled={!canAddGallery || addGalleryMutation.isPending}
-          className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
         >
+          {addGalleryMutation.isPending && <LoadingSpinner />}
           {addGalleryMutation.isPending ? 'Adding...' : 'Add gallery item'}
         </button>
       </div>
@@ -610,7 +692,7 @@ export default function OrganizationOpsPanel() {
           checked={serviceIsActive}
           onChange={(event) => setServiceIsActive(event.target.checked)}
         />
-        Service is active
+        Service is available
       </label>
       <div className="flex justify-end gap-2">
         <button
@@ -624,8 +706,9 @@ export default function OrganizationOpsPanel() {
           type="button"
           onClick={() => createTrailServiceMutation.mutate()}
           disabled={!canCreateService || createTrailServiceMutation.isPending}
-          className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
         >
+          {createTrailServiceMutation.isPending && <LoadingSpinner />}
           {createTrailServiceMutation.isPending ? 'Adding...' : 'Add service'}
         </button>
       </div>
@@ -745,11 +828,22 @@ export default function OrganizationOpsPanel() {
         </button>
         <button
           type="button"
-          onClick={() => createUpdateMutation.mutate()}
-          disabled={!canPostUpdate || createUpdateMutation.isPending}
-          className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+          onClick={() =>
+            editUpdateTarget
+              ? editUpdateMutation.mutate()
+              : createUpdateMutation.mutate()
+          }
+          disabled={!canPostUpdate || isSavingUpdate}
+          className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
         >
-          {createUpdateMutation.isPending ? 'Posting...' : 'Post trail update'}
+          {isSavingUpdate && <LoadingSpinner />}
+          {editUpdateTarget
+            ? editUpdateMutation.isPending
+              ? 'Saving...'
+              : 'Save trail update'
+            : createUpdateMutation.isPending
+              ? 'Posting...'
+              : 'Post trail update'}
         </button>
       </div>
     </div>
@@ -825,7 +919,6 @@ export default function OrganizationOpsPanel() {
                           />
                           <div className="min-w-0">
                             <p className="font-semibold text-gray-900">{item.caption || 'Untitled image'}</p>
-                            <p className="mt-1 max-w-xs truncate text-xs text-gray-600">{item.image_url}</p>
                           </div>
                         </div>
                       </td>
@@ -850,9 +943,10 @@ export default function OrganizationOpsPanel() {
                             type="button"
                             onClick={() => setDeleteGalleryTarget(item)}
                             disabled={deleteGalleryMutation.isPending}
-                            className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
                           >
-                            Delete
+                            {deletingGalleryId === item.id && <LoadingSpinner />}
+                            {deletingGalleryId === item.id ? 'Deleting...' : 'Delete'}
                           </button>
                         </div>
                       </td>
@@ -925,7 +1019,7 @@ export default function OrganizationOpsPanel() {
                               : 'bg-slate-100 text-slate-700'
                           }`}
                         >
-                          {service.is_active ? 'Visible' : 'Hidden'}
+                          {service.is_active ? 'Available' : 'Out of service'}
                         </span>
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -939,17 +1033,23 @@ export default function OrganizationOpsPanel() {
                               })
                             }
                             disabled={toggleTrailServiceMutation.isPending}
-                            className="rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                           >
-                            {service.is_active ? 'Hide' : 'Show'}
+                            {togglingServiceId === service.id && <LoadingSpinner />}
+                            {togglingServiceId === service.id
+                              ? 'Saving...'
+                              : service.is_active
+                                ? 'Mark out'
+                                : 'Mark available'}
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeleteServiceTarget(service)}
                             disabled={deleteTrailServiceMutation.isPending}
-                            className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
                           >
-                            Delete
+                            {deletingServiceId === service.id && <LoadingSpinner />}
+                            {deletingServiceId === service.id ? 'Deleting...' : 'Delete'}
                           </button>
                         </div>
                       </td>
@@ -969,7 +1069,7 @@ export default function OrganizationOpsPanel() {
             </div>
             <button
               type="button"
-              onClick={() => setUpdateOpen(true)}
+              onClick={openCreateUpdate}
               className="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-semibold text-white hover:bg-cyan-800"
             >
               Post trail update
@@ -1019,11 +1119,20 @@ export default function OrganizationOpsPanel() {
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
+                            onClick={() => openEditUpdate(update)}
+                            disabled={isSavingUpdate}
+                            className="rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => setDeleteUpdateTarget(update)}
                             disabled={deleteTrailUpdateMutation.isPending}
-                            className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
                           >
-                            Delete
+                            {deletingUpdateId === update.id && <LoadingSpinner />}
+                            {deletingUpdateId === update.id ? 'Deleting...' : 'Delete'}
                           </button>
                         </div>
                       </td>
@@ -1055,9 +1164,16 @@ export default function OrganizationOpsPanel() {
       </AppDialog>
       <AppDialog
         open={updateOpen}
-        onOpenChange={setUpdateOpen}
-        title="Post trail update"
-        description="Publish a trail builder or admin trail update."
+        onOpenChange={(open) => {
+          setUpdateOpen(open);
+          if (!open) resetTrailUpdateForm();
+        }}
+        title={editUpdateTarget ? 'Edit trail update' : 'Post trail update'}
+        description={
+          editUpdateTarget
+            ? 'Update the trail update details.'
+            : 'Publish a trail builder or admin trail update.'
+        }
         maxWidthClassName="max-w-xl"
       >
         {trailUpdateForm}
@@ -1091,8 +1207,9 @@ export default function OrganizationOpsPanel() {
                 type="button"
                 onClick={() => deleteGalleryMutation.mutate(deleteGalleryTarget)}
                 disabled={deleteGalleryMutation.isPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
+                {deleteGalleryMutation.isPending && <LoadingSpinner />}
                 {deleteGalleryMutation.isPending ? 'Deleting...' : 'Delete gallery item'}
               </button>
             </div>
@@ -1128,8 +1245,9 @@ export default function OrganizationOpsPanel() {
                 type="button"
                 onClick={() => deleteTrailServiceMutation.mutate(deleteServiceTarget.id)}
                 disabled={deleteTrailServiceMutation.isPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
+                {deleteTrailServiceMutation.isPending && <LoadingSpinner />}
                 {deleteTrailServiceMutation.isPending ? 'Deleting...' : 'Delete service'}
               </button>
             </div>
@@ -1165,8 +1283,9 @@ export default function OrganizationOpsPanel() {
                 type="button"
                 onClick={() => deleteTrailUpdateMutation.mutate(deleteUpdateTarget)}
                 disabled={deleteTrailUpdateMutation.isPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
+                {deleteTrailUpdateMutation.isPending && <LoadingSpinner />}
                 {deleteTrailUpdateMutation.isPending ? 'Deleting...' : 'Delete update'}
               </button>
             </div>

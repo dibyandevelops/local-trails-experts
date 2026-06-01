@@ -5,8 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   Bike,
+  CircleDollarSign,
   CircleDot,
   Footprints,
+  Hammer,
   MapPinned,
   Mountain,
   PersonStanding,
@@ -108,6 +110,9 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const ratingValue = ratingRaw != null && (trail.review_count || 0) > 0 ? ratingRaw : null;
   const ratingDisplay = ratingValue ?? 5;
   const ratingCount = trail.review_count || 0;
+  const hasTrailBuilder =
+    Boolean(trail.built_by_org_name || trail.maintained_by_org_name || trail.verified_by_org_name) ||
+    (trail.trail_builder_count || 0) > 0;
 
   const dropdownItems = [
     ...(trail.showViewTrailOption ? [{ label: 'View trail', href: detailsHref }] : []),
@@ -423,6 +428,29 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             {(trail.associated_expert_count || 0) > 0 && (
               <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-medium text-cyan-700 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
                 Local expert available
+              </span>
+            )}
+            {(trail.campaign_count || 0) > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+                title={`${trail.campaign_count} active campaign${trail.campaign_count === 1 ? '' : 's'}`}
+              >
+                <CircleDollarSign className="h-3.5 w-3.5" aria-hidden="true" />
+                Campaign
+              </span>
+            )}
+            {hasTrailBuilder && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+                title={
+                  trail.built_by_org_name ||
+                  trail.maintained_by_org_name ||
+                  trail.verified_by_org_name ||
+                  `${trail.trail_builder_count} trail builder${trail.trail_builder_count === 1 ? '' : 's'}`
+                }
+              >
+                <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
+                Builder
               </span>
             )}
           </div>

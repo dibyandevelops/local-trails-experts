@@ -53,9 +53,8 @@ export async function GET(
       FROM trail_services ts
       LEFT JOIN organizations o ON o.id = ts.organization_id
       WHERE ts.trail_id = $1
-        AND ts.is_active = TRUE
         AND (ts.organization_id IS NULL OR o.is_active = TRUE)
-      ORDER BY ts.updated_at DESC
+      ORDER BY ts.is_active DESC, ts.updated_at DESC
       `,
       [trailId]
     );
