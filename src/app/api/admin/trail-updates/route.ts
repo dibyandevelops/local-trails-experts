@@ -5,7 +5,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -23,6 +23,18 @@ export async function GET(request: NextRequest) {
     if (organizationId) {
       where.push(`tul.organization_id = $${idx}`);
       values.push(organizationId);
+      idx += 1;
+    }
+    if (auth.role !== 'admin') {
+      where.push(`EXISTS (
+        SELECT 1
+        FROM organization_members om
+        WHERE om.organization_id = tul.organization_id
+          AND om.user_id = $${idx}
+          AND om.status = 'active'
+          AND om.role IN ('org_admin', 'org_editor')
+      )`);
+      values.push(auth.sub);
       idx += 1;
     }
     where.push('(tul.organization_id IS NULL OR o.is_active = TRUE)');

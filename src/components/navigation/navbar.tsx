@@ -33,6 +33,7 @@ type NavItem = {
   badge?: string;
   requiresAuth?: boolean;
   requiresRole?: Array<'admin' | 'expert' | 'participant'>;
+  requiresOrgMember?: boolean;
   showFor?: Array<'anonymous' | 'admin' | 'expert' | 'participant'>;
 };
 
@@ -70,6 +71,12 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         label: 'Create Trail',
         href: '/upload',
         showFor: ['admin', 'expert'],
+      },
+      {
+        label: 'Trail Builder Dashboard',
+        href: '/trail-builders/me',
+        showFor: ['expert', 'participant', 'admin'],
+        requiresOrgMember: true,
       }
     ],
   },
@@ -98,6 +105,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/events/trainings/create': Dumbbell,
   '/upload': MapPinned,
   '/experts/join': Sparkles,
+  '/trail-builders/me': Users,
 };
 
 const getMobileNavIcon = (href: string) => {
@@ -147,6 +155,17 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       return Array.isArray(data?.events) ? data.events.length : 0;
     },
     refetchInterval: 60000,
+    retry: false,
+  });
+  const { data: builderAccess } = useQuery<{ organizations?: unknown[] }>({
+    queryKey: ['navbar-builder-access', user?.id],
+    queryFn: async () => {
+      const response = await fetch('/api/organizations/me', { cache: 'no-store' });
+      if (!response.ok) return { organizations: [] };
+      return response.json();
+    },
+    enabled: Boolean(user),
+    staleTime: 60000,
     retry: false,
   });
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -271,10 +290,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const canSeeItem = (item: NavItem) => {
     if (item.showFor) {
       if (!user) return item.showFor.includes('anonymous');
-      return item.showFor.includes(user.role);
+      if (!item.showFor.includes(user.role)) return false;
+      if (item.requiresOrgMember && !(builderAccess?.organizations?.length)) return false;
+      return true;
     }
     if (!item.requiresAuth) return true;
     if (!user) return false;
+    if (item.requiresOrgMember && !(builderAccess?.organizations?.length)) return false;
     if (!item.requiresRole) return true;
     return item.requiresRole.includes(user.role);
   };

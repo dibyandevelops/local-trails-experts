@@ -816,8 +816,18 @@ export default function OrganizationOpsPanel() {
                   {galleryItems.map((item) => (
                     <tr key={item.id}>
                       <td className="px-4 py-3 align-top">
-                        <p className="font-semibold text-gray-900">{item.caption || 'Untitled image'}</p>
-                        <p className="mt-1 max-w-sm break-all text-xs text-gray-600">{item.image_url}</p>
+                        <div className="flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.image_url}
+                            alt={item.caption || 'Trail builder gallery image'}
+                            className="h-14 w-20 rounded-lg bg-gray-100 object-cover"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900">{item.caption || 'Untitled image'}</p>
+                            <p className="mt-1 max-w-xs truncate text-xs text-gray-600">{item.image_url}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600">
                         {item.organization_name || 'Unknown trail builder'}

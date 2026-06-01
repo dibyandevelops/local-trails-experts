@@ -28,10 +28,44 @@ async function validateTrailOrganizationLink(
   return result.rows.length > 0;
 }
 
+async function validateActiveOrganization(organizationId: string | null): Promise<boolean> {
+  if (!organizationId) return true;
+  const result = await pool.query(
+    `
+    SELECT 1
+    FROM organizations
+    WHERE id = $1
+      AND is_active = TRUE
+    LIMIT 1
+    `,
+    [organizationId]
+  );
+  return result.rows.length > 0;
+}
+
+async function canManageOrganization(userId: string, organizationId: string | null) {
+  if (!organizationId) return false;
+  const result = await pool.query(
+    `
+    SELECT 1
+    FROM organization_members om
+    JOIN organizations o ON o.id = om.organization_id
+    WHERE om.organization_id = $1
+      AND om.user_id = $2
+      AND om.status = 'active'
+      AND om.role IN ('org_admin', 'org_editor')
+      AND o.is_active = TRUE
+    LIMIT 1
+    `,
+    [organizationId, userId]
+  );
+  return result.rows.length > 0;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -51,6 +85,18 @@ export async function GET(request: NextRequest) {
     if (organizationId) {
       where.push(`ts.organization_id = $${idx}`);
       values.push(organizationId);
+      idx += 1;
+    }
+    if (auth.role !== 'admin') {
+      where.push(`EXISTS (
+        SELECT 1
+        FROM organization_members om
+        WHERE om.organization_id = ts.organization_id
+          AND om.user_id = $${idx}
+          AND om.status = 'active'
+          AND om.role IN ('org_admin', 'org_editor')
+      )`);
+      values.push(auth.sub);
       idx += 1;
     }
     if (!includeInactive) {
@@ -98,7 +144,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -128,12 +174,25 @@ export async function POST(request: NextRequest) {
     if (!trailCheck.rows.length) {
       return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
     }
-    const linked = await validateTrailOrganizationLink(trailId, body.organization_id || null);
-    if (!linked) {
+    const organizationId = body.organization_id?.trim() || null;
+    const activeOrganization = await validateActiveOrganization(organizationId);
+    if (!activeOrganization) {
       return NextResponse.json(
-        { error: 'organization_id must be linked to the trail' },
+        { error: 'organization_id must be an active trail builder' },
         { status: 400 }
       );
+    }
+    if (auth.role !== 'admin') {
+      const linked = await validateTrailOrganizationLink(trailId, organizationId);
+      if (!linked) {
+        return NextResponse.json(
+          { error: 'organization_id must be linked to the trail' },
+          { status: 400 }
+        );
+      }
+      if (!(await canManageOrganization(auth.sub, organizationId))) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     const result = await pool.query(
@@ -157,7 +216,7 @@ export async function POST(request: NextRequest) {
       `,
       [
         trailId,
-        body.organization_id || null,
+        organizationId,
         body.service_type,
         title,
         body.description?.trim() || null,
@@ -181,7 +240,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -222,6 +281,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Trail service not found' }, { status: 404 });
     }
     const current = existing.rows[0] as { trail_id: string; organization_id: string | null };
+    if (auth.role !== 'admin' && !(await canManageOrganization(auth.sub, current.organization_id))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     for (const fieldName of fieldNames) {
       if (Object.prototype.hasOwnProperty.call(body, fieldName)) {
@@ -243,12 +305,27 @@ export async function PATCH(request: NextRequest) {
     const effectiveOrgId = Object.prototype.hasOwnProperty.call(body, 'organization_id')
       ? (body.organization_id ? String(body.organization_id).trim() : null)
       : current.organization_id;
-    const linked = await validateTrailOrganizationLink(effectiveTrailId, effectiveOrgId);
-    if (!linked) {
+    const activeOrganization = await validateActiveOrganization(effectiveOrgId);
+    if (!activeOrganization) {
       return NextResponse.json(
-        { error: 'organization_id must be linked to the trail' },
+        { error: 'organization_id must be an active trail builder' },
         { status: 400 }
       );
+    }
+    if (auth.role !== 'admin') {
+      const linked = await validateTrailOrganizationLink(effectiveTrailId, effectiveOrgId);
+      if (!linked) {
+        return NextResponse.json(
+          { error: 'organization_id must be linked to the trail' },
+          { status: 400 }
+        );
+      }
+      if (effectiveOrgId !== current.organization_id) {
+        return NextResponse.json(
+          { error: 'Trail builder members cannot move services between organizations' },
+          { status: 403 }
+        );
+      }
     }
 
     if (!updates.length) {
