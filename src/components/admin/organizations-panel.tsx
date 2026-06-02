@@ -359,7 +359,7 @@ export default function OrganizationsPanel() {
                         <button
                           type="button"
                           onClick={() => openEditForOrganization(organization)}
-                          className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-900 hover:bg-cyan-100"
+                          className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-900 hover:bg-cyan-100 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/70"
                         >
                           Edit
                         </button>
@@ -367,7 +367,7 @@ export default function OrganizationsPanel() {
                           type="button"
                           onClick={() => toggleOrganizationVisibility(organization)}
                           disabled={visibilityMutation.isPending}
-                          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                         >
                           {organization.is_active ? 'Hide' : 'Show'}
                         </button>
@@ -375,7 +375,7 @@ export default function OrganizationsPanel() {
                           type="button"
                           onClick={() => setDeleteTarget(organization)}
                           disabled={deleteMutation.isPending}
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/70"
                         >
                           Delete
                         </button>

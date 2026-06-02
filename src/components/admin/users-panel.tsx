@@ -116,7 +116,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                   <button
                     type="button"
                     onClick={() => handleDeleteUser(user)}
-                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/70"
                     disabled={deleteUserMutation.isPending}
                   >
                     Delete
@@ -127,7 +127,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                     <button
                       type="button"
                       onClick={() => handleToggleExpertVisibility(user)}
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                       disabled={visibilityMutation.isPending}
                     >
                       {user.is_hidden ? 'Show on experts page' : 'Hide from experts page'}
@@ -150,7 +150,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                         setActiveUser(user);
                         setDetailsOpen(true);
                       }}
-                      className="mt-3 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      className="mt-3 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                     >
                       View verification
                     </button>
@@ -236,7 +236,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                               setActiveUser(user);
                               setDetailsOpen(true);
                             }}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                           >
                             View
                           </button>
@@ -251,7 +251,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                           <button
                             type="button"
                             onClick={() => handleToggleExpertVisibility(user)}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                             disabled={visibilityMutation.isPending}
                           >
                             {user.is_hidden ? 'Show' : 'Hide'}
@@ -260,7 +260,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                         <button
                           type="button"
                           onClick={() => handleDeleteUser(user)}
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/70"
                           disabled={deleteUserMutation.isPending}
                         >
                           Delete

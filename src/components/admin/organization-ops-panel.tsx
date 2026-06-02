@@ -162,6 +162,7 @@ export default function OrganizationOpsPanel() {
   const [galleryUploadName, setGalleryUploadName] = useState('');
   const [galleryCaption, setGalleryCaption] = useState('');
   const [gallerySortOrder, setGallerySortOrder] = useState('0');
+  const [serviceTrailFilterId, setServiceTrailFilterId] = useState('');
   const [serviceTrailId, setServiceTrailId] = useState('');
   const [serviceOrganizationId, setServiceOrganizationId] = useState('');
   const [serviceType, setServiceType] = useState<'shuttle' | 'lift' | 'support_vehicle'>('shuttle');
@@ -227,11 +228,16 @@ export default function OrganizationOpsPanel() {
       return data?.assignments || [];
     },
   });
-  const { data: trailServices = [], refetch: refetchTrailServices } = useQuery<TrailService[]>({
-    queryKey: ['admin-trail-services', serviceTrailId],
+  const {
+    data: trailServices = [],
+    refetch: refetchTrailServices,
+    isLoading: loadingTrailServices,
+    error: trailServicesError,
+  } = useQuery<TrailService[]>({
+    queryKey: ['admin-trail-services', serviceTrailFilterId],
     queryFn: async () => {
       const params = new URLSearchParams({ include_inactive: 'true' });
-      if (serviceTrailId) params.set('trail_id', serviceTrailId);
+      if (serviceTrailFilterId) params.set('trail_id', serviceTrailFilterId);
       const response = await fetch(`/api/admin/trail-services?${params.toString()}`);
       const data = await response.json();
       if (!response.ok) {
@@ -491,7 +497,6 @@ export default function OrganizationOpsPanel() {
     },
     onSuccess: async () => {
       await refetchTrailServices();
-      setMessage('Trail service updated.');
       setServiceType('shuttle');
       setServiceTitle('');
       setServiceDescription('');
@@ -587,6 +592,30 @@ export default function OrganizationOpsPanel() {
         .map((org) => ({ value: org.id, label: org.name })),
     [organizations]
   );
+  const fieldClass =
+    'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
+  const fullFieldClass =
+    'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
+  const secondaryButtonClass =
+    'rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800';
+  const tableActionButtonClass =
+    'inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800';
+  const dangerActionButtonClass =
+    'inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/70';
+  const primarySlateButtonClass =
+    'inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white';
+  const primaryGreenButtonClass =
+    'inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60 dark:bg-green-500 dark:text-slate-950 dark:hover:bg-green-400';
+  const primaryCyanButtonClass =
+    'inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300';
+  const primaryDangerButtonClass =
+    'inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 dark:bg-red-500 dark:text-white dark:hover:bg-red-400';
+  const smallSlateButtonClass =
+    'rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white';
+  const smallGreenButtonClass =
+    'rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-green-500 dark:text-slate-950 dark:hover:bg-green-400';
+  const smallCyanButtonClass =
+    'rounded-lg bg-cyan-700 px-3 py-2 text-xs font-semibold text-white hover:bg-cyan-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300';
   const updateMediaList = updateMediaUrls
     .split('\n')
     .map((value) => value.trim())
@@ -650,7 +679,7 @@ export default function OrganizationOpsPanel() {
         <select
           value={assignmentTrailId}
           onChange={(event) => setAssignmentTrailId(event.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         >
           <option value="">Select trail</option>
           {trails.map((trail) => (
@@ -662,7 +691,7 @@ export default function OrganizationOpsPanel() {
         <select
           value={assignmentOrgId}
           onChange={(event) => setAssignmentOrgId(event.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         >
           <option value="">Select trail builder</option>
           {orgOptions.map((org) => (
@@ -676,7 +705,7 @@ export default function OrganizationOpsPanel() {
           onChange={(event) =>
             setAssignmentRelationType(event.target.value as TrailOrganizationRelationType)
           }
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         >
           {RELATION_TYPE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -684,7 +713,7 @@ export default function OrganizationOpsPanel() {
             </option>
           ))}
         </select>
-        <label className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
+        <label className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 dark:border-slate-800 dark:text-slate-200">
           <input
             type="checkbox"
             checked={assignmentIsPrimary}
@@ -697,7 +726,7 @@ export default function OrganizationOpsPanel() {
         <button
           type="button"
           onClick={() => setAssignmentOpen(false)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          className={secondaryButtonClass}
         >
           Cancel
         </button>
@@ -705,7 +734,7 @@ export default function OrganizationOpsPanel() {
           type="button"
           onClick={() => createAssignmentMutation.mutate()}
           disabled={!canCreateAssignment || createAssignmentMutation.isPending}
-          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+          className={primarySlateButtonClass}
         >
           {createAssignmentMutation.isPending && <LoadingSpinner />}
           {createAssignmentMutation.isPending ? 'Assigning...' : 'Assign trail builder'}
@@ -719,7 +748,7 @@ export default function OrganizationOpsPanel() {
       <select
         value={selectedOrgId}
         onChange={(event) => setSelectedOrgId(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       >
         <option value="">Select trail builder</option>
         {orgOptions.map((org) => (
@@ -740,12 +769,12 @@ export default function OrganizationOpsPanel() {
               setGalleryUploadName('');
             }}
             placeholder="Paste an image URL or upload below"
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            className={`mt-1 ${fullFieldClass}`}
           />
         </div>
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-green-300 bg-white p-4 text-center hover:bg-green-50">
-          <span className="text-sm font-semibold text-green-800">Upload image</span>
-          <span className="mt-1 text-xs text-gray-500">
+        <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-green-300 bg-white p-4 text-center hover:bg-green-50 dark:border-green-900/70 dark:bg-slate-900 dark:hover:bg-green-950/30">
+          <span className="text-sm font-semibold text-green-800 dark:text-green-200">Upload image</span>
+          <span className="mt-1 text-xs text-gray-500 dark:text-slate-400">
             JPG, PNG, or WebP under 4MB. Stored as data URL for now.
           </span>
           <input
@@ -768,12 +797,12 @@ export default function OrganizationOpsPanel() {
           />
         </label>
         {galleryUploadName && (
-          <p className="text-xs font-semibold text-gray-700">
+          <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">
             Selected: {galleryUploadName}
           </p>
         )}
         {galleryImageUrl.startsWith('data:image/') && (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <Image
               src={galleryImageUrl}
               alt="Gallery upload preview"
@@ -788,7 +817,7 @@ export default function OrganizationOpsPanel() {
                 setGalleryImageUrl('');
                 setGalleryUploadName('');
               }}
-              className="w-full border-t border-gray-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50"
+              className="w-full border-t border-gray-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-slate-800 dark:text-red-200 dark:hover:bg-red-950/40"
             >
               Remove uploaded image
             </button>
@@ -799,20 +828,20 @@ export default function OrganizationOpsPanel() {
         value={galleryCaption}
         onChange={(event) => setGalleryCaption(event.target.value)}
         placeholder="Caption (optional)"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       />
       <input
         type="number"
         value={gallerySortOrder}
         onChange={(event) => setGallerySortOrder(event.target.value)}
         placeholder="Sort order"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       />
       <div className="flex justify-end gap-2">
         <button
           type="button"
           onClick={() => setGalleryOpen(false)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          className={secondaryButtonClass}
         >
           Cancel
         </button>
@@ -820,7 +849,7 @@ export default function OrganizationOpsPanel() {
           type="button"
           onClick={() => addGalleryMutation.mutate()}
           disabled={!canAddGallery || addGalleryMutation.isPending}
-          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+          className={primaryGreenButtonClass}
         >
           {addGalleryMutation.isPending && <LoadingSpinner />}
           {addGalleryMutation.isPending ? 'Adding...' : 'Add gallery item'}
@@ -835,7 +864,7 @@ export default function OrganizationOpsPanel() {
         <select
           value={serviceTrailId}
           onChange={(event) => setServiceTrailId(event.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         >
           <option value="">Select trail</option>
           {trails.map((trail) => (
@@ -847,7 +876,7 @@ export default function OrganizationOpsPanel() {
         <select
           value={serviceOrganizationId}
           onChange={(event) => setServiceOrganizationId(event.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         >
           <option value="">No trail builder</option>
           {orgOptions.map((org) => (
@@ -859,7 +888,7 @@ export default function OrganizationOpsPanel() {
         <select
           value={serviceType}
           onChange={(event) => setServiceType(event.target.value as 'shuttle' | 'lift' | 'support_vehicle')}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         >
           <option value="shuttle">Shuttle</option>
           <option value="lift">Lift</option>
@@ -869,46 +898,46 @@ export default function OrganizationOpsPanel() {
           value={serviceTitle}
           onChange={(event) => setServiceTitle(event.target.value)}
           placeholder="Service title"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         />
         <input
           value={serviceContactPhone}
           onChange={(event) => setServiceContactPhone(event.target.value)}
           placeholder="Phone (optional)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         />
         <input
           value={serviceContactWhatsapp}
           onChange={(event) => setServiceContactWhatsapp(event.target.value)}
           placeholder="WhatsApp (optional)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         />
         <input
           value={serviceContactEmail}
           onChange={(event) => setServiceContactEmail(event.target.value)}
           placeholder="Email (optional)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         />
         <input
           value={servicePriceNote}
           onChange={(event) => setServicePriceNote(event.target.value)}
           placeholder="Price note"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         />
         <input
           value={serviceScheduleNote}
           onChange={(event) => setServiceScheduleNote(event.target.value)}
           placeholder="Schedule note"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className={fieldClass}
         />
         <input
           value={serviceDescription}
           onChange={(event) => setServiceDescription(event.target.value)}
           placeholder="Description (optional)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm md:col-span-2"
+          className={`${fieldClass} md:col-span-2`}
         />
       </div>
-      <label className="inline-flex items-center gap-2 text-xs text-gray-700">
+      <label className="inline-flex items-center gap-2 text-xs text-gray-700 dark:text-slate-200">
         <input
           type="checkbox"
           checked={serviceIsActive}
@@ -920,7 +949,7 @@ export default function OrganizationOpsPanel() {
         <button
           type="button"
           onClick={() => setServiceOpen(false)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          className={secondaryButtonClass}
         >
           Cancel
         </button>
@@ -928,7 +957,7 @@ export default function OrganizationOpsPanel() {
           type="button"
           onClick={() => createTrailServiceMutation.mutate()}
           disabled={!canCreateService || createTrailServiceMutation.isPending}
-          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+          className={primaryGreenButtonClass}
         >
           {createTrailServiceMutation.isPending && <LoadingSpinner />}
           {createTrailServiceMutation.isPending ? 'Adding...' : 'Add service'}
@@ -942,7 +971,7 @@ export default function OrganizationOpsPanel() {
       <select
         value={selectedTrailId}
         onChange={(event) => setSelectedTrailId(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       >
         <option value="">Select trail</option>
         {trails.map((trail) => (
@@ -954,7 +983,7 @@ export default function OrganizationOpsPanel() {
       <select
         value={selectedUpdateOrgId}
         onChange={(event) => setSelectedUpdateOrgId(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       >
         <option value="">No trail builder (optional)</option>
         {orgOptions.map((org) => (
@@ -966,7 +995,7 @@ export default function OrganizationOpsPanel() {
       <select
         value={updateType}
         onChange={(event) => setUpdateType(event.target.value as TrailUpdateType)}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       >
         {UPDATE_TYPE_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
@@ -978,21 +1007,21 @@ export default function OrganizationOpsPanel() {
         value={updateTitle}
         onChange={(event) => setUpdateTitle(event.target.value)}
         placeholder="Update title"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       />
       <textarea
         value={updateDetails}
         onChange={(event) => setUpdateDetails(event.target.value)}
         rows={3}
         placeholder="Update details"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       />
       <textarea
         value={updateMediaUrls}
         onChange={(event) => setUpdateMediaUrls(event.target.value)}
         rows={3}
         placeholder="Media URLs (one per line)"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className={fullFieldClass}
       />
       <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
         <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-cyan-300 bg-white p-4 text-center hover:bg-cyan-50">
@@ -1044,7 +1073,7 @@ export default function OrganizationOpsPanel() {
         <button
           type="button"
           onClick={() => setUpdateOpen(false)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          className={secondaryButtonClass}
         >
           Cancel
         </button>
@@ -1056,7 +1085,7 @@ export default function OrganizationOpsPanel() {
               : createUpdateMutation.mutate()
           }
           disabled={!canPostUpdate || isSavingUpdate}
-          className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+          className={primaryCyanButtonClass}
         >
           {isSavingUpdate && <LoadingSpinner />}
           {editUpdateTarget
@@ -1072,32 +1101,32 @@ export default function OrganizationOpsPanel() {
   );
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">Trail Builder Operations</h2>
-      <p className="text-sm text-gray-600 mb-5">
+    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">Trail Builder Operations</h2>
+      <p className="mb-5 text-sm text-gray-600 dark:text-slate-300">
         Manage trail builder gallery assets and publish trail update logs.
       </p>
       {message && (
-        <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">
+        <p className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
           {message}
         </p>
       )}
 
       <div className="space-y-6">
-        <section className="rounded-xl border border-gray-200 p-4">
+        <section className="rounded-xl border border-gray-200 p-4 dark:border-slate-800">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                 Trail Builder Assignments
               </h3>
-              <p className="mt-1 text-xs text-gray-600">
+              <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">
                 Link active trail builders to trails for builder, maintainer, and verifier roles.
               </p>
             </div>
             <button
               type="button"
               onClick={() => setAssignmentOpen(true)}
-              className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+              className={smallSlateButtonClass}
             >
               Assign trail builder
             </button>
@@ -1106,7 +1135,7 @@ export default function OrganizationOpsPanel() {
             <select
               value={assignmentTrailFilterId}
               onChange={(event) => setAssignmentTrailFilterId(event.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={fieldClass}
             >
               <option value="">All trails</option>
               {trails.map((trail) => (
@@ -1118,7 +1147,7 @@ export default function OrganizationOpsPanel() {
             <select
               value={assignmentOrgFilterId}
               onChange={(event) => setAssignmentOrgFilterId(event.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={fieldClass}
             >
               <option value="">All trail builders</option>
               {orgOptions.map((org) => (
@@ -1129,13 +1158,13 @@ export default function OrganizationOpsPanel() {
             </select>
           </div>
           {trailOrganizationAssignments.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
               No trail builder assignments found.
             </p>
           ) : (
-            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200">
+            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
               <table className="min-w-[950px] w-full text-left text-sm">
-                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500">
+                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Trail</th>
                     <th className="px-4 py-3">Trail Builder</th>
@@ -1145,23 +1174,23 @@ export default function OrganizationOpsPanel() {
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
+                <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
                   {trailOrganizationAssignments.map((assignment) => (
                     <tr key={assignment.id}>
-                      <td className="px-4 py-3 align-top font-semibold text-gray-900">
+                      <td className="px-4 py-3 align-top font-semibold text-gray-900 dark:text-slate-100">
                         {assignment.trail_name || 'Unknown trail'}
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-gray-900 dark:text-slate-100">
                           {assignment.organization_name || 'Unknown trail builder'}
                         </p>
                         {assignment.organization_slug && (
-                          <p className="mt-1 text-xs text-gray-500">
+                          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                             {assignment.organization_slug}
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {relationLabelByValue[assignment.relation_type]}
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -1175,7 +1204,7 @@ export default function OrganizationOpsPanel() {
                           {assignment.is_primary ? 'Primary' : 'Secondary'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {new Date(assignment.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -1189,7 +1218,7 @@ export default function OrganizationOpsPanel() {
                               })
                             }
                             disabled={toggleAssignmentPrimaryMutation.isPending}
-                            className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                            className={tableActionButtonClass}
                           >
                             {togglingAssignmentId === assignment.id && <LoadingSpinner />}
                             {togglingAssignmentId === assignment.id
@@ -1202,7 +1231,7 @@ export default function OrganizationOpsPanel() {
                             type="button"
                             onClick={() => setDeleteAssignmentTarget(assignment)}
                             disabled={deleteAssignmentMutation.isPending}
-                            className="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                            className={dangerActionButtonClass}
                           >
                             {deletingAssignmentId === assignment.id && <LoadingSpinner />}
                             {deletingAssignmentId === assignment.id ? 'Deleting...' : 'Delete'}
@@ -1217,16 +1246,16 @@ export default function OrganizationOpsPanel() {
           )}
         </section>
 
-        <section className="rounded-xl border border-gray-200 p-4">
+        <section className="rounded-xl border border-gray-200 p-4 dark:border-slate-800">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900">Trail Builder Gallery</h3>
-              <p className="mt-1 text-xs text-gray-600">Gallery assets grouped by trail builder.</p>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Trail Builder Gallery</h3>
+              <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">Gallery assets grouped by trail builder.</p>
             </div>
             <button
               type="button"
               onClick={() => setGalleryOpen(true)}
-              className="rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800"
+              className={smallGreenButtonClass}
             >
               Add gallery item
             </button>
@@ -1235,7 +1264,7 @@ export default function OrganizationOpsPanel() {
             <select
               value={selectedOrgId}
               onChange={(event) => setSelectedOrgId(event.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={fullFieldClass}
             >
               <option value="">All trail builders</option>
               {orgOptions.map((org) => (
@@ -1246,13 +1275,13 @@ export default function OrganizationOpsPanel() {
             </select>
           </div>
           {galleryItems.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
               No gallery items found.
             </p>
           ) : (
-            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200">
+            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
               <table className="min-w-[900px] w-full text-left text-sm">
-                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500">
+                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Item</th>
                     <th className="px-4 py-3">Trail Builder</th>
@@ -1261,7 +1290,7 @@ export default function OrganizationOpsPanel() {
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
+                <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
                   {galleryItems.map((item) => (
                     <tr key={item.id}>
                       <td className="px-4 py-3 align-top">
@@ -1273,15 +1302,15 @@ export default function OrganizationOpsPanel() {
                             className="h-14 w-20 rounded-lg bg-gray-100 object-cover"
                           />
                           <div className="min-w-0">
-                            <p className="font-semibold text-gray-900">{item.caption || 'Untitled image'}</p>
+                            <p className="font-semibold text-gray-900 dark:text-slate-100">{item.caption || 'Untitled image'}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {item.organization_name || 'Unknown trail builder'}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">{item.sort_order}</td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">{item.sort_order}</td>
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {new Date(item.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -1290,7 +1319,7 @@ export default function OrganizationOpsPanel() {
                             href={item.image_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            className={tableActionButtonClass}
                           >
                             Open
                           </a>
@@ -1298,7 +1327,7 @@ export default function OrganizationOpsPanel() {
                             type="button"
                             onClick={() => setDeleteGalleryTarget(item)}
                             disabled={deleteGalleryMutation.isPending}
-                            className="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                            className={dangerActionButtonClass}
                           >
                             {deletingGalleryId === item.id && <LoadingSpinner />}
                             {deletingGalleryId === item.id ? 'Deleting...' : 'Delete'}
@@ -1313,28 +1342,53 @@ export default function OrganizationOpsPanel() {
           )}
         </section>
 
-        <section className="rounded-xl border border-gray-200 p-4">
+        <section className="rounded-xl border border-gray-200 p-4 dark:border-slate-800">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900">Trail Services</h3>
-              <p className="mt-1 text-xs text-gray-600">Shuttle, lift, and support vehicle options.</p>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Trail Services</h3>
+              <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">Shuttle, lift, and support vehicle options.</p>
             </div>
             <button
               type="button"
               onClick={() => setServiceOpen(true)}
-              className="rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800"
+              className={smallGreenButtonClass}
             >
               Add trail service
             </button>
           </div>
-          {trailServices.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+          <div className="mb-3 max-w-sm">
+            <select
+              value={serviceTrailFilterId}
+              onChange={(event) => setServiceTrailFilterId(event.target.value)}
+              className={fullFieldClass}
+            >
+              <option value="">All trails</option>
+              {trails.map((trail) => (
+                <option key={trail.id} value={trail.id}>
+                  {trail.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {loadingTrailServices ? (
+            <p className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+              <LoadingSpinner />
+              Loading trail services...
+            </p>
+          ) : trailServicesError ? (
+            <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200">
+              {trailServicesError instanceof Error
+                ? trailServicesError.message
+                : 'Failed to load trail services.'}
+            </p>
+          ) : trailServices.length === 0 ? (
+            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
               No trail services found.
             </p>
           ) : (
-            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200">
+            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
               <table className="min-w-[1000px] w-full text-left text-sm">
-                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500">
+                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Service</th>
                     <th className="px-4 py-3">Trail</th>
@@ -1344,24 +1398,24 @@ export default function OrganizationOpsPanel() {
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
+                <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
                   {trailServices.map((service) => (
                     <tr key={service.id}>
                       <td className="px-4 py-3 align-top">
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-gray-900 dark:text-slate-100">
                           {service.title} · {service.service_type.replace('_', ' ')}
                         </p>
-                        <p className="mt-1 max-w-xs text-xs text-gray-600">
+                        <p className="mt-1 max-w-xs text-xs text-gray-600 dark:text-slate-300">
                           {service.price_note || service.schedule_note || service.description || 'No notes'}
                         </p>
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {service.trail_name || 'Unknown trail'}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {service.organization_name || 'No trail builder'}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         <p>{service.contact_phone || 'No phone'}</p>
                         <p>{service.contact_whatsapp || 'No WhatsApp'}</p>
                         <p className="max-w-[180px] break-all">{service.contact_email || 'No email'}</p>
@@ -1388,7 +1442,7 @@ export default function OrganizationOpsPanel() {
                               })
                             }
                             disabled={toggleTrailServiceMutation.isPending}
-                            className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                            className={tableActionButtonClass}
                           >
                             {togglingServiceId === service.id && <LoadingSpinner />}
                             {togglingServiceId === service.id
@@ -1401,7 +1455,7 @@ export default function OrganizationOpsPanel() {
                             type="button"
                             onClick={() => setDeleteServiceTarget(service)}
                             disabled={deleteTrailServiceMutation.isPending}
-                            className="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                            className={dangerActionButtonClass}
                           >
                             {deletingServiceId === service.id && <LoadingSpinner />}
                             {deletingServiceId === service.id ? 'Deleting...' : 'Delete'}
@@ -1416,28 +1470,28 @@ export default function OrganizationOpsPanel() {
           )}
         </section>
 
-        <section className="rounded-xl border border-gray-200 p-4">
+        <section className="rounded-xl border border-gray-200 p-4 dark:border-slate-800">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900">Trail Updates</h3>
-              <p className="mt-1 text-xs text-gray-600">Condition, maintenance, route, and hazard updates.</p>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Trail Updates</h3>
+              <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">Condition, maintenance, route, and hazard updates.</p>
             </div>
             <button
               type="button"
               onClick={openCreateUpdate}
-              className="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-semibold text-white hover:bg-cyan-800"
+              className={smallCyanButtonClass}
             >
               Post trail update
             </button>
           </div>
           {trailUpdates.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+            <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
               No trail updates found.
             </p>
           ) : (
-            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200">
+            <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
               <table className="min-w-[950px] w-full text-left text-sm">
-                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500">
+                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Update</th>
                     <th className="px-4 py-3">Trail</th>
@@ -1447,27 +1501,27 @@ export default function OrganizationOpsPanel() {
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
+                <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
                   {trailUpdates.map((update) => (
                     <tr key={update.id}>
                       <td className="px-4 py-3 align-top">
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-gray-900 dark:text-slate-100">
                           {update.title} · {update.update_type.replace('_', ' ')}
                         </p>
                         {update.details && (
-                          <p className="mt-1 max-w-xs text-xs text-gray-600">{update.details}</p>
+                          <p className="mt-1 max-w-xs text-xs text-gray-600 dark:text-slate-300">{update.details}</p>
                         )}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {update.trail_name || 'Unknown trail'}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {update.organization_name || 'No trail builder'}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {update.actor_name || 'System'}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600">
+                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {new Date(update.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -1476,7 +1530,7 @@ export default function OrganizationOpsPanel() {
                             type="button"
                             onClick={() => openEditUpdate(update)}
                             disabled={isSavingUpdate}
-                            className="rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                            className={tableActionButtonClass}
                           >
                             Edit
                           </button>
@@ -1484,7 +1538,7 @@ export default function OrganizationOpsPanel() {
                             type="button"
                             onClick={() => setDeleteUpdateTarget(update)}
                             disabled={deleteTrailUpdateMutation.isPending}
-                            className="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                            className={dangerActionButtonClass}
                           >
                             {deletingUpdateId === update.id && <LoadingSpinner />}
                             {deletingUpdateId === update.id ? 'Deleting...' : 'Delete'}
@@ -1567,7 +1621,7 @@ export default function OrganizationOpsPanel() {
               <button
                 type="button"
                 onClick={() => setDeleteAssignmentTarget(null)}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className={secondaryButtonClass}
               >
                 Cancel
               </button>
@@ -1575,7 +1629,7 @@ export default function OrganizationOpsPanel() {
                 type="button"
                 onClick={() => deleteAssignmentMutation.mutate(deleteAssignmentTarget)}
                 disabled={deleteAssignmentMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className={primaryDangerButtonClass}
               >
                 {deleteAssignmentMutation.isPending && <LoadingSpinner />}
                 {deleteAssignmentMutation.isPending ? 'Deleting...' : 'Delete assignment'}
@@ -1605,7 +1659,7 @@ export default function OrganizationOpsPanel() {
               <button
                 type="button"
                 onClick={() => setDeleteGalleryTarget(null)}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className={secondaryButtonClass}
               >
                 Cancel
               </button>
@@ -1613,7 +1667,7 @@ export default function OrganizationOpsPanel() {
                 type="button"
                 onClick={() => deleteGalleryMutation.mutate(deleteGalleryTarget)}
                 disabled={deleteGalleryMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className={primaryDangerButtonClass}
               >
                 {deleteGalleryMutation.isPending && <LoadingSpinner />}
                 {deleteGalleryMutation.isPending ? 'Deleting...' : 'Delete gallery item'}
@@ -1643,7 +1697,7 @@ export default function OrganizationOpsPanel() {
               <button
                 type="button"
                 onClick={() => setDeleteServiceTarget(null)}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className={secondaryButtonClass}
               >
                 Cancel
               </button>
@@ -1651,7 +1705,7 @@ export default function OrganizationOpsPanel() {
                 type="button"
                 onClick={() => deleteTrailServiceMutation.mutate(deleteServiceTarget.id)}
                 disabled={deleteTrailServiceMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className={primaryDangerButtonClass}
               >
                 {deleteTrailServiceMutation.isPending && <LoadingSpinner />}
                 {deleteTrailServiceMutation.isPending ? 'Deleting...' : 'Delete service'}
@@ -1681,7 +1735,7 @@ export default function OrganizationOpsPanel() {
               <button
                 type="button"
                 onClick={() => setDeleteUpdateTarget(null)}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className={secondaryButtonClass}
               >
                 Cancel
               </button>
@@ -1689,7 +1743,7 @@ export default function OrganizationOpsPanel() {
                 type="button"
                 onClick={() => deleteTrailUpdateMutation.mutate(deleteUpdateTarget)}
                 disabled={deleteTrailUpdateMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className={primaryDangerButtonClass}
               >
                 {deleteTrailUpdateMutation.isPending && <LoadingSpinner />}
                 {deleteTrailUpdateMutation.isPending ? 'Deleting...' : 'Delete update'}
