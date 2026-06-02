@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
-import { TrailCard } from '@/components/feature-components/trail-card';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import {
   fetchTrailsPaginated,
   requestTrail,
@@ -16,7 +14,7 @@ import {
 } from '@/services/trails/trails.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
-import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
+import { TRAIL_SPORTS } from '@/services/constants/sports';
 import { getSafetyLabelText } from '@/lib/trail-safety';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -32,369 +30,46 @@ import Map, {
 import 'maplibre-gl/dist/maplibre-gl.css';
 import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapLibreCompatibleMapStyle, type MapStyleMode } from '@/lib/map-styles';
-import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import TrailRequestModal from '@/components/feature-components/trail-request/trail-request-modal';
 import {
   getDifficultyLabel,
-  normalizeDifficulty,
   TRAIL_DIFFICULTY_OPTIONS,
 } from '@/services/constants/difficulty';
 import { isShuttleEligibleSport } from '@/lib/shuttle';
-import { getTrailAttributionChipClass, getTrailAttributionLabel } from '@/lib/trail-attribution';
+import {
+  TrailFilterChip,
+  TrailGallery,
+  TrailsLoadMoreSkeleton,
+  TrailsPageSkeleton,
+  TrailViewToggle,
+  type TrailsViewMode,
+} from '@/components/feature-components/trails';
+import {
+  clearTrailsScrollPosition,
+  readTrailsScrollPosition,
+} from '@/components/feature-components/trails/trails-list-state';
+import { useTrailsFilters } from '@/components/feature-components/trails/hooks/use-trails-filters';
+import {
+  RIDE_PROFILE_QUICK_FILTERS,
+  TRAIL_SORT_OPTIONS,
+  type RideProfile,
+  type TrailSort,
+} from '@/components/feature-components/trails/trails-page-options';
 
-const TRAILS_SCROLL_KEY = 'trails_scroll_y';
-const TRAILS_LAST_URL_KEY = 'trails_last_url';
 const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
 
-type TrailsViewMode = 'grid' | 'quick';
 type TrailsPageParam = { offset: number; limit: number };
-type TrailSort =
-  | 'random'
-  | 'name_asc'
-  | 'name_desc'
-  | 'newest'
-  | 'distance_asc'
-  | 'distance_desc'
-  | 'elevation_desc';
-type RideProfile = '' | 'short' | 'medium' | 'long';
 type ExpertTrailsResponse = {
   associated_trails?: Trail[];
 };
 
-const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
-  { value: 'random', label: 'Random' },
-  { value: 'newest', label: 'Newest' },
-  { value: 'name_asc', label: 'Name (A–Z)' },
-  { value: 'name_desc', label: 'Name (Z–A)' },
-  { value: 'distance_asc', label: 'Distance (low → high)' },
-  { value: 'distance_desc', label: 'Distance (high → low)' },
-  { value: 'elevation_desc', label: 'Elevation gain (high → low)' },
-];
-
-const RIDE_PROFILE_QUICK_FILTERS: Array<{ label: string; value: RideProfile }> = [
-  { label: 'All rides', value: '' },
-  { label: 'Short ride', value: 'short' },
-  { label: 'Medium ride', value: 'medium' },
-  { label: 'Long ride', value: 'long' },
-];
-
-function isTrailSort(value: string): value is TrailSort {
-  return TRAIL_SORT_OPTIONS.some((option) => option.value === value);
-}
-
-function TrailGallery({
-  trails,
-  viewMode,
-  onViewMap,
-  onRequestTrail,
-  onCancelRequest,
-  onCreateEvent,
-  onOpenImageGallery,
-  canRequestTrail,
-  canCreateEvent,
-  isAdmin,
-  onEditTrail,
-  onDeleteTrail,
-  onHideTrail,
-  onUnhideTrail,
-  onToggleExpertTrail,
-  canAssociateExpertTrail,
-  associatedTrailIds,
-  deletingTrailId,
-  hidingTrailId,
-  unhidingTrailId,
-  associatingTrailId,
-}: {
-  trails: Array<Trail & { isRequested?: boolean }>;
-  viewMode: TrailsViewMode;
-  onViewMap: (trail: Trail) => void;
-  onRequestTrail?: (trail: Trail & { isRequested?: boolean }) => void;
-  onCancelRequest?: (trail: Trail & { isRequested?: boolean }) => void;
-  onCreateEvent: (trail: Trail) => void;
-  onOpenImageGallery?: (trail: Trail) => void;
-  canRequestTrail: boolean;
-  canCreateEvent: boolean;
-  isAdmin: boolean;
-  onEditTrail?: (trail: Trail) => void;
-  onDeleteTrail?: (trailId: string) => void;
-  onHideTrail?: (trailId: string) => void;
-  onUnhideTrail?: (trailId: string) => void;
-  onToggleExpertTrail?: (trail: Trail, isAssociated: boolean) => void;
-  canAssociateExpertTrail: boolean;
-  associatedTrailIds: Set<string>;
-  deletingTrailId?: string | null;
-  hidingTrailId?: string | null;
-  unhidingTrailId?: string | null;
-  associatingTrailId?: string | null;
-}) {
-  const router = useRouter();
-  const storeTrailsListState = () => {
-    if (typeof window === 'undefined') return;
-    sessionStorage.setItem(
-      TRAILS_LAST_URL_KEY,
-      `${window.location.pathname}${window.location.search}`
-    );
-    sessionStorage.setItem(TRAILS_SCROLL_KEY, String(window.scrollY || 0));
-  };
-  if (viewMode === 'quick') {
-    return (
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-        {trails.map((trail) => {
-          const distanceKm = Number(trail.distance_km);
-          const elevationM = Number(trail.elevation_gain_m);
-          return (
-            <div
-              key={trail.id}
-              className="group rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 dark:border-slate-800 dark:bg-slate-900/70"
-            >
-              <Link
-                href={`/trails/${trail.slug || trail.id}`}
-                onClick={storeTrailsListState}
-                aria-label={`View details for ${trail.name}`}
-                className="block"
-              >
-                <div className="flex items-start justify-between gap-1.5">
-                  <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900 dark:text-white">
-                    {trail.name}
-                  </p>
-                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
-                    {getDifficultyLabel(trail.difficulty)}
-                  </span>
-                </div>
-                <p className="mt-1 truncate text-[11px] text-gray-600 dark:text-slate-300">
-                  {trail.location || 'Nepal'}
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
-                    {Number.isFinite(distanceKm) && distanceKm > 0
-                      ? `${distanceKm.toFixed(1)} km`
-                      : 'Distance —'}
-                  </span>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
-                    {Number.isFinite(elevationM) && elevationM > 0
-                      ? `${elevationM} m`
-                      : 'Elevation —'}
-                  </span>
-                  {trail.built_by_org_name && (
-                    <span
-                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('built_by')}`}
-                      title={`Built: ${trail.built_by_org_name}`}
-                    >
-                      <span className="truncate">
-                        {getTrailAttributionLabel('built_by')}: {trail.built_by_org_name}
-                      </span>
-                    </span>
-                  )}
-                  {trail.verified_by_org_name && (
-                    <span
-                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('verified_by')}`}
-                      title={`Verified: ${trail.verified_by_org_name}`}
-                    >
-                      <span className="truncate">
-                        {getTrailAttributionLabel('verified_by')}: {trail.verified_by_org_name}
-                      </span>
-                    </span>
-                  )}
-                  {trail.maintained_by_org_name && (
-                    <span
-                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('maintained_by')}`}
-                      title={`Maintained: ${trail.maintained_by_org_name}`}
-                    >
-                      <span className="truncate">
-                        {getTrailAttributionLabel('maintained_by')}: {trail.maintained_by_org_name}
-                      </span>
-                    </span>
-                  )}
-                  {(trail.associated_expert_count || 0) > 0 && (
-                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-700">
-                      Local expert
-                    </span>
-                  )}
-                </div>
-              </Link>
-              {canAssociateExpertTrail && (
-                <button
-                  type="button"
-                  onClick={() => onToggleExpertTrail?.(trail, associatedTrailIds.has(trail.id))}
-                  disabled={Boolean(associatingTrailId)}
-                  className={`mt-2 w-full rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                    associatedTrailIds.has(trail.id)
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {associatingTrailId === trail.id
-                    ? 'Saving...'
-                    : associatedTrailIds.has(trail.id)
-                      ? 'Pinned to profile'
-                      : 'Pin to expert profile'}
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {trails.map((trail) => (
-        <TrailCard
-          key={trail.id}
-          {...{
-            ...trail,
-            isRequested: trail.isRequested,
-            detailsHref: `/trails/${trail.slug || trail.id}`,
-            onBeforeNavigate: storeTrailsListState,
-            onViewMap() {
-              onViewMap(trail);
-            },
-            ...(canRequestTrail && onRequestTrail
-              ? {
-                  onRequestTrail() {
-                    onRequestTrail(trail);
-                  },
-                  onCancelRequest() {
-                    onCancelRequest?.(trail);
-                  },
-                }
-              : {}),
-            ...(canCreateEvent
-              ? {
-                  onCreateEvent() {
-                    onCreateEvent(trail);
-                  },
-                }
-              : {}),
-            ...(onOpenImageGallery
-              ? {
-                  onOpenImageGallery() {
-                    onOpenImageGallery(trail);
-                  },
-                }
-              : {}),
-            ...(canAssociateExpertTrail && onToggleExpertTrail
-              ? {
-                  isAssociatedToExpert: associatedTrailIds.has(trail.id),
-                  associationLoading: Boolean(associatingTrailId),
-                  onAssociateTrail() {
-                    onToggleExpertTrail(trail, false);
-                  },
-                  onRemoveAssociation() {
-                    onToggleExpertTrail(trail, true);
-                  },
-                }
-              : {}),
-            ...(isAdmin
-              ? {
-                  deleteLoading: deletingTrailId === trail.id,
-                  hideLoading: hidingTrailId === trail.id,
-                  unhideLoading: unhidingTrailId === trail.id,
-                  onEdit() {
-                    onEditTrail?.(trail);
-                  },
-                  onDelete() {
-                    onDeleteTrail?.(trail.id);
-                  },
-                  onHide() {
-                    onHideTrail?.(trail.id);
-                  },
-                  onUnhide() {
-                    onUnhideTrail?.(trail.id);
-                  },
-                }
-              : {}),
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function TrailsPageSkeleton() {
-  return (
-    <div
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-pulse"
-      aria-hidden="true"
-    >
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div
-          key={`trail-skeleton-${index}`}
-          className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
-        >
-          <div className="h-48 w-full bg-gray-200 dark:bg-slate-800" />
-          <div className="p-4">
-            <div className="mb-3 h-6 w-2/3 rounded bg-gray-200 dark:bg-slate-800" />
-            <div className="mb-3 h-4 w-1/2 rounded bg-gray-200 dark:bg-slate-800" />
-            <div className="mb-4 flex gap-2">
-              <div className="h-6 w-16 rounded-full bg-gray-200 dark:bg-slate-800" />
-              <div className="h-6 w-20 rounded-full bg-gray-200 dark:bg-slate-800" />
-              <div className="h-6 w-14 rounded-full bg-gray-200 dark:bg-slate-800" />
-            </div>
-            <div className="h-9 w-full rounded bg-gray-200 dark:bg-slate-800" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TrailsLoadMoreSkeleton() {
-  return (
-    <div
-      className="mt-4 grid animate-pulse grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      aria-hidden="true"
-    >
-      {Array.from({ length: 3 }).map((_, index) => (
-        <div
-          key={`trail-loadmore-skeleton-${index}`}
-          className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
-        >
-          <div className="h-48 w-full bg-gray-200 dark:bg-slate-800" />
-          <div className="p-4">
-            <div className="mb-3 h-6 w-2/3 rounded bg-gray-200 dark:bg-slate-800" />
-            <div className="mb-3 h-4 w-1/2 rounded bg-gray-200 dark:bg-slate-800" />
-            <div className="mb-4 flex gap-2">
-              <div className="h-6 w-16 rounded-full bg-gray-200 dark:bg-slate-800" />
-              <div className="h-6 w-20 rounded-full bg-gray-200 dark:bg-slate-800" />
-            </div>
-            <div className="h-9 w-full rounded bg-gray-200 dark:bg-slate-800" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function TrailsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const didInitFromUrl = useRef(false);
   const didRestoreScroll = useRef(false);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
-  const [locationInput, setLocationInput] = useState('');
-  const [location, setLocation] = useState('');
-  const [sport, setSport] = useState('');
-  const [distanceMinInput, setDistanceMinInput] = useState('');
-  const [distanceMaxInput, setDistanceMaxInput] = useState('');
-  const [distanceMin, setDistanceMin] = useState('');
-  const [distanceMax, setDistanceMax] = useState('');
-  const [rideProfile, setRideProfile] = useState<RideProfile>('');
-  const [sort, setSort] = useState<TrailSort>('random');
-  const [draftDifficulty, setDraftDifficulty] = useState<Difficulty | ''>('');
-  const [draftSport, setDraftSport] = useState('');
-  const [draftRideProfile, setDraftRideProfile] = useState<RideProfile>('');
-  const [draftSort, setDraftSort] = useState<TrailSort>('random');
-  const [randomSeed] = useState(
-    () => `trails-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-  );
-  const [viewMode, setViewMode] = useState<TrailsViewMode>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapTrailSummary, setMapTrailSummary] = useState<Trail | null>(null);
   const [mapTrailId, setMapTrailId] = useState<string | null>(null);
@@ -416,6 +91,63 @@ function TrailsPageContent() {
     'Your trail request has been submitted.'
   );
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  const openCreateEventFromUrl = useCallback((trailId: string, sport: string) => {
+    setCreateEventTrailId(trailId);
+    setCreateEventSport(sport);
+    setCreateEventOpen(true);
+  }, []);
+
+  const {
+    activeFilterCount,
+    applyDraftFilters,
+    applySearch,
+    draftDifficulty,
+    draftRideProfile,
+    draftSort,
+    draftSport,
+    filterQuery,
+    hasActiveFilters,
+    resetFilters,
+    searchInput,
+    setSearchInput,
+    search,
+    setSearch,
+    difficulty,
+    setDifficulty,
+    locationInput,
+    setLocationInput,
+    location,
+    setLocation,
+    sport,
+    setSport,
+    distanceMinInput,
+    setDistanceMinInput,
+    distanceMaxInput,
+    setDistanceMaxInput,
+    distanceMin,
+    setDistanceMin,
+    distanceMax,
+    setDistanceMax,
+    rideProfile,
+    setRideProfile,
+    sort,
+    setSort,
+    setDraftDifficulty,
+    setDraftRideProfile,
+    setDraftSort,
+    setDraftSport,
+    setViewMode,
+    syncDraftFilters,
+    viewMode,
+  } = useTrailsFilters({
+    searchParams,
+    createEventOpen,
+    createEventTrailId,
+    createEventSport,
+    onCreateEventFromUrl: openCreateEventFromUrl,
+  });
+
   const initialPageSize = viewMode === 'quick' ? 10 : 3;
   const nextPageSize = viewMode === 'quick' ? 10 : 3;
 
@@ -514,29 +246,13 @@ function TrailsPageContent() {
     error,
   } = useInfiniteQuery({
     queryKey: QUERY_KEYS.trails.infiniteList({
-      search,
-      difficulty,
-      location,
-      sport,
-      distanceMin,
-      distanceMax,
-      rideProfile,
-      sort,
-      randomSeed,
+      ...filterQuery,
       pageSize: initialPageSize,
     }),
     queryFn: ({ signal, pageParam }) =>
       fetchTrailsPaginated(
         {
-          search,
-          difficulty,
-          location,
-          sport,
-          distanceMin,
-          distanceMax,
-          rideProfile,
-          sort,
-          randomSeed,
+          ...filterQuery,
           offset: pageParam.offset,
           pageSize: pageParam.limit,
         },
@@ -668,40 +384,16 @@ function TrailsPageContent() {
 
   const invalidateTrailsQueries = (trailId?: string) => {
     const infiniteKey = QUERY_KEYS.trails.infiniteList({
-      search,
-      difficulty,
-      location,
-      sport,
-      distanceMin,
-      distanceMax,
-      rideProfile,
-      sort,
-      randomSeed,
+      ...filterQuery,
       pageSize: initialPageSize,
     });
     const paginatedKey = QUERY_KEYS.trails.paginatedList({
-      search,
-      difficulty,
-      location,
-      sport,
-      distanceMin,
-      distanceMax,
-      rideProfile,
-      sort,
-      randomSeed,
+      ...filterQuery,
       page: 1,
       pageSize: initialPageSize,
     });
     const listKey = QUERY_KEYS.trails.list({
-      search,
-      difficulty,
-      location,
-      sport,
-      distanceMin,
-      distanceMax,
-      rideProfile,
-      sort,
-      randomSeed,
+      ...filterQuery,
     });
 
     if (trailId) {
@@ -861,135 +553,25 @@ function TrailsPageContent() {
     },
   });
 
-
   useEffect(() => {
     if (didRestoreScroll.current) return;
     if (isInitialLoading) return;
-    const raw = sessionStorage.getItem(TRAILS_SCROLL_KEY);
-    if (!raw) {
+    const y = readTrailsScrollPosition();
+    if (y === null) {
       didRestoreScroll.current = true;
       return;
     }
-    const y = Number(raw);
-    if (Number.isFinite(y)) {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: y, behavior: 'auto' });
-      });
-    }
-    sessionStorage.removeItem(TRAILS_SCROLL_KEY);
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: y, behavior: 'auto' });
+    });
+    clearTrailsScrollPosition();
     didRestoreScroll.current = true;
   }, [isInitialLoading, trails.length]);
 
   useEffect(() => {
-    if (didInitFromUrl.current) return;
-    const urlSearch = (searchParams.get('search') || '').trim();
-    const urlDifficulty = normalizeDifficulty((searchParams.get('difficulty') || '').trim()) as
-      | Difficulty
-      | '';
-    const urlLocation = (searchParams.get('location') || '').trim();
-    const urlSport = (searchParams.get('sport') || '').trim();
-    const urlDistanceMin = (searchParams.get('distanceMin') || '').trim();
-    const urlDistanceMax = (searchParams.get('distanceMax') || '').trim();
-    const urlRideProfile = (searchParams.get('rideProfile') || '').trim() as RideProfile;
-    const urlSort = (searchParams.get('sort') || '').trim();
-    const urlCreateTrail = (searchParams.get('createEventTrail') || '').trim();
-    const urlCreateSport = (searchParams.get('createEventSport') || '').trim();
-    const urlView = (searchParams.get('view') || '').trim();
-
-    if (urlSearch) {
-      setSearchInput(urlSearch);
-      setSearch(urlSearch);
-    }
-    if (urlDifficulty) {
-      setDifficulty(urlDifficulty);
-    }
-    if (urlLocation) {
-      setLocationInput(urlLocation);
-      setLocation(urlLocation);
-    }
-    if (urlSport && TRAIL_SPORTS.some((option) => option.value === urlSport)) {
-      setSport(urlSport as typeof sport);
-    }
-    if (urlDistanceMin) {
-      setDistanceMinInput(urlDistanceMin);
-      setDistanceMin(urlDistanceMin);
-    }
-    if (urlDistanceMax) {
-      setDistanceMaxInput(urlDistanceMax);
-      setDistanceMax(urlDistanceMax);
-    }
-    if (urlRideProfile === 'short' || urlRideProfile === 'medium' || urlRideProfile === 'long') {
-      setRideProfile(urlRideProfile);
-    }
-    if (urlSort && isTrailSort(urlSort)) {
-      setSort(urlSort);
-    } else {
-      setSort('random');
-    }
-    if (urlCreateTrail) {
-      setCreateEventTrailId(urlCreateTrail);
-      setCreateEventSport(urlCreateSport || 'mtb');
-      setCreateEventOpen(true);
-    }
-    if (urlView === 'quick') {
-      setViewMode('quick');
-    } else {
-      setViewMode('grid');
-    }
-    didInitFromUrl.current = true;
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (!didInitFromUrl.current) return;
-    const params = new URLSearchParams();
-    if (search) params.set('search', search);
-    if (difficulty) params.set('difficulty', difficulty);
-    if (location) params.set('location', location);
-    if (sport) params.set('sport', sport);
-    if (distanceMin) params.set('distanceMin', distanceMin);
-    if (distanceMax) params.set('distanceMax', distanceMax);
-    if (rideProfile) params.set('rideProfile', rideProfile);
-    if (sort && sort !== 'random') params.set('sort', sort);
-    if (viewMode === 'quick') params.set('view', 'quick');
-    if (createEventOpen && createEventTrailId) {
-      params.set('createEventTrail', createEventTrailId);
-      params.set('createEventSport', createEventSport || 'mtb');
-    }
-    const query = params.toString();
-    const nextUrl = query ? `/trails?${query}` : '/trails';
-    // Use history.replaceState to avoid route transition flicker while keeping URL in sync.
-    if (typeof window !== 'undefined') {
-      const currentUrl = `${window.location.pathname}${window.location.search}`;
-      if (currentUrl !== nextUrl) {
-        window.history.replaceState(null, '', nextUrl);
-      }
-    }
-  }, [
-    search,
-    difficulty,
-    location,
-    sport,
-    distanceMin,
-    distanceMax,
-    rideProfile,
-    sort,
-    viewMode,
-    createEventOpen,
-    createEventTrailId,
-    createEventSport,
-  ]);
-
-  useEffect(() => {
     if (!filtersOpen) return;
-    setSearchInput(search);
-    setLocationInput(location);
-    setDistanceMinInput(distanceMin);
-    setDistanceMaxInput(distanceMax);
-    setDraftDifficulty(difficulty);
-    setDraftSport(sport);
-    setDraftRideProfile(rideProfile);
-    setDraftSort(sort);
-  }, [filtersOpen, search, location, distanceMin, distanceMax, difficulty, sport, rideProfile, sort]);
+    syncDraftFilters();
+  }, [filtersOpen, syncDraftFilters]);
 
   useEffect(() => {
     if (!user || user.role !== 'participant') {
@@ -1023,25 +605,8 @@ function TrailsPageContent() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearch(searchInput.trim());
-    setLocation(locationInput.trim());
-    setDistanceMin(distanceMinInput.trim());
-    setDistanceMax(distanceMaxInput.trim());
+    applySearch();
   };
-
-  const hasActiveFilters = Boolean(
-    search || difficulty || location || sport || distanceMin || distanceMax || rideProfile || sort !== 'random'
-  );
-  const activeFilterCount = [
-    search,
-    difficulty,
-    location,
-    sport,
-    distanceMin,
-    distanceMax,
-    rideProfile,
-    sort !== 'random' ? sort : '',
-  ].filter(Boolean).length;
 
   return (
     <div>
@@ -1064,30 +629,7 @@ function TrailsPageContent() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center rounded-full border border-gray-300 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  viewMode === 'grid'
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                }`}
-              >
-                Default view
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('quick')}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  viewMode === 'quick'
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                }`}
-              >
-                Quick view
-              </button>
-            </div>
+            <TrailViewToggle value={viewMode} onChange={setViewMode} />
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
@@ -1137,98 +679,76 @@ function TrailsPageContent() {
         {hasActiveFilters && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {search && (
-              <button
-                type="button"
-                onClick={() => {
+              <TrailFilterChip
+                tone="green"
+                onRemove={() => {
                   setSearch('');
                   setSearchInput('');
                 }}
-                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
               >
-                Search: {search} ×
-              </button>
+                Search: {search}
+              </TrailFilterChip>
             )}
             {difficulty && (
-              <button
-                type="button"
-                onClick={() => setDifficulty('')}
-                className="rounded-full border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800"
-              >
-                Difficulty: {getDifficultyLabel(difficulty)} ×
-              </button>
+              <TrailFilterChip tone="blue" onRemove={() => setDifficulty('')}>
+                Difficulty: {getDifficultyLabel(difficulty)}
+              </TrailFilterChip>
             )}
             {location && (
-              <button
-                type="button"
-                onClick={() => {
+              <TrailFilterChip
+                tone="purple"
+                onRemove={() => {
                   setLocation('');
                   setLocationInput('');
                 }}
-                className="rounded-full border border-purple-300 bg-purple-50 px-3 py-1 text-xs font-medium text-purple-800"
               >
-                Location: {location} ×
-              </button>
+                Location: {location}
+              </TrailFilterChip>
             )}
             {sport && (
-              <button
-                type="button"
-                onClick={() => setSport('')}
-                className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800"
-              >
+              <TrailFilterChip tone="amber" onRemove={() => setSport('')}>
                 Sport:{' '}
-                {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport} ×
-              </button>
+                {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport}
+              </TrailFilterChip>
             )}
             {rideProfile && (
-              <button
-                type="button"
-                onClick={() => setRideProfile('')}
-                className="rounded-full border border-cyan-300 bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-800"
-              >
+              <TrailFilterChip tone="cyan" onRemove={() => setRideProfile('')}>
                 Ride:{' '}
                 {rideProfile === 'short'
                   ? 'Short'
                   : rideProfile === 'medium'
                     ? 'Medium'
                     : 'Long'}{' '}
-                ×
-              </button>
+              </TrailFilterChip>
             )}
             {sort !== 'random' && (
-              <button
-                type="button"
-                onClick={() => setSort('random')}
-                className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-800"
-              >
+              <TrailFilterChip tone="slate" onRemove={() => setSort('random')}>
                 Sort:{' '}
                 {TRAIL_SORT_OPTIONS.find((option) => option.value === sort)
                   ?.label || sort}{' '}
-                ×
-              </button>
+              </TrailFilterChip>
             )}
             {distanceMin && (
-              <button
-                type="button"
-                onClick={() => {
+              <TrailFilterChip
+                tone="green"
+                onRemove={() => {
                   setDistanceMin('');
                   setDistanceMinInput('');
                 }}
-                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
               >
-                Min distance: {distanceMin} km ×
-              </button>
+                Min distance: {distanceMin} km
+              </TrailFilterChip>
             )}
             {distanceMax && (
-              <button
-                type="button"
-                onClick={() => {
+              <TrailFilterChip
+                tone="green"
+                onRemove={() => {
                   setDistanceMax('');
                   setDistanceMaxInput('');
                 }}
-                className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
               >
-                Max distance: {distanceMax} km ×
-              </button>
+                Max distance: {distanceMax} km
+              </TrailFilterChip>
             )}
           </div>
         )}
@@ -1255,14 +775,7 @@ function TrailsPageContent() {
             <form
               onSubmit={(event) => {
                 event.preventDefault();
-                setSearch(searchInput.trim());
-                setLocation(locationInput.trim());
-                setDistanceMin(distanceMinInput.trim());
-                setDistanceMax(distanceMaxInput.trim());
-                setDifficulty(draftDifficulty);
-                setSport(draftSport);
-                setRideProfile(draftRideProfile);
-                setSort(draftSort);
+                applyDraftFilters();
                 setFiltersOpen(false);
               }}
               className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2"
@@ -1418,18 +931,7 @@ function TrailsPageContent() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchInput('');
-                    setSearch('');
-                    setDifficulty('');
-                    setLocationInput('');
-                    setDistanceMinInput('');
-                    setDistanceMaxInput('');
-                    setDraftDifficulty('');
-                    setDraftSport('');
-                    setDraftRideProfile('');
-                    setDraftSort('random');
-                  }}
+                  onClick={resetFilters}
                   className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Reset all
@@ -1478,14 +980,7 @@ function TrailsPageContent() {
           {hasActiveFilters && (
             <button
               type="button"
-              onClick={() => {
-                setSearchInput('');
-                setSearch('');
-                setDifficulty('');
-                setLocationInput('');
-                setLocation('');
-                setSport('');
-              }}
+              onClick={resetFilters}
               className="mt-4 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
               Clear filters
