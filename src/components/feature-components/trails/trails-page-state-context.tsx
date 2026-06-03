@@ -34,6 +34,12 @@ type TrailsPageState = {
   setToastTitle: Dispatch<SetStateAction<string>>;
   toastDescription: string;
   setToastDescription: Dispatch<SetStateAction<string>>;
+  requestFeedback: string;
+  setRequestFeedback: Dispatch<SetStateAction<string>>;
+  requestModalMessage: string;
+  setRequestModalMessage: Dispatch<SetStateAction<string>>;
+  requestedByTrailId: Record<string, string>;
+  setRequestedByTrailId: Dispatch<SetStateAction<Record<string, string>>>;
 };
 
 const TrailsPageStateContext = createContext<TrailsPageState | null>(null);
@@ -56,6 +62,9 @@ export function TrailsPageStateProvider({ children }: { children: ReactNode }) {
   const [toastDescription, setToastDescription] = useState(
     'Your trail request has been submitted.'
   );
+  const [requestFeedback, setRequestFeedback] = useState('');
+  const [requestModalMessage, setRequestModalMessage] = useState('');
+  const [requestedByTrailId, setRequestedByTrailId] = useState<Record<string, string>>({});
 
   return (
     <TrailsPageStateContext.Provider
@@ -90,6 +99,12 @@ export function TrailsPageStateProvider({ children }: { children: ReactNode }) {
         setToastTitle,
         toastDescription,
         setToastDescription,
+        requestFeedback,
+        setRequestFeedback,
+        requestModalMessage,
+        setRequestModalMessage,
+        requestedByTrailId,
+        setRequestedByTrailId,
       }}
     >
       {children}
