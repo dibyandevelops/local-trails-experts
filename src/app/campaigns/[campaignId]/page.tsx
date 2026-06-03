@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import pool from '@/lib/db';
+import CampaignSupportModal from '@/components/feature-components/campaigns/campaign-support-modal';
 
 type CampaignDetail = {
   id: string;
@@ -11,11 +12,14 @@ type CampaignDetail = {
   raised_amount_npr: string;
   qr_image_url: string | null;
   payment_note: string | null;
-  status: 'active' | 'completed' | 'paused';
+  status: 'active' | 'looking_for_funds' | 'completed' | 'paused';
   starts_at: string | null;
   ends_at: string | null;
   organization_name: string;
   organization_slug: string;
+  organization_contact_email: string | null;
+  organization_contact_phone: string | null;
+  organization_whatsapp_url: string | null;
   trail_id: string | null;
   trail_name: string | null;
   updated_at: string;
@@ -26,6 +30,15 @@ function formatDate(dateLike: string | null) {
   const parsed = new Date(dateLike);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toLocaleDateString('en-NP', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function canSponsorCampaign(status: CampaignDetail['status']) {
+  return status === 'active' || status === 'looking_for_funds';
+}
+
+function formatCampaignStatus(status: CampaignDetail['status']) {
+  if (status === 'looking_for_funds') return 'Looking for funds';
+  return status;
 }
 
 export async function generateMetadata({
@@ -40,7 +53,7 @@ export async function generateMetadata({
     FROM fundraising_campaigns fc
     JOIN organizations o ON o.id = fc.organization_id
     WHERE fc.id = $1
-      AND fc.status IN ('active', 'completed', 'paused')
+      AND fc.status IN ('active', 'looking_for_funds', 'completed', 'paused')
       AND o.is_active = TRUE
     LIMIT 1
     `,
@@ -83,13 +96,16 @@ export default async function CampaignDetailPage({
       fc.updated_at::text,
       o.name AS organization_name,
       o.slug AS organization_slug,
+      o.contact_email AS organization_contact_email,
+      o.contact_phone AS organization_contact_phone,
+      o.whatsapp_url AS organization_whatsapp_url,
       t.id AS trail_id,
       t.name AS trail_name
     FROM fundraising_campaigns fc
     JOIN organizations o ON o.id = fc.organization_id
     LEFT JOIN trails t ON t.id = fc.trail_id
     WHERE fc.id = $1
-      AND fc.status IN ('active', 'completed', 'paused')
+      AND fc.status IN ('active', 'looking_for_funds', 'completed', 'paused')
       AND o.is_active = TRUE
     LIMIT 1
     `,
@@ -128,7 +144,7 @@ export default async function CampaignDetailPage({
       <header className="rounded-2xl border border-emerald-200/70 bg-white p-6 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-            {campaign.status}
+            {formatCampaignStatus(campaign.status)}
           </span>
           {updatedAt && (
             <span className="text-xs text-gray-500 dark:text-slate-400">Updated: {updatedAt}</span>
@@ -175,40 +191,46 @@ export default async function CampaignDetailPage({
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
             <p className="font-semibold">How to support</p>
             <p className="mt-1">
-              Use the campaign QR/payment details and mention this campaign title in your note.
+              {canSponsorCampaign(campaign.status)
+                ? 'Use the campaign QR/payment details and mention this campaign title in your note.'
+                : 'This campaign is not currently accepting direct sponsorships.'}
             </p>
-            {campaign.payment_note && (
+            {canSponsorCampaign(campaign.status) && campaign.payment_note && (
               <p className="mt-2 rounded-md border border-emerald-200 bg-white/80 p-2 text-xs dark:border-emerald-900/60 dark:bg-slate-900/70">
                 {campaign.payment_note}
               </p>
             )}
+            {canSponsorCampaign(campaign.status) && (
+              <div className="mt-3">
+                <CampaignSupportModal
+                  campaignTitle={campaign.title}
+                  organizationName={campaign.organization_name}
+                  organizationSlug={campaign.organization_slug}
+                  targetAmount={target}
+                  raisedAmount={raised}
+                  progress={progress}
+                  qrImageUrl={campaign.qr_image_url}
+                  paymentNote={campaign.payment_note}
+                  contactEmail={campaign.organization_contact_email}
+                  contactPhone={campaign.organization_contact_phone}
+                  whatsappUrl={campaign.organization_whatsapp_url}
+                />
+              </div>
+            )}
           </div>
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-            <p className="font-semibold">For organizations and sponsors</p>
+            <p className="font-semibold">Trail builder</p>
             <p className="mt-1">
-              If your company wants to co-fund this initiative, use the sponsorship flow.
+              Review who is managing this campaign and the trails they are associated with.
             </p>
             <Link
-              href="/sponsors"
-              className="mt-3 inline-flex rounded-md bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800"
+              href={`/organizations/${campaign.organization_slug}`}
+              className="mt-3 inline-flex rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Start sponsor inquiry
+              View trail builder
             </Link>
           </div>
         </div>
-
-        {campaign.qr_image_url && (
-          <div className="mt-5">
-            <a
-              href={campaign.qr_image_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-            >
-              Open payment QR
-            </a>
-          </div>
-        )}
       </section>
     </main>
   );

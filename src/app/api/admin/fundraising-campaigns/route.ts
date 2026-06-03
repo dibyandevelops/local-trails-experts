@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 
-type CampaignStatus = 'draft' | 'active' | 'completed' | 'paused' | 'archived';
+type CampaignStatus =
+  | 'draft'
+  | 'active'
+  | 'looking_for_funds'
+  | 'completed'
+  | 'paused'
+  | 'archived';
 
 function isValidStatus(value: unknown): value is CampaignStatus {
   return (
     value === 'draft' ||
     value === 'active' ||
+    value === 'looking_for_funds' ||
     value === 'completed' ||
     value === 'paused' ||
     value === 'archived'

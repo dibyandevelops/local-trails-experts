@@ -3,7 +3,22 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { fetchAdminOrganizations, type OrganizationOption } from '@/services/admin/admin.service';
 import AppDialog from '@/components/ui/app-dialog';
 
-type CampaignStatus = 'draft' | 'active' | 'completed' | 'paused' | 'archived';
+type CampaignStatus =
+  | 'draft'
+  | 'active'
+  | 'looking_for_funds'
+  | 'completed'
+  | 'paused'
+  | 'archived';
+
+const CAMPAIGN_STATUS_OPTIONS: Array<{ value: CampaignStatus; label: string }> = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'active', label: 'Active' },
+  { value: 'looking_for_funds', label: 'Looking for funds' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'paused', label: 'Paused' },
+  { value: 'archived', label: 'Archived' },
+];
 
 type Campaign = {
   id: string;
@@ -255,11 +270,11 @@ export default function FundraisingCampaignsPanel() {
           onChange={(event) => setStatus(event.target.value as CampaignStatus)}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
-          <option value="paused">Paused</option>
-          <option value="archived">Archived</option>
+          {CAMPAIGN_STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
         <input
           value={title}
@@ -373,11 +388,11 @@ export default function FundraisingCampaignsPanel() {
           onChange={(event) => setEditStatus(event.target.value as CampaignStatus)}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
-          <option value="paused">Paused</option>
-          <option value="archived">Archived</option>
+          {CAMPAIGN_STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
         <textarea
           value={editDescription}
@@ -454,11 +469,13 @@ export default function FundraisingCampaignsPanel() {
   );
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Fundraising Campaigns</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">
+            Fundraising Campaigns
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             Create and manage support campaigns with QR and target progress.
           </p>
         </div>
@@ -471,24 +488,28 @@ export default function FundraisingCampaignsPanel() {
         </button>
       </div>
       {message && (
-        <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">
+        <p className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
           {message}
         </p>
       )}
 
       <div className="mt-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-gray-900">Campaign list</h3>
-          <span className="text-xs font-medium text-gray-500">{campaigns.length} total</span>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+            Campaign list
+          </h3>
+          <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
+            {campaigns.length} total
+          </span>
         </div>
         {campaigns.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
             No campaigns created yet.
           </div>
         ) : (
-          <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-200">
+          <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
             <table className="min-w-[1100px] w-full text-left text-sm">
-              <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500">
+              <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Campaign</th>
                   <th className="px-4 py-3">Trail Builder</th>
@@ -499,28 +520,30 @@ export default function FundraisingCampaignsPanel() {
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
                 {campaigns.map((campaign) => (
                   <tr key={campaign.id}>
                     <td className="px-4 py-3 align-top">
-                      <p className="font-semibold text-gray-900">{campaign.title}</p>
+                      <p className="font-semibold text-gray-900 dark:text-slate-100">
+                        {campaign.title}
+                      </p>
                       {campaign.description && (
-                        <p className="mt-1 max-w-xs text-xs text-gray-600">
+                        <p className="mt-1 max-w-xs text-xs text-gray-600 dark:text-slate-300">
                           {campaign.description}
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-3 align-top text-xs text-gray-600">
+                    <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                       {campaign.organization_name || 'Unknown trail builder'}
                     </td>
-                    <td className="px-4 py-3 align-top text-xs text-gray-600">
+                    <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                       {campaign.trail_name || 'No trail'}
                     </td>
-                    <td className="px-4 py-3 align-top text-xs text-gray-600">
+                    <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                       <p>NPR {formatMoney(campaign.raised_amount_npr)}</p>
                       <p>of NPR {formatMoney(campaign.target_amount_npr)}</p>
                     </td>
-                    <td className="px-4 py-3 align-top text-xs text-gray-600">
+                    <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                       <p>Start: {formatDate(campaign.starts_at)}</p>
                       <p>End: {formatDate(campaign.ends_at)}</p>
                     </td>
@@ -533,13 +556,13 @@ export default function FundraisingCampaignsPanel() {
                             nextStatus: event.target.value as CampaignStatus,
                           })
                         }
-                        className="rounded border border-gray-300 bg-white px-2 py-1 text-xs"
+                        className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                       >
-                        <option value="draft">Draft</option>
-                        <option value="active">Active</option>
-                        <option value="completed">Completed</option>
-                        <option value="paused">Paused</option>
-                        <option value="archived">Archived</option>
+                        {CAMPAIGN_STATUS_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td className="px-4 py-3 align-top">
@@ -547,7 +570,7 @@ export default function FundraisingCampaignsPanel() {
                         <button
                           type="button"
                           onClick={() => openEdit(campaign)}
-                          className="rounded border border-cyan-300 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100"
+                          className="rounded border border-cyan-300 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/70"
                         >
                           Edit
                         </button>
@@ -555,7 +578,7 @@ export default function FundraisingCampaignsPanel() {
                           type="button"
                           onClick={() => setDeleteTarget(campaign)}
                           disabled={deleteCampaignMutation.isPending}
-                          className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                          className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/70"
                         >
                           Delete
                         </button>

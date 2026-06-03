@@ -45,9 +45,9 @@ export async function getImpactStats(): Promise<ImpactStats> {
     ),
     campaign_stats AS (
       SELECT
-        COUNT(*) FILTER (WHERE fc.status = 'active') AS active_campaigns,
-        COALESCE(SUM(fc.raised_amount_npr) FILTER (WHERE fc.status IN ('active', 'completed')), 0) AS funded_amount_npr,
-        COALESCE(SUM(fc.target_amount_npr) FILTER (WHERE fc.status IN ('active', 'completed')), 0) AS target_amount_npr
+        COUNT(*) FILTER (WHERE fc.status IN ('active', 'looking_for_funds')) AS active_campaigns,
+        COALESCE(SUM(fc.raised_amount_npr) FILTER (WHERE fc.status IN ('active', 'looking_for_funds', 'completed')), 0) AS funded_amount_npr,
+        COALESCE(SUM(fc.target_amount_npr) FILTER (WHERE fc.status IN ('active', 'looking_for_funds', 'completed')), 0) AS target_amount_npr
       FROM fundraising_campaigns fc
       JOIN organizations o ON o.id = fc.organization_id
       WHERE o.is_active = TRUE

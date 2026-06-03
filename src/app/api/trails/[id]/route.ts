@@ -93,7 +93,7 @@ export async function GET(
           FROM fundraising_campaigns fc
           JOIN organizations org ON org.id = fc.organization_id
           WHERE fc.trail_id = t.id
-            AND fc.status = 'active'
+            AND fc.status IN ('active', 'looking_for_funds')
             AND org.is_active = TRUE
         ) active_campaigns ON TRUE
         WHERE t.id::text = $1 OR t.slug = $1

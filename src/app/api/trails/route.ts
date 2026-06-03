@@ -330,7 +330,7 @@ export async function GET(request: NextRequest) {
         FROM fundraising_campaigns fc
         JOIN organizations o ON o.id = fc.organization_id
         WHERE fc.trail_id = t.id
-          AND fc.status = 'active'
+          AND fc.status IN ('active', 'looking_for_funds')
           AND o.is_active = TRUE
       ) active_campaigns ON TRUE
       ${whereClause}

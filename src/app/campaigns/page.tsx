@@ -15,7 +15,7 @@ type CampaignRow = {
   description: string | null;
   target_amount_npr: string;
   raised_amount_npr: string;
-  status: 'active' | 'completed' | 'paused';
+  status: 'active' | 'looking_for_funds' | 'completed' | 'paused';
   starts_at: string | null;
   ends_at: string | null;
   organization_name: string;
@@ -27,7 +27,16 @@ function formatDate(dateLike: string | null) {
   if (!dateLike) return null;
   const parsed = new Date(dateLike);
   if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toLocaleDateString('en-NP', { year: 'numeric', month: 'short', day: 'numeric' });
+    return parsed.toLocaleDateString('en-NP', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function canSponsorCampaign(status: CampaignRow['status']) {
+  return status === 'active' || status === 'looking_for_funds';
+}
+
+function formatCampaignStatus(status: CampaignRow['status']) {
+  if (status === 'looking_for_funds') return 'Looking for funds';
+  return status;
 }
 
 export default async function CampaignsPage() {
@@ -48,10 +57,11 @@ export default async function CampaignsPage() {
     FROM fundraising_campaigns fc
     JOIN organizations o ON o.id = fc.organization_id
     LEFT JOIN trails t ON t.id = fc.trail_id
-    WHERE fc.status IN ('active', 'completed', 'paused')
+    WHERE fc.status IN ('active', 'looking_for_funds', 'completed', 'paused')
       AND o.is_active = TRUE
     ORDER BY
       CASE fc.status
+        WHEN 'looking_for_funds' THEN 1
         WHEN 'active' THEN 1
         WHEN 'paused' THEN 2
         ELSE 3
@@ -96,7 +106,7 @@ export default async function CampaignsPage() {
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-                    {campaign.status}
+                    {formatCampaignStatus(campaign.status)}
                   </span>
                   <Link
                     href={`/organizations/${campaign.organization_slug}`}
@@ -139,18 +149,12 @@ export default async function CampaignsPage() {
                 <p className="mt-2 text-xs text-emerald-900 dark:text-emerald-100">
                   NPR {raised.toLocaleString()} / NPR {target.toLocaleString()} ({progress}%)
                 </p>
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 flex justify-end">
                   <Link
                     href={`/campaigns/${campaign.id}`}
                     className="inline-flex rounded-md bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800"
                   >
-                    View campaign
-                  </Link>
-                  <Link
-                    href="/sponsors"
-                    className="text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"
-                  >
-                    Sponsor this mission
+                    {canSponsorCampaign(campaign.status) ? 'Sponsor this mission' : 'View campaign'}
                   </Link>
                 </div>
               </article>
