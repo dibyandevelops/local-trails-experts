@@ -36,6 +36,7 @@
     "firebase-admin": "^12.5.0",
     "gpx-parse": "^0.10.4",
     "gpx-parser-builder": "^1.2.0",
+    "jotai": "^2.20.0",
     "lucide-react": "^1.14.0",
     "mapbox-gl": "^3.21.0",
     "maplibre-gl": "^5.15.0",
