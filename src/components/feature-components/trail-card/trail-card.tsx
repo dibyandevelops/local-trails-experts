@@ -113,6 +113,13 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
   const hasTrailBuilder =
     Boolean(trail.built_by_org_name || trail.maintained_by_org_name || trail.verified_by_org_name) ||
     (trail.trail_builder_count || 0) > 0;
+  const primaryTrailBuilder = trail.built_by_org_name
+    ? { relation: 'built_by' as const, name: trail.built_by_org_name }
+    : trail.maintained_by_org_name
+      ? { relation: 'maintained_by' as const, name: trail.maintained_by_org_name }
+      : trail.verified_by_org_name
+        ? { relation: 'verified_by' as const, name: trail.verified_by_org_name }
+        : null;
 
   const dropdownItems = [
     ...(trail.showViewTrailOption ? [{ label: 'View trail', href: detailsHref }] : []),
@@ -395,39 +402,28 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             >
               {getDifficultyLabel(trail.difficulty)}
             </span>
-            {trail.built_by_org_name && (
+            {primaryTrailBuilder ? (
               <span
-                className={`inline-flex max-w-[210px] items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getTrailAttributionChipClass('built_by')}`}
-                title={`Built: ${trail.built_by_org_name}`}
+                className={`inline-flex max-w-[240px] items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${getTrailAttributionChipClass(primaryTrailBuilder.relation)}`}
+                title={`${getTrailAttributionLabel(primaryTrailBuilder.relation)}: ${primaryTrailBuilder.name}`}
               >
+                <Hammer className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="truncate">
-                  {getTrailAttributionLabel('built_by')}: {trail.built_by_org_name}
+                  {getTrailAttributionLabel(primaryTrailBuilder.relation)}: {primaryTrailBuilder.name}
                 </span>
               </span>
-            )}
-            {trail.verified_by_org_name && (
+            ) : hasTrailBuilder ? (
               <span
-                className={`inline-flex max-w-[210px] items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getTrailAttributionChipClass('verified_by')}`}
-                title={`Verified: ${trail.verified_by_org_name}`}
+                className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+                title={`${trail.trail_builder_count || 1} trail builder${trail.trail_builder_count === 1 ? '' : 's'}`}
               >
-                <span className="truncate">
-                  {getTrailAttributionLabel('verified_by')}: {trail.verified_by_org_name}
-                </span>
+                <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
+                Trail builder
               </span>
-            )}
-            {trail.maintained_by_org_name && (
-              <span
-                className={`inline-flex max-w-[210px] items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getTrailAttributionChipClass('maintained_by')}`}
-                title={`Maintained: ${trail.maintained_by_org_name}`}
-              >
-                <span className="truncate">
-                  {getTrailAttributionLabel('maintained_by')}: {trail.maintained_by_org_name}
-                </span>
-              </span>
-            )}
+            ) : null}
             {(trail.associated_expert_count || 0) > 0 && (
               <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-medium text-cyan-700 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
-                Local expert available
+                Expert
               </span>
             )}
             {(trail.campaign_count || 0) > 0 && (
@@ -437,20 +433,6 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
               >
                 <CircleDollarSign className="h-3.5 w-3.5" aria-hidden="true" />
                 Campaign
-              </span>
-            )}
-            {hasTrailBuilder && (
-              <span
-                className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-                title={
-                  trail.built_by_org_name ||
-                  trail.maintained_by_org_name ||
-                  trail.verified_by_org_name ||
-                  `${trail.trail_builder_count} trail builder${trail.trail_builder_count === 1 ? '' : 's'}`
-                }
-              >
-                <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
-                Builder
               </span>
             )}
           </div>

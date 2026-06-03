@@ -61,6 +61,13 @@ export function TrailGallery({
         {trails.map((trail) => {
           const distanceKm = Number(trail.distance_km);
           const elevationM = Number(trail.elevation_gain_m);
+          const primaryTrailBuilder = trail.built_by_org_name
+            ? { relation: 'built_by' as const, name: trail.built_by_org_name }
+            : trail.maintained_by_org_name
+              ? { relation: 'maintained_by' as const, name: trail.maintained_by_org_name }
+              : trail.verified_by_org_name
+                ? { relation: 'verified_by' as const, name: trail.verified_by_org_name }
+                : null;
           return (
             <div
               key={trail.id}
@@ -94,39 +101,24 @@ export function TrailGallery({
                       ? `${elevationM} m`
                       : 'Elevation -'}
                   </span>
-                  {trail.built_by_org_name && (
+                  {primaryTrailBuilder && (
                     <span
-                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('built_by')}`}
-                      title={`Built: ${trail.built_by_org_name}`}
+                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass(primaryTrailBuilder.relation)}`}
+                      title={`${getTrailAttributionLabel(primaryTrailBuilder.relation)}: ${primaryTrailBuilder.name}`}
                     >
                       <span className="truncate">
-                        {getTrailAttributionLabel('built_by')}: {trail.built_by_org_name}
-                      </span>
-                    </span>
-                  )}
-                  {trail.verified_by_org_name && (
-                    <span
-                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('verified_by')}`}
-                      title={`Verified: ${trail.verified_by_org_name}`}
-                    >
-                      <span className="truncate">
-                        {getTrailAttributionLabel('verified_by')}: {trail.verified_by_org_name}
-                      </span>
-                    </span>
-                  )}
-                  {trail.maintained_by_org_name && (
-                    <span
-                      className={`inline-flex max-w-[160px] items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getTrailAttributionChipClass('maintained_by')}`}
-                      title={`Maintained: ${trail.maintained_by_org_name}`}
-                    >
-                      <span className="truncate">
-                        {getTrailAttributionLabel('maintained_by')}: {trail.maintained_by_org_name}
+                        {getTrailAttributionLabel(primaryTrailBuilder.relation)}: {primaryTrailBuilder.name}
                       </span>
                     </span>
                   )}
                   {(trail.associated_expert_count || 0) > 0 && (
                     <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-700">
-                      Local expert
+                      Expert
+                    </span>
+                  )}
+                  {(trail.campaign_count || 0) > 0 && (
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                      Campaign
                     </span>
                   )}
                 </div>
