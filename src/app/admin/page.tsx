@@ -17,32 +17,41 @@ import FundraisingCampaignsPanel from '@/components/admin/fundraising-campaigns-
 import ImpactStatsPanel from '@/components/admin/impact-stats-panel';
 
 function AdminSection({
+  id,
+  eyebrow,
   title,
   description,
   children,
 }: {
+  id: string;
+  eyebrow: string;
   title: string;
   description: string;
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
-        <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">{description}</p>
+    <section id={id} className="scroll-mt-24 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="border-b border-gray-200 pb-4 dark:border-slate-800">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+          {eyebrow}
+        </p>
+        <h2 className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
+        <p className="mt-1 max-w-3xl text-sm text-gray-600 dark:text-slate-300">{description}</p>
       </div>
-      <div className="space-y-6">{children}</div>
+      <div className="mt-5 space-y-6">{children}</div>
     </section>
   );
 }
 
 export default function AdminPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-10">
       <AdminHeader />
       <ImpactStatsPanel />
 
       <AdminSection
+        id="requests"
+        eyebrow="Review queue"
         title="Requests"
         description="Review incoming applications, trail help requests, and store submissions."
       >
@@ -52,6 +61,8 @@ export default function AdminPage() {
       </AdminSection>
 
       <AdminSection
+        id="operations"
+        eyebrow="Operations area"
         title="Operations"
         description="Manage events, trails, stores, trail builders, and fundraising work."
       >
@@ -68,6 +79,8 @@ export default function AdminPage() {
       </AdminSection>
 
       <AdminSection
+        id="accounts"
+        eyebrow="Admin control"
         title="Accounts"
         description="Manage experts, visibility, and participant records."
       >

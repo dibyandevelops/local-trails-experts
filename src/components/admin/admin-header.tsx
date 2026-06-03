@@ -8,14 +8,17 @@ export default function AdminHeader() {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+            Control center
+          </p>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            Admin Console
+            Admin Portal
           </h1>
-          <p className="text-sm text-gray-600 dark:text-slate-300">
-            Review trail requests and publish new events.
+          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-slate-300">
+            Review requests, manage trail builders, publish operations, and keep public content clean.
           </p>
         </div>
         {isAdmin && (

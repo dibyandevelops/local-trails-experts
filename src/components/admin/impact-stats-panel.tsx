@@ -27,15 +27,19 @@ export default function ImpactStatsPanel() {
   });
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-gray-900">Impact Snapshot</h2>
-      <p className="mt-1 text-sm text-gray-600">
+    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Impact Snapshot</h2>
+      <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
         Aggregate platform metrics for trails, riders, events, organizations, and funding.
       </p>
 
-      {isLoading && <p className="mt-4 text-sm text-gray-600">Loading impact stats...</p>}
+      {isLoading && (
+        <p className="mt-4 text-sm text-gray-600 dark:text-slate-300">
+          Loading impact stats...
+        </p>
+      )}
       {isError && (
-        <p className="mt-4 text-sm text-red-700">
+        <p className="mt-4 text-sm text-red-700 dark:text-red-300">
           Failed to load impact stats. Please retry shortly.
         </p>
       )}
@@ -65,10 +69,11 @@ export default function ImpactStatsPanel() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <article className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-1 text-xl font-bold text-gray-900">{value}</p>
+    <article className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">{value}</p>
     </article>
   );
 }
-
