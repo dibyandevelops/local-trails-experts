@@ -1,24 +1,4 @@
-const { Pool } = require('pg');
-require('dotenv').config({ path: '.env.local' });
-
-const env = (key) => {
-  const value = process.env[key];
-  return value && value.trim().length > 0 ? value : undefined;
-};
-
-const connectionString =
-  env('DIRECT_DATABASE_URL') ||
-  `postgresql://${env('DB_USER') || 'postgres'}:${env('DB_PASSWORD') || 'postgres'}@${env('DB_HOST') || 'localhost'}:${env('DB_PORT') || '5432'}/${env('DB_NAME') || 'mtb_trail_finder'}`;
-
-const pool = new Pool({
-  connectionString,
-  ssl:
-    env('DB_SSL') === 'true' || env('DB_SSL') === '1'
-      ? { rejectUnauthorized: false }
-      : env('DIRECT_DATABASE_URL')
-      ? { rejectUnauthorized: false }
-      : undefined,
-});
+const { runSeedScript, withPool } = require('./db-utils');
 
 const MOCK_USER = {
   name: 'Nirav Shrestha',
@@ -194,9 +174,10 @@ async function ensureCampaign(client, campaign) {
 }
 
 async function run() {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
+  return withPool(async (pool) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
     const userId = await ensureMockUser(client);
     const orgId = await ensureMockOrg(client, userId);
@@ -221,7 +202,7 @@ async function run() {
     );
 
     if (!trails.rows.length) {
-      throw new Error('No trails found. Seed trails first with: npm run db:seed:trails');
+      throw new Error('No trails found. Seed trail data before running the collaboration seed.');
     }
 
     const primaryTrail = trails.rows[0];
@@ -336,14 +317,17 @@ async function run() {
     console.log(`- Organization: ${MOCK_ORG.slug}`);
     console.log(`- Campaign inserted: ${insertedFirstCampaign ? 'yes' : 'updated existing'}`);
     console.log(`- Campaign inserted: ${insertedSecondCampaign ? 'yes' : 'updated existing'}`);
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Failed to seed collaboration mocks:', error.message);
-    process.exitCode = 1;
-  } finally {
-    client.release();
-    await pool.end();
-  }
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  });
 }
 
-run();
+module.exports = run;
+
+if (require.main === module) {
+  runSeedScript(run, 'collaboration mocks');
+}

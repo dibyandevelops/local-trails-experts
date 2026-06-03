@@ -19,9 +19,7 @@ A Next.js application for finding mountain biking trails and joining events base
 
 1. **Install dependencies:**
    ```bash
-   yarn install
-   # or
-   npm install
+   pnpm install
    ```
 
 2. **Set up PostgreSQL database:**
@@ -48,25 +46,19 @@ A Next.js application for finding mountain biking trails and joining events base
 
 4. **Run database migrations:**
    ```bash
-   yarn db:migrate
-   # or
-   npm run db:migrate
+   pnpm db:migrate
    ```
 
-5. **Seed the database with sample trails (optional):**
+5. **Seed collaboration mock data (optional):**
    ```bash
-   yarn db:seed
-   # or
-   npm run db:seed
+   pnpm db:seed
    ```
 
-   This will add 50 trails in Kathmandu Valley with varying difficulty levels (easy, medium, hard).
+   This seeds the collaboration mock data used for expert and organization collaboration flows.
 
 6. **Start the development server:**
    ```bash
-   yarn dev
-   # or
-   npm run dev
+   pnpm dev
    ```
 
 7. **Open [http://localhost:3000](http://localhost:3000)** in your browser.
@@ -96,7 +88,7 @@ The application uses the following main tables:
 │   └── migrations/       # Database migrations
 └── scripts/
     ├── migrate.js        # Migration script
-    └── seed-trails.js    # Seed script for sample trails
+    └── seed.js          # Canonical seed orchestrator
 ```
 
 ## API Routes
@@ -113,4 +105,3 @@ The application uses the following main tables:
 - **PostgreSQL** - Database
 - **Tailwind CSS** - Styling
 - **date-fns** - Date formatting
-
