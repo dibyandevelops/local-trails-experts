@@ -23,12 +23,11 @@ export async function GET(request: NextRequest) {
         o.name AS organization_name,
         ogi.image_url,
         ogi.caption,
-        ogi.sort_order,
         ogi.created_at::text
       FROM organization_gallery_items ogi
       JOIN organizations o ON o.id = ogi.organization_id
       ${where}
-      ORDER BY ogi.created_at DESC
+      ORDER BY ogi.created_at ASC, ogi.id ASC
       `,
       values
     );

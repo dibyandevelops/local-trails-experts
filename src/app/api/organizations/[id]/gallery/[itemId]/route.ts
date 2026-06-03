@@ -77,3 +77,62 @@ export async function DELETE(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; itemId: string }> }
+) {
+  try {
+    const auth = getAuthFromRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id, itemId } = await params;
+    const organizationId = await resolveOrganizationId(id);
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+    const allowed = auth.role === 'admin' || (await canManage(auth.sub, organizationId));
+    if (!allowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = (await request.json()) as {
+      image_url?: string;
+      caption?: string | null;
+    };
+
+    const result = await pool.query(
+      `
+      UPDATE organization_gallery_items
+      SET
+        image_url = COALESCE(NULLIF(TRIM($1), ''), image_url),
+        caption = CASE
+          WHEN $2::text IS NULL THEN caption
+          ELSE NULLIF(TRIM($2), '')
+        END
+      WHERE id = $3 AND organization_id = $4
+      RETURNING id, organization_id, image_url, caption, created_at
+      `,
+      [
+        body.image_url ?? null,
+        body.caption ?? null,
+        itemId,
+        organizationId,
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Gallery item not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ item: result.rows[0] }, { status: 200 });
+  } catch (error) {
+    console.error('Error updating organization gallery item:', error);
+    return NextResponse.json(
+      { error: 'Failed to update organization gallery item' },
+      { status: 500 }
+    );
+  }
+}

@@ -50,10 +50,10 @@ export async function GET(
 
     const result = await pool.query(
       `
-      SELECT id, organization_id, image_url, caption, sort_order, created_at
+      SELECT id, organization_id, image_url, caption, created_at
       FROM organization_gallery_items
       WHERE organization_id = $1
-      ORDER BY sort_order ASC, created_at DESC
+      ORDER BY created_at ASC, id ASC
       `,
       [organization.id]
     );
@@ -98,7 +98,6 @@ export async function POST(
     const body = (await request.json()) as {
       image_url?: string;
       caption?: string | null;
-      sort_order?: number;
     };
     const imageUrl = (body.image_url || '').trim();
     if (!imageUrl) {
@@ -109,9 +108,9 @@ export async function POST(
       `
       INSERT INTO organization_gallery_items (organization_id, image_url, caption, sort_order, created_by_user_id)
       VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, organization_id, image_url, caption, sort_order, created_at
+      RETURNING id, organization_id, image_url, caption, created_at
       `,
-      [organization.id, imageUrl, body.caption?.trim() || null, body.sort_order ?? 0, auth.sub]
+      [organization.id, imageUrl, body.caption?.trim() || null, 0, auth.sub]
     );
 
     return NextResponse.json({ item: result.rows[0] }, { status: 201 });

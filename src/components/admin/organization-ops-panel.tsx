@@ -15,8 +15,14 @@ type GalleryItem = {
   organization_name?: string | null;
   image_url: string;
   caption: string | null;
-  sort_order: number;
   created_at: string;
+};
+
+type GalleryDraftItem = {
+  id: string;
+  fileName: string;
+  imageUrl: string;
+  title: string;
 };
 
 type TrailService = {
@@ -101,6 +107,34 @@ const relationLabelByValue = RELATION_TYPE_OPTIONS.reduce<
   verified_by: 'Verified by',
 });
 
+const updateTypeLabelByValue = UPDATE_TYPE_OPTIONS.reduce<Record<TrailUpdateType, string>>(
+  (acc, option) => {
+    acc[option.value] = option.label;
+    return acc;
+  },
+  {
+    condition_update: 'Condition update',
+    maintenance_done: 'Maintenance done',
+    hazard_reported: 'Hazard reported',
+    hazard_cleared: 'Hazard cleared',
+    route_changed: 'Route changed',
+    metadata_updated: 'Metadata updated',
+  }
+);
+
+function getUpdateTypeBadgeClass(updateType: TrailUpdateType) {
+  if (updateType === 'hazard_reported') {
+    return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200';
+  }
+  if (updateType === 'hazard_cleared' || updateType === 'maintenance_done') {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-200';
+  }
+  if (updateType === 'route_changed') {
+    return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/70 dark:bg-amber-950/40 dark:text-amber-200';
+  }
+  return 'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900/70 dark:bg-cyan-950/40 dark:text-cyan-200';
+}
+
 function readImageFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
@@ -122,6 +156,31 @@ function readImageFileAsDataUrl(file: File) {
   });
 }
 
+function deriveGalleryTitle(sourceName: string) {
+  const baseName = sourceName
+    .split(/[\\/]/)
+    .pop()
+    ?.replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return baseName || 'Untitled image';
+}
+
+function extractImageNameFromUrl(imageUrl: string) {
+  try {
+    const parsed = new URL(imageUrl);
+    const fileName = parsed.pathname.split('/').pop();
+    if (!fileName) return '';
+    return deriveGalleryTitle(decodeURIComponent(fileName));
+  } catch {
+    const fileName = imageUrl.split('/').pop();
+    if (!fileName) return '';
+    return deriveGalleryTitle(decodeURIComponent(fileName.split('?')[0].split('#')[0]));
+  }
+}
+
 function LoadingSpinner() {
   return (
     <span
@@ -138,6 +197,7 @@ export default function OrganizationOpsPanel() {
   const [updateOpen, setUpdateOpen] = useState(false);
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [deleteGalleryTarget, setDeleteGalleryTarget] = useState<GalleryItem | null>(null);
+  const [editGalleryTarget, setEditGalleryTarget] = useState<GalleryItem | null>(null);
   const [deleteServiceTarget, setDeleteServiceTarget] = useState<TrailService | null>(null);
   const [deleteUpdateTarget, setDeleteUpdateTarget] = useState<TrailUpdate | null>(null);
   const [deleteAssignmentTarget, setDeleteAssignmentTarget] =
@@ -158,10 +218,9 @@ export default function OrganizationOpsPanel() {
   const [updateDetails, setUpdateDetails] = useState('');
   const [updateMediaUrls, setUpdateMediaUrls] = useState('');
 
-  const [galleryImageUrl, setGalleryImageUrl] = useState('');
-  const [galleryUploadName, setGalleryUploadName] = useState('');
-  const [galleryCaption, setGalleryCaption] = useState('');
-  const [gallerySortOrder, setGallerySortOrder] = useState('0');
+  const [galleryDrafts, setGalleryDrafts] = useState<GalleryDraftItem[]>([]);
+  const [editGalleryCaption, setEditGalleryCaption] = useState('');
+  const [editGalleryImageUrl, setEditGalleryImageUrl] = useState('');
   const [serviceTrailFilterId, setServiceTrailFilterId] = useState('');
   const [serviceTrailId, setServiceTrailId] = useState('');
   const [serviceOrganizationId, setServiceOrganizationId] = useState('');
@@ -247,12 +306,9 @@ export default function OrganizationOpsPanel() {
     },
   });
   const { data: trailUpdates = [], refetch: refetchTrailUpdates } = useQuery<TrailUpdate[]>({
-    queryKey: ['admin-trail-updates', selectedTrailId, selectedUpdateOrgId],
+    queryKey: ['admin-trail-updates'],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedTrailId) params.set('trail_id', selectedTrailId);
-      if (selectedUpdateOrgId) params.set('organization_id', selectedUpdateOrgId);
-      const response = await fetch(`/api/admin/trail-updates?${params.toString()}`);
+      const response = await fetch('/api/admin/trail-updates');
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.error || 'Failed to fetch trail updates');
@@ -263,32 +319,69 @@ export default function OrganizationOpsPanel() {
 
   const addGalleryMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/organizations/${selectedOrgId}/gallery`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: galleryImageUrl.trim(),
-          caption: galleryCaption.trim() || null,
-          sort_order: Number(gallerySortOrder || '0'),
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to add gallery item');
+      if (!selectedOrgId) {
+        throw new Error('Please select a trail builder.');
       }
-      return data;
+      const responses = [];
+      for (const draft of galleryDrafts) {
+        const response = await fetch(`/api/organizations/${selectedOrgId}/gallery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_url: draft.imageUrl.trim(),
+            caption: draft.title.trim() || null,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to add gallery item');
+        }
+        responses.push(data);
+      }
+      return responses;
     },
     onSuccess: async () => {
       await refetchGallery();
-      setGalleryImageUrl('');
-      setGalleryUploadName('');
-      setGalleryCaption('');
-      setGallerySortOrder('0');
+      setGalleryDrafts([]);
       setGalleryOpen(false);
       setMessage('Gallery item added.');
     },
     onError: (error) => {
       setMessage(error instanceof Error ? error.message : 'Failed to add gallery item.');
+    },
+  });
+
+  const editGalleryMutation = useMutation({
+    mutationFn: async () => {
+      if (!editGalleryTarget) {
+        throw new Error('No gallery item selected.');
+      }
+      const response = await fetch(
+        `/api/organizations/${editGalleryTarget.organization_id}/gallery/${editGalleryTarget.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_url: editGalleryImageUrl.trim() || null,
+            caption: editGalleryCaption.trim() || null,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update gallery item');
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      await refetchGallery();
+      setEditGalleryTarget(null);
+      setEditGalleryCaption('');
+      setEditGalleryImageUrl('');
+      setMessage('Gallery item updated.');
+    },
+    onError: (error) => {
+      setMessage(error instanceof Error ? error.message : 'Failed to update gallery item.');
     },
   });
 
@@ -574,7 +667,12 @@ export default function OrganizationOpsPanel() {
     },
   });
 
-  const canAddGallery = Boolean(selectedOrgId && galleryImageUrl.trim());
+  const canAddGallery = Boolean(
+    selectedOrgId &&
+      galleryDrafts.length > 0 &&
+      galleryDrafts.every((draft) => draft.imageUrl.trim())
+  );
+  const canSaveGalleryEdit = Boolean(editGalleryTarget);
   const canCreateAssignment = Boolean(assignmentTrailId && assignmentOrgId);
   const canPostUpdate = Boolean(selectedTrailId && updateTitle.trim());
   const canCreateService = Boolean(serviceTrailId && serviceTitle.trim());
@@ -659,6 +757,11 @@ export default function OrganizationOpsPanel() {
     setUpdateMediaUrls(getUpdateMediaText(update));
     setUpdateOpen(true);
   };
+  const openEditGallery = (item: GalleryItem) => {
+    setEditGalleryTarget(item);
+    setEditGalleryCaption(item.caption || '');
+    setEditGalleryImageUrl(item.image_url);
+  };
   const handleUpdateMediaUpload = async (files: FileList | null) => {
     if (!files?.length) return;
     try {
@@ -671,6 +774,43 @@ export default function OrganizationOpsPanel() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to upload images.');
     }
+  };
+  const appendGalleryDrafts = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const fileList = Array.from(files);
+    try {
+      const dataUrls = await Promise.all(fileList.map(readImageFileAsDataUrl));
+      setGalleryDrafts((prev) => {
+        const nextDrafts = dataUrls.map((imageUrl, index) => {
+          const file = fileList[index];
+          return {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${index}`,
+            fileName: file.name,
+            imageUrl,
+            title: deriveGalleryTitle(file.name),
+          };
+        });
+        return [...prev, ...nextDrafts];
+      });
+      setMessage(null);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed to upload images.');
+    }
+  };
+  const updateGalleryDraft = (id: string, patch: Partial<GalleryDraftItem>) => {
+    setGalleryDrafts((prev) => prev.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)));
+  };
+  const removeGalleryDraft = (id: string) => {
+    setGalleryDrafts((prev) => prev.filter((draft) => draft.id !== id));
+  };
+  const closeGalleryDialog = () => {
+    setGalleryOpen(false);
+    setGalleryDrafts([]);
+  };
+  const closeEditGalleryDialog = () => {
+    setEditGalleryTarget(null);
+    setEditGalleryCaption('');
+    setEditGalleryImageUrl('');
   };
 
   const assignmentForm = (
@@ -744,7 +884,7 @@ export default function OrganizationOpsPanel() {
   );
 
   const galleryForm = (
-    <div className="mt-5 space-y-3">
+    <div className="mt-5 space-y-4">
       <select
         value={selectedOrgId}
         onChange={(event) => setSelectedOrgId(event.target.value)}
@@ -757,90 +897,100 @@ export default function OrganizationOpsPanel() {
           </option>
         ))}
       </select>
-      <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
-        <div>
-          <label className="text-xs font-semibold uppercase text-gray-500">
-            Image URL
-          </label>
-          <input
-            value={galleryImageUrl}
-            onChange={(event) => {
-              setGalleryImageUrl(event.target.value);
-              setGalleryUploadName('');
-            }}
-            placeholder="Paste an image URL or upload below"
-            className={`mt-1 ${fullFieldClass}`}
-          />
-        </div>
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-green-300 bg-white p-4 text-center hover:bg-green-50 dark:border-green-900/70 dark:bg-slate-900 dark:hover:bg-green-950/30">
-          <span className="text-sm font-semibold text-green-800 dark:text-green-200">Upload image</span>
-          <span className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-            JPG, PNG, or WebP under 4MB. Stored as data URL for now.
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={async (event) => {
-              const file = event.target.files?.[0];
-              if (!file) return;
-              try {
-                const result = await readImageFileAsDataUrl(file);
-                setGalleryImageUrl(result);
-                setGalleryUploadName(file.name);
-                setMessage(null);
-              } catch (error) {
-                setMessage(error instanceof Error ? error.message : 'Failed to upload image.');
-              }
-              event.target.value = '';
-            }}
-            className="sr-only"
-          />
-        </label>
-        {galleryUploadName && (
-          <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">
-            Selected: {galleryUploadName}
-          </p>
-        )}
-        {galleryImageUrl.startsWith('data:image/') && (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <Image
-              src={galleryImageUrl}
-              alt="Gallery upload preview"
-              width={640}
-              height={240}
-              unoptimized
-              className="h-32 w-full object-cover"
-            />
+      <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-green-300 bg-white p-4 text-center hover:bg-green-50 dark:border-green-900/70 dark:bg-slate-900 dark:hover:bg-green-950/30">
+        <span className="text-sm font-semibold text-green-800 dark:text-green-200">
+          Upload multiple images
+        </span>
+        <span className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+          JPG, PNG, or WebP under 4MB each. Titles default from the file name.
+        </span>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={async (event) => {
+            await appendGalleryDrafts(event.target.files);
+            event.target.value = '';
+          }}
+          className="sr-only"
+        />
+      </label>
+      {galleryDrafts.length > 0 ? (
+        <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+              Pending gallery items
+            </p>
             <button
               type="button"
-              onClick={() => {
-                setGalleryImageUrl('');
-                setGalleryUploadName('');
-              }}
-              className="w-full border-t border-gray-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-slate-800 dark:text-red-200 dark:hover:bg-red-950/40"
+              onClick={() => setGalleryDrafts([])}
+              className="text-xs font-semibold text-red-700 hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
             >
-              Remove uploaded image
+              Clear all
             </button>
           </div>
-        )}
-      </div>
-      <input
-        value={galleryCaption}
-        onChange={(event) => setGalleryCaption(event.target.value)}
-        placeholder="Caption (optional)"
-        className={fullFieldClass}
-      />
-      <input
-        type="number"
-        value={gallerySortOrder}
-        onChange={(event) => setGallerySortOrder(event.target.value)}
-        placeholder="Sort order"
-        className={fullFieldClass}
-      />
+          <div className="space-y-3">
+            {galleryDrafts.map((draft) => (
+              <div
+                key={draft.id}
+                className="rounded-xl border border-gray-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950"
+              >
+                <div className="flex flex-col gap-3 lg:flex-row">
+                  <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-slate-800">
+                    <Image
+                      src={draft.imageUrl}
+                      alt={draft.title}
+                      width={240}
+                      height={160}
+                      unoptimized
+                      className="h-28 w-full object-cover lg:w-40"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div>
+                      <label className="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
+                        Image title
+                      </label>
+                      <input
+                        value={draft.title}
+                        onChange={(event) =>
+                          updateGalleryDraft(draft.id, { title: event.target.value })
+                        }
+                        className={`mt-1 ${fullFieldClass}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
+                        File name
+                      </label>
+                      <p className="mt-1 break-all rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                        {draft.fileName}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start justify-end">
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryDraft(draft.id)}
+                      className={dangerActionButtonClass}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          Choose one or more image files to build the gallery queue.
+        </p>
+      )}
       <div className="flex justify-end gap-2">
         <button
           type="button"
-          onClick={() => setGalleryOpen(false)}
+          onClick={closeGalleryDialog}
           className={secondaryButtonClass}
         >
           Cancel
@@ -852,7 +1002,11 @@ export default function OrganizationOpsPanel() {
           className={primaryGreenButtonClass}
         >
           {addGalleryMutation.isPending && <LoadingSpinner />}
-          {addGalleryMutation.isPending ? 'Adding...' : 'Add gallery item'}
+          {addGalleryMutation.isPending
+            ? 'Adding...'
+            : galleryDrafts.length > 1
+              ? `Add ${galleryDrafts.length} gallery items`
+              : 'Add gallery item'}
         </button>
       </div>
     </div>
@@ -1280,12 +1434,11 @@ export default function OrganizationOpsPanel() {
             </p>
           ) : (
             <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
-              <table className="min-w-[900px] w-full text-left text-sm">
+              <table className="min-w-[780px] w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Item</th>
                     <th className="px-4 py-3">Trail Builder</th>
-                    <th className="px-4 py-3">Sort</th>
                     <th className="px-4 py-3">Created</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
@@ -1298,23 +1451,40 @@ export default function OrganizationOpsPanel() {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={item.image_url}
-                            alt={item.caption || 'Trail builder gallery image'}
+                            alt={item.caption || extractImageNameFromUrl(item.image_url) || 'Trail builder gallery image'}
                             className="h-14 w-20 rounded-lg bg-gray-100 object-cover"
                           />
                           <div className="min-w-0">
-                            <p className="font-semibold text-gray-900 dark:text-slate-100">{item.caption || 'Untitled image'}</p>
+                            <p
+                              className="max-w-[260px] truncate font-semibold text-gray-900 dark:text-slate-100"
+                              title={
+                                item.caption ||
+                                extractImageNameFromUrl(item.image_url) ||
+                                'Untitled image'
+                              }
+                            >
+                              {item.caption ||
+                                extractImageNameFromUrl(item.image_url) ||
+                                'Untitled image'}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {item.organization_name || 'Unknown trail builder'}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">{item.sort_order}</td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {new Date(item.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditGallery(item)}
+                            className={tableActionButtonClass}
+                          >
+                            Edit
+                          </button>
                           <a
                             href={item.image_url}
                             target="_blank"
@@ -1505,9 +1675,16 @@ export default function OrganizationOpsPanel() {
                   {trailUpdates.map((update) => (
                     <tr key={update.id}>
                       <td className="px-4 py-3 align-top">
-                        <p className="font-semibold text-gray-900 dark:text-slate-100">
-                          {update.title} · {update.update_type.replace('_', ' ')}
-                        </p>
+                        <div className="flex max-w-sm flex-wrap items-center gap-2">
+                          <p className="font-semibold text-gray-900 dark:text-slate-100">
+                            {update.title}
+                          </p>
+                          <span
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${getUpdateTypeBadgeClass(update.update_type)}`}
+                          >
+                            {updateTypeLabelByValue[update.update_type]}
+                          </span>
+                        </div>
                         {update.details && (
                           <p className="mt-1 max-w-xs text-xs text-gray-600 dark:text-slate-300">{update.details}</p>
                         )}
@@ -1564,12 +1741,83 @@ export default function OrganizationOpsPanel() {
       </AppDialog>
       <AppDialog
         open={galleryOpen}
-        onOpenChange={setGalleryOpen}
+        onOpenChange={(open) => {
+          setGalleryOpen(open);
+          if (!open) {
+            setGalleryDrafts([]);
+          }
+        }}
         title="Add gallery item"
         description="Add a public trail builder gallery image."
         maxWidthClassName="max-w-xl"
       >
         {galleryForm}
+      </AppDialog>
+      <AppDialog
+        open={Boolean(editGalleryTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeEditGalleryDialog();
+          }
+        }}
+        title="Edit gallery item"
+        description="Update the gallery image title and order."
+        maxWidthClassName="max-w-xl"
+      >
+        {editGalleryTarget && (
+          <div className="mt-5 space-y-4">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-slate-800 dark:bg-slate-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={editGalleryImageUrl || editGalleryTarget.image_url}
+                alt={editGalleryCaption || editGalleryTarget.caption || 'Trail builder gallery image'}
+                className="h-48 w-full object-cover"
+              />
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
+                  Image title
+                </label>
+                <input
+                  value={editGalleryCaption}
+                  onChange={(event) => setEditGalleryCaption(event.target.value)}
+                  className={`mt-1 ${fullFieldClass}`}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
+                  Image URL
+                </label>
+                <input
+                  value={editGalleryImageUrl}
+                  onChange={(event) => setEditGalleryImageUrl(event.target.value)}
+                  className={`mt-1 ${fullFieldClass}`}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  closeEditGalleryDialog();
+                }}
+                className={secondaryButtonClass}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => editGalleryMutation.mutate()}
+                disabled={!canSaveGalleryEdit || editGalleryMutation.isPending}
+                className={primaryGreenButtonClass}
+              >
+                {editGalleryMutation.isPending && <LoadingSpinner />}
+                {editGalleryMutation.isPending ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+        )}
       </AppDialog>
       <AppDialog
         open={serviceOpen}
