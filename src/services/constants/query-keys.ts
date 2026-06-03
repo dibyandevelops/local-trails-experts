@@ -107,6 +107,9 @@ export const QUERY_KEYS = {
     all: () => ['stores'] as const,
     list: (params: Record<string, unknown>) => ['stores', params] as const,
   },
+  organizations: {
+    detail: (slugOrId?: string | null) => ['organization-detail', slugOrId || ''] as const,
+  },
   events: {
     byId: (id?: string | null) => ['event', id || ''] as const,
     list: (filters?: {

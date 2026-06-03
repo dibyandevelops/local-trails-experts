@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import pool from '@/lib/db';
+import OrganizationAvatar from '@/components/feature-components/organizations/organization-avatar';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,7 @@ type OrganizationRow = {
   slug: string;
   name: string;
   tagline: string | null;
+  logo_url: string | null;
   city: string | null;
   country: string | null;
   is_verified: boolean;
@@ -23,6 +25,7 @@ export default async function OrganizationsPage() {
       o.slug,
       o.name,
       o.tagline,
+      o.logo_url,
       o.city,
       o.country,
       o.is_verified,
@@ -55,17 +58,28 @@ export default async function OrganizationsPage() {
             key={org.id}
             className="rounded-2xl border border-emerald-200/70 bg-white p-5 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70"
           >
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{org.name}</h2>
-              {org.is_verified && (
-                <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-                  Verified
-                </span>
-              )}
+            <div className="flex items-start gap-3">
+              <OrganizationAvatar
+                name={org.name}
+                logoUrl={org.logo_url}
+                sizeClassName="h-14 w-14"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {org.name}
+                  </h2>
+                  {org.is_verified && (
+                    <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                      Verified
+                    </span>
+                  )}
+                </div>
+                {org.tagline && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{org.tagline}</p>
+                )}
+              </div>
             </div>
-            {org.tagline && (
-              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{org.tagline}</p>
-            )}
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                 Trails: {org.trail_count}

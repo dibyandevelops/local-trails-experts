@@ -15,12 +15,13 @@ function buildLookup(idOrSlug: string) {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     const { clause, value } = buildLookup(id);
+    const includeDetail = request.nextUrl.searchParams.get('detail') === 'true';
 
     const result = await pool.query(
       `
@@ -42,7 +43,121 @@ export async function GET(
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ organization: result.rows[0] }, { status: 200 });
+    const organization = result.rows[0];
+
+    if (!includeDetail) {
+      return NextResponse.json({ organization }, { status: 200 });
+    }
+
+    if (!organization.is_active) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+
+    const [trailsResult, galleryResult, campaignsResult, membersResult, updatesResult] =
+      await Promise.all([
+        pool.query(
+          `
+          SELECT
+            to2.trail_id,
+            t.slug AS trail_slug,
+            t.name AS trail_name,
+            t.location AS trail_location,
+            to2.relation_type,
+            to2.is_primary
+          FROM trail_organizations to2
+          JOIN trails t ON t.id = to2.trail_id
+          WHERE to2.organization_id = $1
+            AND COALESCE(t.is_hidden, FALSE) = FALSE
+          ORDER BY to2.is_primary DESC, to2.created_at DESC
+          `,
+          [organization.id]
+        ),
+        pool.query(
+          `
+          SELECT id, image_url, caption, created_at::text
+          FROM organization_gallery_items
+          WHERE organization_id = $1
+          ORDER BY created_at ASC, id ASC
+          `,
+          [organization.id]
+        ),
+        pool.query(
+          `
+          SELECT
+            id,
+            trail_id,
+            title,
+            description,
+            target_amount_npr::text,
+            raised_amount_npr::text,
+            qr_image_url,
+            payment_note,
+            status
+          FROM fundraising_campaigns
+          WHERE organization_id = $1
+            AND status IN ('active', 'looking_for_funds', 'completed', 'paused')
+          ORDER BY created_at DESC
+          LIMIT 3
+          `,
+          [organization.id]
+        ),
+        pool.query(
+          `
+          SELECT
+            om.id,
+            om.role,
+            om.status,
+            om.created_at::text,
+            u.id AS user_id,
+            u.name AS user_name,
+            u.city AS user_city,
+            u.role AS user_role
+          FROM organization_members om
+          JOIN users u ON u.id = om.user_id
+          WHERE om.organization_id = $1
+            AND om.status = 'active'
+          ORDER BY
+            CASE om.role WHEN 'org_admin' THEN 1 ELSE 2 END,
+            om.created_at DESC
+          `,
+          [organization.id]
+        ),
+        pool.query(
+          `
+          SELECT
+            tul.id,
+            tul.trail_id,
+            t.slug AS trail_slug,
+            t.name AS trail_name,
+            tul.update_type,
+            tul.title,
+            tul.details,
+            tul.media_urls,
+            tul.created_at::text,
+            u.name AS actor_name
+          FROM trail_update_logs tul
+          JOIN trails t ON t.id = tul.trail_id
+          LEFT JOIN users u ON u.id = tul.actor_user_id
+          WHERE tul.organization_id = $1
+            AND COALESCE(t.is_hidden, FALSE) = FALSE
+          ORDER BY tul.created_at DESC
+          LIMIT 8
+          `,
+          [organization.id]
+        ),
+      ]);
+
+    return NextResponse.json(
+      {
+        organization,
+        trails: trailsResult.rows,
+        galleryItems: galleryResult.rows,
+        campaigns: campaignsResult.rows,
+        members: membersResult.rows,
+        updates: updatesResult.rows,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error fetching organization:', error);
     return NextResponse.json({ error: 'Failed to fetch organization' }, { status: 500 });
