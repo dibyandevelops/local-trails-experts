@@ -1,14 +1,9 @@
 import Link from 'next/link';
 import type { OrganizationTrailUpdate } from './hooks/use-organization-detail';
-
-const updateLabels: Record<OrganizationTrailUpdate['update_type'], string> = {
-  condition_update: 'Condition',
-  maintenance_done: 'Maintenance',
-  hazard_reported: 'Hazard',
-  hazard_cleared: 'Cleared',
-  route_changed: 'Route changed',
-  metadata_updated: 'Trail info',
-};
+import {
+  getTrailUpdateTypeBadgeClass,
+  trailUpdateTypeLabelByValue,
+} from '@/lib/trail-updates';
 
 export default function OrganizationUpdatesSection({
   updates,
@@ -32,8 +27,10 @@ export default function OrganizationUpdatesSection({
             className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/40"
           >
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
-                {updateLabels[update.update_type]}
+              <span
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${getTrailUpdateTypeBadgeClass(update.update_type)}`}
+              >
+                {trailUpdateTypeLabelByValue[update.update_type]}
               </span>
               <span className="text-xs text-gray-500 dark:text-slate-400">
                 {new Date(update.created_at).toLocaleDateString()}

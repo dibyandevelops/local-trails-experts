@@ -27,6 +27,8 @@ async function fetchPublicTrailByIdentifier(identifier: string): Promise<Fetched
       u.email AS submitted_by_email,
       COALESCE(associated_experts.expert_count, 0)::int AS associated_expert_count,
       COALESCE(associated_experts.experts, '[]'::json) AS associated_experts,
+      COALESCE(active_campaigns.campaign_count, 0)::int AS campaign_count,
+      COALESCE(active_campaigns.campaigns, '[]'::json) AS active_campaigns,
       CASE WHEN t.slug = $1 THEN 'slug' ELSE 'id' END AS matched_by
     FROM trails t
     LEFT JOIN users u ON t.submitted_by_user_id = u.id
@@ -66,6 +68,27 @@ async function fetchPublicTrailByIdentifier(identifier: string): Promise<Fetched
         AND expert.role = 'expert'
         AND COALESCE(expert.is_hidden, FALSE) = FALSE
     ) associated_experts ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT
+        COUNT(*)::int AS campaign_count,
+        json_agg(
+          json_build_object(
+            'id', fc.id,
+            'title', fc.title,
+            'description', fc.description,
+            'target_amount_npr', fc.target_amount_npr::text,
+            'raised_amount_npr', fc.raised_amount_npr::text,
+            'organization_name', org.name,
+            'organization_slug', org.slug
+          )
+          ORDER BY fc.created_at DESC
+        ) AS campaigns
+      FROM fundraising_campaigns fc
+      JOIN organizations org ON org.id = fc.organization_id
+      WHERE fc.trail_id = t.id
+        AND fc.status IN ('active', 'looking_for_funds')
+        AND org.is_active = TRUE
+    ) active_campaigns ON TRUE
     WHERE (t.slug = $1 OR t.id::text = $1)
       AND t.status = 'approved'
       AND t.is_hidden = FALSE
@@ -95,6 +118,10 @@ async function fetchPublicTrailByIdentifier(identifier: string): Promise<Fetched
 
   if (!Array.isArray(trail.associated_experts)) {
     trail.associated_experts = [];
+  }
+
+  if (!Array.isArray(trail.active_campaigns)) {
+    trail.active_campaigns = [];
   }
 
   return trail;
