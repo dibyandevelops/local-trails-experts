@@ -10,8 +10,8 @@ export type TrailSort =
 export type RideProfile = '' | 'short' | 'medium' | 'long';
 
 export const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
-  { value: 'random', label: 'Random' },
   { value: 'newest', label: 'Newest' },
+  { value: 'random', label: 'Random' },
   { value: 'name_asc', label: 'Name (A-Z)' },
   { value: 'name_desc', label: 'Name (Z-A)' },
   { value: 'distance_asc', label: 'Distance (low to high)' },

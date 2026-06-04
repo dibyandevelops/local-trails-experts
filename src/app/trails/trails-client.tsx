@@ -744,8 +744,8 @@ function TrailsPageContent() {
                     : 'Long'}{' '}
               </TrailFilterChip>
             )}
-            {sort !== 'random' && (
-              <TrailFilterChip tone="slate" onRemove={() => setSort('random')}>
+            {sort !== 'newest' && (
+              <TrailFilterChip tone="slate" onRemove={() => setSort('newest')}>
                 Sort:{' '}
                 {TRAIL_SORT_OPTIONS.find((option) => option.value === sort)
                   ?.label || sort}{' '}
@@ -989,7 +989,7 @@ function TrailsPageContent() {
           <p className="sr-only" role="status" aria-live="polite">
             Loading trails…
           </p>
-          <TrailsPageSkeleton />
+          <TrailsPageSkeleton viewMode={viewMode} />
         </>
       ) : hasInitialError ? (
         <div className="text-center py-12">

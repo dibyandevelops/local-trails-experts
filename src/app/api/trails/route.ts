@@ -237,8 +237,9 @@ export async function GET(request: NextRequest) {
           return 't.elevation_gain_m DESC NULLS LAST, t.name ASC';
         case 'newest':
           return 't.created_at DESC, t.name ASC';
-        case 'name_asc':
         case '':
+          return 't.created_at DESC, t.name ASC';
+        case 'name_asc':
         default:
           return 't.name ASC';
       }

@@ -33,11 +33,11 @@ export function useTrailsFilters({
   const [distanceMin, setDistanceMin] = useState('');
   const [distanceMax, setDistanceMax] = useState('');
   const [rideProfile, setRideProfile] = useState<RideProfile>('');
-  const [sort, setSort] = useState<TrailSort>('random');
+  const [sort, setSort] = useState<TrailSort>('newest');
   const [draftDifficulty, setDraftDifficulty] = useState<Difficulty | ''>('');
   const [draftSport, setDraftSport] = useState('');
   const [draftRideProfile, setDraftRideProfile] = useState<RideProfile>('');
-  const [draftSort, setDraftSort] = useState<TrailSort>('random');
+  const [draftSort, setDraftSort] = useState<TrailSort>('newest');
   const [viewMode, setViewMode] = useState<TrailsViewMode>('grid');
   const [randomSeed] = useState(
     () => `trails-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
@@ -87,7 +87,7 @@ export function useTrailsFilters({
     if (urlSort && isTrailSort(urlSort)) {
       setSort(urlSort);
     } else {
-      setSort('random');
+      setSort('newest');
     }
     if (urlCreateTrail) {
       onCreateEventFromUrl(urlCreateTrail, urlCreateSport || 'mtb');
@@ -106,7 +106,7 @@ export function useTrailsFilters({
     if (distanceMin) params.set('distanceMin', distanceMin);
     if (distanceMax) params.set('distanceMax', distanceMax);
     if (rideProfile) params.set('rideProfile', rideProfile);
-    if (sort && sort !== 'random') params.set('sort', sort);
+    if (sort && sort !== 'newest') params.set('sort', sort);
     if (viewMode === 'quick') params.set('view', 'quick');
     if (createEventOpen && createEventTrailId) {
       params.set('createEventTrail', createEventTrailId);
@@ -152,7 +152,7 @@ export function useTrailsFilters({
   );
 
   const hasActiveFilters = Boolean(
-    search || difficulty || location || sport || distanceMin || distanceMax || rideProfile || sort !== 'random'
+    search || difficulty || location || sport || distanceMin || distanceMax || rideProfile || sort !== 'newest'
   );
   const activeFilterCount = [
     search,
@@ -162,7 +162,7 @@ export function useTrailsFilters({
     distanceMin,
     distanceMax,
     rideProfile,
-    sort !== 'random' ? sort : '',
+    sort !== 'newest' ? sort : '',
   ].filter(Boolean).length;
 
   const applySearch = useCallback(() => {
@@ -192,11 +192,11 @@ export function useTrailsFilters({
     setDistanceMax('');
     setSport('');
     setRideProfile('');
-    setSort('random');
+    setSort('newest');
     setDraftDifficulty('');
     setDraftSport('');
     setDraftRideProfile('');
-    setDraftSort('random');
+    setDraftSort('newest');
   }, []);
 
   const syncDraftFilters = useCallback(() => {

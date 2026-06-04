@@ -4,7 +4,6 @@ import { Trail } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { normalizeSafetyLabels } from '@/lib/trail-safety';
 import { COMMUNITY_NAME } from '@/lib/branding';
-import { getUniqueTrailSlug } from '@/lib/trail-slug';
 
 function normalizeKomootEmbedInput(raw: string) {
   const value = raw.trim();
@@ -266,10 +265,6 @@ export async function PATCH(
       'safety_labels'
     );
     const nextName = body.name ?? trail.name;
-    const nextSlug =
-      body.name && body.name.trim()
-        ? await getUniqueTrailSlug(pool, body.name.trim(), id)
-        : trail.slug;
 
     const result = await pool.query(
       `
@@ -296,7 +291,7 @@ export async function PATCH(
       `,
       [
         nextName,
-        nextSlug,
+        trail.slug,
         body.description ?? trail.description,
         body.difficulty ?? trail.difficulty,
         body.sport_type ?? trail.sport_type ?? 'mtb',

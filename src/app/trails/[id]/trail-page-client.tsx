@@ -652,8 +652,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [coverModalOpen, setCoverModalOpen] = useState(false);
   const [coverUploadBusy, setCoverUploadBusy] = useState(false);
   const [coverMessage, setCoverMessage] = useState<string | null>(null);
-  const [settingCoverImageUrl, setSettingCoverImageUrl] = useState<string | null>(null);
-  const [deletingTrailImageUrl, setDeletingTrailImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
@@ -1183,48 +1181,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     }
   };
 
-  const handleDeleteTrailImage = async (imageUrl: string) => {
-    if (!canManageTrail || !trail) return;
-    setDeletingTrailImageUrl(imageUrl);
-    setPhotoUploadMessage(null);
-    try {
-      const remaining = trailImages.filter((current) => current !== imageUrl);
-      await updateTrailMutation.mutateAsync({
-        image_url: remaining[0] || null,
-        trail_images: remaining,
-      });
-      setPhotoUploadMessage('Trail image removed.');
-    } catch (error) {
-      setPhotoUploadMessage(
-        error instanceof Error ? error.message : 'Failed to remove trail image'
-      );
-    } finally {
-      setDeletingTrailImageUrl(null);
-    }
-  };
-
-  const handleSetCoverImage = async (imageUrl: string) => {
-    if (!canManageTrail || !trail) return;
-    if (trail.image_url === imageUrl) return;
-    setSettingCoverImageUrl(imageUrl);
-    setPhotoUploadMessage(null);
-    try {
-      const merged = [imageUrl, ...trailImages].filter(Boolean);
-      const unique = merged.filter((current, index, arr) => arr.indexOf(current) === index);
-      await updateTrailMutation.mutateAsync({
-        image_url: imageUrl,
-        trail_images: unique,
-      });
-      setPhotoUploadMessage('Cover image updated from gallery.');
-    } catch (error) {
-      setPhotoUploadMessage(
-        error instanceof Error ? error.message : 'Failed to set cover image'
-      );
-    } finally {
-      setSettingCoverImageUrl(null);
-    }
-  };
-
   const applyTrailCoverImage = async (nextImageUrl: string) => {
     if (!trail || !nextImageUrl.trim()) return;
     const cleaned = nextImageUrl.trim();
@@ -1560,17 +1516,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       label: 'Jump to route guide',
       onSelect: () => scrollToTrailSection('route-guide'),
     },
-    ...(trailImages.length > 0
-      ? [
-          {
-            label: 'View photos',
-            onSelect: () => {
-              setGalleryInitialIndex(0);
-              setGalleryModalOpen(true);
-            },
-          } as ThemedDropdownItem,
-        ]
-      : []),
     ...(canRequestTrail && !hasRequestedTrail
       ? [
           {
@@ -1905,6 +1850,25 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             )}
             <CampaignSupportDropdown campaigns={activeCampaigns} />
             <TrailAlertsDropdown updates={trailUpdates} />
+            {trailImages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setGalleryInitialIndex(0);
+                  setGalleryModalOpen(true);
+                }}
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                aria-label={`${trailImages.length} trail photo${trailImages.length === 1 ? '' : 's'}`}
+                title={`${trailImages.length} trail photo${trailImages.length === 1 ? '' : 's'}`}
+              >
+                <svg viewBox="0 0 20 20" className="h-5 w-5 fill-current" aria-hidden="true">
+                  <path d="M4.5 4A2.5 2.5 0 0 0 2 6.5v7A2.5 2.5 0 0 0 4.5 16h11a2.5 2.5 0 0 0 2.5-2.5v-7A2.5 2.5 0 0 0 15.5 4h-11Zm0 2h11a.5.5 0 0 1 .5.5v5.1l-2.2-2.2a1.5 1.5 0 0 0-2.1 0L9.9 11.2l-.7-.7a1.5 1.5 0 0 0-2.1 0L4 13.6V6.5a.5.5 0 0 1 .5-.5Zm9.25 1.25a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5Z" />
+                </svg>
+                <span className="absolute -right-1 -top-1 min-w-5 rounded-full border border-white bg-slate-700 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white dark:border-slate-900 dark:bg-slate-500">
+                  {trailImages.length}
+                </span>
+              </button>
+            )}
             <ThemedDropdown
               label="Actions"
               hideCaret
@@ -1959,33 +1923,50 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
 
         <div className="relative grid gap-5">
           <div className="min-w-0">
-            <div className="mb-4 rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-950/70">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
-                  Nepal Trail Network
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
+                Nepal Trail Network
+              </span>
+              {trail.sport_type && (
+                <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
+                  {getSportLabel(trail.sport_type)}
                 </span>
-                {trail.sport_type && (
-                  <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:border-emerald-900 dark:bg-slate-900/60 dark:text-emerald-200">
-                    {getSportLabel(trail.sport_type)}
-                  </span>
-                )}
-                {trail.status === 'pending' && (
-                  <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-                    Pending
-                  </span>
-                )}
-                {trail.is_hazardous && (
-                  <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
-                    Hazardous
-                  </span>
-                )}
-                {hasRequestedTrail && (
-                  <span className="inline-flex items-center rounded-full border border-green-700 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
-                    Trail Requested
-                  </span>
-                )}
-              </div>
-              <div className="mt-3">
+              )}
+              {trail.status === 'pending' && (
+                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                  Pending
+                </span>
+              )}
+              {trail.is_hazardous && (
+                <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
+                  Hazardous
+                </span>
+              )}
+              {hasRequestedTrail && (
+                <span className="inline-flex items-center rounded-full border border-green-700 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
+                  Trail Requested
+                </span>
+              )}
+            </div>
+
+            <div id="trail-map" className="scroll-mt-28 [&>div]:mb-0">
+              <MapSection
+                hasRoute={hasRoute}
+                routeGeoJSON={routeGeoJSON}
+                routeData={routeData}
+                mapCenter={mapCenter}
+                mapStyle={mapStyle}
+                mapStyleMode={mapStyleMode}
+                mapboxToken={mapboxToken}
+                onStyleModeChange={setMapStyleMode}
+                komootEmbedUrl={trail.komoot_embed_url || null}
+                mapProvider={mapProvider}
+                onMapProviderChange={setMapProvider}
+              />
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-950/70">
+              <div>
                 <h1 className="text-balance text-3xl font-extrabold leading-tight text-green-900 sm:text-4xl lg:text-5xl dark:text-green-100">
                   {trail.name}
                 </h1>
@@ -2014,43 +1995,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 )}
               </div>
               <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
-              <div
-                id="route-guide"
-                className="mt-4 scroll-mt-28 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                  Route guide
-                </p>
-                <p className="mt-2 text-sm leading-7 text-gray-700 dark:text-slate-200">
-                  {trail.description?.trim() || 'Route description will be added soon.'}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {trailConsiderations.slice(0, 3).map((item, index) => (
-                    <span
-                      key={`trail-consideration-chip-${index}`}
-                      className="rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div id="trail-map" className="scroll-mt-28 [&>div]:mb-0">
-              <MapSection
-                hasRoute={hasRoute}
-                routeGeoJSON={routeGeoJSON}
-                routeData={routeData}
-                mapCenter={mapCenter}
-                mapStyle={mapStyle}
-                mapStyleMode={mapStyleMode}
-                mapboxToken={mapboxToken}
-                onStyleModeChange={setMapStyleMode}
-                komootEmbedUrl={trail.komoot_embed_url || null}
-                mapProvider={mapProvider}
-                onMapProviderChange={setMapProvider}
-              />
             </div>
           </div>
 
@@ -2223,26 +2167,38 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         )}
       </section>
 
+      <section
+        id="route-guide"
+        className="mt-4 scroll-mt-28 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+      >
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+          Route guide
+        </p>
+        <p className="mt-2 text-sm leading-7 text-gray-700 dark:text-slate-200">
+          {trail.description?.trim() || 'Route description will be added soon.'}
+        </p>
+      </section>
+
       {!!trail.safety_labels?.length && (
-        <section className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/25">
+        <section className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/25">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
             Safety Recommendations
           </p>
           <p className="mt-1 text-sm text-emerald-950 dark:text-emerald-100">
             Review these before starting the route.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {trail.safety_labels.map((label) => (
-              <span
+              <div
                 key={`${trail.id}-safe-${label}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm dark:border-emerald-800/70 dark:bg-slate-950/40 dark:text-emerald-100"
+                className="flex items-start gap-2 text-sm font-medium text-emerald-950 dark:text-emerald-100"
               >
                 <span
-                  className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-300"
+                  className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-300"
                   aria-hidden="true"
                 />
                 {getSafetyLabelText(label)}
-              </span>
+              </div>
             ))}
           </div>
         </section>
@@ -2311,77 +2267,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         </section>
       )}
 
-      {trailImages.length > 0 && (
-        <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Trail Photos</h2>
-            <button
-              type="button"
-              onClick={() => {
-                setGalleryInitialIndex(0);
-                setGalleryModalOpen(true);
-              }}
-              className="text-sm font-medium text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-            >
-              Open Gallery
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {trailImages.map((imageUrl, index) => (
-              <div
-                key={`${imageUrl}-${index}`}
-                className="relative h-32 overflow-hidden rounded-lg ring-offset-2 transition hover:scale-[1.01] hover:ring-2 hover:ring-green-400 dark:ring-offset-slate-900"
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGalleryInitialIndex(index);
-                    setGalleryModalOpen(true);
-                  }}
-                  className="absolute inset-0"
-                >
-                  <Image
-                    src={imageUrl}
-                    alt={`${trail.name} trail photo ${index + 1}`}
-                    fill
-                    unoptimized
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-300 hover:scale-105"
-                  />
-                </button>
-                {canManageTrail && (
-                  <button
-                    type="button"
-                    onClick={() => void handleDeleteTrailImage(imageUrl)}
-                    disabled={deletingTrailImageUrl === imageUrl || updateTrailMutation.isPending}
-                    className="absolute right-2 top-2 z-10 rounded-full border border-white/70 bg-black/60 px-2 py-1 text-[11px] font-semibold text-white hover:bg-black/75 disabled:opacity-60"
-                  >
-                    {deletingTrailImageUrl === imageUrl ? 'Removing...' : 'Delete'}
-                  </button>
-                )}
-                {canManageTrail &&
-                  (trail?.image_url === imageUrl ? (
-                    <span className="absolute bottom-2 left-2 z-10 rounded-full border border-emerald-200/70 bg-emerald-600/90 px-2 py-1 text-[11px] font-semibold text-white">
-                      Cover
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => void handleSetCoverImage(imageUrl)}
-                      disabled={settingCoverImageUrl === imageUrl || updateTrailMutation.isPending}
-                      className="absolute bottom-2 right-2 z-10 rounded-full border border-white/70 bg-black/60 px-2 py-1 text-[11px] font-semibold text-white hover:bg-black/75 disabled:opacity-60"
-                    >
-                      {settingCoverImageUrl === imageUrl ? 'Setting...' : 'Set Cover'}
-                    </button>
-                  ))}
-              </div>
-            ))}
-          </div>
-          {photoUploadMessage && (
-            <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">{photoUploadMessage}</p>
-          )}
-        </div>
-      )}
+
 
       <Dialog.Root
         open={requestModalOpen}
