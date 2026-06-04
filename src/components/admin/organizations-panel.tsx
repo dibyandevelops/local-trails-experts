@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
 import {
   createAdminOrganization,
   deleteAdminOrganization,
@@ -56,11 +57,21 @@ export default function OrganizationsPanel() {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
-  const [form, setForm] = useState<OrganizationForm>(emptyForm);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [deleteTarget, setDeleteTarget] = useState<OrganizationOption | null>(null);
   const [logoUploadPending, setLogoUploadPending] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<OrganizationForm>({
+    defaultValues: emptyForm,
+  });
+  const form = watch();
 
   const { data: organizations = [] } = useQuery<OrganizationOption[]>({
     queryKey: ['admin-organizations'],
@@ -72,11 +83,11 @@ export default function OrganizationsPanel() {
   };
 
   const createMutation = useMutation({
-    mutationFn: () => createAdminOrganization(form),
+    mutationFn: (values: OrganizationForm) => createAdminOrganization(values),
     onSuccess: async () => {
       await invalidateOrganizations();
       setMessage('Trail builder created.');
-      setForm(emptyForm);
+      reset(emptyForm);
       setSelectedOrganizationId('');
       setFormOpen(false);
     },
@@ -85,7 +96,7 @@ export default function OrganizationsPanel() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: () => updateAdminOrganization(selectedOrganizationId, form),
+    mutationFn: (values: OrganizationForm) => updateAdminOrganization(selectedOrganizationId, values),
     onSuccess: async () => {
       await invalidateOrganizations();
       setMessage('Trail builder updated.');
@@ -106,7 +117,7 @@ export default function OrganizationsPanel() {
           : 'Trail builder hidden from public pages.'
       );
       if (organization.id === selectedOrganizationId) {
-        setForm((prev) => ({ ...prev, is_active: organization.is_active }));
+        setValue('is_active', organization.is_active);
       }
     },
     onError: (error) =>
@@ -121,7 +132,7 @@ export default function OrganizationsPanel() {
       setDeleteTarget(null);
       if (organization.id === selectedOrganizationId) {
         setSelectedOrganizationId('');
-        setForm(emptyForm);
+        reset(emptyForm);
       }
     },
     onError: (error) =>
@@ -129,8 +140,7 @@ export default function OrganizationsPanel() {
   });
 
   const hydrateOrganizationForm = (org: OrganizationOption) => {
-    setForm((prev) => ({
-      ...prev,
+    reset({
       slug: org.slug || '',
       name: org.name || '',
       tagline: org.tagline || '',
@@ -142,11 +152,7 @@ export default function OrganizationsPanel() {
       contact_phone: org.contact_phone || '',
       is_verified: org.is_verified,
       is_active: org.is_active,
-    }));
-  };
-
-  const onChange = (key: keyof OrganizationForm, value: string | boolean) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    });
   };
 
   const handleLogoUpload = async (file: File | null) => {
@@ -159,7 +165,7 @@ export default function OrganizationsPanel() {
     setMessage(null);
     try {
       const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 512, quality: 0.86 });
-      onChange('logo_url', dataUrl);
+      setValue('logo_url', dataUrl, { shouldDirty: true });
     } catch {
       setMessage('Failed to process trail builder logo.');
     } finally {
@@ -169,7 +175,7 @@ export default function OrganizationsPanel() {
 
   const openCreate = () => {
     setSelectedOrganizationId('');
-    setForm(emptyForm);
+    reset(emptyForm);
     setFormMode('create');
     setFormOpen(true);
   };
@@ -189,59 +195,65 @@ export default function OrganizationsPanel() {
   };
 
   const organizationForm = (
-    <div className="mt-5 space-y-4">
+    <form
+      onSubmit={handleSubmit((values) =>
+        formMode === 'create' ? createMutation.mutate(values) : updateMutation.mutate(values)
+      )}
+      className="mt-5 space-y-4"
+    >
       <div className="grid gap-3 md:grid-cols-2">
+        <div>
+          <input
+            {...register('slug', { required: 'Slug is required.' })}
+            placeholder="Slug (e.g. trail-builders-nepal)"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+          {errors.slug?.message && (
+            <p className="mt-1 text-xs text-red-600">{errors.slug.message}</p>
+          )}
+        </div>
+        <div>
+          <input
+            {...register('name', { required: 'Trail builder name is required.' })}
+            placeholder="Trail builder name"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+          {errors.name?.message && (
+            <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
+          )}
+        </div>
         <input
-          value={form.slug}
-          onChange={(event) => onChange('slug', event.target.value)}
-          placeholder="Slug (e.g. trail-builders-nepal)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          value={form.name}
-          onChange={(event) => onChange('name', event.target.value)}
-          placeholder="Trail builder name"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          value={form.tagline}
-          onChange={(event) => onChange('tagline', event.target.value)}
+          {...register('tagline')}
           placeholder="Tagline"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
         <input
-          value={form.city}
-          onChange={(event) => onChange('city', event.target.value)}
+          {...register('city')}
           placeholder="City"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
         <input
-          value={form.country}
-          onChange={(event) => onChange('country', event.target.value)}
+          {...register('country')}
           placeholder="Country"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
         <input
-          value={form.logo_url}
-          onChange={(event) => onChange('logo_url', event.target.value)}
+          {...register('logo_url')}
           placeholder="Logo URL or uploaded image data"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
         <input
-          value={form.website_url}
-          onChange={(event) => onChange('website_url', event.target.value)}
+          {...register('website_url')}
           placeholder="Website URL"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
         <input
-          value={form.contact_email}
-          onChange={(event) => onChange('contact_email', event.target.value)}
+          {...register('contact_email')}
           placeholder="Contact email"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
         <input
-          value={form.contact_phone}
-          onChange={(event) => onChange('contact_phone', event.target.value)}
+          {...register('contact_phone')}
           placeholder="Contact phone"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
@@ -283,7 +295,7 @@ export default function OrganizationsPanel() {
               {form.logo_url && (
                 <button
                   type="button"
-                  onClick={() => onChange('logo_url', '')}
+                  onClick={() => setValue('logo_url', '', { shouldDirty: true })}
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                 >
                   Remove logo
@@ -298,16 +310,14 @@ export default function OrganizationsPanel() {
         <label className="inline-flex items-center gap-2 text-sm text-gray-700">
           <input
             type="checkbox"
-            checked={form.is_verified}
-            onChange={(event) => onChange('is_verified', event.target.checked)}
+            {...register('is_verified')}
           />
           Verified
         </label>
         <label className="inline-flex items-center gap-2 text-sm text-gray-700">
           <input
             type="checkbox"
-            checked={form.is_active}
-            onChange={(event) => onChange('is_active', event.target.checked)}
+            {...register('is_active')}
           />
           Active
         </label>
@@ -322,10 +332,7 @@ export default function OrganizationsPanel() {
           Cancel
         </button>
         <button
-          type="button"
-          onClick={() =>
-            formMode === 'create' ? createMutation.mutate() : updateMutation.mutate()
-          }
+          type="submit"
           disabled={
             !form.slug.trim() ||
             !form.name.trim() ||
@@ -345,7 +352,7 @@ export default function OrganizationsPanel() {
               : 'Update trail builder'}
         </button>
       </div>
-    </div>
+    </form>
   );
 
   return (
