@@ -10,35 +10,35 @@ export const metadata: Metadata = {
 
 export default function StoreLocatorPage() {
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-6 py-8 shadow-sm md:px-10 md:py-12">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-hero-glow/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 h-44 w-44 rounded-full bg-hero-glow/30 blur-3xl" />
-        <div className="relative max-w-3xl">
-          <div className="mb-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-              Feature
-            </span>
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-              Cycle Hubs
-            </span>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-6 dark:border-emerald-800/50 dark:from-slate-950 dark:via-slate-950 dark:to-emerald-950/40 sm:px-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-emerald-300/25 blur-3xl" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+                Cycle Hubs
+              </span>
+              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+                Nepal
+              </span>
+            </div>
+            <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
+              Find bike shops and trail support nearby
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
+              Discover repair points, rental partners, gear shops, and local support hubs before you ride.
+            </p>
           </div>
-          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
-            Find trusted support hubs near your trail
-          </h1>
-          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            Discover gear partners in Nepal. This
-            list will expand as local teams add verified stores.
-          </p>
-          <div className="mt-5 grid gap-2 text-xs sm:grid-cols-3">
-            <div className="rounded-xl border border-hero-border/70 bg-hero-pill/70 px-3 py-2 text-hero-pill-text">
-              Connect riders with trusted local experts.
+          <div className="grid gap-2 text-xs text-emerald-900 dark:text-emerald-100 sm:grid-cols-3 lg:max-w-md">
+            <div className="rounded-2xl border border-emerald-200 bg-white/80 px-3 py-2 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+              Repairs
             </div>
-            <div className="rounded-xl border border-hero-border/70 bg-hero-pill/70 px-3 py-2 text-hero-pill-text">
-              Support local shops that keep trails active.
+            <div className="rounded-2xl border border-emerald-200 bg-white/80 px-3 py-2 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+              Rentals
             </div>
-            <div className="rounded-xl border border-hero-border/70 bg-hero-pill/70 px-3 py-2 text-hero-pill-text">
-              Strengthen Nepal&apos;s long-term trail community.
+            <div className="rounded-2xl border border-emerald-200 bg-white/80 px-3 py-2 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+              Local support
             </div>
           </div>
         </div>

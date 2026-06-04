@@ -27,6 +27,84 @@ const STORE_MAP_LIGHT_STYLE = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 } as const;
 
+function StoreCard({
+  store,
+  onFocus,
+}: {
+  store: Store;
+  onFocus: () => void;
+}) {
+  return (
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={onFocus}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onFocus();
+        }
+      }}
+      className="cursor-pointer rounded-2xl border border-gray-200 bg-white p-4 transition hover:border-emerald-300 hover:bg-emerald-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-emerald-900/70 dark:hover:bg-emerald-950/20"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-950 dark:text-slate-50">{store.name}</h3>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{store.location}</p>
+        </div>
+        {store.distance_km !== null && store.distance_km !== undefined && (
+          <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+            {store.distance_km.toFixed(1)} km
+          </span>
+        )}
+      </div>
+
+      {store.services && (
+        <p className="mt-2 line-clamp-2 text-xs leading-5 text-gray-600 dark:text-slate-300">
+          {store.services}
+        </p>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+        {store.hours && (
+          <span className="rounded-full border border-slate-200 bg-gray-50 px-2.5 py-1 text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+            {store.hours}
+          </span>
+        )}
+        {store.phone && (
+          <a
+            href={`tel:${store.phone.replace(/\s+/g, '')}`}
+            className="rounded-full border border-slate-200 bg-gray-50 px-2.5 py-1 text-gray-700 hover:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {store.phone}
+          </a>
+        )}
+        {store.website && (
+          <a
+            href={store.website}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+            onClick={(event) => event.stopPropagation()}
+          >
+            Website
+          </a>
+        )}
+        <a
+          href={`https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
+          onClick={(event) => event.stopPropagation()}
+        >
+          Navigate
+        </a>
+      </div>
+    </article>
+  );
+}
+
 export default function StoreLocatorClient() {
   const { data: user = null } = useCurrentUser();
   const mapRef = useRef<MapRef | null>(null);
@@ -42,21 +120,32 @@ export default function StoreLocatorClient() {
     maxLng: number;
   } | null>(null);
   const [useBoundsFilter, setUseBoundsFilter] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const queryKey = useMemo(
     () =>
       QUERY_KEYS.stores.list({
+        search,
         lat: geo?.lat,
         lng: geo?.lng,
         bounds: useBoundsFilter ? bounds : null,
       }),
-    [geo?.lat, geo?.lng, bounds, useBoundsFilter]
+    [search, geo?.lat, geo?.lng, bounds, useBoundsFilter]
   );
 
   const { data: stores = [], isLoading } = useQuery<Store[]>({
     queryKey,
     queryFn: () =>
       fetchStores({
+        search,
         lat: geo?.lat,
         lng: geo?.lng,
         radius: 25,
@@ -139,203 +228,92 @@ export default function StoreLocatorClient() {
   }, [stores]);
 
   return (
-    <section className="space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Nearby stores
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-slate-300">
-              Use your location or search by neighborhood and services.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+    <section className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 sm:p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-950 dark:text-slate-50">
+            Cycle hub locator
+          </h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+            Search shops, use your location, or move the map to find support nearby.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={requestNearby}
+            className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+          >
+            Use my location
+          </button>
+          {user ? (
+            <Dialog.Root>
+              <Dialog.Trigger asChild>
+                <button className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
+                  List my shop
+                </button>
+              </Dialog.Trigger>
+              <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm" />
+                <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <Dialog.Title className="text-lg font-semibold text-gray-950 dark:text-slate-50">
+                        List my shop
+                      </Dialog.Title>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                        Share your shop details for review.
+                      </p>
+                    </div>
+                    <Dialog.Close className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">
+                      ✕
+                    </Dialog.Close>
+                  </div>
+                  <div className="mt-5">
+                    <StoreRequestForm />
+                  </div>
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
+          ) : (
             <button
               type="button"
-              onClick={requestNearby}
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent('open-register', {
+                    detail: {
+                      message: 'Create an account to list your shop.',
+                      next: '/store-locator',
+                    },
+                  })
+                );
+              }}
               className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
             >
-              Use my location
+              Register to list
             </button>
-            {user ? (
-              <Dialog.Root>
-                <Dialog.Trigger asChild>
-                  <button className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
-                    List my shop
-                  </button>
-                </Dialog.Trigger>
-                <Dialog.Portal>
-                  <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-                  <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-950 sm:p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                          List my shop
-                        </Dialog.Title>
-                        <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                          Fill in the details and we’ll follow up.
-                        </p>
-                      </div>
-                      <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
-                        Close
-                      </Dialog.Close>
-                    </div>
-                    <div className="mt-5">
-                      <StoreRequestForm />
-                    </div>
-                  </Dialog.Content>
-                </Dialog.Portal>
-              </Dialog.Root>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('open-register', {
-                      detail: {
-                        message: 'Create an account to list your shop.',
-                        next: '/store-locator',
-                      },
-                    })
-                  );
-                }}
-                className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-              >
-                Register to list your shop
-              </button>
-            )}
-          </div>
-        </div>
-
-        {locationMessage && (
-          <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-            {locationMessage}
-          </p>
-        )}
-
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-slate-300">
-            <input
-              type="checkbox"
-              checked={useBoundsFilter}
-              onChange={(event) => setUseBoundsFilter(event.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-            />
-            Filter by map bounds
-          </label>
-        </div>
-
-        <div className="mt-5 space-y-6">
-          {isLoading && (
-            <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
-              Loading stores…
-            </div>
           )}
-          {!isLoading && stores.length === 0 && (
-            <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
-              No stores found for this area yet.
-            </div>
-          )}
-          {groupedStores.map(([cityLabel, cityStores]) => (
-            <div key={cityLabel} className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {cityLabel}
-                </p>
-                <span className="text-xs text-gray-500 dark:text-slate-400">
-                  {cityStores.length} store{cityStores.length > 1 ? 's' : ''}
-                </span>
-              </div>
-              <div className="grid gap-3">
-                {cityStores.map((store) => (
-                  <div
-                    key={store.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      mapRef.current?.flyTo({
-                        center: [store.longitude, store.latitude],
-                        zoom: 14,
-                        duration: 700,
-                      });
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        mapRef.current?.flyTo({
-                          center: [store.longitude, store.latitude],
-                          zoom: 14,
-                          duration: 700,
-                        });
-                      }
-                    }}
-                    className="cursor-pointer rounded-2xl border border-gray-200 bg-gray-50/70 p-4 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950/40 dark:hover:border-emerald-900/60 dark:hover:bg-emerald-950/30"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                          {store.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">
-                          {store.location}
-                        </p>
-                      </div>
-                      {store.distance_km !== null && store.distance_km !== undefined && (
-                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-                          {store.distance_km.toFixed(1)} km away
-                        </span>
-                      )}
-                    </div>
-                    {store.services && (
-                      <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-                        {store.services}
-                      </p>
-                    )}
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600 dark:text-slate-300">
-                      {store.hours && (
-                        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 dark:border-slate-700 dark:bg-slate-900">
-                          {store.hours}
-                        </span>
-                      )}
-                      {store.phone && (
-                        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 dark:border-slate-700 dark:bg-slate-900">
-                          {store.phone}
-                        </span>
-                      )}
-                      {store.website && (
-                        <a
-                          href={store.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-                        >
-                          Visit site
-                        </a>
-                      )}
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700 hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
-                      >
-                        Navigate
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Store map
-          </h2>
-          <div className="inline-flex overflow-hidden rounded-full border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+      <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-center">
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          placeholder="Search by shop, location, repair, rental..."
+          className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+        />
+        <label className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={useBoundsFilter}
+            onChange={(event) => setUseBoundsFilter(event.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+          />
+          Map area only
+        </label>
+        <div className="inline-flex overflow-hidden rounded-full border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
             <button
               type="button"
               aria-pressed={mapStyleMode === 'map'}
@@ -357,8 +335,16 @@ export default function StoreLocatorClient() {
               Satellite
             </button>
           </div>
-        </div>
-        <div className="relative mt-4 h-[420px] overflow-hidden rounded-2xl border border-emerald-200/60 dark:border-emerald-900/60">
+      </div>
+
+      {locationMessage && (
+        <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+          {locationMessage}
+        </p>
+      )}
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="relative h-[520px] overflow-hidden rounded-3xl border border-emerald-200/70 dark:border-emerald-900/60">
           <Map
             ref={mapRef}
             initialViewState={mapCenter}
@@ -465,6 +451,71 @@ export default function StoreLocatorClient() {
             Fly to my location
           </button>
         </div>
+
+        <aside className="rounded-3xl border border-gray-200 bg-gray-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-950 dark:text-slate-50">
+                Listed hubs
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-slate-400">
+                {isLoading ? 'Loading...' : `${stores.length} result${stores.length === 1 ? '' : 's'}`}
+              </p>
+            </div>
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchInput('');
+                  setSearch('');
+                }}
+                className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="mt-4 max-h-[448px] space-y-4 overflow-y-auto pr-1">
+            {isLoading && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                Loading cycle hubs...
+              </div>
+            )}
+            {!isLoading && stores.length === 0 && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                No cycle hubs found. Try a broader search or turn off map area filtering.
+              </div>
+            )}
+            {groupedStores.map(([cityLabel, cityStores]) => (
+              <div key={cityLabel} className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-300">
+                    {cityLabel}
+                  </p>
+                  <span className="text-xs text-gray-500 dark:text-slate-400">
+                    {cityStores.length}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {cityStores.map((store) => (
+                    <StoreCard
+                      key={store.id}
+                      store={store}
+                      onFocus={() => {
+                        mapRef.current?.flyTo({
+                          center: [store.longitude, store.latitude],
+                          zoom: 14,
+                          duration: 700,
+                        });
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
       </div>
     </section>
   );
