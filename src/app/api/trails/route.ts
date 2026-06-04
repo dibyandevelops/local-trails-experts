@@ -52,6 +52,12 @@ export async function GET(request: NextRequest) {
       offsetParam !== null && offsetParam >= 0
         ? Math.floor(offsetParam)
         : (page - 1) * pageSize;
+    const searchTokens = search
+      .toLowerCase()
+      .split(/[\s,./_-]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 2)
+      .slice(0, 8);
 
     let whereClause = ' WHERE 1=1';
     const params: any[] = [];
@@ -93,32 +99,73 @@ export async function GET(request: NextRequest) {
     if (search) {
       const searchPatternParam = paramIndex++;
       const searchTermParam = paramIndex++;
+      const searchTokensParam = paramIndex++;
       whereClause += ` AND (
         t.name ILIKE $${searchPatternParam}
+        OR t.slug ILIKE $${searchPatternParam}
         OR COALESCE(t.description, '') ILIKE $${searchPatternParam}
         OR t.location ILIKE $${searchPatternParam}
         OR t.difficulty ILIKE $${searchPatternParam}
         OR t.sport_type ILIKE $${searchPatternParam}
+        OR NOT EXISTS (
+          SELECT 1
+          FROM unnest($${searchTokensParam}::text[]) AS token
+          WHERE lower(
+            concat_ws(
+              ' ',
+              t.name,
+              t.slug,
+              t.location,
+              t.difficulty,
+              t.sport_type,
+              COALESCE(t.description, '')
+            )
+          ) NOT LIKE '%' || token || '%'
+        )
         OR EXISTS (
           SELECT 1
           FROM trail_organizations search_to
           JOIN organizations search_org ON search_org.id = search_to.organization_id
           WHERE search_to.trail_id = t.id
             AND search_org.is_active = TRUE
-            AND search_org.name ILIKE $${searchPatternParam}
+            AND (
+              search_org.name ILIKE $${searchPatternParam}
+              OR similarity(lower(search_org.name), lower($${searchTermParam})) >= 0.2
+              OR word_similarity(lower($${searchTermParam}), lower(search_org.name)) >= 0.32
+              OR NOT EXISTS (
+                SELECT 1
+                FROM unnest($${searchTokensParam}::text[]) AS token
+                WHERE lower(search_org.name) NOT LIKE '%' || token || '%'
+              )
+            )
         )
-        OR similarity(lower(COALESCE(t.name, '')), lower($${searchTermParam})) >= 0.28
-        OR word_similarity(lower($${searchTermParam}), lower(COALESCE(t.name, ''))) >= 0.45
-        OR similarity(lower(COALESCE(t.location, '')), lower($${searchTermParam})) >= 0.28
-        OR word_similarity(lower($${searchTermParam}), lower(COALESCE(t.location, ''))) >= 0.45
-        OR similarity(lower(COALESCE(t.description, '')), lower($${searchTermParam})) >= 0.18
+        OR similarity(lower(COALESCE(t.name, '')), lower($${searchTermParam})) >= 0.2
+        OR word_similarity(lower($${searchTermParam}), lower(COALESCE(t.name, ''))) >= 0.32
+        OR similarity(lower(COALESCE(t.location, '')), lower($${searchTermParam})) >= 0.2
+        OR word_similarity(lower($${searchTermParam}), lower(COALESCE(t.location, ''))) >= 0.32
+        OR similarity(lower(COALESCE(t.description, '')), lower($${searchTermParam})) >= 0.16
       )`;
       params.push(`%${search}%`);
       params.push(search);
+      params.push(searchTokens.length > 0 ? searchTokens : [search.toLowerCase()]);
       searchRelevanceOrder = `
         GREATEST(
           CASE WHEN t.name ILIKE $${searchPatternParam} THEN 1.0 ELSE 0.0 END,
+          CASE WHEN t.slug ILIKE $${searchPatternParam} THEN 0.96 ELSE 0.0 END,
           CASE WHEN t.location ILIKE $${searchPatternParam} THEN 0.9 ELSE 0.0 END,
+          CASE WHEN EXISTS (
+            SELECT 1
+            FROM trail_organizations search_to
+            JOIN organizations search_org ON search_org.id = search_to.organization_id
+            WHERE search_to.trail_id = t.id
+              AND search_org.is_active = TRUE
+              AND search_org.name ILIKE $${searchPatternParam}
+          ) THEN 0.86 ELSE 0.0 END,
+          CASE WHEN NOT EXISTS (
+            SELECT 1
+            FROM unnest($${searchTokensParam}::text[]) AS token
+            WHERE lower(concat_ws(' ', t.name, t.slug, t.location, t.difficulty, t.sport_type)) NOT LIKE '%' || token || '%'
+          ) THEN 0.82 ELSE 0.0 END,
           similarity(lower(COALESCE(t.name, '')), lower($${searchTermParam}))::double precision,
           word_similarity(lower($${searchTermParam}), lower(COALESCE(t.name, '')))::double precision,
           similarity(lower(COALESCE(t.location, '')), lower($${searchTermParam}))::double precision,

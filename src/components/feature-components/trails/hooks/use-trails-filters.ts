@@ -22,6 +22,7 @@ export function useTrailsFilters({
   onCreateEventFromUrl,
 }: UseTrailsFiltersParams) {
   const didInitFromUrl = useRef(false);
+  const didHydrateSearchInput = useRef(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
@@ -95,6 +96,21 @@ export function useTrailsFilters({
     setViewMode(urlView === 'quick' ? 'quick' : 'grid');
     didInitFromUrl.current = true;
   }, [onCreateEventFromUrl, searchParams]);
+
+  useEffect(() => {
+    if (!didInitFromUrl.current) return;
+    if (!didHydrateSearchInput.current) {
+      didHydrateSearchInput.current = true;
+      return;
+    }
+
+    const nextSearch = searchInput.trim();
+    const timer = window.setTimeout(() => {
+      setSearch((current) => (current === nextSearch ? current : nextSearch));
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     if (!didInitFromUrl.current) return;

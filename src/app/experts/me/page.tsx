@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Event, EventParticipant, User, SportType } from '@/types';
 import Link from 'next/link';
@@ -107,6 +107,15 @@ export default function ExpertProfilePage() {
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
+  const sortedAvailableTrails = useMemo(() => {
+    const selected = new Set(selectedAssociatedTrailIds);
+    return [...availableTrails].sort((a, b) => {
+      const aSelected = selected.has(a.id);
+      const bSelected = selected.has(b.id);
+      if (aSelected !== bSelected) return aSelected ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [availableTrails, selectedAssociatedTrailIds]);
 
   const sportOptions: { value: SportType; label: string }[] = TRAIL_SPORTS;
   const { data: stravaSummary } = useQuery({
@@ -287,19 +296,19 @@ export default function ExpertProfilePage() {
   };
 
   if (loadingUser || loadingEvents || loadingTrailRequests || loadingTrails) {
-    return <div className="text-gray-600">Loading profile...</div>;
+    return <div className="text-gray-600 dark:text-slate-300">Loading profile...</div>;
   }
 
   if (!user || user.role !== 'expert') {
     return (
-      <div className="bg-red-50 border border-red-100 text-red-700 rounded-lg px-4 py-3">
+      <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
         You must be logged in as an expert to view this page.
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 pb-8">
       <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
@@ -320,7 +329,7 @@ export default function ExpertProfilePage() {
           </p>
         </div>
       </section>
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 dark:border-slate-800 dark:bg-slate-900">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -355,11 +364,11 @@ export default function ExpertProfilePage() {
         )}
       </section>
 
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Profile Details</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Profile Details</h2>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
               Keep your public expert information and verification details updated.
             </p>
           </div>
@@ -367,14 +376,14 @@ export default function ExpertProfilePage() {
             <button
               type="button"
               onClick={() => setProfileModalOpen(true)}
-              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
             >
               Edit profile
             </button>
             <button
               type="button"
               onClick={() => setVerificationModalOpen(true)}
-              className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+              className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
             >
               Update verification
             </button>
@@ -384,31 +393,31 @@ export default function ExpertProfilePage() {
           <>
             <div className="mb-3 flex flex-wrap items-center gap-2">
               {stravaSummary?.connected ? (
-                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
+                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800 dark:bg-orange-950/50 dark:text-orange-200">
                   Strava Connected
                 </span>
               ) : (
                 <Link
                   href={`${ApiPath.StravaAuthorize}?mode=connect`}
-                  className="inline-flex items-center rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 hover:bg-orange-100"
+                  className="inline-flex items-center rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200 dark:hover:bg-orange-900/50"
                 >
                   Connect with Strava
                 </Link>
               )}
               {stravaSummary?.syncedAt && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-slate-400">
                   Last synced <DateText value={stravaSummary.syncedAt} pattern="PPP p" />
                 </span>
               )}
             </div>
             {stravaSummary?.connected && (
-              <div className="mb-4 flex flex-wrap items-center gap-3 text-[11px] text-orange-700">
+              <div className="mb-4 flex flex-wrap items-center gap-3 text-[11px] text-orange-700 dark:text-orange-200">
                 {stravaSummary?.profile?.id && (
                   <a
                     href={`https://www.strava.com/athletes/${stravaSummary.profile.id}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-semibold text-orange-700 underline decoration-orange-400"
+                    className="font-semibold text-orange-700 underline decoration-orange-400 dark:text-orange-200"
                   >
                     View on Strava
                   </a>
@@ -419,18 +428,18 @@ export default function ExpertProfilePage() {
           </>
         )}
         {user.is_verified_expert ? (
-          <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold mb-4">
+          <span className="mb-4 inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800 dark:bg-emerald-950/50 dark:text-emerald-200">
             Verified Expert
           </span>
         ) : (
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
               Pending Verification
             </span>
             <button
               type="button"
               onClick={() => setVerificationModalOpen(true)}
-              className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+              className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
             >
               Complete verification details
             </button>
@@ -441,8 +450,8 @@ export default function ExpertProfilePage() {
             className={`text-sm border rounded-lg px-3 py-2 mb-3 ${
               message.toLowerCase().includes('select at least one sport') ||
               message.toLowerCase().includes('accept the terms')
-                ? 'text-red-600 bg-red-50 border-red-100'
-                : 'text-green-700 bg-green-50 border-green-100'
+                ? 'border-red-100 bg-red-50 text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200'
+                : 'border-green-100 bg-green-50 text-green-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200'
             }`}
           >
             {message}
@@ -450,23 +459,23 @@ export default function ExpertProfilePage() {
         )}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Full name</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Full name</p>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.name || 'Not added'}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Email</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Email</p>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{user.email || 'Not added'}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Phone</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Phone</p>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.phone || 'Not added'}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">City</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">City</p>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.city || 'Not added'}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Sports</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Sports</p>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
               {selectedSports.length > 0
                 ? selectedSports.map((sport) => getSportLabel(sport as SportType)).join(', ')
@@ -474,58 +483,58 @@ export default function ExpertProfilePage() {
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Bio</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Bio</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{editForm.bio?.trim() || 'Not added'}</p>
           </div>
         </div>
       </section>
 
-      <section id="trail-requests" className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+      <section id="trail-requests" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Requested Trails For You
           </h2>
           {trailRequests.length > 0 && (
-            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
               {trailRequests.length} alert{trailRequests.length === 1 ? '' : 's'}
             </span>
           )}
         </div>
         {trailRequests.length === 0 ? (
-          <p className="text-sm text-gray-600">No trail requests assigned to you.</p>
+          <p className="text-sm text-gray-600 dark:text-slate-300">No trail requests assigned to you.</p>
         ) : (
           <div className="space-y-3">
             {trailRequests.map((request) => (
               <div
                 key={request.id}
-                className="rounded-lg border border-gray-200 p-4"
+                className="rounded-lg border border-gray-200 p-4 dark:border-slate-800 dark:bg-slate-950/40"
               >
                 <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                       {request.trail_name}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       {request.trail_location || 'Unknown location'}
                       {request.trail_sport_type
                         ? ` • ${getSportLabel(request.trail_sport_type)}`
                         : ''}
                     </p>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
                     Requested <DateText value={request.created_at} pattern="PPP p" />
                   </p>
                 </div>
-                <p className="mt-2 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-gray-600 dark:text-slate-300">
                   Participant: {request.requester_name || 'Participant'} ({request.requester_email})
                 </p>
                 {request.preferred_date && (
-                  <p className="mt-1 text-xs text-gray-600">
+                  <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">
                     Preferred date: {request.preferred_date.slice(0, 10)}
                   </p>
                 )}
                 {request.description && (
-                  <p className="mt-2 rounded bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                  <p className="mt-2 rounded bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-slate-800 dark:text-slate-200">
                     {request.description}
                   </p>
                 )}
@@ -536,7 +545,7 @@ export default function ExpertProfilePage() {
                       setRequestForEvent(request);
                       setCreateEventOpen(true);
                     }}
-                    className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100"
+                    className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:bg-indigo-900/50"
                   >
                     Create Event For This Participant
                   </button>
@@ -547,18 +556,18 @@ export default function ExpertProfilePage() {
         )}
       </section>
 
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
           Events You Host
         </h2>
         {events.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             You have not created any events yet.
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800">
             <table className="w-full min-w-[520px] text-left text-sm">
-              <thead className="text-xs uppercase text-gray-500">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-950 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2">Event</th>
                   <th className="px-3 py-2">Date</th>
@@ -570,32 +579,32 @@ export default function ExpertProfilePage() {
                 {events.map((event) => {
                   const participants = event.participants || [];
                   return (
-                    <tr key={event.id} className="border-t border-gray-200 align-top">
+                    <tr key={event.id} className="border-t border-gray-200 align-top dark:border-slate-800">
                       <td className="px-3 py-3">
                         <Link
                           href={`/events/${event.id}`}
-                          className="text-sm font-semibold text-gray-900 hover:text-green-700"
+                          className="text-sm font-semibold text-gray-900 hover:text-green-700 dark:text-slate-100 dark:hover:text-emerald-300"
                         >
                           {event.title}
                         </Link>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-slate-400">
                           {event.city ? event.city : '—'}
                         </div>
                         {event.sport_type && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 dark:text-slate-400">
                             {getSportLabel(event.sport_type)}
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-xs text-gray-600">
+                      <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                         <DateText value={event.event_date} pattern="PPP p" />
                       </td>
-                      <td className="px-3 py-3 text-xs text-gray-600">
+                      <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                         {participants.length === 0 ? (
-                          <span className="text-gray-400">No participants yet</span>
+                          <span className="text-gray-400 dark:text-slate-500">No participants yet</span>
                         ) : (
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
                               {participants.length} joined
                             </span>
                             <button
@@ -605,7 +614,7 @@ export default function ExpertProfilePage() {
                                 setParticipantsList(participants);
                                 setParticipantsModalOpen(true);
                               }}
-                              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
                             >
                               View list
                             </button>
@@ -616,7 +625,7 @@ export default function ExpertProfilePage() {
                         <button
                           type="button"
                           onClick={() => router.push(`/events/${event.id}`)}
-                          className="text-xs font-semibold text-green-700 hover:text-green-800"
+                          className="text-xs font-semibold text-green-700 hover:text-green-800 dark:text-emerald-300 dark:hover:text-emerald-200"
                         >
                           View event
                         </button>
@@ -630,24 +639,24 @@ export default function ExpertProfilePage() {
         )}
       </section>
 
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Trails Associated With You
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
               Pin public trails you guide, ride, or know well. These appear on your public expert profile.
             </p>
           </div>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
             {selectedAssociatedTrailIds.length}/12 selected
           </span>
         </div>
 
         {associatedTrails.length > 0 && (
-          <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
               Currently shown on profile
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -655,7 +664,7 @@ export default function ExpertProfilePage() {
                 <Link
                   key={`associated-${trail.id}`}
                   href={`/trails/${trail.slug || trail.id}`}
-                  className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                  className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/50"
                 >
                   {trail.name}
                 </Link>
@@ -665,13 +674,13 @@ export default function ExpertProfilePage() {
         )}
 
         {availableTrails.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             No approved visible trails are available to associate yet.
           </p>
         ) : (
-          <div className="max-h-80 overflow-y-auto rounded-xl border border-gray-200">
+          <div className="max-h-80 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-800">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-gray-50 text-xs uppercase text-gray-500">
+              <thead className="sticky top-0 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-950 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2">Select</th>
                   <th className="px-3 py-2">Trail</th>
@@ -680,10 +689,10 @@ export default function ExpertProfilePage() {
                 </tr>
               </thead>
               <tbody>
-                {availableTrails.map((trail) => {
+                {sortedAvailableTrails.map((trail) => {
                   const checked = selectedAssociatedTrailIds.includes(trail.id);
                   return (
-                    <tr key={`available-${trail.id}`} className="border-t border-gray-200">
+                    <tr key={`available-${trail.id}`} className="border-t border-gray-200 dark:border-slate-800">
                       <td className="px-3 py-3">
                         <input
                           type="checkbox"
@@ -696,15 +705,15 @@ export default function ExpertProfilePage() {
                       <td className="px-3 py-3">
                         <Link
                           href={`/trails/${trail.slug || trail.id}`}
-                          className="text-sm font-semibold text-gray-900 hover:text-green-700"
+                          className="text-sm font-semibold text-gray-900 hover:text-green-700 dark:text-slate-100 dark:hover:text-emerald-300"
                         >
                           {trail.name}
                         </Link>
                       </td>
-                      <td className="px-3 py-3 text-xs text-gray-600">
+                      <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                         {trail.location || '—'}
                       </td>
-                      <td className="px-3 py-3 text-xs text-gray-600">
+                      <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                         {trail.sport_type ? getSportLabel(trail.sport_type as SportType) : '—'}
                       </td>
                     </tr>
@@ -725,23 +734,23 @@ export default function ExpertProfilePage() {
             {savingAssociatedTrails ? 'Saving...' : 'Save associated trails'}
           </button>
           {trailAssociationMessage && (
-            <p className="text-sm text-gray-600">{trailAssociationMessage}</p>
+            <p className="text-sm text-gray-600 dark:text-slate-300">{trailAssociationMessage}</p>
           )}
         </div>
       </section>
 
-      <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
           Trails You Created
         </h2>
         {createdTrails.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             You have not created any trails yet.
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-gray-500">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-950 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2">Trail</th>
                   <th className="px-3 py-2">Location</th>
@@ -752,23 +761,23 @@ export default function ExpertProfilePage() {
               </thead>
               <tbody>
                 {createdTrails.map((trail) => (
-                  <tr key={trail.id} className="border-t border-gray-200">
+                  <tr key={trail.id} className="border-t border-gray-200 dark:border-slate-800">
                     <td className="px-3 py-3">
                       <button
                         type="button"
                         onClick={() => router.push(`/trails/${trail.slug || trail.id}`)}
-                        className="text-sm font-semibold text-gray-900 hover:text-green-700"
+                        className="text-sm font-semibold text-gray-900 hover:text-green-700 dark:text-slate-100 dark:hover:text-emerald-300"
                       >
                         {trail.name}
                       </button>
                     </td>
-                    <td className="px-3 py-3 text-xs text-gray-600">
+                    <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                       {trail.location || '—'}
                     </td>
-                    <td className="px-3 py-3 text-xs text-gray-600">
+                    <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                       {trail.sport_type ? getSportLabel(trail.sport_type) : '—'}
                     </td>
-                    <td className="px-3 py-3 text-xs text-gray-600">
+                    <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                       {trail.is_hidden ? 'Hidden' : 'Visible'}
                     </td>
                     <td className="px-3 py-3 text-right">
@@ -796,7 +805,7 @@ export default function ExpertProfilePage() {
                               setHidingTrailId(null);
                             }
                           }}
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-900/50"
                           disabled={hidingTrailId === trail.id}
                         >
                           {hidingTrailId === trail.id ? 'Hiding...' : 'Hide'}
@@ -822,7 +831,7 @@ export default function ExpertProfilePage() {
                               setUnhidingTrailId(null);
                             }
                           }}
-                          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
                           disabled={unhidingTrailId === trail.id}
                         >
                           {unhidingTrailId === trail.id ? 'Unhiding...' : 'Unhide'}
@@ -831,7 +840,7 @@ export default function ExpertProfilePage() {
                       <button
                         type="button"
                         onClick={() => router.push(`/upload?trailId=${trail.id}`)}
-                        className="ml-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                        className="ml-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                       >
                         Edit
                       </button>
@@ -855,12 +864,12 @@ export default function ExpertProfilePage() {
       >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 h-[88vh] w-[96vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <Dialog.Title className="truncate pr-2 text-sm font-semibold text-gray-900">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 h-[88vh] w-[96vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-slate-950">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-slate-800">
+              <Dialog.Title className="truncate pr-2 text-sm font-semibold text-gray-900 dark:text-slate-100">
                 Create Event For Requested Trail
               </Dialog.Title>
-              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
               </Dialog.Close>
             </div>
@@ -891,7 +900,7 @@ export default function ExpertProfilePage() {
                 />
               </div>
             ) : (
-              <div className="grid h-[calc(88vh-52px)] place-items-center text-sm text-gray-600">
+              <div className="grid h-[calc(88vh-52px)] place-items-center text-sm text-gray-600 dark:text-slate-300">
                 Select a request to create event.
               </div>
             )}
@@ -902,12 +911,12 @@ export default function ExpertProfilePage() {
       <Dialog.Root open={profileModalOpen} onOpenChange={setProfileModalOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-              <Dialog.Title className="text-sm font-semibold text-gray-900">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-4 shadow-2xl dark:bg-slate-950">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3 dark:border-slate-800">
+              <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                 Edit expert profile
               </Dialog.Title>
-              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
               </Dialog.Close>
             </div>
@@ -957,7 +966,7 @@ export default function ExpertProfilePage() {
               className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2"
             >
               <div className="md:col-span-2 flex items-center gap-4">
-                <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+                <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100 dark:border-slate-700 dark:bg-slate-800">
                   {editForm.profilePhotoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -966,13 +975,13 @@ export default function ExpertProfilePage() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
+                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500 dark:text-slate-300">
                       {initials}
                     </div>
                   )}
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Profile photo</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Profile photo</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -987,41 +996,41 @@ export default function ExpertProfilePage() {
                         setMessage('Unable to load profile photo.');
                       }
                     }}
-                    className="block w-full text-sm text-gray-700"
+                    className="block w-full text-sm text-gray-700 dark:text-slate-200"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Name</label>
                 <input
                   type="text"
                   value={editForm.name}
                   onChange={(event) => setEditForm({ ...editForm, name: event.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">City</label>
                 <input
                   type="text"
                   value={editForm.city}
                   onChange={(event) => setEditForm({ ...editForm, city: event.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Bio</label>
                 <textarea
                   id="expert-bio"
                   value={editForm.bio}
                   onChange={(event) => setEditForm({ ...editForm, bio: event.target.value })}
                   ref={bioRef}
                   placeholder="Tell about yourself."
-                  className="w-full min-h-[100px] rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="min-h-[100px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sports</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Sports</label>
                 <div className="flex flex-wrap gap-2">
                   {sportOptions.map((sport) => {
                     const selected = selectedSports.includes(sport.value);
@@ -1038,7 +1047,7 @@ export default function ExpertProfilePage() {
                         className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                           selected
                             ? 'bg-green-700 text-white border-green-700'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-green-600'
+                            : 'border-gray-300 bg-white text-gray-700 hover:border-green-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-500'
                         }`}
                       >
                         {sport.label}
@@ -1048,17 +1057,17 @@ export default function ExpertProfilePage() {
                 </div>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone number</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Phone number</label>
                 <input
                   type="tel"
                   value={editForm.phone}
                   onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   placeholder="+9779812345678"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="flex items-start gap-2 text-xs text-gray-600">
+                <label className="flex items-start gap-2 text-xs text-gray-600 dark:text-slate-300">
                   <input
                     type="checkbox"
                     checked={acceptTerms}
@@ -1085,21 +1094,21 @@ export default function ExpertProfilePage() {
       <Dialog.Root open={participantsModalOpen} onOpenChange={setParticipantsModalOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <Dialog.Title className="text-sm font-semibold text-gray-900">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-slate-950">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-slate-800">
+              <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                 Participants · {participantsEventTitle}
               </Dialog.Title>
-              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
               </Dialog.Close>
             </div>
             <div className="max-h-[70vh] overflow-y-auto p-4">
               {participantsList.length === 0 ? (
-                <p className="text-sm text-gray-600">No participants yet.</p>
+                <p className="text-sm text-gray-600 dark:text-slate-300">No participants yet.</p>
               ) : (
                 <table className="w-full text-left text-sm">
-                  <thead className="text-xs uppercase text-gray-500">
+                  <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-950 dark:text-slate-400">
                     <tr>
                       <th className="px-3 py-2">Name</th>
                       <th className="px-3 py-2">Email</th>
@@ -1110,20 +1119,20 @@ export default function ExpertProfilePage() {
                   </thead>
                   <tbody>
                     {participantsList.map((participant) => (
-                      <tr key={participant.id} className="border-t border-gray-200">
-                        <td className="px-3 py-2 text-sm font-semibold text-gray-900">
+                      <tr key={participant.id} className="border-t border-gray-200 dark:border-slate-800">
+                        <td className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-slate-100">
                           {participant.participant_name}
                         </td>
-                        <td className="px-3 py-2 text-xs text-gray-600">
+                        <td className="px-3 py-2 text-xs text-gray-600 dark:text-slate-300">
                           {participant.participant_email}
                         </td>
-                        <td className="px-3 py-2 text-xs text-gray-600">
+                        <td className="px-3 py-2 text-xs text-gray-600 dark:text-slate-300">
                           {participant.phone || '—'}
                         </td>
-                        <td className="px-3 py-2 text-xs text-gray-600">
+                        <td className="px-3 py-2 text-xs text-gray-600 dark:text-slate-300">
                           {participant.expertise_level}
                         </td>
-                        <td className="px-3 py-2 text-xs text-gray-600">
+                        <td className="px-3 py-2 text-xs text-gray-600 dark:text-slate-300">
                           <DateText value={participant.joined_at} pattern="PP" />
                         </td>
                       </tr>
@@ -1139,16 +1148,16 @@ export default function ExpertProfilePage() {
       <Dialog.Root open={verificationModalOpen} onOpenChange={setVerificationModalOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-              <Dialog.Title className="text-sm font-semibold text-gray-900">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-4 shadow-2xl dark:bg-slate-950">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3 dark:border-slate-800">
+              <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                 Expert verification details
               </Dialog.Title>
-              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
               </Dialog.Close>
             </div>
-            <p className="mt-3 text-xs text-gray-600">
+            <p className="mt-3 text-xs text-gray-600 dark:text-slate-300">
               Share clear experience and safety details so admin can review your verification faster.
             </p>
             <div className="mt-3">
@@ -1174,19 +1183,19 @@ export default function ExpertProfilePage() {
                     verificationLinks: next.links,
                   })
                 }
-                containerClassName="rounded-lg border border-gray-200 bg-white p-4"
-                labelClassName="block text-xs font-medium text-gray-700 mb-1"
-                inputClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                textareaClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                titleClassName="text-sm font-semibold text-gray-900"
-                descriptionClassName="mt-1 text-xs text-gray-500 mb-3"
+                containerClassName="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+                labelClassName="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-200"
+                inputClassName="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                textareaClassName="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                titleClassName="text-sm font-semibold text-gray-900 dark:text-slate-100"
+                descriptionClassName="mb-3 mt-1 text-xs text-gray-500 dark:text-slate-400"
               />
             </div>
             <div className="mt-4 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setVerificationModalOpen(false)}
-                className="rounded border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                className="rounded border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 Cancel
               </button>
