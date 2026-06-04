@@ -127,8 +127,8 @@ export default function TermsPage() {
         <H2>9. Contact</H2>
         <p className="mt-2 text-sm text-gray-700 dark:text-slate-200">
           For questions about these terms, contact us via{' '}
-          <Link href="/sponsors" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-200">
-            Sponsors / collaborate
+          <Link href="/campaigns" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-200">
+            Campaigns
           </Link>
           .
         </p>

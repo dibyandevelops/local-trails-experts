@@ -45,10 +45,10 @@ export default function DonatePage() {
               Support community fundraising
             </Link>
             <Link
-              href="/sponsors"
+              href="/campaigns"
               className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base"
             >
-              Sponsor / collaborate
+              Support campaigns
             </Link>
           </div>
         </div>
@@ -103,9 +103,9 @@ export default function DonatePage() {
 
           <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
             Want to support in-kind (tools, gloves, signage, water, first aid) or
-            sponsor a trail day?{' '}
-            <Link href="/sponsors" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-200">
-              Sponsor / collaborate →
+            support a trail day?{' '}
+            <Link href="/campaigns" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-200">
+              Support campaigns →
             </Link>
           </div>
         </div>

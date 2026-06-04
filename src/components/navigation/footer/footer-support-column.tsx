@@ -48,11 +48,6 @@ export default function FooterSupportColumn({
           </Link>
         </li>
         <li>
-          <Link className="hover:underline" href="/sponsors">
-            Sponsor the trail hub
-          </Link>
-        </li>
-        <li>
           <Link className="hover:underline" href="/donate">
             Contribute to trail fund
           </Link>

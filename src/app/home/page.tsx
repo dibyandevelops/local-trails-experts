@@ -5,7 +5,6 @@ import { COMMUNITY_NAME } from '@/lib/branding';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import { absoluteUrl, DEFAULT_DESCRIPTION } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
-// import PhoneVerifyToast from '@/components/phone-verify-toast';
 
 export const metadata: Metadata = {
   title: 'Best Site to View MTB Trails in Nepal',
@@ -37,6 +36,68 @@ export const metadata: Metadata = {
   },
 };
 
+const quickSearches = [
+  { label: 'Pharping', href: '/trails?search=pharping' },
+  { label: 'Enduro trails', href: '/trails?sport=mtb&search=enduro' },
+  { label: 'Beginner friendly', href: '/trails?difficulty=easy' },
+  { label: 'Near Kathmandu', href: '/trails?location=Kathmandu' },
+  { label: 'Trail builders', href: '/organizations' },
+];
+
+const featuredTrails = [
+  {
+    title: 'Ride Kathmandu Valley trails',
+    description: 'Search mapped routes around Kathmandu, Lalitpur, Bhaktapur, and nearby ridgelines.',
+    href: '/trails?location=Kathmandu',
+    meta: 'Local routes',
+  },
+  {
+    title: 'Find enduro-style rides',
+    description: 'Look for longer descents, technical sections, and trails built for serious MTB sessions.',
+    href: '/trails?search=enduro',
+    meta: 'MTB focus',
+  },
+  {
+    title: 'Start with easier routes',
+    description: 'Filter beginner-friendly options before moving into harder trails and expert-led rides.',
+    href: '/trails?difficulty=easy',
+    meta: 'New riders',
+  },
+];
+
+const discoveryPaths = [
+  {
+    title: 'Trails',
+    description: 'Search routes by place, difficulty, distance, and ride profile.',
+    href: '/trails',
+    cta: 'Browse trails',
+  },
+  {
+    title: 'Local Experts',
+    description: 'Find verified riders and guides who know local routes and conditions.',
+    href: '/experts',
+    cta: 'Browse experts',
+  },
+  {
+    title: 'Trail Builders',
+    description: 'See organizations building, maintaining, and supporting Nepal trails.',
+    href: '/organizations',
+    cta: 'View builders',
+  },
+  {
+    title: 'Campaigns',
+    description: 'Support active trail work, maintenance, and local riding infrastructure.',
+    href: '/campaigns',
+    cta: 'Support campaigns',
+  },
+];
+
+const planningSteps = [
+  'Search a trail or place.',
+  'Check route guide, map, difficulty, alerts, and services.',
+  'Request ride support or join an expert-led event.',
+];
+
 export default function Home() {
   const websiteJsonLd = jsonLdStringify({
     '@context': 'https://schema.org',
@@ -52,271 +113,258 @@ export default function Home() {
   });
 
   return (
-    <div className="space-y-12 md:space-y-12">
+    <div className="space-y-10 pb-8 md:space-y-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: websiteJsonLd }}
       />
-      {/* <PhoneVerifyToast /> */}
-      <section className="reveal reveal-1 relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-10 shadow-sm md:px-10 md:py-14">
+
+      <section className="reveal reveal-1 relative overflow-hidden rounded-[2rem] border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-8 shadow-sm md:px-10 md:py-12 lg:px-12">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-hero-glow/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-hero-glow/30 blur-3xl" />
-        <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,rgba(16,185,129,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.08)_1px,transparent_1px)] [background-size:72px_72px]" />
+        <div className="pointer-events-none absolute -bottom-28 -left-20 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-700/20" />
+        <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_1px_1px,rgba(16,185,129,0.16)_1px,transparent_0)] [background-size:34px_34px]" />
 
-        <div className="relative grid gap-8 md:grid-cols-[1.15fr_0.85fr] md:items-center">
-          <div className="text-left">
-            <div className="mb-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Nepal Trails
-              </span>
-              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Local Experts
-              </span>
-              {EXPERTS_BETA_ENABLED && (
-                <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                  For Experts ( Beta )
-                </span>
-              )}
-              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Community First
-              </span>
-              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-                Support Local Tourism
-              </span>
-            </div>
-            <h1 className="mb-4 text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl lg:text-6xl">
-              Find trails and local guides across Nepal.
-            </h1>
-            <p className="mb-6 max-w-xl text-base text-gray-600 dark:text-gray-300 md:text-lg">
-              Search by place, view clear trail details, and join rides with local experts.
-              We keep trail info simple, practical, and community-driven.
-            </p>
-            <div className="mb-6 flex flex-wrap gap-3">
-              <Link
-                href="/trails"
-                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-emerald-100 px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-300 transition hover:bg-emerald-200 dark:bg-emerald-400 dark:text-emerald-950 dark:ring-emerald-300 dark:hover:bg-emerald-300 md:text-base"
-              >
-                Browse Trails
-              </Link>
-              <Link
-                href="/experts"
-                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-green-700 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 md:text-base"
-              >
-                Browse Experts
-              </Link>
-              <Link
-                href="/store-locator"
-                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50 dark:bg-slate-900 dark:text-emerald-100 dark:ring-emerald-700/60 dark:hover:bg-emerald-950/30 md:text-base"
-              >
-                Cycle Hubs
-              </Link>
-              <JoinAdventureButton className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base" />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-emerald-200/70 bg-white/90 p-5 shadow-sm dark:border-emerald-900 dark:bg-slate-900/90">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                Start Here
-              </p>
-              <div className="mt-3 space-y-2 text-sm text-gray-700 dark:text-gray-200">
-                <div className="flex items-start gap-2">
-                  <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
-                  Browse trails with distance, climb, and difficulty.
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
-                  Join group rides or training events.
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-2 h-2 w-2 rounded-full bg-green-600" />
-                  Request a custom ride with a local expert.
-                </div>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-green-900 to-emerald-950 p-5 text-white shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
-                Built for experts
-              </p>
-              {EXPERTS_BETA_ENABLED && (
-                <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-200">
-                  Beta feature: workflows may change.
-                </p>
-              )}
-              <h3 className="mt-3 text-lg font-semibold">
-                Turn your local trail knowledge into events.
-              </h3>
-              <p className="mt-2 text-sm text-emerald-100">
-                Create rides, organize training sessions, and grow your local community.
-              </p>
-              <Link
-                href="/experts/join"
-                className="mt-4 inline-flex text-sm font-semibold text-emerald-100 underline-offset-4 hover:underline"
-              >
-                Start your expert application →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="reveal reveal-2 grid gap-12">
-        <div className="reveal reveal-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-            Riders & Adventurers
-          </span>
-          <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Find a trail that fits your level.
-          </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            See the key details first, then decide where to ride.
-          </p>
-          <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              MTB and mixed-surface routes across Nepal.
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Community-led rides in local areas.
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Training and skill-based rides.
-            </div>
-          </div>
-          <Link
-            href="/experts"
-            className="mt-5 inline-flex text-sm font-semibold text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-300"
-          >
-            Browse experts →
-          </Link>
-        </div>
-
-        <div className="reveal reveal-4 rounded-2xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm">
-          <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
-            Cycle Hubs & Support
-          </span>
-          <h2 className="mt-3 text-lg font-semibold">
-            Find bike shops, service points, and ride support.
-          </h2>
-          <p className="mt-2 text-sm text-emerald-100">
-            Use Cycle Hubs to locate repairs, parts, and pre-ride help.
-          </p>
-          <div className="mt-4 space-y-2 text-sm text-emerald-100">
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              Map-based shop listings with directions.
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              Community listings with admin review.
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-200" />
-              Simple form for stores to join.
-            </div>
-          </div>
-          <Link
-            href="/store-locator"
-            className="mt-4 inline-flex text-sm font-semibold text-emerald-100 underline-offset-4 hover:underline"
-          >
-            Browse cycle hubs →
-          </Link>
-        </div>
-
-        <div className="reveal reveal-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-            Nepal Focus
-          </span>
-          <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            One place for trails, rides, and local guidance.
-          </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Built for Nepal riders who want clear trail information without extra noise.
-          </p>
-          <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Filter by place, category, and difficulty.
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Check distance, climb, and map quickly.
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500" />
-              Join rides and manage booking in one flow.
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-
-      <section className="reveal reveal-7 flex flex-col items-center justify-between gap-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:flex-row md:p-10">
-        <div>
-          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-            Training & Performance
-          </span>
-          <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Training rides with local coaches.
-          </h2>
-          <p className="mt-3 max-w-xl text-sm text-gray-600 dark:text-gray-300">
-            Join skill rides, endurance sessions, and guided practice rides.
-          </p>
-          <Link
-            href="/events?sport=training"
-            className="mt-5 inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-800"
-          >
-            See training events
-          </Link>
-        </div>
-        <div className="max-w-xs rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-500 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-400">
-          We are continuously improving safety updates, route quality, and ride planning tools.
-        </div>
-      </section>
-
-      <section className="reveal reveal-6 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:p-10">
-        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div>
-            <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-              Project Purpose
+        <div className="relative mx-auto max-w-5xl text-center">
+          <div className="mb-5 flex flex-wrap justify-center gap-2">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Nepal Trail Search
             </span>
-            <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Why this platform exists
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-              We help riders find trails, help experts run rides, and keep the platform running
-              with sponsor and community support.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href="/sponsors"
-                className="inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-800"
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Experts
+            </span>
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              Trail Builders
+            </span>
+            {EXPERTS_BETA_ENABLED && (
+              <span className="rounded-full border border-amber-200 bg-amber-50/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                Expert beta
+              </span>
+            )}
+          </div>
+
+          <h1 className="text-balance text-4xl font-black leading-tight text-gray-950 dark:text-gray-100 md:text-6xl lg:text-7xl">
+            Find trails, experts, and ride support in Nepal.
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-gray-600 dark:text-gray-300 md:text-lg">
+            Search by trail, place, builder, or riding style. Open route maps, check safety context,
+            and connect with local experts when you need support.
+          </p>
+
+          <form
+            action="/trails"
+            method="get"
+            className="mx-auto mt-7 max-w-3xl rounded-2xl border border-white/80 bg-white/90 p-2 shadow-lg shadow-emerald-950/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90"
+          >
+            <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+              <label htmlFor="home-trail-search" className="sr-only">
+                Search trails
+              </label>
+              <input
+                id="home-trail-search"
+                name="search"
+                type="search"
+                placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
+                className="min-h-[54px] w-full rounded-xl border border-transparent bg-transparent px-4 text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 focus:border-emerald-300 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
+              <button
+                type="submit"
+                className="min-h-[54px] rounded-xl bg-green-700 px-7 text-sm font-bold text-white transition hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
               >
-                Sponsor the platform
-              </Link>
-              <Link
-                href="/donate"
-                className="inline-flex items-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30"
-              >
-                Contribute to community
-              </Link>
-              <Link
-                href="/purpose"
-                className="inline-flex items-center rounded-full border border-emerald-300 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm transition-colors hover:bg-emerald-50 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/30"
-              >
-                Read full purpose
-              </Link>
+                Search trails
+              </button>
             </div>
+          </form>
+
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            {quickSearches.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/80 dark:text-emerald-100 dark:hover:bg-emerald-950/40"
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
-          <div className="w-full max-w-sm rounded-xl border border-emerald-200 bg-white/80 p-4 text-xs text-gray-600 shadow-sm dark:border-emerald-900 dark:bg-slate-900/80 dark:text-gray-300">
-            <p className="font-semibold text-gray-900 dark:text-gray-100">Built by {COMMUNITY_NAME}</p>
-            <p className="mt-2">
-              Local experts, riders, stores, and supporters working together to keep Nepal trails active and easier to discover.
+        </div>
+      </section>
+
+      <section className="reveal reveal-2 grid gap-4 md:grid-cols-3">
+        {featuredTrails.map((trail, index) => (
+          <Link
+            key={trail.title}
+            href={trail.href}
+            className={`group relative min-h-[230px] overflow-hidden rounded-3xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${
+              index === 1
+                ? 'border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 text-white'
+                : 'border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900'
+            }`}
+          >
+            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-emerald-300/30 blur-2xl" />
+            <div className="relative flex h-full flex-col justify-between">
+              <div>
+                <span
+                  className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                    index === 1
+                      ? 'bg-white/10 text-emerald-100'
+                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200'
+                  }`}
+                >
+                  {trail.meta}
+                </span>
+                <h2
+                  className={`mt-4 text-xl font-bold ${
+                    index === 1 ? 'text-white' : 'text-gray-950 dark:text-white'
+                  }`}
+                >
+                  {trail.title}
+                </h2>
+                <p
+                  className={`mt-2 text-sm leading-6 ${
+                    index === 1 ? 'text-emerald-100' : 'text-gray-600 dark:text-slate-300'
+                  }`}
+                >
+                  {trail.description}
+                </p>
+              </div>
+              <span
+                className={`mt-6 text-sm font-semibold ${
+                  index === 1 ? 'text-emerald-100' : 'text-emerald-700 dark:text-emerald-300'
+                }`}
+              >
+                Explore now →
+              </span>
+            </div>
+          </Link>
+        ))}
+      </section>
+
+      <section className="reveal reveal-3 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:p-7">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+              Discover
+            </span>
+            <h2 className="mt-3 text-2xl font-bold text-gray-950 dark:text-white">
+              Choose what you need today
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
+              The homepage should work like a launchpad: search trails first, then move into expert
+              support, builders, campaigns, and ride infrastructure.
             </p>
           </div>
+          <JoinAdventureButton className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30" />
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {discoveryPaths.map((path) => (
+            <Link
+              key={path.title}
+              href={path.href}
+              className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-emerald-800 dark:hover:bg-slate-950"
+            >
+              <h3 className="text-base font-bold text-gray-950 dark:text-white">{path.title}</h3>
+              <p className="mt-2 min-h-[66px] text-sm leading-6 text-gray-600 dark:text-slate-300">
+                {path.description}
+              </p>
+              <span className="mt-4 inline-flex text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                {path.cta} →
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="reveal reveal-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-3xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm md:p-7">
+          <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
+            Plan better
+          </span>
+          <h2 className="mt-4 text-2xl font-bold">From search to ride plan.</h2>
+          <div className="mt-5 space-y-4">
+            {planningSteps.map((step, index) => (
+              <div key={step} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-300 text-xs font-black text-emerald-950">
+                  {index + 1}
+                </span>
+                <p className="text-sm leading-6 text-emerald-100">{step}</p>
+              </div>
+            ))}
+          </div>
+          <Link
+            href="/trails"
+            className="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-bold text-emerald-950 transition hover:bg-emerald-50"
+          >
+            Start with trails
+          </Link>
+        </div>
+
+        <div className="rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:p-7">
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+            Community infrastructure
+          </span>
+          <h2 className="mt-4 text-2xl font-bold text-gray-950 dark:text-white">
+            Trails need more than maps.
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
+            LocoXperts connects route information with experts, trail builders, campaigns,
+            services, and cycle hubs so riders can make better decisions before they go.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <Link
+              href="/store-locator"
+              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-100"
+            >
+              Find cycle hubs →
+            </Link>
+            <Link
+              href="/events"
+              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-100"
+            >
+              Join ride events →
+            </Link>
+            <Link
+              href="/campaigns"
+              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-100"
+            >
+              Support campaigns →
+            </Link>
+            <Link
+              href="/purpose"
+              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-100"
+            >
+              Read our purpose →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="reveal reveal-5 flex flex-col gap-5 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:flex-row md:items-center md:justify-between md:p-8">
+        <div>
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+            Built by {COMMUNITY_NAME}
+          </span>
+          <h2 className="mt-3 text-2xl font-bold text-gray-950 dark:text-white">
+            Know a trail or run local rides?
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
+            Help grow the trail network by adding routes, running events, sharing local knowledge,
+            or supporting campaign work.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/upload"
+            className="inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800"
+          >
+            Add a trail
+          </Link>
+          <Link
+            href="/experts/join"
+            className="inline-flex items-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30"
+          >
+            Join as expert
+          </Link>
         </div>
       </section>
     </div>

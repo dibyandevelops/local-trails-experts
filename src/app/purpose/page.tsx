@@ -222,10 +222,10 @@ export default async function PurposePage() {
           </div>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/sponsors"
+              href="/campaigns"
               className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-green-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800"
             >
-              Sponsor a trail
+              Support active campaigns
             </Link>
             <Link
               href="/donate"
@@ -266,10 +266,10 @@ export default async function PurposePage() {
               Meet local experts
             </Link>
             <Link
-              href="/sponsors"
+              href="/campaigns"
               className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-emerald-300 px-6 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-100 dark:hover:bg-emerald-950/40"
             >
-              Sponsor / collaborate
+              Support campaigns
             </Link>
           </div>
         </div>
