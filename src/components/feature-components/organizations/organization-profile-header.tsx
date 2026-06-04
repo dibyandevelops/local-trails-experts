@@ -44,7 +44,7 @@ export default function OrganizationProfileHeader({
               {organization.trail_count || 0} trails
             </span>
             <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              {organization.member_count || 0} members
+              {organization.member_count || 0} team
             </span>
             {organization.website_url && (
               <a
