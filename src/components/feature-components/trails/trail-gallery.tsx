@@ -71,7 +71,7 @@ export function TrailGallery({
           return (
             <div
               key={trail.id}
-              className="group rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 dark:border-slate-800 dark:bg-slate-900/70"
+              className="group rounded-2xl border border-gray-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 dark:border-emerald-900/45 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/15 dark:to-slate-900 dark:hover:border-emerald-700/70"
             >
               <Link
                 href={`/trails/${trail.slug || trail.id}`}
@@ -83,7 +83,7 @@ export function TrailGallery({
                   <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900 dark:text-white">
                     {trail.name}
                   </p>
-                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
                     {getDifficultyLabel(trail.difficulty)}
                   </span>
                 </div>
@@ -91,12 +91,12 @@ export function TrailGallery({
                   {trail.location || 'Nepal'}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-900/80 dark:text-slate-200">
                     {Number.isFinite(distanceKm) && distanceKm > 0
                       ? `${distanceKm.toFixed(1)} km`
                       : 'Distance -'}
                   </span>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-900/80 dark:text-slate-200">
                     {Number.isFinite(elevationM) && elevationM > 0
                       ? `${elevationM} m`
                       : 'Elevation -'}
@@ -112,7 +112,7 @@ export function TrailGallery({
                     </span>
                   )}
                   {(trail.associated_expert_count || 0) > 0 && (
-                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-700">
+                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-700 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
                       Expert
                     </span>
                   )}

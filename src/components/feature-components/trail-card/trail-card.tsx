@@ -261,7 +261,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
   return (
     <article
-      className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-green-500 dark:border-slate-800 dark:bg-slate-900"
+      className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:border-emerald-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-green-500 dark:border-emerald-900/45 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/15 dark:to-slate-900 dark:hover:border-emerald-700/70"
       aria-label={trail.name}
     >
       <Link
@@ -275,7 +275,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
 
       <div className="relative p-4 pb-0">
         {primaryImage ? (
-          <div className="relative h-52 w-full overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-900">
+          <div className="relative h-52 w-full overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-950">
             <Image
               src={primaryImage}
               alt={trail.name}

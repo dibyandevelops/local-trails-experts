@@ -7,14 +7,14 @@ type TrailViewToggleProps = {
 
 export function TrailViewToggle({ value, onChange }: TrailViewToggleProps) {
   return (
-    <div className="inline-flex items-center rounded-full border border-gray-300 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="inline-flex items-center rounded-full border border-emerald-200 bg-white/80 p-1 shadow-sm dark:border-emerald-800/60 dark:bg-slate-950/70">
       <button
         type="button"
         onClick={() => onChange('grid')}
         className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
           value === 'grid'
-            ? 'bg-emerald-600 text-white'
-            : 'text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800'
+            ? 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-emerald-950'
+            : 'text-gray-700 hover:bg-emerald-50 dark:text-slate-200 dark:hover:bg-emerald-950/40'
         }`}
       >
         Default view
@@ -24,8 +24,8 @@ export function TrailViewToggle({ value, onChange }: TrailViewToggleProps) {
         onClick={() => onChange('quick')}
         className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
           value === 'quick'
-            ? 'bg-emerald-600 text-white'
-            : 'text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800'
+            ? 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-emerald-950'
+            : 'text-gray-700 hover:bg-emerald-50 dark:text-slate-200 dark:hover:bg-emerald-950/40'
         }`}
       >
         Quick view

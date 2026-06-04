@@ -632,31 +632,30 @@ function TrailsPageContent() {
   };
 
   return (
-    <div>
-      <div className="mb-6 rounded-2xl border border-emerald-200/70 bg-white/90 p-5 shadow-sm dark:border-emerald-900/60 dark:bg-slate-950/70">
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/35 dark:to-lime-950/20 sm:p-6">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-emerald-300/25 blur-3xl dark:bg-emerald-400/10" />
+        <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-lime-300/20 blur-3xl dark:bg-lime-400/10" />
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+          <div className="relative">
             <div className="flex items-center gap-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                Trail Guide
+                Nepal Trail Guide
               </p>
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-                Nepal
-              </span>
             </div>
-            <h1 className="mt-2 text-3xl font-bold text-green-800 dark:text-green-200">
-              Find a Trail
+            <h1 className="mt-2 text-3xl font-black text-gray-950 dark:text-slate-50 sm:text-4xl">
+              Find your next trail
             </h1>
-            <p className="mt-2 max-w-xl text-sm text-gray-600 dark:text-slate-300">
-              Pick a place, open a trail, and ride with confidence.
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
+              Search mapped routes, compare distance and difficulty, then open the trail details for maps, alerts, support, and local context.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex flex-wrap items-center gap-2">
             <TrailViewToggle value={viewMode} onChange={setViewMode} />
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-900 shadow-sm hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-700/60 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:bg-emerald-900/45"
             >
               Filters
               {activeFilterCount > 0 && (
@@ -669,14 +668,14 @@ function TrailsPageContent() {
               <button
                 type="button"
                 onClick={() => router.push('/upload')}
-                className="rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-green-700"
+                className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
               >
                 Create Trail
               </button>
             )}
           </div>
         </div>
-        <form className="mt-4" onSubmit={handleSearch}>
+        <form className="relative mt-5" onSubmit={handleSearch}>
           <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
             <div className="min-w-0">
               <label htmlFor="trails-search" className="sr-only">
@@ -687,20 +686,20 @@ function TrailsPageContent() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search by trail or place"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition focus:ring-2 focus:ring-green-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-emerald-400"
+                placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
+                className="w-full rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700/50 dark:bg-slate-950/75 dark:text-slate-50 dark:placeholder:text-emerald-100/40 dark:focus:border-emerald-500/70"
               />
             </div>
             <button
               type="submit"
-              className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
+              className="rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
             >
               Search
             </button>
           </div>
         </form>
         {hasActiveFilters && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="relative mt-4 flex flex-wrap items-center gap-2">
             {search && (
               <TrailFilterChip
                 tone="green"
@@ -773,26 +772,32 @@ function TrailsPageContent() {
                 Max distance: {distanceMax} km
               </TrailFilterChip>
             )}
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="rounded-full border border-gray-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-white dark:border-emerald-800/60 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-emerald-950/30"
+            >
+              Clear all
+            </button>
           </div>
         )}
       </div>
 
       <Dialog.Root open={filtersOpen} onOpenChange={setFiltersOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-950">
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[94vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-emerald-900/60 dark:bg-slate-950 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+                <Dialog.Title className="text-lg font-semibold text-gray-950 dark:text-slate-50">
                   Filter trails
                 </Dialog.Title>
                 <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                  Narrow results by difficulty, location, sport type, and
-                  distance.
+                  Narrow results by difficulty, location, sport, distance, and ride profile.
                 </p>
               </div>
-              <Dialog.Close className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
-                Close
+              <Dialog.Close className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">
+                ✕
               </Dialog.Close>
             </div>
             <form
@@ -817,7 +822,7 @@ function TrailsPageContent() {
                   onChange={(e) =>
                     setDraftDifficulty(e.target.value as Difficulty | '')
                   }
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   <option value="">All</option>
                   {TRAIL_DIFFICULTY_OPTIONS.map((option) => (
@@ -840,7 +845,7 @@ function TrailsPageContent() {
                   value={locationInput}
                   onChange={(e) => setLocationInput(e.target.value)}
                   placeholder="City or region..."
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
@@ -857,7 +862,7 @@ function TrailsPageContent() {
                   value={distanceMinInput}
                   onChange={(e) => setDistanceMinInput(e.target.value)}
                   placeholder="e.g. 10"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
@@ -874,7 +879,7 @@ function TrailsPageContent() {
                   value={distanceMaxInput}
                   onChange={(e) => setDistanceMaxInput(e.target.value)}
                   placeholder="e.g. 40"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
@@ -888,7 +893,7 @@ function TrailsPageContent() {
                   id="trails-sport-modal"
                   value={draftSport}
                   onChange={(event) => setDraftSport(event.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   <option value="">All categories</option>
                   {TRAIL_SPORTS.map((option) => (
@@ -911,7 +916,7 @@ function TrailsPageContent() {
                   onChange={(event) =>
                     setDraftSort(event.target.value as TrailSort)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   {TRAIL_SORT_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -933,7 +938,7 @@ function TrailsPageContent() {
                   onChange={(event) =>
                     setDraftRideProfile(event.target.value as RideProfile)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   {RIDE_PROFILE_QUICK_FILTERS.map((option) => (
                     <option
@@ -948,14 +953,14 @@ function TrailsPageContent() {
               <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
                 <button
                   type="submit"
-                  className="w-full rounded-lg bg-green-600 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 sm:w-auto"
+                  className="w-full rounded-2xl bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300 sm:w-auto"
                 >
                   Apply filters
                 </button>
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="w-full rounded-2xl border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
                 >
                   Reset all
                 </button>
@@ -967,7 +972,7 @@ function TrailsPageContent() {
 
       {isRefreshingResults && (
         <div
-          className="mb-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600"
+          className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200"
           role="status"
           aria-live="polite"
         >
@@ -992,19 +997,19 @@ function TrailsPageContent() {
           <TrailsPageSkeleton viewMode={viewMode} />
         </>
       ) : hasInitialError ? (
-        <div className="text-center py-12">
-          <p className="text-red-600">{(error as Error).message}</p>
+        <div className="rounded-3xl border border-red-200 bg-red-50 px-5 py-10 text-center dark:border-red-900/60 dark:bg-red-950/25">
+          <p className="text-sm font-semibold text-red-700 dark:text-red-200">{(error as Error).message}</p>
         </div>
       ) : trails.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600">
+        <div className="rounded-3xl border border-gray-200 bg-white px-5 py-12 text-center shadow-sm dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/20 dark:to-slate-900">
+          <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">
             No trails found. Try adjusting your search criteria.
           </p>
           {hasActiveFilters && (
             <button
               type="button"
               onClick={resetFilters}
-              className="mt-4 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              className="mt-4 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:bg-emerald-900/45"
             >
               Clear filters
             </button>
@@ -1105,86 +1110,20 @@ function TrailsPageContent() {
             </>
           )}
           {pagination && (
-            <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3 sm:flex-row">
-              <p className="text-sm text-gray-600">
+            <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white/80 p-3 dark:border-emerald-900/50 dark:bg-slate-950/60 sm:flex-row">
+              <p className="text-sm text-gray-600 dark:text-slate-300">
                 Showing {trails.length} of {pagination.total} trails
               </p>
             </div>
           )}
           <div ref={loadMoreRef} className="h-2 w-full" aria-hidden="true" />
           {requestFeedback && (
-            <div className="mt-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+            <div className="mt-3 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
               {requestFeedback}
             </div>
           )}
         </>
       )}
-
-      <div className="mt-10 grid gap-4 md:grid-cols-2">
-        {user?.role !== 'expert' && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-200">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                  <path d="M12 3l4 7-4 11-4-11 4-7z" fill="currentColor" />
-                </svg>
-              </span>
-              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
-                For Participants
-              </p>
-            </div>
-            <p>
-              Discover local trails with safety tags, distance, and difficulty.
-              Request a guided outing from verified experts when you&apos;re
-              ready.
-            </p>
-            <button
-              type="button"
-              onClick={() => router.push('/events')}
-              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-            >
-              Explore events
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
-        )}
-        {user?.role !== 'participant' && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                  <path
-                    d="M4 12h16M12 4v16"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300">
-                For Experts
-              </p>
-              {EXPERTS_BETA_ENABLED && (
-                <span className="rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                  Beta
-                </span>
-              )}
-            </div>
-            <p>
-              Publish your best trails, manage safety labels, and showcase
-              routes that help your community discover guided experiences.
-            </p>
-            <button
-              type="button"
-              onClick={() => router.push('/upload')}
-              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-            >
-              Create a trail
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
-        )}
-      </div>
 
       <Dialog.Root
         open={mapOpen}
