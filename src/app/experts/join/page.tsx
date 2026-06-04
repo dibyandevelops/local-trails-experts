@@ -115,102 +115,52 @@ export default function ExpertJoinPage() {
     }
   };
 
+  const inputClass =
+    'w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
+  const labelClass = 'block text-sm font-semibold text-gray-800 dark:text-slate-100';
+  const helperClass = 'mt-1 text-xs text-gray-500 dark:text-slate-400';
+
   return (
-    <div className="max-w-4xl mx-auto space-y-10">
-      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-6 py-8 shadow-sm">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-hero-glow/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-20 h-56 w-56 rounded-full bg-hero-glow/30 blur-3xl" />
-        <div className="relative text-left">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-6 dark:border-emerald-800/50 dark:from-slate-950 dark:via-slate-950 dark:to-emerald-950/40 sm:px-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-emerald-300/25 blur-3xl" />
+        <div className="relative max-w-3xl">
           <div className="mb-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-              For Experts
+            <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+              Local Experts
             </span>
             {EXPERTS_BETA_ENABLED && (
-              <span className="rounded-full border border-amber-300/80 bg-amber-100/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800">
+              <span className="rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
                 Beta
               </span>
             )}
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-              Nepal
-            </span>
           </div>
-          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
-            Apply as a Local Expert
+          <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
+            Apply as a local trail expert
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300 sm:text-base">
-            Share your local trail knowledge and host rides or training sessions.
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
+            Create an expert profile for guiding, coaching, route advice, and hosted rides around Nepal.
           </p>
-          {EXPERTS_BETA_ENABLED && (
-            <p className="mt-2 max-w-2xl text-xs font-medium text-amber-700 dark:text-amber-300">
-              Beta feature: workflows may change.
-            </p>
-          )}
         </div>
       </section>
 
-      <section className="grid md:grid-cols-2 gap-8">
-        <div className="rounded-2xl border border-hero-border/70 bg-white/90 p-6 shadow-sm dark:bg-slate-900/80">
-          <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">
-            Why apply for a <span className="text-hero-pill-text">Verified badge</span>?
-          </h2>
-          <ul className="space-y-3 text-sm text-gray-700 dark:text-slate-200">
-            <li className="flex gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
-              <span>Show up clearly in expert search results.</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
-              <span>Build trust with riders and visitors.</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-hero-pill-text" />
-              <span>Get access to expert features as they roll out.</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="rounded-2xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm">
+      <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 sm:p-6"
+        >
           <div>
-            <h3 className="text-xl font-semibold mb-3">Who is this for?</h3>
-            <p className="text-sm text-green-100 mb-4">
-              This is for local guides and coaches who:
+            <h2 className="text-xl font-bold text-gray-950 dark:text-slate-50">
+              Expert signup
+            </h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+              Fill in the essentials now. Verification details can be completed after signup.
             </p>
-            <ul className="space-y-2 text-sm text-green-100">
-              <li>• Know local trails and weather conditions</li>
-              <li>• Have guiding, coaching, or riding experience</li>
-              <li>• Want to host rides or training sessions</li>
-            </ul>
           </div>
-          <p className="mt-6 text-xs text-green-200">
-            Start with this form. We may ask for extra details before approval.
-          </p>
-        </div>
-      </section>
 
-      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Quick Expert Signup
-          {EXPERTS_BETA_ENABLED && (
-            <span className="ml-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
-              Beta
-            </span>
-          )}
-        </h2>
-        <p className="text-sm text-gray-600 mb-6">
-          Create your account in under a minute. You can complete verification details from your profile after signup.
-        </p>
-        {EXPERTS_BETA_ENABLED && (
-          <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Experts onboarding is currently in beta. Applications are open, and review timelines may vary.
-          </div>
-        )}
-        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-          After signup, we will request a few additional verification details in your profile before approval.
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={labelClass}>
                 Full Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -218,12 +168,12 @@ export default function ExpertJoinPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={`${inputClass} mt-1`}
                 placeholder="e.g., Suman Gurung"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={labelClass}>
                 Email <span className="text-red-500">*</span>
               </label>
               <input
@@ -231,94 +181,90 @@ export default function ExpertJoinPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={`${inputClass} mt-1`}
                 placeholder="you@example.com"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone number <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="+9779812345678"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Use international format (e.g., +977...).
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Min 8 characters with a number"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Must be at least 8 characters and include a number.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Home Base City
+              <label className={labelClass}>
+                Phone number <span className="text-red-500">*</span>
               </label>
+              <input
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={`${inputClass} mt-1`}
+                placeholder="+9779812345678"
+              />
+              <p className={helperClass}>Use international format, e.g. +977...</p>
+            </div>
+            <div>
+              <label className={labelClass}>
+                Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`${inputClass} mt-1`}
+                placeholder="Min 8 characters with a number"
+              />
+              <p className={helperClass}>At least 8 characters and one number.</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className={labelClass}>Home base city</label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="e.g., your city in Nepal"
+                className={`${inputClass} mt-1`}
+                placeholder="e.g., Kathmandu"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sports you guide or coach
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {TRAIL_SPORTS.map((sport) => (
-                  <button
-                    key={sport.value}
-                    type="button"
-                    onClick={() => toggleSport(sport.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
-                      selectedSports.includes(sport.value)
-                        ? 'bg-green-600 text-white border-green-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
-                    }`}
-                  >
-                    {sport.label}
-                  </button>
-                ))}
+              <label className={labelClass}>Sports you guide or coach</label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {TRAIL_SPORTS.map((sport) => {
+                  const selected = selectedSports.includes(sport.value);
+                  return (
+                    <button
+                      key={sport.value}
+                      type="button"
+                      onClick={() => toggleSport(sport.value)}
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                        selected
+                          ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-slate-950'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-emerald-500'
+                      }`}
+                    >
+                      {sport.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
 
           <div>
             <div className="mb-1 flex items-center justify-between gap-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className={labelClass}>
                 Bio <span className="text-red-500">*</span>
               </label>
               <button
                 type="button"
                 onClick={handleGenerateBio}
                 disabled={generatingBio}
-                className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-60"
+                className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-950"
               >
                 {generatingBio ? 'Generating...' : 'Generate with AI'}
               </button>
@@ -328,20 +274,18 @@ export default function ExpertJoinPage() {
               value={credentials}
               onChange={(e) => setCredentials(e.target.value)}
               rows={5}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Tell about yourself."
+              className={inputClass}
+              placeholder="Tell riders about your local trail knowledge, guiding experience, and riding style."
             />
           </div>
 
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
-            Certificates are optional. Real riding experience and local route knowledge are enough to get started.
-          </div>
-
           {errorMessage && (
-            <p className="text-sm text-red-600">{errorMessage}</p>
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+              {errorMessage}
+            </p>
           )}
 
-          <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200">
+          <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200">
             <input
               id="expert-accept-terms"
               type="checkbox"
@@ -351,34 +295,56 @@ export default function ExpertJoinPage() {
             />
             <label htmlFor="expert-accept-terms" className="text-xs leading-5">
               I agree to the{' '}
-              <a href="/terms" className="font-semibold text-green-700 hover:underline">
+              <a href="/terms" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
                 Terms &amp; Conditions
               </a>{' '}
               and{' '}
-              <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+              <a href="/privacy" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
                 Privacy Policy
               </a>
               .
             </label>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-green-700 text-white font-semibold text-sm shadow-sm hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-              {submitting ? 'Submitting...' : EXPERTS_BETA_ENABLED ? 'Submit Application (Beta)' : 'Submit Application'}
+              {submitting ? 'Submitting...' : 'Submit application'}
             </button>
-            <p className="text-xs text-gray-500 max-w-md">
-              Once registered, your profile and hosted events can display a
-              <span className="inline-flex items-center ml-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-semibold text-[11px]">
-                Verified Expert
-              </span>{' '}
-              badge to participants.
+            <p className="max-w-md text-xs text-gray-500 dark:text-slate-400">
+              After signup, continue verification from your expert profile.
             </p>
           </div>
         </form>
+
+        <aside className="space-y-4">
+          <div className="rounded-3xl border border-emerald-900/20 bg-emerald-950 p-5 text-white shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
+              Who this is for
+            </p>
+            <h2 className="mt-2 text-xl font-bold">Guides, coaches, and local riders</h2>
+            <ul className="mt-4 space-y-3 text-sm text-emerald-50">
+              <li>Know local trails, conditions, and route choices.</li>
+              <li>Can support riders with guided rides or training.</li>
+              <li>Want a verified profile for events and requests.</li>
+            </ul>
+          </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-200">
+            <h3 className="font-semibold text-gray-950 dark:text-slate-50">What happens next</h3>
+            <ol className="mt-3 space-y-2">
+              <li>1. Your expert account is created.</li>
+              <li>2. Add verification details from your profile.</li>
+              <li>3. Once approved, riders can discover and contact you.</li>
+            </ol>
+            <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+              Certificates are optional. Real riding experience and local route knowledge are enough to get started.
+            </p>
+          </div>
+        </aside>
       </section>
     </div>
   );
