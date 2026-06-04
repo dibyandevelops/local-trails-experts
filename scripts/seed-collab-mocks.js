@@ -155,6 +155,21 @@ const TBN_TRAIL_UPDATES = [
   },
 ];
 
+const CYCLE_HUBS = [
+  {
+    name: 'Epic Mountain Bike',
+    city: 'Lalitpur',
+    location: 'Sanepa / Jhamsikhel, Lalitpur, Nepal',
+    latitude: 27.67855,
+    longitude: 85.3104,
+    services:
+      'Mountain bike sales, workshop repairs, rentals, tours, parts, accessories, bike servicing pick-up and drop-off',
+    hours: 'Open daily, 8:00 AM - 7:00 PM',
+    phone: '+977 1-5455021',
+    website: 'https://epicmountainbike.com',
+  },
+];
+
 async function ensureUser(client, user) {
   const result = await client.query(
     `
@@ -239,6 +254,79 @@ async function ensureMember(client, organizationId, userId, role) {
 }
 
 // ensureTrail and ensureTrailAssociation removed - we use existing trail associations
+
+async function ensureCycleHub(client, store) {
+  const existing = await client.query(
+    `
+    SELECT id
+    FROM stores
+    WHERE lower(name) = lower($1)
+      AND lower(city) = lower($2)
+    LIMIT 1
+    `,
+    [store.name, store.city]
+  );
+
+  if (existing.rows.length) {
+    await client.query(
+      `
+      UPDATE stores
+      SET
+        location = $2,
+        latitude = $3,
+        longitude = $4,
+        services = $5,
+        hours = $6,
+        phone = $7,
+        website = $8,
+        is_active = TRUE,
+        updated_at = NOW()
+      WHERE id = $1
+      `,
+      [
+        existing.rows[0].id,
+        store.location,
+        store.latitude,
+        store.longitude,
+        store.services,
+        store.hours,
+        store.phone,
+        store.website,
+      ]
+    );
+    return false;
+  }
+
+  await client.query(
+    `
+    INSERT INTO stores (
+      name,
+      city,
+      location,
+      latitude,
+      longitude,
+      services,
+      hours,
+      phone,
+      website,
+      is_active
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE)
+    `,
+    [
+      store.name,
+      store.city,
+      store.location,
+      store.latitude,
+      store.longitude,
+      store.services,
+      store.hours,
+      store.phone,
+      store.website,
+    ]
+  );
+  return true;
+}
 
 async function ensureCampaign(client, organizationId, trailId, userId, campaign) {
   const existing = await client.query(
@@ -507,6 +595,11 @@ async function seedTrailBuildersNepal() {
         updateResults.push(await ensureTrailUpdate(client, trailId, organizationId, adminUserId, update));
       }
 
+      const cycleHubResults = [];
+      for (const store of CYCLE_HUBS) {
+        cycleHubResults.push(await ensureCycleHub(client, store));
+      }
+
       await client.query('COMMIT');
 
       console.log('Trail Builders Nepal seed completed successfully.');
@@ -516,6 +609,7 @@ async function seedTrailBuildersNepal() {
       console.log(`- Campaigns inserted: ${campaignResults.filter(Boolean).length}`);
       console.log(`- Services inserted: ${serviceResults.filter(Boolean).length}`);
       console.log(`- Trail updates inserted: ${updateResults.filter(Boolean).length}`);
+      console.log(`- Cycle hubs inserted: ${cycleHubResults.filter(Boolean).length}`);
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
