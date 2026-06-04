@@ -160,8 +160,8 @@ const CYCLE_HUBS = [
     name: 'Epic Mountain Bike',
     city: 'Lalitpur',
     location: 'Sanepa / Jhamsikhel, Lalitpur, Nepal',
-    latitude: 27.67855,
-    longitude: 85.3104,
+    latitude: 27.690299937452846,
+    longitude: 85.30528399125546,
     services:
       'Mountain bike sales, workshop repairs, rentals, tours, parts, accessories, bike servicing pick-up and drop-off',
     hours: 'Open daily, 8:00 AM - 7:00 PM',
