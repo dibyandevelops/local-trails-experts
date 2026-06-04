@@ -108,14 +108,14 @@ export default function ExpertProfilePage() {
     .map((value) => value.trim())
     .filter(Boolean);
   const sortedAvailableTrails = useMemo(() => {
-    const selected = new Set(selectedAssociatedTrailIds);
+    const savedAssociated = new Set(associatedTrails.map((trail) => trail.id));
     return [...availableTrails].sort((a, b) => {
-      const aSelected = selected.has(a.id);
-      const bSelected = selected.has(b.id);
-      if (aSelected !== bSelected) return aSelected ? -1 : 1;
+      const aSaved = savedAssociated.has(a.id);
+      const bSaved = savedAssociated.has(b.id);
+      if (aSaved !== bSaved) return aSaved ? -1 : 1;
       return a.name.localeCompare(b.name);
     });
-  }, [availableTrails, selectedAssociatedTrailIds]);
+  }, [associatedTrails, availableTrails]);
 
   const sportOptions: { value: SportType; label: string }[] = TRAIL_SPORTS;
   const { data: stravaSummary } = useQuery({
