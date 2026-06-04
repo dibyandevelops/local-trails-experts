@@ -12,17 +12,21 @@ import LoginModal from '@/components/auth/login-modal';
 import RegisterModal from '@/components/auth/register-modal';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
+  Bell,
   Bike,
   CalendarDays,
+  ChevronDown,
   CircleDollarSign,
   Dumbbell,
   House,
   Map,
   MapPinned,
+  Menu,
   PlusCircle,
   Sparkles,
   Store,
   Users,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
@@ -113,15 +117,28 @@ const getMobileNavIcon = (href: string) => {
   return <Icon className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />;
 };
 const icon = (
-  <Image
-    src="/icons/logo-transparent-source.png"
-    alt="LocoXperts logo"
-    width={220}
-    height={120}
-    className="h-12 w-[150px] shrink-0 object-contain object-left sm:h-14 sm:w-[170px]"
-    priority
-  />
+  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/95 p-1.5 shadow-sm ring-1 ring-white/60 sm:h-12 sm:w-12">
+    <Image
+      src="/icons/logo-transparent-source.png?v=20260604-lx"
+      alt="LocoXperts logo"
+      width={96}
+      height={96}
+      className="h-full w-full object-contain"
+      priority
+      unoptimized
+    />
+  </span>
 );
+
+const navButtonClass =
+  'inline-flex h-10 items-center rounded-full px-3 text-sm font-semibold transition-colors';
+const navButtonIdleClass = 'text-emerald-50/90 hover:bg-white/10 hover:text-white';
+const navButtonActiveClass = 'bg-white text-green-950 shadow-sm';
+const dropdownContentClass =
+  'z-30 flex w-60 flex-col gap-1 rounded-2xl border border-white/10 bg-emerald-950/95 p-2 text-sm text-white shadow-xl shadow-emerald-950/30 backdrop-blur';
+const dropdownItemClass =
+  'rounded-xl px-3 py-2 text-sm font-semibold outline-none transition-colors';
+const mobileItemClass = 'rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors';
 
 type NavbarProps = {
   initialUser?: User | null;
@@ -320,25 +337,30 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     'U';
 
   return (
-    <nav className="sticky top-0 z-30 border-b border-emerald-900/20 bg-gradient-to-r from-emerald-950 via-green-900 to-emerald-900 text-white shadow-sm backdrop-blur">
+    <nav className="sticky top-0 z-30 border-b border-white/10 bg-emerald-950/95 text-white shadow-sm shadow-emerald-950/20 backdrop-blur supports-[backdrop-filter]:bg-emerald-950/80">
       <div className="container mx-auto px-4 py-2">
-        <div className="flex min-h-[58px] items-center justify-between gap-4">
+        <div className="flex min-h-[58px] items-center justify-between gap-3">
           <Link
             href="/home"
-            className="inline-flex items-center gap-2 rounded-2xl px-1 py-1 text-2xl font-bold leading-none transition-opacity hover:opacity-95"
+            className="inline-flex items-center gap-2 rounded-2xl py-1 pr-2 transition-opacity hover:opacity-95"
+            aria-label="Go to LocoXperts home"
           >
             {icon}
+            <span className="hidden text-sm font-black uppercase tracking-[0.22em] text-emerald-50 sm:inline">
+              LocoXperts
+            </span>
           </Link>
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/50 bg-white/10 shadow-sm hover:bg-white/15 lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-sm transition-colors hover:bg-white/15 lg:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle navigation"
+            aria-expanded={mobileOpen}
           >
-            {mobileOpen ? '✕' : '☰'}
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
-          <div className="hidden items-center gap-1.5 lg:flex">
+          <div className="hidden items-center gap-1 lg:flex">
             {navItems.map((item) =>
               canSeeItem(item) ? (() => {
                 const itemActive = isNavItemActive(item.href);
@@ -346,13 +368,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`inline-flex h-10 items-center rounded-full px-3 py-1 text-sm font-semibold transition-all ${
-                      itemActive
-                        ? 'bg-white text-green-900 shadow-sm'
-                        : 'text-emerald-50/90 hover:bg-white/10 hover:text-white'
-                    }`}
+                    className={`${navButtonClass} ${itemActive ? navButtonActiveClass : navButtonIdleClass}`}
                   >
-                    <span className="truncate max-w-[140px]">{getNavLabel(item)}</span>
+                    <span className="max-w-[140px] truncate">{getNavLabel(item)}</span>
                     {item.badge && (
                       <span
                         className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
@@ -382,10 +400,8 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     <DropdownMenu.Trigger asChild>
                       <button
                         type="button"
-                        className={`inline-flex h-10 items-center gap-1 rounded-xl px-3 py-1 text-sm font-semibold transition-all ${
-                          groupActive
-                            ? 'bg-white text-green-900 shadow-sm'
-                            : 'text-emerald-50/90 hover:bg-white/10 hover:text-white'
+                        className={`${navButtonClass} gap-1.5 ${
+                          groupActive ? navButtonActiveClass : navButtonIdleClass
                         }`}
                         aria-label={`${group.label} menu`}
                         onPointerMove={() => {
@@ -401,15 +417,15 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                           }, 120);
                         }}
                       >
-                        <span className="truncate max-w-[140px]">{group.label}</span>
-                        <span className="text-xs">▾</span>
+                        <span className="max-w-[140px] truncate">{group.label}</span>
+                        <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
                     </DropdownMenu.Trigger>
                     <DropdownMenu.Portal>
                       <DropdownMenu.Content
                         sideOffset={8}
                         align="start"
-                        className="z-30 flex w-56 flex-col gap-1 rounded-2xl border border-emerald-700/50 bg-emerald-950/95 p-2 text-sm text-white shadow-xl backdrop-blur"
+                        className={dropdownContentClass}
                         onPointerEnter={() => {
                           if (hoverCloseTimeout.current) {
                             clearTimeout(hoverCloseTimeout.current);
@@ -428,9 +444,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                             <DropdownMenu.Item asChild key={item.href}>
                               <Link
                                 href={item.href}
-                                className={`block rounded-lg px-3 py-2 text-sm font-semibold outline-none transition ${
+                                className={`block ${dropdownItemClass} ${
                                   itemActive
-                                    ? 'bg-white text-green-900'
+                                    ? 'bg-white text-green-950'
                                     : 'text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10'
                                 }`}
                               >
@@ -467,22 +483,22 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setRegisterNext(null);
                   setRegisterOpen(true);
                 }}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-amber-300/70 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/30"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-lime-300/60 bg-lime-300/15 px-3 text-sm font-semibold text-lime-100 transition-colors hover:bg-lime-300/25"
               >
                 Join
               </button>
             )}
-            <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-full border border-emerald-400/50 bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/15" />
+            <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 text-sm font-semibold transition-colors hover:bg-white/15" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
-                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full border border-emerald-400/50 bg-white/10 leading-none hover:bg-white/15"
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full border border-white/15 bg-white/10 leading-none transition-colors hover:bg-white/15"
                 aria-label="View expert alerts"
                 title="View trail request alerts"
               >
-                <span className="text-sm" aria-hidden="true">🔔</span>
+                <Bell className="h-4 w-4" aria-hidden="true" />
                 {(alertsData?.unreadCount || 0) > 0 && (
-                  <span className="absolute -right-1 -top-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-green-900">
+                  <span className="absolute -right-1 -top-1 rounded-full bg-lime-300 px-1.5 py-0.5 text-[10px] font-bold text-green-950">
                     {alertsData?.unreadCount}
                   </span>
                 )}
@@ -497,7 +513,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setLoginNext(null);
                   setLoginOpen(true);
                 }}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-green-900 hover:bg-emerald-50"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-sm font-semibold text-green-950 transition-colors hover:bg-emerald-50"
               >
                 Login
               </button>
@@ -508,7 +524,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <DropdownMenu.Trigger asChild>
                   <button
                     type="button"
-                    className="ml-1 inline-flex h-10 w-10 shrink-0 items-center justify-center self-center overflow-hidden rounded-full border border-emerald-400/50 bg-white/10 align-middle text-sm font-semibold uppercase leading-none hover:bg-white/15"
+                    className="ml-1 inline-flex h-10 w-10 shrink-0 items-center justify-center self-center overflow-hidden rounded-full border border-white/15 bg-white/10 align-middle text-sm font-semibold uppercase leading-none transition-colors hover:bg-white/15"
                     aria-label="User menu"
                   >
                     {user.profile_photo_url ? (
@@ -527,13 +543,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <DropdownMenu.Content
                     sideOffset={8}
                     align="end"
-                    className="z-30 flex w-48 flex-col gap-1 rounded-2xl border border-emerald-700/50 bg-emerald-950/95 p-2 text-sm text-white shadow-xl backdrop-blur"
+                    className={dropdownContentClass}
                   >
                     <DropdownMenu.Item asChild>
                       <button
                         type="button"
                         onClick={handleViewProfile}
-                        className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-emerald-50 outline-none transition hover:bg-white/10 data-[highlighted]:bg-white/10"
+                        className={`w-full text-left text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10 ${dropdownItemClass}`}
                       >
                         {accountActionLabel}
                       </button>
@@ -542,7 +558,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-200 outline-none transition hover:bg-red-500/15 data-[highlighted]:bg-red-500/20"
+                        className={`w-full text-left text-red-200 hover:bg-red-500/15 data-[highlighted]:bg-red-500/20 ${dropdownItemClass}`}
                       >
                         Logout
                       </button>
@@ -555,11 +571,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         </div>
 
         <div
-          className={`mt-2 overflow-hidden rounded-3xl border border-emerald-600/50 bg-emerald-950/55 shadow-lg backdrop-blur transition-all duration-300 ease-out lg:hidden ${
-            mobileOpen ? 'max-h-[700px] p-3 opacity-100' : 'max-h-0 p-0 opacity-0 border-transparent'
+          className={`mt-2 overflow-hidden rounded-3xl border border-white/10 bg-emerald-950/95 shadow-xl shadow-emerald-950/30 backdrop-blur transition-all duration-300 ease-out lg:hidden ${
+            mobileOpen ? 'max-h-[760px] p-3 opacity-100' : 'max-h-0 border-transparent p-0 opacity-0'
           }`}
         >
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             {[...navItems, ...navGroups.flatMap((group) => group.items)].map((item) =>
               canSeeItem(item) ? (() => {
                 const itemActive = isNavItemActive(item.href);
@@ -567,9 +583,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`truncate whitespace-nowrap rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                    className={`truncate whitespace-nowrap ${mobileItemClass} ${
                       itemActive
-                        ? 'bg-white text-green-900'
+                        ? 'bg-white text-green-950'
                         : 'text-emerald-50 hover:bg-white/10'
                     }`}
                     onClick={() => setMobileOpen(false)}
@@ -596,7 +612,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             {!loadingUser && !user && (
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-2xl border border-amber-300/80 bg-amber-200/15 px-3 py-2 text-sm font-semibold text-amber-50"
+                className="inline-flex items-center justify-center rounded-2xl border border-lime-300/60 bg-lime-300/15 px-3 py-2.5 text-sm font-semibold text-lime-50 transition-colors hover:bg-lime-300/25"
                 onClick={() => {
                   setMobileOpen(false);
                   setRegisterMessage(null);
@@ -607,23 +623,28 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 Join
               </button>
             )}
-            <ThemeToggle className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/60 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/15" />
+            <ThemeToggle className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-white/15" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
-                className="rounded-2xl px-3 py-2.5 text-emerald-50 hover:bg-white/10"
+                className={`${mobileItemClass} text-emerald-50 hover:bg-white/10`}
                 onClick={() => setMobileOpen(false)}
               >
-                Alerts
-                {(alertsData?.unreadCount || 0) > 0
-                  ? ` (${alertsData?.unreadCount})`
-                  : ''}
+                <span className="inline-flex items-center gap-2">
+                  <Bell className="h-4 w-4" aria-hidden="true" />
+                  <span>Alerts</span>
+                  {(alertsData?.unreadCount || 0) > 0 && (
+                    <span className="rounded-full bg-lime-300 px-1.5 py-0.5 text-[10px] font-bold text-green-950">
+                      {alertsData?.unreadCount}
+                    </span>
+                  )}
+                </span>
               </Link>
             )}
             {!loadingUser && !user && (
               <button
                 type="button"
-                className="rounded-2xl bg-white px-3 py-2.5 text-left font-semibold text-green-900"
+                className="rounded-2xl bg-white px-3 py-2.5 text-left text-sm font-semibold text-green-950 transition-colors hover:bg-emerald-50"
                 onClick={() => {
                   setMobileOpen(false);
                   setLoginMessage(null);
@@ -639,14 +660,14 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <button
                   type="button"
                   onClick={handleViewProfile}
-                  className="rounded-2xl px-3 py-2.5 text-left text-emerald-50 hover:bg-white/10"
+                  className={`${mobileItemClass} text-left text-emerald-50 hover:bg-white/10`}
                 >
                   {accountActionLabel}
                 </button>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-2xl px-3 py-2.5 text-left text-red-200 hover:bg-red-500/15"
+                  className={`${mobileItemClass} text-left text-red-200 hover:bg-red-500/15`}
                 >
                   Logout
                 </button>
