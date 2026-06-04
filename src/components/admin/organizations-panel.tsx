@@ -8,6 +8,7 @@ import {
   type OrganizationOption,
 } from '@/services/admin/admin.service';
 import AppDialog from '@/components/ui/app-dialog';
+import { resizeImageToDataUrl } from '@/lib/image';
 
 type OrganizationForm = {
   slug: string;
@@ -15,6 +16,7 @@ type OrganizationForm = {
   tagline: string;
   city: string;
   country: string;
+  logo_url: string;
   website_url: string;
   contact_email: string;
   contact_phone: string;
@@ -28,6 +30,7 @@ const emptyForm: OrganizationForm = {
   tagline: '',
   city: '',
   country: 'Nepal',
+  logo_url: '',
   website_url: '',
   contact_email: '',
   contact_phone: '',
@@ -57,6 +60,7 @@ export default function OrganizationsPanel() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [deleteTarget, setDeleteTarget] = useState<OrganizationOption | null>(null);
+  const [logoUploadPending, setLogoUploadPending] = useState(false);
 
   const { data: organizations = [] } = useQuery<OrganizationOption[]>({
     queryKey: ['admin-organizations'],
@@ -132,6 +136,7 @@ export default function OrganizationsPanel() {
       tagline: org.tagline || '',
       city: org.city || '',
       country: org.country || 'Nepal',
+      logo_url: org.logo_url || '',
       website_url: org.website_url || '',
       contact_email: org.contact_email || '',
       contact_phone: org.contact_phone || '',
@@ -142,6 +147,24 @@ export default function OrganizationsPanel() {
 
   const onChange = (key: keyof OrganizationForm, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleLogoUpload = async (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setMessage('Please upload a valid image file for the trail builder logo.');
+      return;
+    }
+    setLogoUploadPending(true);
+    setMessage(null);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 512, quality: 0.86 });
+      onChange('logo_url', dataUrl);
+    } catch {
+      setMessage('Failed to process trail builder logo.');
+    } finally {
+      setLogoUploadPending(false);
+    }
   };
 
   const openCreate = () => {
@@ -199,6 +222,12 @@ export default function OrganizationsPanel() {
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
         <input
+          value={form.logo_url}
+          onChange={(event) => onChange('logo_url', event.target.value)}
+          placeholder="Logo URL or uploaded image data"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        />
+        <input
           value={form.website_url}
           onChange={(event) => onChange('website_url', event.target.value)}
           placeholder="Website URL"
@@ -216,6 +245,53 @@ export default function OrganizationsPanel() {
           placeholder="Contact phone"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white text-sm font-bold text-emerald-800">
+            {form.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={form.logo_url}
+                alt="Trail builder logo preview"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span>{form.name.trim().slice(0, 2).toUpperCase() || 'TB'}</span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-gray-900">Trail builder logo</p>
+            <p className="mt-1 text-xs text-gray-600">
+              Upload a square logo or paste an image URL. Uploaded logos are resized before saving.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <label className="inline-flex cursor-pointer rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100">
+                {logoUploadPending ? 'Processing...' : 'Upload logo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={logoUploadPending}
+                  onChange={async (event) => {
+                    await handleLogoUpload(event.target.files?.[0] || null);
+                    if (event.target) event.target.value = '';
+                  }}
+                />
+              </label>
+              {form.logo_url && (
+                <button
+                  type="button"
+                  onClick={() => onChange('logo_url', '')}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  Remove logo
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
@@ -255,6 +331,7 @@ export default function OrganizationsPanel() {
             !form.name.trim() ||
             createMutation.isPending ||
             updateMutation.isPending ||
+            logoUploadPending ||
             (formMode === 'edit' && !selectedOrganizationId)
           }
           className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
@@ -321,21 +398,37 @@ export default function OrganizationsPanel() {
                 {organizations.map((organization) => (
                   <tr key={organization.id}>
                     <td className="px-4 py-3 align-top">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-gray-900">{organization.name}</p>
-                        <OrganizationVisibilityBadge isActive={organization.is_active} />
-                        {organization.is_verified && (
-                          <span className="inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-cyan-700">
-                            Verified
-                          </span>
-                        )}
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-emerald-50 text-xs font-bold text-emerald-800">
+                          {organization.logo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={organization.logo_url}
+                              alt={`${organization.name} logo`}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span>{organization.name.slice(0, 2).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-gray-900">{organization.name}</p>
+                            <OrganizationVisibilityBadge isActive={organization.is_active} />
+                            {organization.is_verified && (
+                              <span className="inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-cyan-700">
+                                Verified
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500">/{organization.slug}</p>
+                          {organization.tagline && (
+                            <p className="mt-1 max-w-xs text-xs text-gray-600">
+                              {organization.tagline}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">/{organization.slug}</p>
-                      {organization.tagline && (
-                        <p className="mt-1 max-w-xs text-xs text-gray-600">
-                          {organization.tagline}
-                        </p>
-                      )}
                     </td>
                     <td className="px-4 py-3 align-top text-xs text-gray-600">
                       {organization.city || 'Nepal'}
