@@ -118,7 +118,7 @@ const icon = (
     alt="LocoXperts logo"
     width={220}
     height={120}
-    className="h-20 w-[220px] shrink-0 object-contain object-left"
+    className="h-12 w-[150px] shrink-0 object-contain object-left sm:h-14 sm:w-[170px]"
     priority
   />
 );
@@ -320,26 +320,25 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     'U';
 
   return (
-    <nav className="sticky top-0 z-30 border-b border-green-900/70 bg-gradient-to-r from-green-900 via-green-800 to-emerald-800 text-white shadow-lg backdrop-blur">
-      <div className="container mx-auto px-4 py-2.5">
-        <div className="flex min-h-[84px] items-center justify-between gap-4">
+    <nav className="sticky top-0 z-30 border-b border-emerald-900/20 bg-gradient-to-r from-emerald-950 via-green-900 to-emerald-900 text-white shadow-sm backdrop-blur">
+      <div className="container mx-auto px-4 py-2">
+        <div className="flex min-h-[58px] items-center justify-between gap-4">
           <Link
             href="/home"
-            className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-2xl font-bold leading-none transition-opacity hover:opacity-95"
+            className="inline-flex items-center gap-2 rounded-2xl px-1 py-1 text-2xl font-bold leading-none transition-opacity hover:opacity-95"
           >
             {icon}
-            {/* <span className="tracking-tight">LocoXperts</span> */}
           </Link>
           <button
             type="button"
-            className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-green-400/70 bg-white/10 shadow-sm hover:bg-white/15"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/50 bg-white/10 shadow-sm hover:bg-white/15 lg:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle navigation"
           >
             {mobileOpen ? '✕' : '☰'}
           </button>
 
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden items-center gap-1.5 lg:flex">
             {navItems.map((item) =>
               canSeeItem(item) ? (() => {
                 const itemActive = isNavItemActive(item.href);
@@ -347,15 +346,12 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`inline-flex h-10 items-center rounded-xl px-3 py-1 text-sm font-semibold transition-all ${
+                    className={`inline-flex h-10 items-center rounded-full px-3 py-1 text-sm font-semibold transition-all ${
                       itemActive
                         ? 'bg-white text-green-900 shadow-sm'
-                        : 'text-green-50 hover:text-white'
+                        : 'text-emerald-50/90 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <span aria-hidden="true" className="mr-1">
-                      {getMobileNavIcon(item.href)}
-                    </span>
                     <span className="truncate max-w-[140px]">{getNavLabel(item)}</span>
                     {item.badge && (
                       <span
@@ -389,7 +385,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                         className={`inline-flex h-10 items-center gap-1 rounded-xl px-3 py-1 text-sm font-semibold transition-all ${
                           groupActive
                             ? 'bg-white text-green-900 shadow-sm'
-                            : 'text-green-50 hover:text-white'
+                            : 'text-emerald-50/90 hover:bg-white/10 hover:text-white'
                         }`}
                         aria-label={`${group.label} menu`}
                         onPointerMove={() => {
@@ -413,7 +409,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       <DropdownMenu.Content
                         sideOffset={8}
                         align="start"
-                        className="z-30 flex w-56 flex-col gap-1 rounded-xl border border-green-700/60 bg-green-950/95 p-2 text-sm text-white shadow-xl"
+                        className="z-30 flex w-56 flex-col gap-1 rounded-2xl border border-emerald-700/50 bg-emerald-950/95 p-2 text-sm text-white shadow-xl backdrop-blur"
                         onPointerEnter={() => {
                           if (hoverCloseTimeout.current) {
                             clearTimeout(hoverCloseTimeout.current);
@@ -435,7 +431,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                                 className={`block rounded-lg px-3 py-2 text-sm font-semibold outline-none transition ${
                                   itemActive
                                     ? 'bg-white text-green-900'
-                                    : 'text-green-50 hover:bg-white/15 data-[highlighted]:bg-white/15'
+                                    : 'text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10'
                                 }`}
                               >
                                 <span className="inline-flex items-center gap-2">
@@ -471,16 +467,16 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setRegisterNext(null);
                   setRegisterOpen(true);
                 }}
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/30"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-amber-300/70 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-100 hover:bg-amber-200/30"
               >
-                Join Adventure
+                Join
               </button>
             )}
-            <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-xl border border-green-400/50 bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/15" />
+            <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-full border border-emerald-400/50 bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/15" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-green-400/50 bg-white/10 hover:bg-white/15 self-center leading-none shrink-0"
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full border border-emerald-400/50 bg-white/10 leading-none hover:bg-white/15"
                 aria-label="View expert alerts"
                 title="View trail request alerts"
               >
@@ -501,7 +497,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setLoginNext(null);
                   setLoginOpen(true);
                 }}
-                className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-green-800 hover:bg-green-100"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-green-900 hover:bg-emerald-50"
               >
                 Login
               </button>
@@ -512,7 +508,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <DropdownMenu.Trigger asChild>
                   <button
                     type="button"
-                    className="ml-1 inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-green-400/50 bg-white/10 text-sm font-semibold uppercase hover:bg-white/15 self-center leading-none shrink-0 align-middle"
+                    className="ml-1 inline-flex h-10 w-10 shrink-0 items-center justify-center self-center overflow-hidden rounded-full border border-emerald-400/50 bg-white/10 align-middle text-sm font-semibold uppercase leading-none hover:bg-white/15"
                     aria-label="User menu"
                   >
                     {user.profile_photo_url ? (
@@ -531,13 +527,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <DropdownMenu.Content
                     sideOffset={8}
                     align="end"
-                    className="z-30 flex w-48 flex-col gap-1 rounded-xl border border-green-700/60 bg-green-950/95 p-2 text-sm text-white shadow-xl"
+                    className="z-30 flex w-48 flex-col gap-1 rounded-2xl border border-emerald-700/50 bg-emerald-950/95 p-2 text-sm text-white shadow-xl backdrop-blur"
                   >
                     <DropdownMenu.Item asChild>
                       <button
                         type="button"
                         onClick={handleViewProfile}
-                        className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-green-50 outline-none transition hover:bg-white/15 data-[highlighted]:bg-white/15"
+                        className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-emerald-50 outline-none transition hover:bg-white/10 data-[highlighted]:bg-white/10"
                       >
                         {accountActionLabel}
                       </button>
@@ -559,7 +555,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         </div>
 
         <div
-          className={`lg:hidden mt-3 overflow-hidden rounded-2xl border border-green-600/60 bg-green-900/35 shadow-lg backdrop-blur transition-all duration-300 ease-out ${
+          className={`mt-2 overflow-hidden rounded-3xl border border-emerald-600/50 bg-emerald-950/55 shadow-lg backdrop-blur transition-all duration-300 ease-out lg:hidden ${
             mobileOpen ? 'max-h-[700px] p-3 opacity-100' : 'max-h-0 p-0 opacity-0 border-transparent'
           }`}
         >
@@ -571,10 +567,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`truncate whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
+                    className={`truncate whitespace-nowrap rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors ${
                       itemActive
                         ? 'bg-white text-green-900'
-                        : 'text-green-50 hover:bg-white/15'
+                        : 'text-emerald-50 hover:bg-white/10'
                     }`}
                     onClick={() => setMobileOpen(false)}
                   >
@@ -600,7 +596,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             {!loadingUser && !user && (
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-lg border border-amber-300/80 bg-amber-200/15 px-3 py-1.5 text-sm font-semibold text-amber-50"
+                className="inline-flex items-center justify-center rounded-2xl border border-amber-300/80 bg-amber-200/15 px-3 py-2 text-sm font-semibold text-amber-50"
                 onClick={() => {
                   setMobileOpen(false);
                   setRegisterMessage(null);
@@ -608,14 +604,14 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   setRegisterOpen(true);
                 }}
               >
-                Join Adventure
+                Join
               </button>
             )}
-            <ThemeToggle className="inline-flex items-center gap-2 rounded-lg border border-green-500/70 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/15" />
+            <ThemeToggle className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/60 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/15" />
             {!loadingUser && user?.role === 'expert' && (
               <Link
                 href="/experts/me#trail-requests"
-                className="rounded-lg px-3 py-2.5 text-green-50 hover:bg-white/15"
+                className="rounded-2xl px-3 py-2.5 text-emerald-50 hover:bg-white/10"
                 onClick={() => setMobileOpen(false)}
               >
                 Alerts
@@ -627,7 +623,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             {!loadingUser && !user && (
               <button
                 type="button"
-                className="rounded-lg bg-white px-3 py-2.5 text-left font-semibold text-green-800"
+                className="rounded-2xl bg-white px-3 py-2.5 text-left font-semibold text-green-900"
                 onClick={() => {
                   setMobileOpen(false);
                   setLoginMessage(null);
@@ -643,14 +639,14 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 <button
                   type="button"
                   onClick={handleViewProfile}
-                  className="rounded-lg px-3 py-2.5 text-left text-green-50 hover:bg-white/15"
+                  className="rounded-2xl px-3 py-2.5 text-left text-emerald-50 hover:bg-white/10"
                 >
                   {accountActionLabel}
                 </button>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="text-left px-2 py-2 rounded text-red-200 hover:bg-green-700"
+                  className="rounded-2xl px-3 py-2.5 text-left text-red-200 hover:bg-red-500/15"
                 >
                   Logout
                 </button>
