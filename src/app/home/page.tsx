@@ -119,20 +119,20 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: websiteJsonLd }}
       />
 
-      <section className="reveal reveal-1 relative overflow-hidden rounded-[2rem] border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-8 shadow-sm md:px-10 md:py-12 lg:px-12">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-hero-glow/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 -left-20 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-700/20" />
-        <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_1px_1px,rgba(16,185,129,0.16)_1px,transparent_0)] [background-size:34px_34px]" />
+      <section className="reveal reveal-1 relative overflow-hidden rounded-[2rem] border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-8 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/45 dark:to-lime-950/25 dark:shadow-emerald-950/30 md:px-10 md:py-12 lg:px-12">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-hero-glow/40 blur-3xl dark:bg-emerald-400/15" />
+        <div className="pointer-events-none absolute -bottom-28 -left-20 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-lime-400/10" />
+        <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_1px_1px,rgba(16,185,129,0.16)_1px,transparent_0)] [background-size:34px_34px] dark:opacity-30 dark:[background-image:radial-gradient(circle_at_1px_1px,rgba(110,231,183,0.2)_1px,transparent_0)]" />
 
         <div className="relative mx-auto max-w-5xl text-center">
           <div className="mb-5 flex flex-wrap justify-center gap-2">
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text dark:border-emerald-700/60 dark:bg-emerald-900/35 dark:text-emerald-100">
               Nepal Trail Search
             </span>
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text dark:border-emerald-700/60 dark:bg-emerald-900/35 dark:text-emerald-100">
               Experts
             </span>
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text dark:border-emerald-700/60 dark:bg-emerald-900/35 dark:text-emerald-100">
               Trail Builders
             </span>
             {EXPERTS_BETA_ENABLED && (
@@ -153,7 +153,7 @@ export default function Home() {
           <form
             action="/trails"
             method="get"
-            className="mx-auto mt-7 max-w-3xl rounded-2xl border border-white/80 bg-white/90 p-2 shadow-lg shadow-emerald-950/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90"
+            className="mx-auto mt-7 max-w-3xl rounded-2xl border border-white/80 bg-white/90 p-2 shadow-lg shadow-emerald-950/10 backdrop-blur dark:border-emerald-700/50 dark:bg-slate-950/75 dark:shadow-emerald-950/40"
           >
             <div className="grid gap-2 md:grid-cols-[1fr_auto]">
               <label htmlFor="home-trail-search" className="sr-only">
@@ -164,7 +164,7 @@ export default function Home() {
                 name="search"
                 type="search"
                 placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
-                className="min-h-[54px] w-full rounded-xl border border-transparent bg-transparent px-4 text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 focus:border-emerald-300 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="min-h-[54px] w-full rounded-xl border border-transparent bg-transparent px-4 text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 focus:border-emerald-300 dark:text-slate-50 dark:placeholder:text-emerald-100/40 dark:focus:border-emerald-500/70"
               />
               <button
                 type="submit"
@@ -180,7 +180,7 @@ export default function Home() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900/80 dark:text-emerald-100 dark:hover:bg-emerald-950/40"
+                className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-50 dark:border-emerald-700/50 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:border-emerald-500/70 dark:hover:bg-emerald-900/45"
               >
                 {item.label}
               </Link>
@@ -196,11 +196,11 @@ export default function Home() {
             href={trail.href}
             className={`group relative min-h-[230px] overflow-hidden rounded-3xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${
               index === 1
-                ? 'border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 text-white'
-                : 'border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900'
+                ? 'border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 text-white dark:border-emerald-700/60 dark:from-emerald-950 dark:via-green-950 dark:to-slate-950'
+                : 'border-gray-200 bg-white dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/20 dark:to-slate-900'
             }`}
           >
-            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-emerald-300/30 blur-2xl" />
+            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-emerald-300/30 blur-2xl dark:bg-emerald-400/10" />
             <div className="relative flex h-full flex-col justify-between">
               <div>
                 <span
@@ -239,7 +239,7 @@ export default function Home() {
         ))}
       </section>
 
-      <section className="reveal reveal-3 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:p-7">
+      <section className="reveal reveal-3 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/20 dark:to-slate-900 md:p-7">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
@@ -261,7 +261,7 @@ export default function Home() {
             <Link
               key={path.title}
               href={path.href}
-              className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-emerald-800 dark:hover:bg-slate-950"
+              className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-white dark:border-emerald-900/45 dark:bg-slate-950/65 dark:hover:border-emerald-700/70 dark:hover:bg-emerald-950/25"
             >
               <h3 className="text-base font-bold text-gray-950 dark:text-white">{path.title}</h3>
               <p className="mt-2 min-h-[66px] text-sm leading-6 text-gray-600 dark:text-slate-300">
@@ -276,7 +276,7 @@ export default function Home() {
       </section>
 
       <section className="reveal reveal-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-3xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm md:p-7">
+        <div className="rounded-3xl border border-emerald-900/60 bg-gradient-to-br from-green-900 to-emerald-950 p-6 text-white shadow-sm dark:border-emerald-700/60 dark:from-emerald-950 dark:via-green-950 dark:to-slate-950 md:p-7">
           <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
             Plan better
           </span>
@@ -299,7 +299,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-green-50 to-sky-50 p-6 dark:border-emerald-900/60 dark:from-green-950/40 dark:to-sky-950/30 md:p-7">
+        <div className="rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-green-50 to-sky-50 p-6 dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/35 dark:to-sky-950/25 md:p-7">
           <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
             Community infrastructure
           </span>
@@ -313,25 +313,25 @@ export default function Home() {
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <Link
               href="/store-locator"
-              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-100"
+              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-800/60 dark:bg-emerald-950/25 dark:text-emerald-100 dark:hover:bg-emerald-900/35"
             >
               Find cycle hubs →
             </Link>
             <Link
               href="/events"
-              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-100"
+              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-800/60 dark:bg-emerald-950/25 dark:text-emerald-100 dark:hover:bg-emerald-900/35"
             >
               Join ride events →
             </Link>
             <Link
               href="/campaigns"
-              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-100"
+              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-800/60 dark:bg-emerald-950/25 dark:text-emerald-100 dark:hover:bg-emerald-900/35"
             >
               Support campaigns →
             </Link>
             <Link
               href="/purpose"
-              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-900/60 dark:bg-slate-900/70 dark:text-emerald-100"
+              className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-800/60 dark:bg-emerald-950/25 dark:text-emerald-100 dark:hover:bg-emerald-900/35"
             >
               Read our purpose →
             </Link>
@@ -339,7 +339,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="reveal reveal-5 flex flex-col gap-5 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:flex-row md:items-center md:justify-between md:p-8">
+      <section className="reveal reveal-5 flex flex-col gap-5 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/20 dark:to-slate-900 md:flex-row md:items-center md:justify-between md:p-8">
         <div>
           <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
             Built by {COMMUNITY_NAME}
