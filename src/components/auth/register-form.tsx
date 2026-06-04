@@ -51,6 +51,13 @@ export default function RegisterForm({
     }
     return validatePassword();
   };
+  const canSubmit =
+    form.name.trim().length > 0 &&
+    form.email.trim().length > 0 &&
+    form.phone.trim().length > 0 &&
+    acceptTerms &&
+    passwordChecks.length &&
+    passwordChecks.number;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -132,7 +139,11 @@ export default function RegisterForm({
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4 dark:bg-slate-900 dark:border-slate-700"
+        className={
+          embedded
+            ? 'space-y-4'
+            : 'space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900'
+        }
       >
         {notice && (
           <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 dark:bg-amber-950/30 dark:border-amber-900/40 dark:text-amber-200">
@@ -255,7 +266,7 @@ export default function RegisterForm({
 
         <button
           type="submit"
-          disabled={loading || Boolean(validateForm())}
+          disabled={loading || !canSubmit}
           className="w-full bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 disabled:opacity-60 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
         >
           {loading ? 'Creating account...' : 'Start My Adventure'}

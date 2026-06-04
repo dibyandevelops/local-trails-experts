@@ -62,18 +62,18 @@ describe('LoginComponent', () => {
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
     // Verify error alert appears with correct message
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent(/please enter your email and password/i);
+    expect(alert).toHaveTextContent(/please enter your email or phone number and password/i);
     expect(alert).toHaveAttribute('id', 'login-error');
   });
 
   // Test that form controls have proper accessibility attributes
   it('has accessible form controls', () => {
     renderWithQuery(<LoginComponent />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const emailInput = screen.getByLabelText(/email or phone/i);
+    const passwordInput = screen.getByLabelText(/^Password$/i);
     // Verify controls exist and have required accessibility attributes
     expect(emailInput).toHaveAttribute('required');
-    expect(emailInput).toHaveAttribute('autocomplete', 'email');
+    expect(emailInput).toHaveAttribute('autocomplete', 'username');
     expect(passwordInput).toHaveAttribute('required');
     expect(passwordInput).toHaveAttribute('autocomplete', 'current-password');
   });
@@ -88,10 +88,10 @@ describe('LoginComponent', () => {
     renderWithQuery(<LoginComponent />);
 
     // Fill in the login form with admin credentials
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    fireEvent.change(screen.getByLabelText(/email or phone/i), {
       target: { value: ADMIN_EMAIL },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/^Password$/i), {
       target: { value: '1MicroPassword' },
     });
     // Submit the form
@@ -101,7 +101,7 @@ describe('LoginComponent', () => {
     await waitFor(() => {
       expect(loginUserMock).toHaveBeenCalled();
       expect(loginUserMock.mock.calls[0][0]).toEqual({
-        email: ADMIN_EMAIL,
+        identifier: ADMIN_EMAIL,
         password: '1MicroPassword',
       });
       expect(pushMock).toHaveBeenCalledWith('/admin');
@@ -117,10 +117,10 @@ describe('LoginComponent', () => {
     renderWithQuery(<LoginComponent />);
 
     // Fill in the login form with participant credentials
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    fireEvent.change(screen.getByLabelText(/email or phone/i), {
       target: { value: 'participant@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/^Password$/i), {
       target: { value: 'Pass12345' },
     });
     // Submit the form
@@ -140,10 +140,10 @@ describe('LoginComponent', () => {
     renderWithQuery(<LoginComponent />);
 
     // Fill in the login form with invalid credentials
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    fireEvent.change(screen.getByLabelText(/email or phone/i), {
       target: { value: 'bad@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/^Password$/i), {
       target: { value: 'wrongpass1' },
     });
     // Submit the form
@@ -169,10 +169,10 @@ describe('LoginComponent', () => {
     renderWithQuery(<LoginComponent />);
 
     // Fill in the login form
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    fireEvent.change(screen.getByLabelText(/email or phone/i), {
       target: { value: 'expert@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/^Password$/i), {
       target: { value: 'Pass12345' },
     });
     // Submit the form

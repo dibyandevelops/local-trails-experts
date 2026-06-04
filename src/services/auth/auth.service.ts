@@ -5,7 +5,8 @@ import { ApiPath } from '@/services/api/paths';
 import type { UserRole } from '@/types';
 
 type LoginInput = {
-  email: string;
+  identifier?: string;
+  email?: string;
   password: string;
 };
 

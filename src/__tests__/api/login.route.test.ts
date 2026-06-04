@@ -89,4 +89,50 @@ describe('POST /api/login', () => {
     expect(setAuthCookie).toHaveBeenCalledWith(response, 'signed.jwt.token');
     expect(pool.query).toHaveBeenCalledTimes(2);
   });
+
+  it('logs in with a phone number identifier', async () => {
+    vi.mocked(pool.query)
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'user-2',
+            name: 'Phone User',
+            email: 'phone@example.com',
+            role: 'participant',
+            bio: null,
+            city: null,
+            sports: null,
+            is_verified_expert: false,
+            phone: '+9779812345678',
+            phone_verified_at: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            password_hash: 'hashed-password',
+          },
+        ],
+      } as never)
+      .mockResolvedValueOnce({ rows: [] } as never);
+
+    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(signAuthToken).mockReturnValue('signed.jwt.token');
+
+    const request = new NextRequest('http://localhost/api/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        identifier: '9812345678',
+        password: 'pass1234',
+      }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const response = await POST(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.user.phone).toBe('+9779812345678');
+    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('ANY($2::text[])'), [
+      '9812345678',
+      ['9812345678', '9779812345678'],
+    ]);
+  });
 });

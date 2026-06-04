@@ -18,7 +18,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
 ) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = React.useState('');
+  const [identifier, setIdentifier] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -64,17 +64,17 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
       e.preventDefault();
       setError(null);
 
-      if (!email.trim() || !password) {
-        setError('Please enter your email and password to continue.');
+      if (!identifier.trim() || !password) {
+        setError('Please enter your email or phone number and password to continue.');
         return;
       }
 
       loginMutation.mutate({
-        email: email.trim(),
+        identifier: identifier.trim(),
         password,
       });
     },
-    [email, password, loginMutation],
+    [identifier, password, loginMutation],
   );
 
   return (
@@ -93,7 +93,7 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
               Login
             </h1>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              Sign in with your email and password.
+              Sign in with your email or phone number.
             </p>
             <div className="mt-3 flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-300">
               <span>• Access trails and upcoming rides</span>
@@ -104,7 +104,11 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
       )}
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+        className={
+          embedded
+            ? 'space-y-4'
+            : 'space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900'
+        }
         noValidate
       >
         {notice && !error && (
@@ -121,18 +125,18 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="email"
           >
-            Email
+            Email or phone number
           </label>
           <input
-            type="email"
-            name="email"
+            type="text"
+            name="identifier"
             id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="you@example.com or +9779812345678"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100 dark:placeholder:text-slate-400"
             required
-            autoComplete="email"
+            autoComplete="username"
             aria-invalid={!!error}
             aria-describedby={error ? 'login-error' : undefined}
           />

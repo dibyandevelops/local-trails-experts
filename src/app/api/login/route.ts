@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
-import type { User, UserRole } from '@/types';
+import type { User } from '@/types';
 import { setAuthCookie, signAuthToken } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
+
+function phoneLoginCandidates(identifier: string) {
+  const digits = identifier.replace(/\D/g, '');
+  if (!digits) return [];
+  const candidates = new Set([digits]);
+  if (digits.length === 10 && digits.startsWith('9')) {
+    candidates.add(`977${digits}`);
+  }
+  if (digits.length === 13 && digits.startsWith('977')) {
+    candidates.add(digits.slice(3));
+  }
+  return Array.from(candidates);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,33 +24,37 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const body = await request.json();
-    const { email, password } = body as {
+    const { identifier, email, password } = body as {
+      identifier?: string;
       email?: string;
       password?: string;
     };
+    const loginIdentifier = (identifier || email || '').trim();
 
-    if (!email || !password) {
+    if (!loginIdentifier || !password) {
       return NextResponse.json(
-        { error: 'Missing required fields: email, password' },
+        { error: 'Missing required fields: email or phone, password' },
         { status: 400 }
       );
     }
 
+    const phoneCandidates = phoneLoginCandidates(loginIdentifier);
     const query = `
-      SELECT id, name, email, role, bio, city, sports, is_verified_expert, created_at, updated_at
+      SELECT id, name, email, role, bio, city, sports, is_verified_expert, phone, phone_verified_at, created_at, updated_at
       , password_hash
       FROM users
-      WHERE email = $1
+      WHERE lower(email) = lower($1)
+        OR regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = ANY($2::text[])
       ORDER BY CASE role WHEN 'admin' THEN 1 WHEN 'expert' THEN 2 ELSE 3 END
       LIMIT 1
     `;
 
-    const result = await pool.query(query, [email]);
+    const result = await pool.query(query, [loginIdentifier, phoneCandidates]);
     const userRow = result.rows[0];
 
     if (!userRow) {
       return NextResponse.json(
-        { error: 'No user found for that email.' },
+        { error: 'No user found for that email or phone number.' },
         { status: 401 }
       );
     }
@@ -73,6 +90,8 @@ export async function POST(request: NextRequest) {
       city: userRow.city,
       sports: userRow.sports,
       is_verified_expert: userRow.is_verified_expert,
+      phone: userRow.phone,
+      phone_verified_at: userRow.phone_verified_at,
       created_at: userRow.created_at,
       updated_at: userRow.updated_at,
     };
