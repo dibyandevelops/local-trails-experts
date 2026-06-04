@@ -20,6 +20,8 @@ import {
 import './globals.css';
 import MainContent from '@/components/main-content';
 
+const ICON_VERSION = '20260604-pwa-safe-area';
+
 export const metadata: Metadata = {
   metadataBase: new URL(getPublicAppUrl()),
   title: {
@@ -49,12 +51,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icons/icon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/icons/icon-64x64.png', sizes: '64x64', type: 'image/png' },
-      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: `/icons/icon-32x32.png?v=${ICON_VERSION}`, sizes: '32x32', type: 'image/png' },
+      { url: `/icons/icon-64x64.png?v=${ICON_VERSION}`, sizes: '64x64', type: 'image/png' },
+      { url: `/icons/icon-192x192.png?v=${ICON_VERSION}`, sizes: '192x192', type: 'image/png' },
     ],
-    shortcut: ['/icons/icon-32x32.png'],
-    apple: '/apple-touch-icon.png',
+    shortcut: [`/icons/icon-32x32.png?v=${ICON_VERSION}`],
+    apple: `/apple-touch-icon.png?v=${ICON_VERSION}`,
   },
   openGraph: {
     type: 'website',
@@ -62,13 +64,13 @@ export const metadata: Metadata = {
     url: '/',
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
-    images: [{ url: absoluteUrl('/icons/icon-512x512.png') }],
+    images: [{ url: absoluteUrl(`/icons/icon-512x512.png?v=${ICON_VERSION}`) }],
   },
   twitter: {
     card: 'summary',
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
-    images: [absoluteUrl('/icons/icon-512x512.png')],
+    images: [absoluteUrl(`/icons/icon-512x512.png?v=${ICON_VERSION}`)],
   },
   verification: {
     google:

@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
+  const iconVersion = '20260604-pwa-safe-area';
+
   return {
     name: 'LocoXperts',
     short_name: 'LocoXperts',
@@ -12,23 +14,23 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     icons: [
       {
-        src: '/icons/icon-192x192.png',
+        src: `/icons/icon-192x192.png?v=${iconVersion}`,
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: '/icons/icon-512x512.png',
+        src: `/icons/icon-512x512.png?v=${iconVersion}`,
         sizes: '512x512',
         type: 'image/png',
       },
       {
-        src: '/icons/maskable-icon-192x192.png',
+        src: `/icons/maskable-icon-192x192.png?v=${iconVersion}`,
         sizes: '192x192',
         type: 'image/png',
         purpose: 'maskable',
       },
       {
-        src: '/icons/maskable-icon-512x512.png',
+        src: `/icons/maskable-icon-512x512.png?v=${iconVersion}`,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',
