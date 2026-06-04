@@ -14,49 +14,50 @@ export default function CreateTrailPage() {
   const { data: user = null, isLoading: loadingUser } = useCurrentUser();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+    <div className="mx-auto max-w-5xl space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-6 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/35 dark:to-lime-950/20 sm:px-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-emerald-300/25 blur-3xl dark:bg-emerald-400/10" />
         <div className="relative">
           <div className="mb-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+            <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
               Trails
             </span>
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+            <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
               GPX
             </span>
           </div>
-          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+          <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
             {isEditMode ? 'Edit Trail' : 'Create Trail'}
           </h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
             Upload routes, add photos, and keep Nepal’s trail network up to date.
           </p>
         </div>
       </section>
 
       {loadingUser ? (
-        <p className="text-gray-600 dark:text-gray-300">Loading user...</p>
+        <div className="rounded-3xl border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+          Loading user...
+        </div>
       ) : !user ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-200">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200">
           Unable to load user session. Please login again.
         </div>
       ) : (
-        <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="space-y-4 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/15 dark:to-slate-900 sm:p-6">
           {isEditMode ? (
             user.role === 'admin' || user.role === 'expert' ? (
               trailId ? (
                 <TrailEditForm trailId={trailId} />
               ) : null
             ) : (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-200">
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200">
                 Only admins or the trail owner can edit trails.
               </div>
             )
           ) : (
             <>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
                 Add as many trails as needed in one submission. Fill each section and click &quot;Add another trail&quot; to include more, then submit.
               </p>
               <MultiTrailSubmissionForm

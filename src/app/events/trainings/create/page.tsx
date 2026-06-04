@@ -42,6 +42,10 @@ const defaultValues: TrainingFormValues = {
   acceptTerms: false,
 };
 
+const labelClass = 'mb-2 block text-sm font-semibold text-gray-800 dark:text-slate-100';
+const inputClass =
+  'w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:bg-gray-50 disabled:text-gray-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:disabled:bg-slate-900 dark:disabled:text-slate-400';
+
 function getUpcomingWeekendDateTimeLocal() {
   const now = new Date();
   const day = now.getDay();
@@ -155,48 +159,47 @@ export default function CreateTrainingPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+    <div className="mx-auto max-w-4xl space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-6 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/35 dark:to-lime-950/20 sm:px-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-emerald-300/25 blur-3xl dark:bg-emerald-400/10" />
         <div className="relative">
           <div className="mb-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+            <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
               Trainings
             </span>
-            <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+            <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
               Coaching
             </span>
           </div>
-          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+          <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
             Organize Training
           </h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
             Plan focused coaching sessions and skill blocks led by trusted local experts.
           </p>
         </div>
       </section>
 
       {loadingUser ? (
-        <div className="text-gray-600">Loading...</div>
+        <div className="rounded-3xl border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">Loading...</div>
       ) : !currentUser ? (
-        <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200">
           Unable to load user session. Please login again.
         </div>
       ) : (
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+          className="space-y-6 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/15 dark:to-slate-900 sm:p-6"
         >
           {isExpertUnverified && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
               Your expert profile is pending verification. Trainings are disabled until
               an admin approves your profile.
             </div>
           )}
           {currentUser.role === 'admin' && (
             <div>
-              <label className="mb-2 block text-sm font-medium">Approved Expert Host</label>
+              <label className={labelClass}>Approved Expert Host</label>
               <select
                 {...register('host_user_id')}
                 required
@@ -207,7 +210,7 @@ export default function CreateTrainingPage() {
                   setValue('organizer_name', expert?.name || '');
                   setValue('organizer_email', expert?.email || '');
                 }}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                className={inputClass}
               >
                 <option value="">Select expert host</option>
                 {experts.map((expert) => (
@@ -230,55 +233,55 @@ export default function CreateTrainingPage() {
           )}
 
           <div>
-            <label className="mb-2 block text-sm font-medium">
+            <label className={labelClass}>
               Training Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               {...register('title', { required: true })}
               placeholder="e.g., MTB Cornering + Braking Fundamentals"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">
+            <label className={labelClass}>
               Venue / Location <span className="text-red-500">*</span>
             </label>
               <input
                 type="text"
                 {...register('venue', { required: true })}
                 placeholder="e.g., Riverside Park Trailhead"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                className={inputClass}
               />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">Training Focus</label>
+            <label className={labelClass}>Training Focus</label>
             <textarea
               {...register('training_focus')}
               rows={4}
               placeholder="What will participants learn in this session?"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2"
+              className={inputClass}
             />
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium">
+              <label className={labelClass}>
                 Date & Time <span className="text-red-500">*</span>
               </label>
               <input
                 type="datetime-local"
                 {...register('event_date', { required: true })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Required Expertise</label>
+              <label className={labelClass}>Required Expertise</label>
               <select
                 {...register('required_expertise', { required: true })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                className={inputClass}
               >
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
@@ -290,39 +293,39 @@ export default function CreateTrainingPage() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium">City</label>
+              <label className={labelClass}>City</label>
               <input
                 type="text"
                 {...register('city')}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                className={inputClass}
                 placeholder="e.g., your city in Nepal"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Max Participants</label>
+              <label className={labelClass}>Max Participants</label>
               <input
                 type="number"
                 min="1"
                 {...register('max_participants', {
                   setValueAs: (value) => (value === '' ? 20 : Number(value)),
                 })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2"
+                className={inputClass}
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">Pricing</label>
+            <label className={labelClass}>Pricing</label>
             <div className="flex items-center gap-2">
               <input id="training-paid" type="checkbox" {...register('is_paid_event')} />
-              <label htmlFor="training-paid" className="text-sm text-gray-700">
+              <label htmlFor="training-paid" className="text-sm text-gray-700 dark:text-slate-200">
                 Paid training
               </label>
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">Price (NPR)</label>
+            <label className={labelClass}>Price (NPR)</label>
             <input
               type="number"
               min="0"
@@ -330,7 +333,7 @@ export default function CreateTrainingPage() {
               {...register('price_npr', {
                 setValueAs: (value) => (value === '' ? 0 : Number(value)),
               })}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 disabled:opacity-60"
+              className={inputClass}
               placeholder="0"
             />
             <p className="mt-1 text-xs text-gray-500">0 = free</p>
@@ -338,26 +341,26 @@ export default function CreateTrainingPage() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium">Organizer Name</label>
+              <label className={labelClass}>Organizer Name</label>
               <input
                 type="text"
                 {...register('organizer_name')}
                 readOnly
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Organizer Email</label>
+              <label className={labelClass}>Organizer Email</label>
               <input
                 type="email"
                 {...register('organizer_email')}
                 readOnly
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2"
+                className={inputClass}
               />
             </div>
           </div>
 
-          <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+          <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-200">
             <input
               id="training-accept-terms"
               type="checkbox"
@@ -368,18 +371,18 @@ export default function CreateTrainingPage() {
             />
             <label htmlFor="training-accept-terms" className="text-xs leading-5">
               I agree to the{' '}
-              <a href="/terms" className="font-semibold text-green-700 hover:underline">
+              <a href="/terms" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
                 Terms &amp; Conditions
               </a>{' '}
               and{' '}
-              <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+              <a href="/privacy" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
                 Privacy Policy
               </a>
               .
             </label>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button
               type="submit"
               disabled={
@@ -389,14 +392,14 @@ export default function CreateTrainingPage() {
                   Boolean(selectedHostId) &&
                   !selectedHostIsVerified)
               }
-              className="flex-1 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+              className="flex-1 rounded-2xl bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
             >
               {createMutation.isPending ? 'Creating...' : 'Create Training'}
             </button>
             <button
               type="button"
               onClick={() => router.push('/events/create')}
-              className="rounded-lg border border-gray-300 px-5 py-3 hover:bg-gray-50"
+              className="rounded-2xl border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Event Form
             </button>

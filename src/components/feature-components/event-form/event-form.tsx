@@ -99,6 +99,10 @@ const defaultValues: EventFormValues = {
   acceptTerms: false,
 };
 
+const labelClass = 'mb-2 block text-sm font-semibold text-gray-800 dark:text-slate-100';
+const inputClass =
+  'w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:bg-gray-50 disabled:text-gray-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:disabled:bg-slate-900 dark:disabled:text-slate-400';
+
 type EventFormProps = {
   mode?: 'create' | 'edit';
   editEventId?: string | null;
@@ -663,24 +667,23 @@ export default function EventForm({
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-4xl">
       {!embedded && (
-        <section className="relative mb-6 overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
+        <section className="relative mb-6 overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-6 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/35 dark:to-lime-950/20 sm:px-7">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-emerald-300/25 blur-3xl dark:bg-emerald-400/10" />
           <div className="relative">
             <div className="mb-3 flex flex-wrap gap-2">
-              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
                 Events
               </span>
-              <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
+              <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
                 Local experts
               </span>
             </div>
-            <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+            <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
               {isEditMode ? 'Edit Event' : 'Create Event'}
             </h1>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
               Choose a sport, pick the right trail, and publish an experience riders can trust.
             </p>
           </div>
@@ -691,14 +694,14 @@ export default function EventForm({
           <button
             type="button"
             onClick={() => router.push('/events/trainings/create')}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:bg-emerald-900/45"
           >
             Use Separate Training Form
           </button>
         </div>
       )}
       {sportChangeMessage && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
           {sportChangeMessage}
         </div>
       )}
@@ -708,23 +711,23 @@ export default function EventForm({
       ) : (
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-6 dark:border-slate-800 dark:bg-slate-900"
+          className="space-y-6 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/15 dark:to-slate-900 sm:p-6"
         >
           {isExpertUnverified && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
               Your expert profile is pending verification. You can create trails, but
               events and trainings are disabled until an admin approves your profile.
             </div>
           )}
           {currentUser?.role === 'admin' && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
               Select an approved host first to unlock sport-specific fields.
             </div>
           )}
 
           {currentUser?.role === 'admin' && (
             <div>
-              <label className="block text-sm font-medium mb-2">Approved Expert Host</label>
+              <label className={labelClass}>Approved Expert Host</label>
               <select
                 {...register('host_user_id')}
                 onChange={(e) => {
@@ -739,7 +742,7 @@ export default function EventForm({
                   }
                 }}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
               >
                 <option value="">Select an expert host</option>
                 {experts.map((expert) => (
@@ -763,17 +766,17 @@ export default function EventForm({
 
           {!lockTrailAndSport ? (
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className={labelClass}>
                 Sport Type <span className="text-red-500">*</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {selectableSports.map((sport) => (
                   <label
                     key={sport.value}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
                       selectedSport === sport.value
-                        ? 'border-green-700 bg-green-50 text-green-800'
-                        : 'border-gray-300 bg-white text-gray-700'
+                        ? 'border-emerald-700 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/45 dark:text-emerald-100'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-300 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30'
                     }`}
                   >
                     <input
@@ -798,12 +801,12 @@ export default function EventForm({
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-              <p className="text-xs font-medium text-gray-600">Selected Trail</p>
-              <p className="text-sm font-semibold text-gray-900">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Selected Trail</p>
+              <p className="text-sm font-semibold text-gray-950 dark:text-slate-50">
                 {selectedLockedTrail?.name || 'Trail'}
               </p>
-              <p className="mt-0.5 text-xs text-gray-600">
+              <p className="mt-0.5 text-xs text-gray-600 dark:text-slate-300">
                 {selectedLockedTrail?.location || ''}
                 {selectedLockedTrail?.sport_type
                   ? ` • ${getSportLabel(selectedLockedTrail.sport_type) || selectedLockedTrail.sport_type}`
@@ -815,12 +818,12 @@ export default function EventForm({
           {!lockTrailAndSport && selectedSport !== 'training' ? (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-2">Select Trail</label>
+                <label className={labelClass}>Select Trail</label>
                 <select
                   value={selectedTrailId}
                   onChange={(e) => handleTrailChange(e.target.value)}
                   disabled={loadingTrails}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className={inputClass}
                 >
                   <option value="">No specific trail (general event)</option>
                   {trailsBySport.map((trail) => (
@@ -838,7 +841,7 @@ export default function EventForm({
                 <p className="text-xs text-gray-500 mt-1">
                   Changing sport clears trail/event-specific fields to avoid stale data.
                 </p>
-                <div className="mt-2 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                <div className="mt-2 inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/45 dark:text-emerald-200">
                   {loadingTrails
                     ? 'Loading trails...'
                     : refreshingTrails
@@ -847,13 +850,13 @@ export default function EventForm({
                 </div>
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-950/70">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                       Can’t find a trail in this sport?
                     </p>
-                    <p className="mt-1 text-xs text-gray-600">
+                    <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">
                       Request a new trail, then refresh later to check approval.
                     </p>
                   </div>
@@ -862,14 +865,14 @@ export default function EventForm({
                       type="button"
                       onClick={() => refetchTrails()}
                       disabled={refreshingTrails}
-                      className="px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold hover:bg-gray-100 disabled:opacity-60"
+                      className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       {refreshingTrails ? 'Refreshing...' : 'Refresh Trails'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowTrailRequestDialog(true)}
-                      className="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800"
+                      className="rounded-xl bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
                     >
                       Request New Trail
                     </button>
@@ -882,11 +885,11 @@ export default function EventForm({
             </div>
           ) : !lockTrailAndSport && selectedSport === 'training' ? (
             <div>
-              <label className="block text-sm font-medium mb-2">Training Route / Venue</label>
+              <label className={labelClass}>Training Route / Venue</label>
               <input
                 type="text"
                 {...register('custom_trail_text')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
                 placeholder="e.g., Army HQ Ground loop + handling drills"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -896,19 +899,19 @@ export default function EventForm({
           ) : null}
 
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className={labelClass}>
               Event Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               {...register('title', { required: true })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={inputClass}
               placeholder="e.g., Weekend Mountain Bike Adventure"
             />
           </div>
 
           {hasTrailRequestContext && trailRequestSummaryLines.length > 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
               <p className="mb-1 font-semibold uppercase tracking-wide">Trail Request Note</p>
               <div className="space-y-0.5">
                 {trailRequestSummaryLines.map((line) => (
@@ -919,11 +922,11 @@ export default function EventForm({
           )}
 
           <div>
-            <label className="block text-sm font-medium mb-2">Description</label>
+            <label className={labelClass}>Description</label>
             <textarea
               {...register('description')}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={inputClass}
               placeholder="Describe your event..."
             />
           </div>
@@ -931,7 +934,7 @@ export default function EventForm({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className={labelClass}>
                 Event Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -950,11 +953,11 @@ export default function EventForm({
                   }
                   setValue('event_date', `${nextDate}T${nextTime}`);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className={labelClass}>
                 Event Time <span className="text-red-500">*</span>
               </label>
               <input
@@ -969,7 +972,7 @@ export default function EventForm({
                   if (!nextTime) return;
                   setValue('event_date', `${nextDate}T${nextTime}`);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
               />
               {isEventDateLocked && (
                 <p className="mt-1 text-xs text-gray-500">
@@ -979,12 +982,12 @@ export default function EventForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className={labelClass}>
                 Required Expertise Level <span className="text-red-500">*</span>
               </label>
               <select
                 {...register('required_expertise', { required: true })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
               >
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
@@ -996,10 +999,10 @@ export default function EventForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Difficulty</label>
+              <label className={labelClass}>Difficulty</label>
               <select
                 {...register('difficulty')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
               >
                 <option value="">Auto (from trail)</option>
                 {TRAIL_DIFFICULTY_OPTIONS.map((option) => (
@@ -1011,24 +1014,24 @@ export default function EventForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Max Participants</label>
+              <label className={labelClass}>Max Participants</label>
               <input
                 type="number"
                 min="1"
                 {...register('max_participants', {
                   setValueAs: (value) => (value === '' ? 20 : Number(value)),
                 })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Meeting Point</label>
+            <label className={labelClass}>Meeting Point</label>
             <input
               type="text"
               {...register('meeting_point')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={inputClass}
               placeholder="e.g., Trailhead parking lot"
             />
             <p className="mt-1 text-xs text-gray-500">
@@ -1037,7 +1040,7 @@ export default function EventForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Pricing</label>
+            <label className={labelClass}>Pricing</label>
             <div className="flex items-center gap-2">
               <input
                 id="paid-event-toggle"
@@ -1052,7 +1055,7 @@ export default function EventForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Event Price (NPR)</label>
+            <label className={labelClass}>Event Price (NPR)</label>
             <input
               type="number"
               min="0"
@@ -1060,14 +1063,14 @@ export default function EventForm({
                 setValueAs: (value) => (value === '' ? 0 : Number(value)),
               })}
               disabled={!isPaidEvent}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={inputClass}
               placeholder="0"
             />
             <p className="text-xs text-gray-500 mt-1">0 = free</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Payment QR Image</label>
+            <label className={labelClass}>Payment QR Image</label>
             <input
               type="file"
               accept="image/*"
@@ -1086,7 +1089,7 @@ export default function EventForm({
                 };
                 reader.readAsDataURL(file);
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={inputClass}
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload the QR image participants will scan to pay.
@@ -1102,29 +1105,29 @@ export default function EventForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Organizer Name</label>
+              <label className={labelClass}>Organizer Name</label>
               <input
                 type="text"
                 {...register('organizer_name')}
                 disabled={currentUser?.role === 'expert' || currentUser?.role === 'admin'}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
                 placeholder="Your name"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Organizer Email</label>
+              <label className={labelClass}>Organizer Email</label>
               <input
                 type="email"
                 {...register('organizer_email')}
                 disabled={currentUser?.role === 'expert' || currentUser?.role === 'admin'}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass}
                 placeholder="your@email.com"
               />
             </div>
           </div>
 
-          <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+          <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-200">
             <input
               id="event-accept-terms"
               type="checkbox"
@@ -1135,11 +1138,11 @@ export default function EventForm({
             />
             <label htmlFor="event-accept-terms" className="text-xs leading-5">
               I agree to the{' '}
-              <a href="/terms" className="font-semibold text-green-700 hover:underline">
+              <a href="/terms" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
                 Terms &amp; Conditions
               </a>{' '}
               and{' '}
-              <a href="/privacy" className="font-semibold text-green-700 hover:underline">
+              <a href="/privacy" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
                 Privacy Policy
               </a>
               .
@@ -1149,7 +1152,7 @@ export default function EventForm({
             <p className="text-xs text-red-600">{formState.errors.acceptTerms.message}</p>
           )}
 
-          <div className="flex gap-4 pt-4">
+          <div className="flex flex-col gap-3 pt-4 sm:flex-row">
             <button
               type="submit"
               disabled={Boolean(
@@ -1159,7 +1162,7 @@ export default function EventForm({
                   selectedHostId &&
                   !selectedHostIsVerified)
               )}
-              className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="flex-1 rounded-2xl bg-emerald-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-gray-400 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
             >
               {isSubmitting
                 ? isEditMode
@@ -1184,7 +1187,7 @@ export default function EventForm({
                   router.back();
                 }
               }}
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="rounded-2xl border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
@@ -1197,14 +1200,21 @@ export default function EventForm({
         onOpenChange={setShowTrailRequestDialog}
       >
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 max-h-[90vh] w-[95vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
-            <Dialog.Title className="text-lg font-semibold text-gray-900">
-              Request New Trail
-            </Dialog.Title>
-            <p className="text-sm text-gray-600 mt-1 mb-4">
-              Submit a new trail with GPX. Admin will review it urgently. Once approved, click refresh and select it.
-            </p>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[95vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-950 dark:text-slate-50">
+                  Request New Trail
+                </Dialog.Title>
+                <p className="mt-1 mb-4 text-sm text-gray-600 dark:text-slate-300">
+                  Submit a new trail with GPX. Once approved, refresh and select it for this event.
+                </p>
+              </div>
+              <Dialog.Close className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">
+                ✕
+              </Dialog.Close>
+            </div>
             {currentUser?.role && (
               <TrailSubmissionForm
                 userRole={currentUser.role}
@@ -1219,7 +1229,7 @@ export default function EventForm({
               <button
                 type="button"
                 onClick={() => setShowTrailRequestDialog(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50"
+                className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 Close
               </button>
