@@ -5,9 +5,6 @@ import { getAuthFromRequest } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
     const body = await request.json();
 
     const {
@@ -28,6 +25,18 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: store_name, city, location, latitude, longitude' },
         { status: 400 }
       );
+    }
+
+    if (auth?.role !== 'admin') {
+      if (!contact_name || !contact_email) {
+        return NextResponse.json(
+          { error: 'Missing required fields: contact_name, contact_email' },
+          { status: 400 }
+        );
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(contact_email))) {
+        return NextResponse.json({ error: 'Invalid contact_email' }, { status: 400 });
+      }
     }
 
     const result = await pool.query(

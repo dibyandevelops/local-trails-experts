@@ -6,6 +6,8 @@ import StoreLocationPicker from '@/components/feature-components/store-locator/s
 
 type InitialStore = {
   storeName: string;
+  contactName?: string;
+  contactEmail?: string;
   city: string;
   location: string;
   locationLat: string;
@@ -21,8 +23,8 @@ type SubmitPayload = {
   location: string;
   latitude: number;
   longitude: number;
-  contact_name: null;
-  contact_email: null;
+  contact_name: string | null;
+  contact_email: string | null;
   phone: string;
   services: string;
   website: string;
@@ -31,18 +33,38 @@ type SubmitPayload = {
 type Props = {
   initialStore?: InitialStore | null;
   onSubmitOverride?: (payload: SubmitPayload) => void;
+  requireReviewContact?: boolean;
 };
 
-export default function StoreRequestForm({ initialStore = null, onSubmitOverride }: Props) {
+const isValidLatitude = (value: string) => {
+  if (!value.trim()) return false;
+  const next = Number(value);
+  return Number.isFinite(next) && next >= -90 && next <= 90;
+};
+
+const isValidLongitude = (value: string) => {
+  if (!value.trim()) return false;
+  const next = Number(value);
+  return Number.isFinite(next) && next >= -180 && next <= 180;
+};
+
+export default function StoreRequestForm({
+  initialStore = null,
+  onSubmitOverride,
+  requireReviewContact,
+}: Props) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
-  const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'contact@locoxperts.com';
   const [acceptTerms, setAcceptTerms] = useState(false);
   const isAdminEdit = Boolean(onSubmitOverride);
+  const shouldCollectReviewContact = requireReviewContact ?? !isAdminEdit;
   const reverseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [form, setForm] = useState({
     storeName: initialStore?.storeName || '',
+    contactName: initialStore?.contactName || '',
+    contactEmail: initialStore?.contactEmail || '',
     city: initialStore?.city || '',
     location: initialStore?.location || '',
     locationLat: initialStore?.locationLat || '',
@@ -59,9 +81,24 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
       setMessage('Please accept the terms and privacy policy.');
       return;
     }
+    if (shouldCollectReviewContact && (!form.contactName.trim() || !form.contactEmail.trim())) {
+      setStatus('error');
+      setMessage('Please add a contact name and email for review.');
+      return;
+    }
+    if (form.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) {
+      setStatus('error');
+      setMessage('Please enter a valid contact email.');
+      return;
+    }
     if (!form.locationLat || !form.locationLng) {
       setStatus('error');
-      setMessage('Please pick the store location on the map.');
+      setMessage('Please pick the store location on the map or enter coordinates.');
+      return;
+    }
+    if (!isValidLatitude(form.locationLat) || !isValidLongitude(form.locationLng)) {
+      setStatus('error');
+      setMessage('Please enter valid coordinates. Latitude must be -90 to 90 and longitude must be -180 to 180.');
       return;
     }
     if (form.phone && !/^\+?[0-9\s-]{7,15}$/.test(form.phone)) {
@@ -83,8 +120,8 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
         location: form.location.trim() || 'Selected on map',
         latitude: Number(form.locationLat),
         longitude: Number(form.locationLng),
-        contact_name: null,
-        contact_email: null,
+        contact_name: form.contactName.trim() || null,
+        contact_email: form.contactEmail.trim() || null,
         phone: form.phone.trim(),
         services: form.services.trim(),
         website: form.website.trim(),
@@ -96,9 +133,11 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
         await apiClient.post('/api/store-requests', payload);
       }
       setStatus('sent');
-      setMessage(isAdminEdit ? 'Store updated.' : 'Request sent. We will review and get back to you.');
+      setMessage(isAdminEdit ? 'Store updated.' : 'Shop request sent. Admin will review before it appears in Cycle Hubs.');
       setForm({
         storeName: '',
+        contactName: '',
+        contactEmail: '',
         city: '',
         location: '',
         locationLat: '',
@@ -116,6 +155,7 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
 
   useEffect(() => {
     if (!form.locationLat || !form.locationLng) return;
+    if (!isValidLatitude(form.locationLat) || !isValidLongitude(form.locationLng)) return;
     if (reverseTimer.current) clearTimeout(reverseTimer.current);
     reverseTimer.current = setTimeout(async () => {
       try {
@@ -155,10 +195,10 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
     <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Request to list your store
+          Register a cycle hub
         </h2>
         <p className="text-sm text-gray-600 dark:text-slate-300">
-          Share your details and we’ll review your listing for Nepal Cycle Hubs.
+          Submit shop details for admin review. Approved shops appear in the Cycle Hubs locator.
         </p>
       </div>
 
@@ -186,6 +226,35 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
             className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
         </div>
+        {shouldCollectReviewContact && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                Contact name
+              </label>
+              <input
+                required
+                value={form.contactName}
+                onChange={(event) => setForm((prev) => ({ ...prev, contactName: event.target.value }))}
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                placeholder="Owner or manager"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                Contact email
+              </label>
+              <input
+                required
+                type="email"
+                value={form.contactEmail}
+                onChange={(event) => setForm((prev) => ({ ...prev, contactEmail: event.target.value }))}
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                placeholder="shop@example.com"
+              />
+            </div>
+          </div>
+        )}
         <div>
           <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
             Detected location
@@ -199,6 +268,38 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
             </p>
           )}
         </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+              Latitude
+            </label>
+            <input
+              required
+              inputMode="decimal"
+              value={form.locationLat}
+              onChange={(event) => setForm((prev) => ({ ...prev, locationLat: event.target.value.trim() }))}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              placeholder="27.690299937452846"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+              Longitude
+            </label>
+            <input
+              required
+              inputMode="decimal"
+              value={form.locationLng}
+              onChange={(event) => setForm((prev) => ({ ...prev, locationLng: event.target.value.trim() }))}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              placeholder="85.30528399125546"
+            />
+          </div>
+        </div>
+        <p className="-mt-1 text-xs text-gray-500 dark:text-slate-400">
+          Paste coordinates directly or click the map. The detected address will update automatically.
+        </p>
 
         <div>
           <StoreLocationPicker
@@ -278,11 +379,11 @@ export default function StoreRequestForm({ initialStore = null, onSubmitOverride
               ? 'Saving...'
               : isAdminEdit
               ? 'Save store'
-              : 'Send store request'}
+              : 'Submit for approval'}
           </button>
           {!isAdminEdit && (
             <p className="text-xs text-gray-500 dark:text-slate-400">
-              We respond within 2–3 working days. For urgent updates email {contactEmail}.
+              Your shop will stay pending until an admin approves it. For urgent updates email {contactEmail}.
             </p>
           )}
         </div>

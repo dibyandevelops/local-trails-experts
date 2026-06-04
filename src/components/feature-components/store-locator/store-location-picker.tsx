@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Marker, NavigationControl, type MapRef } from 'react-map-gl/maplibre';
 import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -43,13 +43,29 @@ export default function StoreLocationPicker({
   );
   const markerLat = lat ? Number(lat) : null;
   const markerLng = lng ? Number(lng) : null;
+  const hasValidMarker =
+    markerLat !== null &&
+    markerLng !== null &&
+    Number.isFinite(markerLat) &&
+    Number.isFinite(markerLng);
 
   const initialViewState = useMemo(() => {
-    if (markerLat !== null && markerLng !== null) {
+    if (hasValidMarker) {
       return { longitude: markerLng, latitude: markerLat, zoom: 13.5 };
     }
     return DEFAULT_CENTER;
-  }, [markerLat, markerLng]);
+  }, [hasValidMarker, markerLat, markerLng]);
+
+  useEffect(() => {
+    if (!hasValidMarker) {
+      return;
+    }
+    mapRef.current?.flyTo({
+      center: [markerLng, markerLat],
+      zoom: 13.5,
+      duration: 500,
+    });
+  }, [hasValidMarker, markerLat, markerLng]);
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) return;
@@ -123,7 +139,7 @@ export default function StoreLocationPicker({
           }}
         >
           <NavigationControl position="top-right" showCompass showZoom />
-          {markerLat !== null && markerLng !== null && (
+          {hasValidMarker && (
             <Marker longitude={markerLng} latitude={markerLat} anchor="bottom">
               <div className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white shadow">
                 {markerLabel}

@@ -10,7 +10,6 @@ import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Dialog from '@radix-ui/react-dialog';
 import StoreRequestForm from '@/components/feature-components/store-locator/store-request-form';
-import { useCurrentUser } from '@/hooks/use-current-user';
 
 const DEFAULT_CENTER = { longitude: 84.124, latitude: 28.3949, zoom: 6.6 };
 
@@ -106,7 +105,6 @@ function StoreCard({
 }
 
 export default function StoreLocatorClient() {
-  const { data: user = null } = useCurrentUser();
   const mapRef = useRef<MapRef | null>(null);
   const boundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastBounds = useRef<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
@@ -246,53 +244,34 @@ export default function StoreLocatorClient() {
           >
             Use my location
           </button>
-          {user ? (
-            <Dialog.Root>
-              <Dialog.Trigger asChild>
-                <button className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
-                  List my shop
-                </button>
-              </Dialog.Trigger>
-              <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm" />
-                <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <Dialog.Title className="text-lg font-semibold text-gray-950 dark:text-slate-50">
-                        List my shop
-                      </Dialog.Title>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                        Share your shop details for review.
-                      </p>
-                    </div>
-                    <Dialog.Close className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">
-                      ✕
-                    </Dialog.Close>
+          <Dialog.Root>
+            <Dialog.Trigger asChild>
+              <button className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
+                Register shop
+              </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm" />
+              <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <Dialog.Title className="text-lg font-semibold text-gray-950 dark:text-slate-50">
+                      Register a cycle hub
+                    </Dialog.Title>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                      Submit shop details for admin approval before it appears publicly.
+                    </p>
                   </div>
-                  <div className="mt-5">
-                    <StoreRequestForm />
-                  </div>
-                </Dialog.Content>
-              </Dialog.Portal>
-            </Dialog.Root>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent('open-register', {
-                    detail: {
-                      message: 'Create an account to list your shop.',
-                      next: '/store-locator',
-                    },
-                  })
-                );
-              }}
-              className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-            >
-              Register to list
-            </button>
-          )}
+                  <Dialog.Close className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">
+                    ✕
+                  </Dialog.Close>
+                </div>
+                <div className="mt-5">
+                  <StoreRequestForm />
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
         </div>
       </div>
 

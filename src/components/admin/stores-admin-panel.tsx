@@ -217,7 +217,7 @@ export default function StoresAdminPanel() {
         maxWidthClassName="max-w-2xl"
       >
         <div className="mt-5">
-          <StoreRequestForm />
+          <StoreRequestForm requireReviewContact={false} />
         </div>
       </AppDialog>
 
