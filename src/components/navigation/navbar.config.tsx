@@ -1,0 +1,93 @@
+import {
+  Bike,
+  CalendarDays,
+  CircleDollarSign,
+  Dumbbell,
+  House,
+  Map,
+  MapPinned,
+  PlusCircle,
+  Sparkles,
+  Store,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
+import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
+import type { NavGroup, NavItem } from './navbar.types';
+
+export const navGroups: NavGroup[] = [
+  {
+    label: 'Explore',
+    items: [
+      { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      {
+        label: 'Experts',
+        href: '/experts',
+        showFor: ['anonymous', 'participant', 'expert', 'admin'],
+        badge: EXPERTS_BETA_ENABLED ? 'Beta' : undefined,
+      },
+      { label: 'Trail Builders', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Campaigns', href: '/campaigns', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Cycle Hubs', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+    ],
+  },
+  {
+    label: 'For Experts',
+    items: [
+      { label: 'Create Event', href: '/events/create', showFor: ['expert', 'admin'] },
+      { label: 'Organize Trainings', href: '/events/trainings/create', showFor: ['expert', 'admin'] },
+      { label: 'Create Trail', href: '/upload', showFor: ['admin', 'expert'] },
+      {
+        label: 'Trail Builder Dashboard',
+        href: '/trail-builders/me',
+        showFor: ['expert', 'participant', 'admin'],
+        requiresOrgMember: true,
+      },
+    ],
+  },
+];
+
+export const navItems: NavItem[] = [
+  { label: 'Home', href: '/home', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  { label: 'Explore Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  {
+    label: 'For Experts',
+    href: '/experts/join',
+    showFor: ['anonymous'],
+    badge: EXPERTS_BETA_ENABLED ? 'Beta' : undefined,
+  },
+];
+
+const NAV_ICON_MAP: Record<string, LucideIcon> = {
+  '/home': House,
+  '/trails': Map,
+  '/events': CalendarDays,
+  '/community-rides': Bike,
+  '/experts': Users,
+  '/organizations': Users,
+  '/campaigns': CircleDollarSign,
+  '/store-locator': Store,
+  '/events/create': PlusCircle,
+  '/events/trainings/create': Dumbbell,
+  '/upload': MapPinned,
+  '/experts/join': Sparkles,
+  '/trail-builders/me': Users,
+};
+
+export function getNavIcon(href: string) {
+  const Icon = NAV_ICON_MAP[href] || MapPinned;
+  return <Icon className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />;
+}
+
+export const navButtonClass =
+  'inline-flex h-10 items-center rounded-full px-3 text-sm font-semibold transition-colors';
+export const navButtonIdleClass = 'text-emerald-50/90 hover:bg-white/10 hover:text-white';
+export const navButtonActiveClass =
+  'border border-lime-300/45 bg-lime-300/15 text-lime-50 shadow-sm shadow-emerald-950/20';
+export const dropdownContentClass =
+  'z-30 flex w-60 flex-col gap-1 rounded-2xl border border-white/10 bg-emerald-950/95 p-2 text-sm text-white shadow-xl shadow-emerald-950/30 backdrop-blur';
+export const dropdownItemClass =
+  'rounded-xl px-3 py-2 text-sm font-semibold outline-none transition-colors';
+export const mobileItemClass = 'rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors';
+export const activeMenuItemClass = 'border border-lime-300/35 bg-lime-300/15 text-lime-50';
