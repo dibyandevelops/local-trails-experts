@@ -38,10 +38,10 @@ export const metadata: Metadata = {
 
 const quickSearches = [
   { label: 'Pharping', href: '/trails?search=pharping' },
-  { label: 'Enduro trails', href: '/trails?sport=mtb&search=enduro' },
+  { label: 'Enduro trails', href: '/trails?sport_type=enduro_mtb' },
+  { label: 'Downhill MTB', href: '/trails?sport_type=downhill_mtb' },
   { label: 'Beginner friendly', href: '/trails?difficulty=easy' },
   { label: 'Near Kathmandu', href: '/trails?location=Kathmandu' },
-  { label: 'Trail builders', href: '/organizations' },
 ];
 
 const featuredTrails = [
@@ -54,7 +54,7 @@ const featuredTrails = [
   {
     title: 'Find enduro-style rides',
     description: 'Look for longer descents, technical sections, and trails built for serious MTB sessions.',
-    href: '/trails?search=enduro',
+    href: '/trails?sport_type=enduro_mtb',
     meta: 'MTB focus',
   },
   {

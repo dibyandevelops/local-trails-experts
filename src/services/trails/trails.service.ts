@@ -45,7 +45,7 @@ export async function fetchTrails(
     if (filters.search?.trim()) params.search = filters.search.trim();
     if (filters.difficulty) params.difficulty = filters.difficulty;
     if (filters.location?.trim()) params.location = filters.location.trim();
-    if (filters.sport?.trim()) params.sport = filters.sport.trim();
+    if (filters.sport?.trim()) params.sport_type = filters.sport.trim();
     if (typeof filters.lat === 'number' && Number.isFinite(filters.lat)) params.lat = String(filters.lat);
     if (typeof filters.lng === 'number' && Number.isFinite(filters.lng)) params.lng = String(filters.lng);
     if (typeof filters.radiusKm === 'number' && Number.isFinite(filters.radiusKm))
@@ -84,7 +84,7 @@ export async function fetchTrailsPaginated(
     if (filters.search?.trim()) params.search = filters.search.trim();
     if (filters.difficulty) params.difficulty = filters.difficulty;
     if (filters.location?.trim()) params.location = filters.location.trim();
-    if (filters.sport?.trim()) params.sport = filters.sport.trim();
+    if (filters.sport?.trim()) params.sport_type = filters.sport.trim();
     if (typeof filters.lat === 'number' && Number.isFinite(filters.lat)) params.lat = filters.lat;
     if (typeof filters.lng === 'number' && Number.isFinite(filters.lng)) params.lng = filters.lng;
     if (typeof filters.radiusKm === 'number' && Number.isFinite(filters.radiusKm))

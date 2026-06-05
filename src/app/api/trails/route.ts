@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const purpose = (searchParams.get('purpose') || '').trim();
     const difficulty = searchParams.get('difficulty');
     const location = searchParams.get('location');
-    const sport = searchParams.get('sport');
+    const sport = searchParams.get('sport_type') || searchParams.get('sport');
     const lat = parseOptionalNumber(searchParams.get('lat'));
     const lng = parseOptionalNumber(searchParams.get('lng'));
     const radiusKm = parseOptionalNumber(searchParams.get('radiusKm'));

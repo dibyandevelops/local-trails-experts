@@ -51,7 +51,7 @@ export function useTrailsFilters({
       | Difficulty
       | '';
     const urlLocation = (searchParams.get('location') || '').trim();
-    const urlSport = (searchParams.get('sport') || '').trim();
+    const urlSport = (searchParams.get('sport_type') || searchParams.get('sport') || '').trim();
     const urlDistanceMin = (searchParams.get('distanceMin') || '').trim();
     const urlDistanceMax = (searchParams.get('distanceMax') || '').trim();
     const urlRideProfile = (searchParams.get('rideProfile') || '').trim() as RideProfile;
@@ -118,7 +118,7 @@ export function useTrailsFilters({
     if (search) params.set('search', search);
     if (difficulty) params.set('difficulty', difficulty);
     if (location) params.set('location', location);
-    if (sport) params.set('sport', sport);
+    if (sport) params.set('sport_type', sport);
     if (distanceMin) params.set('distanceMin', distanceMin);
     if (distanceMax) params.set('distanceMax', distanceMax);
     if (rideProfile) params.set('rideProfile', rideProfile);
