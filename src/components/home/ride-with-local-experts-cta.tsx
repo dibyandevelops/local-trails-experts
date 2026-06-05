@@ -92,7 +92,7 @@ export default function RideWithLocalExpertsCta() {
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50 dark:bg-slate-900 dark:text-emerald-100 dark:ring-emerald-700/60 dark:hover:bg-emerald-950/30 md:text-base"
+        className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50 dark:border dark:border-lime-300/45 dark:bg-lime-300/15 dark:text-lime-50 dark:ring-0 dark:hover:bg-lime-300/25 md:text-base"
       >
         Ride with local experts →
       </button>

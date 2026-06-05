@@ -44,8 +44,8 @@ function OrganizationVisibilityBadge({ isActive }: { isActive: boolean }) {
     <span
       className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase ${
         isActive
-          ? 'bg-emerald-50 text-emerald-700'
-          : 'bg-slate-100 text-slate-700'
+          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200'
+          : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
       }`}
     >
       {isActive ? 'Visible' : 'Hidden'}
@@ -356,43 +356,43 @@ export default function OrganizationsPanel() {
   );
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Trail Builders</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">Trail Builders</h2>
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             Create and maintain profiles for trail builder groups and partners.
           </p>
         </div>
         <button
           type="button"
           onClick={openCreate}
-          className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+          className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 dark:border dark:border-lime-300/45 dark:bg-lime-300/15 dark:text-lime-50 dark:hover:bg-lime-300/25"
         >
           Create trail builder
         </button>
       </div>
       {message && (
-        <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">
+        <p className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
           {message}
         </p>
       )}
 
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-gray-900">Trail builder list</h3>
-          <span className="text-xs font-medium text-gray-500">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Trail builder list</h3>
+          <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
             {organizations.length} total
           </span>
         </div>
         {organizations.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
             No trail builders created yet.
           </div>
         ) : (
-          <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-200">
+          <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
             <table className="min-w-[960px] w-full text-left text-sm">
-              <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500">
+              <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Trail Builder</th>
                   <th className="px-4 py-3">Location</th>
@@ -401,12 +401,12 @@ export default function OrganizationsPanel() {
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
                 {organizations.map((organization) => (
-                  <tr key={organization.id}>
+                  <tr key={organization.id} className="dark:text-slate-200">
                     <td className="px-4 py-3 align-top">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-emerald-50 text-xs font-bold text-emerald-800">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-emerald-50 text-xs font-bold text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/35 dark:text-emerald-100">
                           {organization.logo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -420,32 +420,32 @@ export default function OrganizationsPanel() {
                         </div>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-gray-900">{organization.name}</p>
+                            <p className="font-semibold text-gray-900 dark:text-slate-100">{organization.name}</p>
                             <OrganizationVisibilityBadge isActive={organization.is_active} />
                             {organization.is_verified && (
-                              <span className="inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-cyan-700">
+                              <span className="inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-200">
                                 Verified
                               </span>
                             )}
                           </div>
-                          <p className="mt-1 text-xs text-gray-500">/{organization.slug}</p>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">/{organization.slug}</p>
                           {organization.tagline && (
-                            <p className="mt-1 max-w-xs text-xs text-gray-600">
+                            <p className="mt-1 max-w-xs text-xs text-gray-600 dark:text-slate-300">
                               {organization.tagline}
                             </p>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 align-top text-xs text-gray-600">
+                    <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                       {organization.city || 'Nepal'}
                       {organization.country ? `, ${organization.country}` : ''}
                     </td>
-                    <td className="px-4 py-3 align-top text-xs text-gray-600">
+                    <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                       <p>{organization.trail_count ?? 0} trails</p>
                       <p>{organization.member_count ?? 0} members</p>
                     </td>
-                    <td className="px-4 py-3 align-top text-xs text-gray-600">
+                    <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                       <p className="max-w-[220px] break-all">
                         {organization.contact_email || 'No email'}
                       </p>

@@ -168,7 +168,7 @@ export default function Home() {
               />
               <button
                 type="submit"
-                className="min-h-[54px] rounded-xl bg-green-700 px-7 text-sm font-bold text-white transition hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+                className="min-h-[54px] rounded-xl bg-green-700 px-7 text-sm font-bold text-white transition hover:bg-green-800 dark:border dark:border-lime-300/45 dark:bg-lime-300/15 dark:text-lime-50 dark:hover:bg-lime-300/25"
               >
                 Search trails
               </button>
@@ -253,7 +253,7 @@ export default function Home() {
               support, builders, campaigns, and ride infrastructure.
             </p>
           </div>
-          <JoinAdventureButton className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30" />
+          <JoinAdventureButton className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-lime-300/45 dark:bg-lime-300/10 dark:text-lime-50 dark:hover:bg-lime-300/20" />
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -293,7 +293,7 @@ export default function Home() {
           </div>
           <Link
             href="/trails"
-            className="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-bold text-emerald-950 transition hover:bg-emerald-50"
+            className="mt-6 inline-flex rounded-full border border-lime-300/45 bg-lime-300/15 px-5 py-2.5 text-sm font-bold text-lime-50 transition hover:bg-lime-300/25"
           >
             Start with trails
           </Link>
@@ -355,13 +355,13 @@ export default function Home() {
         <div className="flex flex-wrap gap-3">
           <Link
             href="/upload"
-            className="inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800"
+            className="inline-flex items-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800 dark:border dark:border-lime-300/45 dark:bg-lime-300/15 dark:text-lime-50 dark:hover:bg-lime-300/25"
           >
             Add a trail
           </Link>
           <Link
             href="/experts/join"
-            className="inline-flex items-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30"
+            className="inline-flex items-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition hover:bg-green-50 dark:border-lime-300/45 dark:bg-lime-300/10 dark:text-lime-50 dark:hover:bg-lime-300/20"
           >
             Join as expert
           </Link>

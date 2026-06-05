@@ -133,12 +133,14 @@ const icon = (
 const navButtonClass =
   'inline-flex h-10 items-center rounded-full px-3 text-sm font-semibold transition-colors';
 const navButtonIdleClass = 'text-emerald-50/90 hover:bg-white/10 hover:text-white';
-const navButtonActiveClass = 'bg-white text-green-950 shadow-sm';
+const navButtonActiveClass =
+  'border border-lime-300/45 bg-lime-300/15 text-lime-50 shadow-sm shadow-emerald-950/20';
 const dropdownContentClass =
   'z-30 flex w-60 flex-col gap-1 rounded-2xl border border-white/10 bg-emerald-950/95 p-2 text-sm text-white shadow-xl shadow-emerald-950/30 backdrop-blur';
 const dropdownItemClass =
   'rounded-xl px-3 py-2 text-sm font-semibold outline-none transition-colors';
 const mobileItemClass = 'rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors';
+const activeMenuItemClass = 'border border-lime-300/35 bg-lime-300/15 text-lime-50';
 
 type NavbarProps = {
   initialUser?: User | null;
@@ -446,7 +448,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                                 href={item.href}
                                 className={`block ${dropdownItemClass} ${
                                   itemActive
-                                    ? 'bg-white text-green-950'
+                                    ? activeMenuItemClass
                                     : 'text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10'
                                 }`}
                               >
@@ -585,7 +587,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     href={item.href}
                     className={`truncate whitespace-nowrap ${mobileItemClass} ${
                       itemActive
-                        ? 'bg-white text-green-950'
+                        ? activeMenuItemClass
                         : 'text-emerald-50 hover:bg-white/10'
                     }`}
                     onClick={() => setMobileOpen(false)}
