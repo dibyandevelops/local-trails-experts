@@ -1,9 +1,10 @@
-const DEFAULT_PROD_URL = 'https://locoxperts.com';
+const DEFAULT_PROD_URL = 'https://www.locoxperts.com';
 
 export const SITE_NAME = 'LocoXperts';
 export const DEFAULT_TITLE = `${SITE_NAME} — MTB Trails Nepal, Local Experts & Rides`;
 export const DEFAULT_DESCRIPTION =
   'Find mountain bike trails in Nepal, discover route guides, connect with local experts, and join outdoor rides and events.';
+export const DEFAULT_OG_IMAGE_PATH = '/opengraph-image';
 
 export function getPublicAppUrl() {
   const explicit = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || '').trim();

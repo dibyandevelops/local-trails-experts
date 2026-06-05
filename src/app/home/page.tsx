@@ -3,7 +3,7 @@ import Link from 'next/link';
 import JoinAdventureButton from '@/components/home/join-adventure-button';
 import { COMMUNITY_NAME } from '@/lib/branding';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
-import { absoluteUrl, DEFAULT_DESCRIPTION } from '@/lib/seo';
+import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
 
 export const metadata: Metadata = {
@@ -27,12 +27,14 @@ export const metadata: Metadata = {
       'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
     url: '/home',
     type: 'website',
+    images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE_PATH), width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Best Site to View MTB Trails in Nepal',
     description:
       'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
+    images: [absoluteUrl(DEFAULT_OG_IMAGE_PATH)],
   },
 };
 

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import pool from '@/lib/db';
-import { absoluteUrl, DEFAULT_DESCRIPTION, SITE_NAME } from '@/lib/seo';
+import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
 
 async function getTrailSeo(id: string) {
@@ -66,6 +66,7 @@ export async function generateMetadata(
       `Explore ${trail.name} in ${trail.location}.`;
     const image =
       trail.image_url || (Array.isArray(trail.trail_images) ? trail.trail_images[0] : null);
+    const previewImage = image ? absoluteUrl(image) : absoluteUrl(DEFAULT_OG_IMAGE_PATH);
 
     return {
       title,
@@ -85,13 +86,13 @@ export async function generateMetadata(
         url: `/trails/${slug}`,
         siteName: SITE_NAME,
         type: 'article',
-        images: image ? [{ url: image, alt: trail.name }] : undefined,
+        images: [{ url: previewImage, width: 1200, height: 630, alt: trail.name }],
       },
       twitter: {
-        card: image ? 'summary_large_image' : 'summary',
+        card: 'summary_large_image',
         title,
         description,
-        images: image ? [image] : undefined,
+        images: [previewImage],
       },
     };
   } catch {

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { DEFAULT_DESCRIPTION, SITE_NAME } from '@/lib/seo';
+import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -45,11 +45,13 @@ export function listingMetadata(opts: {
       url: opts.canonicalPath,
       siteName: SITE_NAME,
       type: 'website',
+      images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE_PATH), width: 1200, height: 630, alt: SITE_NAME }],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title: opts.title,
       description,
+      images: [absoluteUrl(DEFAULT_OG_IMAGE_PATH)],
     },
   };
 }

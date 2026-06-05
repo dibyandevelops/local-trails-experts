@@ -12,6 +12,7 @@ import { getServerCurrentUser } from '@/lib/auth-server';
 import {
   absoluteUrl,
   DEFAULT_DESCRIPTION,
+  DEFAULT_OG_IMAGE_PATH,
   DEFAULT_TITLE,
   SITE_NAME,
   getPublicAppUrl,
@@ -64,13 +65,13 @@ export const metadata: Metadata = {
     url: '/',
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
-    images: [{ url: absoluteUrl(`/icons/icon-512x512.png?v=${ICON_VERSION}`) }],
+    images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE_PATH), width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
-    images: [absoluteUrl(`/icons/icon-512x512.png?v=${ICON_VERSION}`)],
+    images: [absoluteUrl(DEFAULT_OG_IMAGE_PATH)],
   },
   verification: {
     google:

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import pool from '@/lib/db';
-import { absoluteUrl, DEFAULT_DESCRIPTION, SITE_NAME } from '@/lib/seo';
+import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
 
 async function getExpertSeo(id: string) {
@@ -61,8 +61,14 @@ export async function generateMetadata(
         url: `/experts/${expert.id}`,
         siteName: SITE_NAME,
         type: 'profile',
+        images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE_PATH), width: 1200, height: 630, alt: title }],
       },
-      twitter: { title, description },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [absoluteUrl(DEFAULT_OG_IMAGE_PATH)],
+      },
     };
   } catch {
     return {
