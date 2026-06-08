@@ -112,13 +112,14 @@ export default function ExpertsBrowsePage() {
     name: trail.name,
     sport_type: trail.sport_type,
   }));
+  const activeFilterCount = [selectedCity.trim(), selectedSport].filter(Boolean).length;
 
   return (
-    <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
+    <div className="space-y-6 pb-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-7 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/45 dark:to-lime-950/25 md:px-8 md:py-9">
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
-        <div className="relative">
+        <div className="relative max-w-3xl">
           <div className="mb-3 flex flex-wrap gap-2">
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
               Experts
@@ -127,35 +128,57 @@ export default function ExpertsBrowsePage() {
               Nepal
             </span>
           </div>
-          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
-            Find Local Sports Experts
+          <h1 className="text-balance text-3xl font-black leading-tight text-gray-950 dark:text-gray-100 sm:text-5xl">
+            Find local trail experts and guides.
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-            Browse verified guides, coaches, and outdoor leaders across Nepal.
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-300 md:text-base">
+            Browse verified riders, guides, coaches, and outdoor leaders who can help with route planning, hosted rides, and local trail context.
           </p>
         </div>
       </section>
 
-      <div className="rounded-2xl border border-emerald-200/70 bg-white/80 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="rounded-3xl border border-emerald-200/70 bg-white/90 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-950/70">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <label className="block text-sm font-medium mb-1">City</label>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              Filter experts
+            </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              {activeFilterCount > 0 ? `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}` : 'Showing all available experts'}
+            </p>
+          </div>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCity('');
+                setSelectedSport('');
+              }}
+              className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <div>
+            <label className="mb-1 block text-sm font-bold text-gray-800 dark:text-slate-100">City</label>
             <input
               type="text"
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-              placeholder="Any city (leave blank for all)"
+              className="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500 dark:focus:ring-emerald-950"
+              placeholder="Kathmandu, Pokhara..."
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="mb-1 block text-sm font-bold text-gray-800 dark:text-slate-100">
               Sport / Activity
             </label>
             <select
               value={selectedSport}
               onChange={(e) => setSelectedSport(e.target.value as SportType | '')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+              className="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500 dark:focus:ring-emerald-950"
             >
               <option value="">All Sports</option>
               {sportOptions.map((sport) => (
@@ -165,11 +188,8 @@ export default function ExpertsBrowsePage() {
               ))}
             </select>
           </div>
-          <div className="flex items-end">
-            <p className="text-xs text-gray-500">
-              Verified experts are highlighted and are more likely to have
-              hosted events and reviews.
-            </p>
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100 md:max-w-xs">
+            Verified experts are highlighted and may include hosted events, reviews, and associated trails.
           </div>
         </div>
       </div>
@@ -177,11 +197,26 @@ export default function ExpertsBrowsePage() {
       {loading ? (
         <ExpertsGridSkeleton />
       ) : experts.length === 0 ? (
-        <div className="text-center py-12 text-gray-600">
-          No experts found. Try a different city or sport.
+        <div className="rounded-3xl border border-dashed border-emerald-300 bg-emerald-50/70 px-5 py-12 text-center dark:border-emerald-900/70 dark:bg-emerald-950/20">
+          <p className="text-lg font-black text-gray-950 dark:text-white">No experts found</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-600 dark:text-slate-300">
+            Try clearing filters or searching a broader city/activity. New experts will appear here after approval.
+          </p>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCity('');
+                setSelectedSport('');
+              }}
+              className="mt-4 rounded-full bg-emerald-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-800"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {experts.map((expert) => (
             <ExpertCard
               key={expert.id}
@@ -321,38 +356,40 @@ function ExpertCard({
           onViewExpert();
         }
       }}
-      className="group flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-emerald-200/70 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-emerald-900/60 dark:bg-slate-950/60"
+      className="group flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-3xl border border-emerald-200/70 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-emerald-900/60 dark:bg-slate-950/70 dark:hover:border-emerald-700"
     >
       <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-cyan-50 p-5 dark:border-emerald-900/60 dark:from-emerald-950/40 dark:via-slate-950/20 dark:to-cyan-950/30">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="h-14 w-14 overflow-hidden rounded-full border border-emerald-200 bg-gray-100 text-gray-700 dark:border-emerald-900/60">
-            {expert.profile_photo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={expert.profile_photo_url}
-                alt={expert.name || 'Expert'}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
-                {initials}
-              </div>
-            )}
-          </div>
-          <div>
-              <h2 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
-              {expert.name || 'Local Expert'}
+            <div className="h-14 w-14 overflow-hidden rounded-2xl border border-emerald-200 bg-gray-100 text-gray-700 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-emerald-100">
+              {expert.profile_photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={expert.profile_photo_url}
+                  alt={expert.name || 'Expert'}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm font-black">
+                  {initials}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <h2 className="line-clamp-1 text-lg font-black text-gray-950 transition-colors group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
+                {expert.name || 'Local Expert'}
               </h2>
-            {expert.city && (
-                <p className="text-xs text-gray-500 dark:text-slate-400">{expert.city}</p>
-            )}
+              <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-slate-400">
+                {expert.city || 'Kathmandu, Nepal'}
+              </p>
               <div className="mt-1 flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
-                <span className="font-semibold text-gray-900">
+                <span className="font-bold text-gray-900 dark:text-white">
                   {averageRating.toFixed(1)}
                 </span>
                 {renderStars(averageRating)}
-                <span className="text-gray-500 dark:text-slate-400">({reviewCount})</span>
+                <span className="text-gray-500 dark:text-slate-400">
+                  {reviewCount} review{reviewCount === 1 ? '' : 's'}
+                </span>
               </div>
             </div>
           </div>
@@ -369,10 +406,10 @@ function ExpertCard({
 
         <div className="mt-1 flex flex-wrap gap-1.5">
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/80 bg-emerald-100/80 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-100">
-            📅 {upcomingEvents.length} upcoming
+            {upcomingEvents.length} upcoming
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/80 bg-emerald-100/80 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-100">
-            ⭐ {averageRating.toFixed(1)}
+            {averageRating.toFixed(1)} rating
           </span>
         </div>
 
@@ -391,7 +428,7 @@ function ExpertCard({
       </div>
 
       {expert.bio && (
-        <p className="mb-3 line-clamp-3 px-5 pt-4 text-sm text-gray-700 dark:text-slate-200">
+        <p className="mb-3 line-clamp-3 px-5 pt-4 text-sm leading-6 text-gray-700 dark:text-slate-200">
           {expert.bio}
         </p>
       )}
@@ -413,8 +450,8 @@ function ExpertCard({
 
       <div className="mt-auto px-5 pb-5">
         {upcomingEvents.length > 0 ? (
-          <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-            <p className="mb-2 text-xs font-medium text-gray-600 dark:text-slate-300">
+          <div className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-slate-400">
               Upcoming events
             </p>
             <ul className="space-y-1.5">
@@ -446,7 +483,7 @@ function ExpertCard({
               event.stopPropagation();
               onViewExpert();
             }}
-            className="rounded-lg border border-green-700 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
+            className="rounded-xl border border-green-700 px-3 py-1.5 text-xs font-bold text-green-700 transition hover:bg-green-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
           >
             View Expert
           </button>
@@ -456,7 +493,7 @@ function ExpertCard({
               event.stopPropagation();
               onRequestTrail();
             }}
-            className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
+            className="rounded-xl border border-emerald-300 px-3 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
           >
             Request Trail
           </button>
@@ -467,7 +504,7 @@ function ExpertCard({
                 event.stopPropagation();
                 onViewEvents();
               }}
-              className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800"
+              className="rounded-xl bg-green-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-800"
             >
               View Events
             </button>

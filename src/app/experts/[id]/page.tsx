@@ -33,6 +33,37 @@ interface ExpertDetail extends User {
   events: Event[];
 }
 
+function DetailSection({
+  eyebrow,
+  title,
+  children,
+  action,
+}: {
+  eyebrow?: string;
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          {eyebrow && (
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              {eyebrow}
+            </p>
+          )}
+          <h2 className="mt-1 text-lg font-black text-gray-950 dark:text-white">
+            {title}
+          </h2>
+        </div>
+        {action}
+      </div>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
 export default function ExpertDetailPage() {
   const params = useParams<{ id: string }>();
   const expertId = params?.id;
@@ -358,8 +389,8 @@ export default function ExpertDetailPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-1 pb-8">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-lg shadow-emerald-100/60 dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 dark:shadow-emerald-950/30 md:p-8">
+    <div className="mx-auto max-w-6xl space-y-6 px-1 pb-8">
+      <section className="relative overflow-hidden rounded-[2rem] border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-sm dark:border-emerald-900/70 dark:from-slate-950 dark:via-emerald-950/45 dark:to-lime-950/20 md:p-8">
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
         <div className="pointer-events-none absolute -left-16 bottom-0 h-56 w-56 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
         <div className="relative">
@@ -380,7 +411,7 @@ export default function ExpertDetailPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
             <div className="min-w-0">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-emerald-200 bg-white text-emerald-900 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900 dark:text-emerald-100">
@@ -414,7 +445,7 @@ export default function ExpertDetailPage() {
                       </span>
                     )}
                   </div>
-                  <h1 className="mt-3 text-3xl font-bold tracking-tight text-green-900 dark:text-green-100 sm:text-4xl">
+                  <h1 className="mt-3 text-balance text-3xl font-black tracking-tight text-gray-950 dark:text-white sm:text-5xl">
                     {expert.name || 'Local Expert'}
                   </h1>
                   {expert.city && (
@@ -445,7 +476,7 @@ export default function ExpertDetailPage() {
               )}
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/80 bg-white/80 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/70">
+                <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/70">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-slate-400">
                     Rating
                   </p>
@@ -459,7 +490,7 @@ export default function ExpertDetailPage() {
                     {reviewSummary.count} review{reviewSummary.count === 1 ? '' : 's'}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/80 bg-white/80 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/70">
+                <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/70">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-slate-400">
                     Events
                   </p>
@@ -470,7 +501,7 @@ export default function ExpertDetailPage() {
                     Upcoming ride{upcomingEvents.length === 1 ? '' : 's'}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/80 bg-white/80 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/70">
+                <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/70">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-slate-400">
                     Trails
                   </p>
@@ -484,11 +515,11 @@ export default function ExpertDetailPage() {
               </div>
             </div>
 
-            <aside className="rounded-2xl border border-emerald-200 bg-white/85 p-5 shadow-sm backdrop-blur-sm dark:border-emerald-900 dark:bg-slate-900/70">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
+            <aside className="rounded-3xl border border-emerald-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-emerald-900 dark:bg-slate-950/75">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
                 Work With This Expert
               </p>
-              <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="mt-2 text-xl font-black text-gray-950 dark:text-white">
                 Plan a local ride
               </h2>
               <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
@@ -497,14 +528,14 @@ export default function ExpertDetailPage() {
               <div className="mt-4 flex flex-col gap-2">
                 <Link
                   href={`/events?expert=${expert.id}`}
-                  className="inline-flex w-full items-center justify-center rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-green-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
                 >
                   View Events
                 </Link>
                 <button
                   type="button"
                   onClick={openRequestModal}
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-cyan-600 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 dark:border-cyan-500 dark:bg-cyan-950/30 dark:text-cyan-200 dark:hover:bg-cyan-900/40"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-cyan-600 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-800 transition hover:bg-cyan-100 dark:border-cyan-500 dark:bg-cyan-950/30 dark:text-cyan-200 dark:hover:bg-cyan-900/40"
                 >
                   Request Trail Activity
                 </button>
@@ -518,7 +549,7 @@ export default function ExpertDetailPage() {
                         ? 'Join this expert’s event first (admins can review directly)'
                         : undefined
                   }
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-green-700 bg-white px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50 dark:border-emerald-500 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-green-700 bg-white px-3 py-2 text-xs font-bold text-green-700 transition hover:bg-green-50 dark:border-emerald-500 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
                 >
                   {!currentUser
                     ? 'Write Review (Login)'
@@ -532,7 +563,7 @@ export default function ExpertDetailPage() {
                   <button
                     type="button"
                     onClick={() => setVerificationModalOpen(true)}
-                    className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     Verification Details
                   </button>
@@ -540,7 +571,7 @@ export default function ExpertDetailPage() {
                 <button
                   type="button"
                   onClick={() => setGalleryModalOpen(true)}
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Career Gallery
                 </button>
@@ -561,29 +592,24 @@ export default function ExpertDetailPage() {
       </section>
 
       {associatedTrails.length > 0 && (
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                Expert Trails
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
-                Trails associated with {expert.name || 'this expert'}
-              </h2>
-            </div>
+        <DetailSection
+          eyebrow="Expert Trails"
+          title={`Trails associated with ${expert.name || 'this expert'}`}
+          action={
             <Link
               href="/trails"
-              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
             >
               Browse all trails
             </Link>
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          }
+        >
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {associatedTrails.map((trail) => (
               <Link
                 key={trail.id}
                 href={`/trails/${trail.slug || trail.id}`}
-                className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900/60 dark:hover:border-emerald-700"
+                className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900/60 dark:hover:border-emerald-700"
               >
                 <div className="h-28 bg-gradient-to-br from-emerald-100 to-lime-100 dark:from-emerald-950 dark:to-slate-800">
                   {trail.image_url ? (
@@ -618,7 +644,7 @@ export default function ExpertDetailPage() {
               </Link>
             ))}
           </div>
-        </section>
+        </DetailSection>
       )}
 
       <TrailRequestModal
@@ -651,32 +677,24 @@ export default function ExpertDetailPage() {
       />
 
       {(loadingReviews || Boolean(reviewData?.reviews?.length)) && (
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                Reviews
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
-                Expert ratings & feedback
-              </h2>
-              <div className="mt-2 flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
-                <span className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {reviewSummary.averageRating.toFixed(1)}
-                </span>
-                {renderStars(reviewSummary.averageRating)}
-                <span>({reviewSummary.count} reviews)</span>
-              </div>
-            </div>
+        <DetailSection eyebrow="Reviews" title="Expert ratings and feedback">
+          <div className="mb-4 flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
+            <span className="text-xl font-black text-gray-950 dark:text-white">
+              {reviewSummary.averageRating.toFixed(1)}
+            </span>
+            {renderStars(reviewSummary.averageRating)}
+            <span>
+              {reviewSummary.count} review{reviewSummary.count === 1 ? '' : 's'}
+            </span>
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             {loadingReviews ? (
               <p className="text-sm text-gray-500 dark:text-slate-300">Loading reviews...</p>
             ) : (
               reviewData?.reviews?.map((review) => (
                 <div
                   key={review.id}
-                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                  className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -706,76 +724,74 @@ export default function ExpertDetailPage() {
                     {renderStars(review.rating)}
                   </div>
                   {review.comment && (
-                    <p className="mt-3 text-sm text-gray-700 dark:text-slate-200">{review.comment}</p>
+                    <p className="mt-3 text-sm leading-6 text-gray-700 dark:text-slate-200">
+                      {review.comment}
+                    </p>
                   )}
                 </div>
               ))
             )}
           </div>
-        </section>
+        </DetailSection>
       )}
 
-      <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
-          Upcoming events with {expert.name || 'this expert'}
-        </h2>
+      <DetailSection title={`Upcoming events with ${expert.name || 'this expert'}`} eyebrow="Events">
         {upcomingEvents.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
-            No upcoming events listed yet. Check back soon or browse other
-            events.
+          <p className="rounded-2xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
+            No upcoming events listed yet. Request trail support or browse other events.
           </p>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {upcomingEvents.map((event) => (
               <div
                 key={event.id}
-                className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900/60"
+                className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900/60"
               >
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                     {event.title}
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                     <DateText value={event.event_date} pattern="PPP p" />
-                    {event.city ? ` • ${event.city}` : ''}
+                    {event.city ? ` - ${event.city}` : ''}
                   </p>
-                  {event.sport_type && (
-                    <p className="text-xs text-gray-500 dark:text-slate-400">
-                      {getSportLabel(event.sport_type)}
-                    </p>
-                  )}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {event.sport_type && (
+                      <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+                        {getSportLabel(event.sport_type)}
+                      </span>
+                    )}
+                    <span className="rounded-full bg-gray-100 px-2 py-1 text-[11px] font-semibold text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                      {event.price_npr > 0 ? `NPR ${event.price_npr}` : 'Free'}
+                    </span>
+                  </div>
                   {event.meeting_point && (
-                    <p className="text-xs text-gray-600 mt-1 dark:text-slate-300">
+                    <p className="mt-2 text-xs leading-5 text-gray-600 dark:text-slate-300">
                       Meeting point: {event.meeting_point}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-gray-900 dark:text-white">
-                    {event.price_npr > 0 ? `NPR ${event.price_npr}` : 'Free'}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/events/${event.id}`}
-                      className="inline-flex rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      Details
-                    </Link>
-                    <Link
-                      href={`/events?city=${encodeURIComponent(event.city || '')}&sport=${encodeURIComponent(
-                        event.sport_type || ''
-                      )}`}
-                      className="inline-flex rounded-lg bg-green-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
-                    >
-                      Explore
-                    </Link>
-                  </div>
+                <div className="flex items-center justify-end gap-2">
+                  <Link
+                    href={`/events/${event.id}`}
+                    className="inline-flex rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Details
+                  </Link>
+                  <Link
+                    href={`/events?city=${encodeURIComponent(event.city || '')}&sport=${encodeURIComponent(
+                      event.sport_type || ''
+                    )}`}
+                    className="inline-flex rounded-xl bg-green-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+                  >
+                    Explore similar
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </section>
+      </DetailSection>
 
       <AppDialog
         open={verificationModalOpen}
