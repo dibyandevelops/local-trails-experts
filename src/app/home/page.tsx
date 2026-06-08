@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import JoinAdventureButton from '@/components/home/join-adventure-button';
 import { COMMUNITY_NAME } from '@/lib/branding';
-import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
 
@@ -137,11 +136,6 @@ export default function Home() {
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text dark:border-emerald-700/60 dark:bg-emerald-900/35 dark:text-emerald-100">
               Trail Builders
             </span>
-            {EXPERTS_BETA_ENABLED && (
-              <span className="rounded-full border border-amber-200 bg-amber-50/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-                Expert beta
-              </span>
-            )}
           </div>
 
           <h1 className="text-balance text-4xl font-black leading-tight text-gray-950 dark:text-gray-100 md:text-6xl lg:text-7xl">

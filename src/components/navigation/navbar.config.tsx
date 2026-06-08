@@ -12,7 +12,6 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import type { NavGroup, NavItem } from './navbar.types';
 
 export const navGroups: NavGroup[] = [
@@ -25,7 +24,6 @@ export const navGroups: NavGroup[] = [
         label: 'Experts',
         href: '/experts',
         showFor: ['anonymous', 'participant', 'expert', 'admin'],
-        badge: EXPERTS_BETA_ENABLED ? 'Beta' : undefined,
       },
       { label: 'Trail Builders', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Campaigns', href: '/campaigns', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
@@ -55,7 +53,6 @@ export const navItems: NavItem[] = [
     label: 'For Experts',
     href: '/experts/join',
     showFor: ['anonymous'],
-    badge: EXPERTS_BETA_ENABLED ? 'Beta' : undefined,
   },
 ];
 

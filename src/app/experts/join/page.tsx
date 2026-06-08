@@ -4,7 +4,6 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
 import { loginUser } from '@/services/auth/auth.service';
-import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 
 export default function ExpertJoinPage() {
   const router = useRouter();
@@ -129,11 +128,6 @@ export default function ExpertJoinPage() {
             <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
               Local Experts
             </span>
-            {EXPERTS_BETA_ENABLED && (
-              <span className="rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
-                Beta
-              </span>
-            )}
           </div>
           <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
             Apply as a local trail expert

@@ -19,8 +19,13 @@ export default function NavbarBrand() {
           unoptimized
         />
       </span>
-      <span className="hidden text-sm font-black uppercase tracking-[0.22em] text-emerald-50 sm:inline">
-        LocoXperts
+      <span className="hidden flex-col leading-none sm:inline-flex">
+        <span className="text-sm font-black uppercase tracking-[0.22em] text-emerald-50">
+          LocoXperts
+        </span>
+        <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-100/75">
+          Find local trails and guides
+        </span>
       </span>
     </Link>
   );

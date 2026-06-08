@@ -123,11 +123,6 @@ export default function ExpertsBrowsePage() {
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
               Experts
             </span>
-            {EXPERTS_BETA_ENABLED && (
-              <span className="rounded-full border border-amber-300/80 bg-amber-100/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800">
-                Beta
-              </span>
-            )}
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
               Nepal
             </span>
@@ -138,11 +133,6 @@ export default function ExpertsBrowsePage() {
           <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
             Browse verified guides, coaches, and outdoor leaders across Nepal.
           </p>
-          {EXPERTS_BETA_ENABLED && (
-            <p className="mt-2 max-w-2xl text-xs font-medium text-amber-700 dark:text-amber-300">
-              Beta feature: workflows may change.
-            </p>
-          )}
         </div>
       </section>
 

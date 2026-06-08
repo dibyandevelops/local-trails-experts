@@ -2289,7 +2289,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             </Dialog.Title>
             <p className="mt-1 text-sm text-gray-600">
               {EXPERTS_BETA_ENABLED
-                ? 'This sends your request to admin while experts are in beta. Add details to help planning.'
+                ? 'This sends your request to the team for planning. Add details to help coordination.'
                 : 'This sends your request to experts/admin. Add details to help them.'}
             </p>
             {requestMessage && (

@@ -175,7 +175,7 @@ export default function TrailRequestModal({
         {selectedTrailName
           ? `Trail: ${selectedTrailName}`
           : expertsBetaEnabled
-            ? 'Pick your preferred date. Requests are handled by admin while experts are in beta.'
+            ? 'Pick your preferred date. Requests are routed to the team for planning.'
             : 'Pick expert and date for your request.'}
       </p>
 

@@ -25,8 +25,8 @@ export default function TrailRequestsPanel() {
         Requests submitted by participants to notify experts/admin.
       </p>
       {EXPERTS_BETA_ENABLED && (
-        <p className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
-          Experts beta is enabled. Trail requests are currently routed to admin for scheduling.
+        <p className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-900">
+          Trail requests are currently routed to admin for scheduling.
         </p>
       )}
       {loadingTrailRequests ? (

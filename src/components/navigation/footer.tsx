@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import type { User } from '@/types';
-import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import FooterInfoColumn from '@/components/navigation/footer/footer-info-column';
 import FooterLinksColumn from '@/components/navigation/footer/footer-links-column';
 import FooterSupportColumn from '@/components/navigation/footer/footer-support-column';
@@ -53,7 +52,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
 
   const expertLinks = [
     {
-      label: `For experts${EXPERTS_BETA_ENABLED ? ' (Beta)' : ''}`,
+      label: 'For experts',
       href: '/experts/join',
     },
     ...EXPERT_LINKS_BASE,
