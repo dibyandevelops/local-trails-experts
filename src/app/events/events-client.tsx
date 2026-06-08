@@ -343,13 +343,23 @@ export default function EventsPageClient() {
     acc[level] = events.filter((event) => event.required_expertise === level);
     return acc;
   }, {} as Record<ExpertiseLevel, Event[]>);
+  const activeFilterCount = [
+    selectedExpertise,
+    selectedCity.trim(),
+    selectedSport,
+    selectedExpert,
+    showOnlyUpcoming ? 'upcoming' : '',
+  ].filter(Boolean).length;
+  const controlClass =
+    'min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500 dark:focus:ring-emerald-950';
+  const labelClass = 'mb-1 block text-sm font-bold text-gray-800 dark:text-slate-100';
 
   return (
-    <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
+    <div className="space-y-6 pb-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-7 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/45 dark:to-lime-950/25 md:px-8 md:py-9">
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
-        <div className="relative">
+        <div className="relative max-w-3xl">
           <div className="mb-3 flex flex-wrap gap-2">
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
               Events
@@ -358,19 +368,48 @@ export default function EventsPageClient() {
               Nepal
             </span>
           </div>
-          <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
-            Find the next ride or training
+          <h1 className="text-balance text-3xl font-black leading-tight text-gray-950 dark:text-gray-100 sm:text-5xl">
+            Find the next local ride or training.
           </h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Browse local events, filter by expertise and sport, and join the right crew.
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-300 md:text-base">
+            Browse upcoming rides, trainings, and community sessions. Filter by sport, city, expertise, or expert host.
           </p>
         </div>
       </section>
 
-      <div className="rounded-2xl border border-emerald-200/70 bg-white/80 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70 sm:p-6">
+      <div className="rounded-3xl border border-emerald-200/70 bg-white/90 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-950/70 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              Filter events
+            </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              {activeFilterCount > 0
+                ? `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`
+                : 'Showing the full event catalog'}
+            </p>
+          </div>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                setEventsFilterDraft({
+                  expertise: '',
+                  city: '',
+                  sport: '',
+                  expert: '',
+                  showUpcoming: false,
+                })
+              }
+              className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
         {sportTypes.length > 0 && (
           <div className="mb-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-gray-600 dark:text-slate-300">
               Quick filter by sport
             </p>
             <div className="flex flex-wrap gap-2">
@@ -407,7 +446,7 @@ export default function EventsPageClient() {
         )}
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Your Expertise Level</label>
+            <label className={labelClass}>Your Expertise Level</label>
             <select
               value={userExpertise}
               onChange={(e) =>
@@ -415,7 +454,7 @@ export default function EventsPageClient() {
                   userExpertise: e.target.value as ExpertiseLevel,
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={controlClass}
             >
               {expertiseLevels.map((level) => (
                 <option key={level} value={level}>
@@ -425,7 +464,7 @@ export default function EventsPageClient() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Filter by Expertise</label>
+            <label className={labelClass}>Filter by Expertise</label>
             <select
               value={selectedExpertise}
               onChange={(e) =>
@@ -433,7 +472,7 @@ export default function EventsPageClient() {
                   expertise: e.target.value as ExpertiseLevel | '',
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={controlClass}
             >
               <option value="">All Levels</option>
               {expertiseLevels.map((level) => (
@@ -444,14 +483,14 @@ export default function EventsPageClient() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">City</label>
+            <label className={labelClass}>City</label>
             <input
               list="events-city-options"
               type="text"
               value={selectedCity}
               onChange={(e) => setEventsFilterDraft({ city: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Any city (leave blank for all)"
+              className={controlClass}
+              placeholder="Kathmandu, Pokhara..."
             />
             <datalist id="events-city-options">
               {cityOptions.map((city: string) => (
@@ -459,7 +498,7 @@ export default function EventsPageClient() {
               ))}
             </datalist>
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 dark:border-emerald-900/60 dark:bg-emerald-950/35">
             <label className="flex items-center">
               <input
                 type="checkbox"
@@ -469,19 +508,21 @@ export default function EventsPageClient() {
                 }
                 className="mr-2"
               />
-              <span className="text-sm font-medium">Show only upcoming events</span>
+              <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
+                Show only upcoming events
+              </span>
             </label>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium mb-2">Sport Type</label>
+            <label className={labelClass}>Sport Type</label>
             <select
               value={selectedSport}
               onChange={(e) =>
                 setEventsFilterDraft({ sport: e.target.value as SportType | '' })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={controlClass}
             >
               <option value="">All Sports</option>
               {sportTypes.map((sport: { value: SportType; label: string }) => (
@@ -492,11 +533,11 @@ export default function EventsPageClient() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Expert</label>
+            <label className={labelClass}>Expert</label>
             <select
               value={selectedExpert}
               onChange={(e) => setEventsFilterDraft({ expert: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className={controlClass}
             >
               <option value="">All experts</option>
               {experts.map((expert) => (
@@ -515,15 +556,18 @@ export default function EventsPageClient() {
         <>
           {selectedExpertise ? (
             <div>
-              <h2 className="text-2xl font-bold mb-6 capitalize">
+              <h2 className="mb-5 text-2xl font-black capitalize text-gray-950 dark:text-white">
                 {selectedExpertise} Events
               </h2>
               {events.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600">No events found for this expertise level.</p>
+                <div className="rounded-3xl border border-dashed border-emerald-300 bg-emerald-50/70 px-5 py-12 text-center dark:border-emerald-900/70 dark:bg-emerald-950/20">
+                  <p className="text-lg font-black text-gray-950 dark:text-white">No events found</p>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                    Try another expertise level or clear filters.
+                  </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                   {events.map((event) => (
                     <EventCard
                       key={event.id}
@@ -559,17 +603,27 @@ export default function EventsPageClient() {
               )}
             </div>
           ) : (
-            <div className="space-y-8 sm:space-y-12">
+            <div className="space-y-8 sm:space-y-10">
               {expertiseLevels.map((level) => {
                 const levelEvents = eventsByExpertise[level];
                 if (levelEvents.length === 0) return null;
 
                 return (
-                  <div key={level}>
-                    <h2 className="mb-4 border-b border-emerald-200 pb-2 text-2xl font-bold capitalize text-gray-900 dark:border-emerald-900/60 dark:text-white">
-                      {level} Events ({levelEvents.length})
-                    </h2>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+                  <section key={level} className="space-y-4">
+                    <div className="flex flex-wrap items-end justify-between gap-2 border-b border-emerald-200 pb-3 dark:border-emerald-900/60">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                          {level}
+                        </p>
+                        <h2 className="mt-1 text-2xl font-black capitalize text-gray-950 dark:text-white">
+                          {level} Events
+                        </h2>
+                      </div>
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+                        {levelEvents.length} event{levelEvents.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                       {levelEvents.map((event) => (
                         <EventCard
                           key={event.id}
@@ -602,12 +656,15 @@ export default function EventsPageClient() {
                         />
                       ))}
                     </div>
-                  </div>
+                  </section>
                 );
               })}
               {events.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-gray-600">No events found. Try adjusting your filters.</p>
+                <div className="rounded-3xl border border-dashed border-emerald-300 bg-emerald-50/70 px-5 py-12 text-center dark:border-emerald-900/70 dark:bg-emerald-950/20">
+                  <p className="text-lg font-black text-gray-950 dark:text-white">No events found</p>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-600 dark:text-slate-300">
+                    Try clearing filters or choosing a broader city/activity.
+                  </p>
                 </div>
               )}
             </div>
@@ -626,14 +683,14 @@ export default function EventsPageClient() {
         }}
       >
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-lg">
-            <Dialog.Title className="text-lg font-semibold text-gray-900">
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-gray-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950">
+            <Dialog.Title className="text-lg font-black text-gray-950 dark:text-white">
               Confirm your spot
             </Dialog.Title>
             {joinTarget && (
-              <div className="mt-3 space-y-3 text-sm text-gray-700">
-                <p className="font-semibold text-gray-900">{joinTarget.title}</p>
+              <div className="mt-3 space-y-3 text-sm text-gray-700 dark:text-slate-300">
+                <p className="font-bold text-gray-950 dark:text-white">{joinTarget.title}</p>
                 <p>
                   <DateText value={joinTarget.event_date} pattern="PPP p" />
                   {joinTarget.city ? ` • ${joinTarget.city}` : ''}
@@ -645,14 +702,14 @@ export default function EventsPageClient() {
                     : 'Free'}
                 </p>
                 {joinTarget.trail && (
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                    <p className="font-semibold text-gray-900">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <p className="font-semibold text-gray-900 dark:text-white">
                       Trail: {joinTarget.trail.name}
                     </p>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-gray-600 dark:text-slate-300">
                       {joinTarget.trail.location}
                     </p>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-gray-600 dark:text-slate-300">
                       {joinTarget.trail.distance_km
                         ? `${joinTarget.trail.distance_km} km`
                         : ''}
@@ -675,7 +732,7 @@ export default function EventsPageClient() {
                     )}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                    className="inline-flex items-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
                   >
                     Open in Google Maps
                   </a>
@@ -686,7 +743,7 @@ export default function EventsPageClient() {
                     {joinTarget.difficulty}
                   </p>
                 )}
-                <div className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-xs text-amber-900">
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
                   <p className="font-semibold mb-1">Rules & checklist</p>
                   <ul className="space-y-1">
                     <li>• Wear a helmet at all times</li>
@@ -695,7 +752,7 @@ export default function EventsPageClient() {
                     <li>• Follow the guide’s instructions</li>
                   </ul>
                 </div>
-                <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                <label className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
                   <input
                     type="checkbox"
                     checked={riskAcknowledged}
@@ -713,7 +770,7 @@ export default function EventsPageClient() {
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                  className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
                 >
                   Cancel
                 </button>
@@ -722,7 +779,7 @@ export default function EventsPageClient() {
                 type="button"
                 onClick={confirmJoin}
                 disabled={joinMutation.isPending || !riskAcknowledged}
-                className="px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-60"
+                className="rounded-xl bg-green-700 px-4 py-2 text-sm font-bold text-white hover:bg-green-800 disabled:opacity-60"
               >
                 {joinMutation.isPending ? 'Joining...' : 'Confirm & Join'}
               </button>
@@ -735,12 +792,12 @@ export default function EventsPageClient() {
         <Toast.Root
           open={toastOpen}
           onOpenChange={setToastOpen}
-          className="fixed bottom-4 right-4 w-[90vw] max-w-sm rounded-2xl bg-white border border-gray-200 shadow-lg p-4"
+          className="fixed bottom-4 right-4 w-[90vw] max-w-sm rounded-2xl border border-gray-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-950"
         >
-          <Toast.Title className="text-sm font-semibold text-gray-900">
+          <Toast.Title className="text-sm font-bold text-gray-950 dark:text-white">
             You are in!
           </Toast.Title>
-          <Toast.Description className="text-xs text-gray-600 mt-1">
+          <Toast.Description className="mt-1 text-xs text-gray-600 dark:text-slate-300">
             Your spot has been confirmed. See you at the trail.
           </Toast.Description>
         </Toast.Root>
@@ -783,7 +840,7 @@ function EventCard({
   return (
     <Link
       href={`/events/${event.id}`}
-      className="group block overflow-hidden rounded-2xl border border-emerald-200/80 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl dark:border-emerald-900/50 dark:bg-slate-950/60"
+      className="group block overflow-hidden rounded-3xl border border-emerald-200/80 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-xl dark:border-emerald-900/50 dark:bg-slate-950/70 dark:hover:border-emerald-700"
     >
       <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-sky-50 px-4 py-3 dark:border-emerald-900/60 dark:from-emerald-950/40 dark:via-slate-950/30 dark:to-sky-950/30 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -813,7 +870,7 @@ function EventCard({
       <div className="p-4 sm:p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 transition-colors group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
+            <h3 className="text-xl font-black text-gray-950 transition-colors group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
               {event.title}
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
@@ -821,7 +878,7 @@ function EventCard({
               {event.city ? ` • ${event.city}` : ''}
             </p>
           </div>
-          <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
+          <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
             {event.current_participants}/{event.max_participants} joined
           </span>
         </div>
@@ -834,7 +891,7 @@ function EventCard({
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {event.difficulty && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/60">
               <p className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Difficulty
               </p>
@@ -844,7 +901,7 @@ function EventCard({
             </div>
           )}
           {event.trail?.distance_km ? (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 dark:border-blue-900/60 dark:bg-blue-950/40">
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 dark:border-blue-900/60 dark:bg-blue-950/40">
               <p className="text-[10px] uppercase tracking-wide text-blue-600 dark:text-blue-300">
                 Distance
               </p>
@@ -854,7 +911,7 @@ function EventCard({
             </div>
           ) : null}
           {event.trail?.elevation_gain_m ? (
-            <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 dark:border-violet-900/60 dark:bg-violet-950/40">
+            <div className="rounded-2xl border border-violet-200 bg-violet-50 px-3 py-2 dark:border-violet-900/60 dark:bg-violet-950/40">
               <p className="text-[10px] uppercase tracking-wide text-violet-600 dark:text-violet-300">
                 Elevation
               </p>
@@ -866,7 +923,7 @@ function EventCard({
         </div>
 
         {event.trail && (
-          <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+          <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/50">
             <p className="text-sm font-semibold text-gray-900 dark:text-white">{event.trail.name}</p>
             <p className="text-xs text-gray-600 dark:text-slate-300">{event.trail.location}</p>
           </div>
@@ -888,7 +945,7 @@ function EventCard({
           {canEdit ? (
             <button
               onClick={onEdit}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
             >
               Edit Event
             </button>
@@ -896,7 +953,7 @@ function EventCard({
             <button
               onClick={onJoin}
               disabled={!canJoin}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
                 canJoin
                   ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                   : 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-slate-700 dark:text-slate-400'
@@ -908,7 +965,7 @@ function EventCard({
           {hasJoined && (
             <button
               onClick={onLeave}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900/60"
+              className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900/60"
             >
               Leave
             </button>
@@ -916,7 +973,7 @@ function EventCard({
           {canConfirmPayment && (
             <button
               onClick={() => window.location.assign(`/events/${event.id}?pay=1`)}
-              className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+              className="rounded-xl border border-emerald-300 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
             >
               Confirm Payment
             </button>
@@ -924,7 +981,7 @@ function EventCard({
           {isAdminOrExpert && (
             <button
               onClick={onCancel}
-              className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+              className="rounded-xl border border-red-200 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
             >
               Cancel Event
             </button>
@@ -937,11 +994,11 @@ function EventCard({
 
 function EventsGridSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 animate-pulse">
+    <div className="grid animate-pulse grid-cols-1 gap-5 md:grid-cols-2">
       {Array.from({ length: 4 }).map((_, index) => (
         <div
           key={`event-skeleton-${index}`}
-          className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900/60"
+          className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
         >
           <div className="mb-3 h-6 w-2/3 rounded bg-gray-200 dark:bg-slate-800" />
           <div className="mb-4 h-4 w-1/3 rounded bg-gray-200 dark:bg-slate-800" />

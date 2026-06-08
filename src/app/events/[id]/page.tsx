@@ -364,17 +364,28 @@ export default function EventDetailPage() {
   }, [eventId, canReviewPayments, refreshReviewBookings]);
 
   if (loading) {
-    return <div className="text-gray-600">Loading event...</div>;
+    return (
+      <div className="mx-auto max-w-5xl space-y-4 py-6">
+        <div className="h-44 animate-pulse rounded-3xl bg-gray-100 dark:bg-slate-800" />
+        <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+          <div className="h-72 animate-pulse rounded-3xl bg-gray-100 dark:bg-slate-800" />
+          <div className="h-72 animate-pulse rounded-3xl bg-gray-100 dark:bg-slate-800" />
+        </div>
+      </div>
+    );
   }
 
   if (!event) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 mb-4">Event not found.</p>
+      <div className="mx-auto max-w-xl rounded-3xl border border-dashed border-emerald-300 bg-emerald-50/70 px-5 py-12 text-center dark:border-emerald-900/70 dark:bg-emerald-950/20">
+        <p className="text-lg font-black text-gray-950 dark:text-white">Event not found</p>
+        <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+          This event may have been removed or is no longer available.
+        </p>
         <button
           type="button"
           onClick={() => router.push('/events')}
-          className="inline-flex px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800"
+          className="mt-4 inline-flex rounded-full bg-green-700 px-4 py-2 text-sm font-bold text-white hover:bg-green-800"
         >
           Back to events
         </button>
@@ -554,8 +565,8 @@ export default function EventDetailPage() {
 
   return (
     <>
-      <div className="mx-auto max-w-5xl space-y-6">
-      <section className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/40 p-6 shadow-md shadow-emerald-100/60 dark:border-emerald-900/60 dark:from-emerald-950/60 dark:via-slate-950/70 dark:to-emerald-900/40 dark:shadow-emerald-950/30">
+      <div className="mx-auto max-w-5xl space-y-6 pb-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-sm dark:border-emerald-900/70 dark:from-slate-950 dark:via-emerald-950/45 dark:to-lime-950/20 md:p-8">
         <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-emerald-200/30 blur-3xl dark:bg-emerald-700/20" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-lime-200/20 blur-3xl dark:bg-lime-700/10" />
         <Link
@@ -564,32 +575,32 @@ export default function EventDetailPage() {
         >
           ← Back to events
         </Link>
-        <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="relative mt-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-balance text-3xl font-black text-gray-950 dark:text-white md:text-5xl">
               {event.title}
             </h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+            <p className="mt-2 text-sm font-medium text-gray-600 dark:text-slate-300">
               <DateText value={event.event_date} pattern="PPP p" />
               {event.city ? ` • ${event.city}` : ''}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {event.sport_type && (
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
+                <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
                   {getSportLabel(event.sport_type)}
                 </span>
               )}
               {event.difficulty && (
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
+                <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
                   {getDifficultyLabel(event.difficulty)}
                 </span>
               )}
               {event.required_expertise && (
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 shadow-sm dark:bg-emerald-900/60 dark:text-emerald-100">
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 shadow-sm dark:bg-emerald-900/60 dark:text-emerald-100">
                   {event.required_expertise}
                 </span>
               )}
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900 shadow-sm dark:bg-amber-900/60 dark:text-amber-100">
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 shadow-sm dark:bg-amber-900/60 dark:text-amber-100">
                 {event.price_npr && event.price_npr > 0
                   ? `NPR ${event.price_npr}`
                   : 'Free'}
@@ -601,7 +612,7 @@ export default function EventDetailPage() {
               <button
                 type="button"
                 onClick={() => router.push(`/experts/${event.host_user_id}`)}
-                className="inline-flex items-center rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                className="inline-flex items-center rounded-xl border border-emerald-600 px-4 py-2 text-sm font-bold text-emerald-700 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
               >
                 View Expert Profile
               </button>
@@ -616,7 +627,7 @@ export default function EventDetailPage() {
                   cancelMutation.mutate(eventId);
                 }}
                 disabled={cancelMutation.isPending}
-                className="inline-flex items-center rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+                className="inline-flex items-center rounded-xl border border-red-200 px-4 py-2 text-sm font-bold text-red-600 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
               >
                 {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Event'}
               </button>
@@ -626,8 +637,8 @@ export default function EventDetailPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+          <h2 className="text-lg font-black text-gray-950 dark:text-white">
             Event Overview
           </h2>
           <div className="mt-3 space-y-3 text-sm text-gray-700 dark:text-slate-200">
@@ -661,7 +672,7 @@ export default function EventDetailPage() {
                   <button
                     type="button"
                     onClick={() => router.push(`/trails/${event.trail?.id}`)}
-                    className="inline-flex items-center rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                    className="inline-flex items-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
                   >
                     View Event Route
                   </button>
@@ -680,7 +691,7 @@ export default function EventDetailPage() {
                     )}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                    className="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
                   >
                     Open in Google Maps
                   </a>
@@ -691,8 +702,8 @@ export default function EventDetailPage() {
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+            <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-gray-600 dark:text-slate-300">
               Organizer
             </h3>
             <div className="mt-3 space-y-2 text-sm text-gray-700 dark:text-slate-200">
@@ -703,8 +714,8 @@ export default function EventDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+            <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-gray-600 dark:text-slate-300">
               Join Event
             </h3>
             {canJoin ? (
@@ -728,7 +739,7 @@ export default function EventDetailPage() {
                         })
                       );
                     }}
-                    className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+                    className="w-full rounded-xl bg-green-700 px-4 py-2 text-sm font-bold text-white hover:bg-green-800"
                   >
                     Register to Join
                   </button>
@@ -755,7 +766,7 @@ export default function EventDetailPage() {
                           <button
                             type="button"
                             onClick={() => setShowPaymentModal(true)}
-                            className="w-full rounded-lg border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                            className="w-full rounded-xl border border-emerald-300 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
                           >
                             Go to Payment
                           </button>
@@ -766,7 +777,7 @@ export default function EventDetailPage() {
                         onClick={() => {
                           setShowCancelBookingModal(true);
                         }}
-                        className="w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+                        className="w-full rounded-xl border border-red-300 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
                       >
                         {cancelBookingMutation.isPending ? 'Processing...' : 'Cancel Booking'}
                       </button>
@@ -781,7 +792,7 @@ export default function EventDetailPage() {
                         setJoinError(null);
                         joinMutation.mutate(eventId);
                       }}
-                      className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-xl bg-green-700 px-4 py-2 text-sm font-bold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {joinMutation.isPending
                         ? 'Joining...'
@@ -811,8 +822,8 @@ export default function EventDetailPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+            <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-gray-600 dark:text-slate-300">
               Payment
             </h3>
             <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
@@ -823,7 +834,7 @@ export default function EventDetailPage() {
                 <button
                   type="button"
                   onClick={() => setShowQrModal(true)}
-                  className="rounded-lg border border-indigo-300 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-200 dark:hover:bg-indigo-900/40"
+                  className="rounded-xl border border-indigo-300 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-200 dark:hover:bg-indigo-900/40"
                 >
                   {event.qr_image_url ? 'Re-upload QR' : 'Upload QR'}
                 </button>
@@ -867,7 +878,7 @@ export default function EventDetailPage() {
                     Payment confirmed. Your booking is fully secured for this event.
                   </p>
                 ) : event.qr_image_url ? (
-                  <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/60">
+                  <div className="rounded-2xl border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/60">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
                       Scan to pay
                     </p>
@@ -885,7 +896,7 @@ export default function EventDetailPage() {
                           alt: 'Payment QR for event',
                         })
                       }
-                      className="mt-2 inline-flex rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                      className="mt-2 inline-flex rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
                     >
                       View full QR
                     </button>
@@ -909,7 +920,7 @@ export default function EventDetailPage() {
                         type="button"
                         onClick={initiateEsewaPayment}
                         disabled={startingPayment}
-                        className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                        className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
                       >
                         {startingPayment ? 'Redirecting to payment...' : 'Pay online'}
                       </button>
@@ -918,7 +929,7 @@ export default function EventDetailPage() {
                       <button
                         type="button"
                         onClick={() => setShowPaymentModal(true)}
-                        className="w-full rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
+                        className="w-full rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
                       >
                         Pay by QR & Upload Screenshot
                       </button>
@@ -938,7 +949,7 @@ export default function EventDetailPage() {
                         setJoinError(null);
                         migrateLegacyJoinMutation.mutate(eventId);
                       }}
-                      className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {migrateLegacyJoinMutation.isPending
                         ? 'Enabling payment...'
@@ -956,8 +967,8 @@ export default function EventDetailPage() {
         </div>
       </section>
       {canReviewPayments && event.price_npr > 0 && (
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300">
+        <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+          <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-gray-600 dark:text-slate-300">
             Participants & Payment Status
           </h3>
           <div className="mt-3 space-y-3">
@@ -972,7 +983,7 @@ export default function EventDetailPage() {
               </p>
             )}
             {reviewBookings.length > 0 && (
-              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+              <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-slate-700">
                 <table className="min-w-[980px] w-full text-left text-xs sm:text-sm">
                   <thead className="bg-gray-50 text-gray-600 dark:bg-slate-900 dark:text-slate-300">
                     <tr>
@@ -1099,7 +1110,7 @@ export default function EventDetailPage() {
                                   requestingPaymentBookingId === item.booking_id
                                 }
                                 onClick={() => requestPaymentReminder(item.booking_id)}
-                                className="rounded-lg border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-700 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+                                className="rounded-xl border border-emerald-300 px-2.5 py-1 text-[11px] font-bold text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-700 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
                               >
                                 {requestingPaymentBookingId === item.booking_id
                                   ? 'Sending...'
@@ -1115,7 +1126,7 @@ export default function EventDetailPage() {
                                       alt: 'Submitted payment screenshot',
                                     })
                                   }
-                                  className="rounded-lg border border-gray-300 px-2.5 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                                  className="rounded-xl border border-gray-300 px-2.5 py-1 text-[11px] font-bold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                                 >
                                   View Proof
                                 </button>
