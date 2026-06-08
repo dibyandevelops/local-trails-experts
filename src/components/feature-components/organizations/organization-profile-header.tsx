@@ -37,7 +37,7 @@ export default function OrganizationProfileHeader({
           )}
           <div className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
             <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              {organization.city || 'Nepal'}
+              {organization.city || 'Kathmandu'}
               {organization.country ? `, ${organization.country}` : ''}
             </span>
             <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">

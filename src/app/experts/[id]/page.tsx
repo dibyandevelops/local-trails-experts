@@ -605,7 +605,7 @@ export default function ExpertDetailPage() {
                     {trail.name}
                   </h3>
                   <p className="mt-1 line-clamp-1 text-xs text-gray-500 dark:text-slate-400">
-                    {trail.location || 'Nepal'}
+                    {trail.location || 'Kathmandu, Nepal'}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {trail.sport_type && (

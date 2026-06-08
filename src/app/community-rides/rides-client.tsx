@@ -248,7 +248,7 @@ export default function CommunityRidesClient() {
           isQuarterlyTraining
             ? ('training' as SportType)
             : (selectedTrail?.sport_type as SportType) || ('mtb' as SportType),
-        city: isQuarterlyTraining ? 'Nepal' : selectedTrail?.location || 'Nepal',
+        city: isQuarterlyTraining ? 'Kathmandu, Nepal' : selectedTrail?.location || 'Kathmandu, Nepal',
         price_npr: Math.max(0, Number(priceNpr) || 0),
       };
 

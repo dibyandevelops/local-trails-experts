@@ -88,7 +88,7 @@ export default async function OrganizationsPage() {
                 Team: {org.member_count}
               </span>
               <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                {org.city || 'Nepal'}{org.country ? `, ${org.country}` : ''}
+                {org.city || 'Kathmandu'}{org.country ? `, ${org.country}` : ''}
               </span>
             </div>
             <div className="mt-4">

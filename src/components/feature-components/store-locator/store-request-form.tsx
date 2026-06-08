@@ -116,7 +116,7 @@ export default function StoreRequestForm({
     try {
       const payload = {
         store_name: form.storeName.trim(),
-        city: form.city.trim() || 'Nepal',
+        city: form.city.trim() || 'Kathmandu',
         location: form.location.trim() || 'Selected on map',
         latitude: Number(form.locationLat),
         longitude: Number(form.locationLng),

@@ -88,7 +88,7 @@ export function TrailGallery({
                   </span>
                 </div>
                 <p className="mt-1 truncate text-[11px] text-gray-600 dark:text-slate-300">
-                  {trail.location || 'Nepal'}
+                  {trail.location || 'Kathmandu, Nepal'}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-slate-900/80 dark:text-slate-200">

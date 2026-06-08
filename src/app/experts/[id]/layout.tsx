@@ -50,7 +50,7 @@ export async function generateMetadata(
       description,
       keywords: [
         `${displayName} cycling expert`,
-        `${expert.city || 'Nepal'} local trail expert`,
+        `${expert.city || 'Kathmandu, Nepal'} local trail expert`,
         'Nepal MTB guide',
         'bike guide Nepal',
       ],

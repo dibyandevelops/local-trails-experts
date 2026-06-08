@@ -438,7 +438,7 @@ export default function OrganizationsPanel() {
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
-                      {organization.city || 'Nepal'}
+                      {organization.city || 'Kathmandu'}
                       {organization.country ? `, ${organization.country}` : ''}
                     </td>
                     <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">

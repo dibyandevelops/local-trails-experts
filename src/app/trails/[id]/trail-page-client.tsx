@@ -1701,7 +1701,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                               {expert.name || expert.email || 'Local expert'}
                             </p>
                             <p className="text-xs text-cyan-700 dark:text-cyan-300">
-                              {expert.city || 'Nepal'}
+                              {expert.city || 'Kathmandu, Nepal'}
                             </p>
                           </div>
                         </a>
@@ -2857,7 +2857,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                       {expert.name || expert.email || 'Local expert'}
                     </p>
                     <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
-                      {expert.city || 'Nepal'}
+                      {expert.city || 'Kathmandu, Nepal'}
                     </p>
                     {(expert.review_count || 0) > 0 && (
                       <p className="mt-2 text-xs text-cyan-800 dark:text-cyan-200">
