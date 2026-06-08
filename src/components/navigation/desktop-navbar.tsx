@@ -196,7 +196,7 @@ export default function DesktopNavbar({
         <button
           type="button"
           onClick={openLogin}
-          className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-sm font-semibold text-green-950 transition-colors hover:bg-emerald-50"
+          className="inline-flex h-10 items-center justify-center rounded-full border border-lime-300/80 bg-lime-300 px-4 text-sm font-bold text-green-950 transition-colors hover:bg-lime-200 dark:border-lime-200 dark:bg-lime-300 dark:text-green-950 dark:hover:bg-lime-200"
         >
           Login
         </button>

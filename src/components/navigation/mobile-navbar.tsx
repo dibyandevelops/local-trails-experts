@@ -119,7 +119,7 @@ export default function MobileNavbar({
         {!loadingUser && !user && (
           <button
             type="button"
-            className="rounded-2xl bg-white px-3 py-2.5 text-left text-sm font-semibold text-green-950 transition-colors hover:bg-emerald-50"
+            className="rounded-2xl border border-lime-300/80 bg-lime-300 px-3 py-2.5 text-left text-sm font-bold text-green-950 transition-colors hover:bg-lime-200 dark:border-lime-200 dark:bg-lime-300 dark:text-green-950 dark:hover:bg-lime-200"
             onClick={() => {
               closeMobileMenu();
               openLogin();
