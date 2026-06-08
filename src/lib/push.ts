@@ -1,5 +1,6 @@
 import pool from '@/lib/db';
 import { firebaseAdminMessaging } from '@/lib/firebase-admin';
+import { absoluteUrl } from '@/lib/seo';
 
 type PushPayload = {
   title: string;
@@ -8,16 +9,17 @@ type PushPayload = {
 };
 
 async function getTokensByUserIds(userIds: string[]) {
-  if (!userIds.length) return [];
+  const uniqueUserIds = Array.from(new Set(userIds.filter(Boolean)));
+  if (!uniqueUserIds.length) return [];
   const result = await pool.query(
     `
       SELECT token
       FROM push_subscriptions
       WHERE user_id = ANY($1::uuid[])
     `,
-    [userIds]
+    [uniqueUserIds]
   );
-  return result.rows.map((row) => row.token as string);
+  return Array.from(new Set(result.rows.map((row) => row.token as string).filter(Boolean)));
 }
 
 async function cleanupInvalidTokens(tokens: string[]) {
@@ -33,6 +35,7 @@ export async function sendPushToUserIds(userIds: string[], payload: PushPayload)
   if (!tokens.length) {
     return { sent: 0, failed: 0 };
   }
+  const targetUrl = payload.url ? absoluteUrl(payload.url) : undefined;
 
   const response = await firebaseAdminMessaging.sendEachForMulticast({
     tokens,
@@ -41,13 +44,18 @@ export async function sendPushToUserIds(userIds: string[], payload: PushPayload)
       body: payload.body,
     },
     webpush: {
-      fcmOptions: payload.url ? { link: payload.url } : undefined,
+      fcmOptions: targetUrl ? { link: targetUrl } : undefined,
       notification: {
         title: payload.title,
         body: payload.body,
         icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-64x64.png',
       },
-      data: payload.url ? { url: payload.url } : undefined,
+      data: {
+        title: payload.title,
+        body: payload.body,
+        ...(targetUrl ? { url: targetUrl } : {}),
+      },
     },
   });
 
@@ -57,7 +65,8 @@ export async function sendPushToUserIds(userIds: string[], payload: PushPayload)
       ({ res }) =>
         !res.success &&
         (res.error?.code === 'messaging/registration-token-not-registered' ||
-          res.error?.code === 'messaging/invalid-registration-token')
+          res.error?.code === 'messaging/invalid-registration-token' ||
+          res.error?.code === 'messaging/mismatched-credential')
     )
     .map(({ token }) => token);
 

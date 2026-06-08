@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 
+const ALLOWED_PLATFORMS = new Set(['ios', 'android', 'web']);
+
 export async function POST(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
@@ -11,8 +13,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const token = String(body?.token || '').trim();
-    const platform = String(body?.platform || 'web').trim().slice(0, 20);
-    const userAgent = String(body?.userAgent || '').trim();
+    const platformInput = String(body?.platform || 'web').trim().toLowerCase();
+    const platform = ALLOWED_PLATFORMS.has(platformInput) ? platformInput : 'web';
+    const userAgent = String(body?.userAgent || '').trim().slice(0, 500) || null;
 
     if (!token) {
       return NextResponse.json({ error: 'Missing push token' }, { status: 400 });
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
         user_agent = EXCLUDED.user_agent,
         updated_at = NOW()
     `,
-      [auth.sub, token, platform || 'web', userAgent || null]
+      [auth.sub, token, platform, userAgent]
     );
 
     return NextResponse.json({ success: true }, { status: 200 });
@@ -70,4 +73,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-
