@@ -11,23 +11,30 @@ function getClientIp(request: NextRequest) {
   return request.headers.get('x-real-ip') || 'unknown';
 }
 
-function getRatelimit() {
+const ratelimits = new Map<string, Ratelimit>();
+
+function getRatelimitForWindow(limit: number, windowSeconds: number) {
   const env = getServerEnv();
   if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
     return null;
   }
+
+  const key = `${limit}:${windowSeconds}`;
+  const existing = ratelimits.get(key);
+  if (existing) return existing;
+
   const redis = new Redis({
     url: env.UPSTASH_REDIS_REST_URL,
     token: env.UPSTASH_REDIS_REST_TOKEN,
   });
-  return new Ratelimit({
+  const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(10, '1 m'),
+    limiter: Ratelimit.slidingWindow(limit, `${windowSeconds} s`),
     analytics: true,
   });
+  ratelimits.set(key, ratelimit);
+  return ratelimit;
 }
-
-const ratelimit = getRatelimit();
 
 export async function rateLimit(
   request: NextRequest,
@@ -38,6 +45,7 @@ export async function rateLimit(
   const ip = getClientIp(request);
   const key = `${keyPrefix}:${ip}`;
 
+  const ratelimit = getRatelimitForWindow(limit, windowSeconds);
   if (ratelimit) {
     const result = await ratelimit.limit(key);
     if (!result.success) {

@@ -7,6 +7,11 @@ import { parseGPX } from '@/lib/gpx-parser';
 import { DEFAULT_TRAIL_SPORT } from '@/services/constants/sports';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 import { getUniqueTrailSlug } from '@/lib/trail-slug';
+import { rateLimit } from '@/lib/rate-limit';
+
+const MAX_TRAIL_UPLOAD_BYTES = 2 * 1024 * 1024;
+const MAX_TRAIL_IMAGES = 12;
+const MAX_IMAGE_URL_LENGTH = 2000;
 
 function parseOptionalNumber(raw: string | null) {
   if (!raw || !raw.trim()) return null;
@@ -422,6 +427,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'trail-create', 5, 60);
+    if (limited) return limited;
+
     // Get optional auth - create trail is now public
     const auth = getAuthFromRequest(request);
 
@@ -431,6 +439,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'GPX upload is required. Submit as multipart/form-data.' },
         { status: 400 }
+      );
+    }
+
+    const contentLength = Number(request.headers.get('content-length') || 0);
+    if (contentLength > MAX_TRAIL_UPLOAD_BYTES * 2) {
+      return NextResponse.json(
+        { error: 'Upload is too large. Please use a smaller GPX file.' },
+        { status: 413 }
       );
     }
 
@@ -453,8 +469,11 @@ export async function POST(request: NextRequest) {
         const parsed = JSON.parse(rawTrailImages) as unknown;
         if (Array.isArray(parsed)) {
           trailImagesInput = parsed.filter(
-            (value): value is string => typeof value === 'string' && value.length > 0
-          );
+            (value): value is string =>
+              typeof value === 'string' &&
+              value.length > 0 &&
+              value.length <= MAX_IMAGE_URL_LENGTH
+          ).slice(0, MAX_TRAIL_IMAGES);
         }
       } catch {
         trailImagesInput = [];
@@ -499,10 +518,30 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (gpxFile.size > MAX_TRAIL_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { error: 'GPX file is too large. Please keep it under 2 MB.' },
+        { status: 413 }
+      );
+    }
 
     if (!name || !difficulty || !location || !sport_type) {
       return NextResponse.json(
         { error: 'Missing required fields: name, difficulty, location, sport_type' },
+        { status: 400 }
+      );
+    }
+    if (
+      name.length > 160 ||
+      description.length > 5000 ||
+      difficulty.length > 80 ||
+      location.length > 240 ||
+      sport_type.length > 80 ||
+      image_url.length > MAX_IMAGE_URL_LENGTH ||
+      komoot_embed_url.length > MAX_IMAGE_URL_LENGTH
+    ) {
+      return NextResponse.json(
+        { error: 'Trail details are too long.' },
         { status: 400 }
       );
     }
@@ -522,7 +561,15 @@ export async function POST(request: NextRequest) {
     const isExpert = auth?.role === 'expert';
     const slug = await getUniqueTrailSlug(pool, name);
 
-    const routeData = await parseGPX(await gpxFile.text());
+    const gpxText = await gpxFile.text();
+    if (gpxText.length > MAX_TRAIL_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { error: 'GPX file is too large. Please keep it under 2 MB.' },
+        { status: 413 }
+      );
+    }
+
+    const routeData = await parseGPX(gpxText);
     const firstPoint = routeData.coordinates[0];
     const latitude = latitudeOverride ?? firstPoint?.latitude ?? null;
     const longitude = longitudeOverride ?? firstPoint?.longitude ?? null;

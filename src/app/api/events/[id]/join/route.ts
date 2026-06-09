@@ -17,7 +17,10 @@ export async function POST(
     const { id: eventId } = await params;
     const body: JoinEventInput = await request.json();
 
-    const { participant_name, participant_email, phone, expertise_level } = body;
+    const participant_name = String(body.participant_name || '').trim();
+    const participant_email = String(body.participant_email || '').trim().toLowerCase();
+    const phone = body.phone ? String(body.phone).trim() : '';
+    const expertise_level = String(body.expertise_level || '').trim();
 
     if (!participant_name || !participant_email || !expertise_level) {
       return NextResponse.json(
@@ -26,86 +29,118 @@ export async function POST(
       );
     }
 
-    // Check if event exists and has space
-    const eventCheck = await pool.query(
-      `SELECT
-        max_participants,
-        current_participants,
-        title,
-        event_date,
-        organizer_name,
-        organizer_email,
-        host_user_id
-      FROM events
-      WHERE id = $1`,
-      [eventId]
-    );
-
-    if (eventCheck.rows.length === 0) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participant_email)) {
       return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
-    }
-
-    const {
-      max_participants,
-      current_participants,
-      title,
-      event_date,
-      organizer_name,
-      organizer_email,
-      host_user_id,
-    } = eventCheck.rows[0];
-
-    const eventTimestamp = new Date(event_date).getTime();
-    if (Number.isFinite(eventTimestamp) && eventTimestamp < Date.now()) {
-      return NextResponse.json(
-        { error: 'This event has already ended.' },
+        { error: 'Invalid participant email.' },
         { status: 400 }
       );
     }
 
-    if (current_participants >= max_participants) {
+    if (participant_name.length > 120 || participant_email.length > 254 || phone.length > 40) {
       return NextResponse.json(
-        { error: 'Event is full' },
+        { error: 'Participant details are too long.' },
         { status: 400 }
       );
     }
 
-    // Check if participant already joined
-    const existingParticipant = await pool.query(
-      'SELECT id FROM event_participants WHERE event_id = $1 AND participant_email = $2',
-      [eventId, participant_email]
-    );
+    let title = '';
+    let event_date: string | Date = '';
+    let organizer_email: string | null = null;
+    let host_user_id: string | null = null;
+    let participantRow: unknown = null;
 
-    if (existingParticipant.rows.length > 0) {
-      return NextResponse.json(
-        { error: 'You have already joined this event' },
-        { status: 400 }
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const eventCheck = await client.query(
+        `SELECT
+          max_participants,
+          current_participants,
+          title,
+          event_date,
+          organizer_email,
+          host_user_id
+        FROM events
+        WHERE id = $1
+        FOR UPDATE`,
+        [eventId]
       );
+
+      if (eventCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: 'Event not found' },
+          { status: 404 }
+        );
+      }
+
+      const event = eventCheck.rows[0];
+      title = event.title;
+      event_date = event.event_date;
+      organizer_email = event.organizer_email;
+      host_user_id = event.host_user_id;
+
+      const eventTimestamp = new Date(event_date).getTime();
+      if (Number.isFinite(eventTimestamp) && eventTimestamp < Date.now()) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: 'This event has already ended.' },
+          { status: 400 }
+        );
+      }
+
+      const maxParticipants = Number(event.max_participants || 0);
+      const currentParticipants = Number(event.current_participants || 0);
+      if (maxParticipants > 0 && currentParticipants >= maxParticipants) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: 'Event is full' },
+          { status: 400 }
+        );
+      }
+
+      const existingParticipant = await client.query(
+        'SELECT id FROM event_participants WHERE event_id = $1 AND lower(participant_email) = lower($2) LIMIT 1',
+        [eventId, participant_email]
+      );
+
+      if (existingParticipant.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: 'You have already joined this event' },
+          { status: 400 }
+        );
+      }
+
+      const participantResult = await client.query(
+        `
+        INSERT INTO event_participants (event_id, participant_name, participant_email, phone, expertise_level)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *
+        `,
+        [
+          eventId,
+          participant_name,
+          participant_email,
+          phone || null,
+          expertise_level,
+        ]
+      );
+      participantRow = participantResult.rows[0];
+
+      await client.query(
+        'UPDATE events SET current_participants = current_participants + 1 WHERE id = $1',
+        [eventId]
+      );
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    // Add participant
-    const insertQuery = `
-      INSERT INTO event_participants (event_id, participant_name, participant_email, phone, expertise_level)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-    `;
-
-    const participantResult = await pool.query(insertQuery, [
-      eventId,
-      participant_name,
-      participant_email,
-      phone || null,
-      expertise_level,
-    ]);
-
-    // Update event participant count
-    await pool.query(
-      'UPDATE events SET current_participants = current_participants + 1 WHERE id = $1',
-      [eventId]
-    );
 
     const eventDateLabel = new Date(event_date).toLocaleString();
     const participantEmail = buildBrandedEmail({
@@ -132,7 +167,11 @@ export async function POST(
       hostEmail = hostRes.rows[0]?.email || null;
     }
     const organizerTargets = Array.from(
-      new Set([organizer_email, hostEmail].filter(Boolean))
+      new Set(
+        [organizer_email, hostEmail].filter(
+          (email): email is string => typeof email === 'string' && email.length > 0
+        )
+      )
     ).filter((email) => email !== participant_email);
 
     if (organizerTargets.length > 0) {
@@ -189,7 +228,7 @@ export async function POST(
     ]);
 
     return NextResponse.json(
-      { participant: participantResult.rows[0] },
+      { participant: participantRow },
       { status: 201 }
     );
   } catch (error) {

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'client-error', 20, 60);
+    if (limited) return limited;
+
     const body = await request.json();
     const message =
       typeof body?.message === 'string' ? body.message.slice(0, 400) : 'Unknown client error';

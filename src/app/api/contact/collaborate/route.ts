@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmailSafe } from '@/lib/email';
 import { getCommunityWhatsappLink } from '@/lib/whatsapp';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,9 @@ function getAdminEmail() {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'collaborate', 3, 60);
+    if (limited) return limited;
+
     const raw = await request.json();
     const parsed = schema.safeParse(raw);
     if (!parsed.success) {

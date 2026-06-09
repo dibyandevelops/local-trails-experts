@@ -1,19 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import pool from '@/lib/db';
+import { rateLimit } from '@/lib/rate-limit';
 
 const schema = z.object({
-  name: z.string().trim().min(1),
+  name: z.string().trim().min(1).max(120),
   email: z.string().trim().email(),
-  company_name: z.string().trim().min(2),
+  company_name: z.string().trim().min(2).max(180),
   tier: z.enum(['bronze', 'silver', 'gold', 'custom']),
-  company_logo_url: z.string().trim().optional().nullable(),
+  company_logo_url: z
+    .preprocess(
+      (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+      z.string().trim().url().max(2000).optional().nullable()
+    ),
   agenda: z.string().trim().min(10).max(3000),
   note: z.string().trim().max(3000).optional().nullable(),
 });
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'sponsor-request', 3, 60);
+    if (limited) return limited;
+
     const raw = await request.json();
     const parsed = schema.safeParse(raw);
     if (!parsed.success) {
@@ -49,4 +57,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create sponsor request' }, { status: 500 });
   }
 }
-

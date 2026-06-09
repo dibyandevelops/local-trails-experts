@@ -15,9 +15,15 @@ function createPool() {
     connectionString,
     ssl:
       env('DB_SSL') === 'true' || env('DB_SSL') === '1'
-        ? { rejectUnauthorized: false }
+        ? {
+            rejectUnauthorized:
+              env('DB_SSL_REJECT_UNAUTHORIZED') === 'false' ? false : true,
+          }
         : env('DIRECT_DATABASE_URL')
-          ? { rejectUnauthorized: false }
+          ? {
+              rejectUnauthorized:
+                env('DB_SSL_REJECT_UNAUTHORIZED') === 'false' ? false : true,
+            }
           : undefined,
   });
 }

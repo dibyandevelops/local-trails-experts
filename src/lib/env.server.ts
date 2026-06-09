@@ -9,6 +9,7 @@ const schema = z.object({
   DB_USER: z.string().optional(),
   DB_PASSWORD: z.string().optional(),
   DB_SSL: z.string().optional(),
+  DB_SSL_REJECT_UNAUTHORIZED: z.string().optional(),
   JWT_SECRET: z.string().optional(),
   NEXTAUTH_SECRET: z.string().optional(),
   SENTRY_DSN: z.string().optional(),

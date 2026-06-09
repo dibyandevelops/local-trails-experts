@@ -67,9 +67,15 @@ const pool = new Pool({
     `postgresql://${env('DB_USER') || 'postgres'}:${env('DB_PASSWORD') || 'postgres'}@${env('DB_HOST') || 'localhost'}:${env('DB_PORT') || '5432'}/${env('DB_NAME') || 'mtb_trail_finder'}`,
   ssl:
     env('DB_SSL') === 'true' || env('DB_SSL') === '1'
-      ? { rejectUnauthorized: false }
+      ? {
+          rejectUnauthorized:
+            env('DB_SSL_REJECT_UNAUTHORIZED') === 'false' ? false : true,
+        }
       : env('DIRECT_DATABASE_URL')
-      ? { rejectUnauthorized: false }
+      ? {
+          rejectUnauthorized:
+            env('DB_SSL_REJECT_UNAUTHORIZED') === 'false' ? false : true,
+        }
       : undefined,
   max: 20,
   idleTimeoutMillis: 30000,

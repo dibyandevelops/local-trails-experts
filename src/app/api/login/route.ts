@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     if (!userRow) {
       return NextResponse.json(
-        { error: 'No user found for that email or phone number.' },
+        { error: 'Invalid email, phone, or password.' },
         { status: 401 }
       );
     }
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (!passwordMatches) {
       return NextResponse.json(
-        { error: 'Incorrect password.' },
+        { error: 'Invalid email, phone, or password.' },
         { status: 401 }
       );
     }

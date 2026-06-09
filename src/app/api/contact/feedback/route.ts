@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmailSafe } from '@/lib/email';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -28,6 +29,9 @@ function escapeHtml(input: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'feedback', 3, 60);
+    if (limited) return limited;
+
     const raw = await request.json();
     const parsed = schema.safeParse(raw);
     if (!parsed.success) {
@@ -92,4 +96,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to send feedback' }, { status: 500 });
   }
 }
-

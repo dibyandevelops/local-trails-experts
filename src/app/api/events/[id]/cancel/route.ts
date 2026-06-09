@@ -20,17 +20,26 @@ export async function POST(
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query('DELETE FROM event_participants WHERE event_id = $1', [
-        eventId,
-      ]);
-      const deleteEvent = await client.query(
-        'DELETE FROM events WHERE id = $1 RETURNING id',
+      const eventRes = await client.query(
+        'SELECT id, host_user_id FROM events WHERE id = $1 FOR UPDATE',
         [eventId]
       );
-      if (deleteEvent.rows.length === 0) {
+      const event = eventRes.rows[0];
+      if (!event) {
         await client.query('ROLLBACK');
         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
       }
+
+      const canCancel = auth.role === 'admin' || event.host_user_id === auth.sub;
+      if (!canCancel) {
+        await client.query('ROLLBACK');
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      await client.query('DELETE FROM event_participants WHERE event_id = $1', [
+        eventId,
+      ]);
+      await client.query('DELETE FROM events WHERE id = $1', [eventId]);
       await client.query('COMMIT');
       return NextResponse.json({ success: true }, { status: 200 });
     } catch (error) {

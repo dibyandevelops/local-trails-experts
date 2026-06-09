@@ -3,6 +3,20 @@ import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 
+const MAX_PROOF_IMAGE_URL_LENGTH = 350_000;
+const MAX_TRANSACTION_REFERENCE_LENGTH = 120;
+
+function isAllowedProofImage(value: string) {
+  if (value.length > MAX_PROOF_IMAGE_URL_LENGTH) return false;
+  if (value.startsWith('data:image/')) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,6 +44,18 @@ export async function POST(
     if (!proofImageUrl) {
       return NextResponse.json(
         { error: 'Payment proof image is required.' },
+        { status: 400 }
+      );
+    }
+    if (transactionReference.length > MAX_TRANSACTION_REFERENCE_LENGTH) {
+      return NextResponse.json(
+        { error: 'Transaction reference is too long.' },
+        { status: 400 }
+      );
+    }
+    if (!isAllowedProofImage(proofImageUrl)) {
+      return NextResponse.json(
+        { error: 'Payment proof must be a valid image upload or HTTPS image URL.' },
         { status: 400 }
       );
     }

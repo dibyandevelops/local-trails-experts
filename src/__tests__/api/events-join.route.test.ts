@@ -8,6 +8,7 @@ import { sendPushToUserIds } from '@/lib/push';
 vi.mock('@/lib/db', () => ({
   default: {
     query: vi.fn(),
+    connect: vi.fn(),
   },
 }));
 
@@ -24,6 +25,21 @@ vi.mock('@/lib/push', () => ({
 }));
 
 describe('POST /api/events/[id]/join', () => {
+  function mockDbClient(...results: Array<{ rows: unknown[] }>) {
+    const client = {
+      query: vi.fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce(results[0])
+        .mockResolvedValueOnce(results[1])
+        .mockResolvedValueOnce(results[2])
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] }),
+      release: vi.fn(),
+    };
+    vi.mocked(pool.connect).mockResolvedValue(client as never);
+    return client;
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(rateLimit).mockResolvedValue(null);
@@ -32,21 +48,21 @@ describe('POST /api/events/[id]/join', () => {
   });
 
   it('joins event and sends participant + organizer emails', async () => {
-    vi.mocked(pool.query)
-      .mockResolvedValueOnce({
+    mockDbClient(
+      {
         rows: [
           {
             max_participants: 10,
             current_participants: 2,
             title: 'Sunrise Ride',
-            event_date: '2026-03-05T06:00:00.000Z',
-            organizer_name: 'Guide One',
+            event_date: '2026-12-05T06:00:00.000Z',
             organizer_email: 'guide@example.com',
+            host_user_id: null,
           },
         ],
-      } as never)
-      .mockResolvedValueOnce({ rows: [] } as never)
-      .mockResolvedValueOnce({
+      },
+      { rows: [] },
+      {
         rows: [
           {
             id: 'ep-1',
@@ -54,8 +70,9 @@ describe('POST /api/events/[id]/join', () => {
             participant_email: 'rider@example.com',
           },
         ],
-      } as never)
-      .mockResolvedValueOnce({ rows: [] } as never)
+      }
+    );
+    vi.mocked(pool.query)
       .mockResolvedValueOnce({
         rows: [
           { id: 'user-participant', email: 'rider@example.com' },
@@ -74,7 +91,7 @@ describe('POST /api/events/[id]/join', () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: 'event-1' } });
+    const response = await POST(request, { params: Promise.resolve({ id: 'event-1' }) });
     const body = await response.json();
 
     expect(response.status).toBe(201);
@@ -83,20 +100,21 @@ describe('POST /api/events/[id]/join', () => {
   });
 
   it('returns 400 when participant already joined', async () => {
-    vi.mocked(pool.query)
-      .mockResolvedValueOnce({
+    mockDbClient(
+      {
         rows: [
           {
             max_participants: 10,
             current_participants: 2,
             title: 'Sunrise Ride',
-            event_date: '2026-03-05T06:00:00.000Z',
-            organizer_name: 'Guide One',
+            event_date: '2026-12-05T06:00:00.000Z',
             organizer_email: 'guide@example.com',
+            host_user_id: null,
           },
         ],
-      } as never)
-      .mockResolvedValueOnce({ rows: [{ id: 'existing' }] } as never);
+      },
+      { rows: [{ id: 'existing' }] }
+    );
 
     const request = new NextRequest('http://localhost/api/events/event-1/join', {
       method: 'POST',
@@ -108,7 +126,7 @@ describe('POST /api/events/[id]/join', () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: 'event-1' } });
+    const response = await POST(request, { params: Promise.resolve({ id: 'event-1' }) });
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -117,21 +135,21 @@ describe('POST /api/events/[id]/join', () => {
   });
 
   it('does not send duplicate organizer email when organizer matches participant', async () => {
-    vi.mocked(pool.query)
-      .mockResolvedValueOnce({
+    mockDbClient(
+      {
         rows: [
           {
             max_participants: 10,
             current_participants: 2,
             title: 'Sunrise Ride',
-            event_date: '2026-03-05T06:00:00.000Z',
-            organizer_name: 'Guide One',
+            event_date: '2026-12-05T06:00:00.000Z',
             organizer_email: 'rider@example.com',
+            host_user_id: null,
           },
         ],
-      } as never)
-      .mockResolvedValueOnce({ rows: [] } as never)
-      .mockResolvedValueOnce({
+      },
+      { rows: [] },
+      {
         rows: [
           {
             id: 'ep-1',
@@ -139,8 +157,9 @@ describe('POST /api/events/[id]/join', () => {
             participant_email: 'rider@example.com',
           },
         ],
-      } as never)
-      .mockResolvedValueOnce({ rows: [] } as never)
+      }
+    );
+    vi.mocked(pool.query)
       .mockResolvedValueOnce({
         rows: [{ id: 'user-participant', email: 'rider@example.com' }],
       } as never);
@@ -156,7 +175,7 @@ describe('POST /api/events/[id]/join', () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: 'event-1' } });
+    const response = await POST(request, { params: Promise.resolve({ id: 'event-1' }) });
 
     expect(response.status).toBe(201);
     expect(sendEmailSafe).toHaveBeenCalledTimes(1);
