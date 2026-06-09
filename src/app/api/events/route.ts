@@ -3,9 +3,6 @@ import pool from '@/lib/db';
 import { Event, CreateEventInput, SportType } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { COMMUNITY_NAME } from '@/lib/branding';
-import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
-import { sendEmailSafe } from '@/lib/email';
-import { sendPushToUserIds } from '@/lib/push';
 import { isAllowedImageUrl } from '@/lib/image-url';
 
 const MAX_EVENT_TITLE_LENGTH = 160;
@@ -394,6 +391,12 @@ export async function POST(request: NextRequest) {
     const event: Event = result.rows[0];
 
     if (trailRequestContext?.requester_email) {
+      const [{ buildBrandedEmail, getAppUrl }, { sendEmailSafe }, { sendPushToUserIds }] =
+        await Promise.all([
+          import('@/lib/email-templates'),
+          import('@/lib/email'),
+          import('@/lib/push'),
+        ]);
       const participantName =
         (trailRequestContext.requester_name || '').trim() ||
         trailRequestContext.requester_email.split('@')[0] ||
