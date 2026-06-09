@@ -157,6 +157,7 @@ export interface Event {
   id: string;
   title: string;
   description: string | null;
+  trail_alert?: string | null;
   trail_id: string | null;
   trail?: Trail;
   event_date: string;
@@ -190,13 +191,14 @@ export interface EventParticipant {
 export interface CreateEventInput {
   title: string;
   description?: string;
-  trail_id?: string;
+  trail_alert?: string | null;
+  trail_id?: string | null;
   event_date: string;
   organizer_name?: string;
   organizer_email?: string;
   max_participants?: number;
   meeting_point?: string;
-  difficulty?: Difficulty;
+  difficulty?: Difficulty | null;
   required_expertise: ExpertiseLevel;
   sport_type?: SportType;
   city?: string;

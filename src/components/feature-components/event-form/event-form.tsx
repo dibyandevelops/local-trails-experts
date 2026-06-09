@@ -30,6 +30,7 @@ import {
 type EventFormValues = {
   title: string;
   description: string;
+  trail_alert: string;
   custom_trail_text: string;
   trail_id: string;
   event_date: string;
@@ -81,6 +82,7 @@ function normalizeDateOnly(value: string) {
 const defaultValues: EventFormValues = {
   title: '',
   description: '',
+  trail_alert: '',
   custom_trail_text: '',
   trail_id: '',
   event_date: '',
@@ -102,6 +104,40 @@ const defaultValues: EventFormValues = {
 const labelClass = 'mb-2 block text-sm font-semibold text-gray-800 dark:text-slate-100';
 const inputClass =
   'w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:bg-gray-50 disabled:text-gray-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:disabled:bg-slate-900 dark:disabled:text-slate-400';
+
+type EventFormStep = 'setup' | 'details' | 'schedule' | 'payment' | 'review';
+
+const EVENT_FORM_STEPS: Array<{
+  id: EventFormStep;
+  label: string;
+  helper: string;
+}> = [
+  {
+    id: 'setup',
+    label: 'Setup',
+    helper: 'Host, sport, and trail',
+  },
+  {
+    id: 'details',
+    label: 'Details',
+    helper: 'Title, description, and alerts',
+  },
+  {
+    id: 'schedule',
+    label: 'Schedule',
+    helper: 'Date, meeting point, and capacity',
+  },
+  {
+    id: 'payment',
+    label: 'Payment',
+    helper: 'Free or paid event',
+  },
+  {
+    id: 'review',
+    label: 'Review',
+    helper: 'Organizer and confirmation',
+  },
+];
 
 type EventFormProps = {
   mode?: 'create' | 'edit';
@@ -160,6 +196,7 @@ export default function EventForm({
   const [requestMessage, setRequestMessage] = useState('');
   const [sportChangeMessage, setSportChangeMessage] = useState('');
   const [showTrailRequestDialog, setShowTrailRequestDialog] = useState(false);
+  const [activeStep, setActiveStep] = useState<EventFormStep>('setup');
   const previousSportRef = useRef<SportType | null>(null);
   const skipSportClearRef = useRef(false);
   const prefillAppliedRef = useRef(false);
@@ -272,6 +309,7 @@ export default function EventForm({
     reset({
       title: editEvent.title || '',
       description: editEvent.description || '',
+      trail_alert: editEvent.trail_alert || '',
       custom_trail_text: '',
       trail_id: editEvent.trail_id || '',
       event_date: editEvent.event_date
@@ -343,6 +381,7 @@ export default function EventForm({
 
   const trailsBySport = useMemo(() => trails, [trails]);
   const selectedLockedTrail = lockTrailAndSport ? lockedTrail : null;
+  const selectedTrailForSummary = selectedLockedTrail || trailsBySport.find((trail) => trail.id === selectedTrailId);
 
   useEffect(() => {
     if (!selectedTrailId) return;
@@ -476,6 +515,15 @@ export default function EventForm({
   });
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const activeStepIndex = EVENT_FORM_STEPS.findIndex((step) => step.id === activeStep);
+  const isFirstStep = activeStepIndex <= 0;
+  const isLastStep = activeStepIndex === EVENT_FORM_STEPS.length - 1;
+  const goToPreviousStep = () => {
+    setActiveStep(EVENT_FORM_STEPS[Math.max(0, activeStepIndex - 1)].id);
+  };
+  const goToNextStep = () => {
+    setActiveStep(EVENT_FORM_STEPS[Math.min(EVENT_FORM_STEPS.length - 1, activeStepIndex + 1)].id);
+  };
 
   const handleTrailChange = (trailId: string) => {
     setValue('trail_id', trailId);
@@ -605,6 +653,7 @@ export default function EventForm({
       const payload: CreateEventInput = {
         title: values.title,
         description: descriptionParts.join('\n\n') || undefined,
+        trail_alert: values.trail_alert.trim() || undefined,
         trail_id: values.sport_type === 'training' ? undefined : values.trail_id || undefined,
         event_date: values.event_date,
         organizer_name: values.organizer_name || undefined,
@@ -725,6 +774,38 @@ export default function EventForm({
             </div>
           )}
 
+          <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-2 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+            <div className="grid gap-2 md:grid-cols-5">
+              {EVENT_FORM_STEPS.map((step, index) => {
+                const isActive = step.id === activeStep;
+                const isComplete = index < activeStepIndex;
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => setActiveStep(step.id)}
+                    className={`rounded-2xl px-3 py-2 text-left transition ${
+                      isActive
+                        ? 'bg-emerald-700 text-white dark:bg-lime-300 dark:text-green-950'
+                        : isComplete
+                          ? 'bg-white text-emerald-800 hover:bg-emerald-50 dark:bg-slate-950 dark:text-emerald-200 dark:hover:bg-emerald-950/50'
+                          : 'text-gray-600 hover:bg-white/70 dark:text-slate-300 dark:hover:bg-slate-950/70'
+                    }`}
+                    aria-current={isActive ? 'step' : undefined}
+                  >
+                    <span className="block text-xs font-black uppercase tracking-[0.16em]">
+                      {index + 1}. {step.label}
+                    </span>
+                    <span className={`mt-0.5 block text-[11px] ${isActive ? 'opacity-90' : 'opacity-75'}`}>
+                      {step.helper}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className={activeStep === 'setup' ? 'space-y-6' : 'hidden'}>
           {currentUser?.role === 'admin' && (
             <div>
               <label className={labelClass}>Approved Expert Host</label>
@@ -897,7 +978,9 @@ export default function EventForm({
               </p>
             </div>
           ) : null}
+          </div>
 
+          <div className={activeStep === 'details' ? 'space-y-6' : 'hidden'}>
           <div>
             <label className={labelClass}>
               Event Title <span className="text-red-500">*</span>
@@ -931,7 +1014,21 @@ export default function EventForm({
             />
           </div>
 
+          <div>
+            <label className={labelClass}>Trail Alert / Participant Notice</label>
+            <textarea
+              {...register('trail_alert')}
+              rows={3}
+              className={inputClass}
+              placeholder="e.g., Slippery descent after rain, carry lights, expect construction near the bridge."
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Use this for temporary trail conditions, safety notes, or ride-day instructions.
+            </p>
+          </div>
+          </div>
 
+          <div className={activeStep === 'schedule' ? 'space-y-6' : 'hidden'}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>
@@ -1038,7 +1135,9 @@ export default function EventForm({
               Use a Google Maps-friendly location name so participants can navigate easily.
             </p>
           </div>
+          </div>
 
+          <div className={activeStep === 'payment' ? 'space-y-6' : 'hidden'}>
           <div>
             <label className={labelClass}>Pricing</label>
             <div className="flex items-center gap-2">
@@ -1101,6 +1200,42 @@ export default function EventForm({
                 className="mt-3 h-36 w-36 rounded border border-gray-200 object-contain bg-white"
               />
             )}
+          </div>
+          </div>
+
+          <div className={activeStep === 'review' ? 'space-y-6' : 'hidden'}>
+          <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              Event Summary
+            </p>
+            <div className="mt-3 grid gap-3 text-sm text-gray-700 dark:text-slate-200 sm:grid-cols-2">
+              <div>
+                <span className="block text-xs font-semibold text-gray-500 dark:text-slate-400">Title</span>
+                <span className="font-semibold text-gray-950 dark:text-slate-50">
+                  {getValues('title') || 'Not set'}
+                </span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500 dark:text-slate-400">Trail / venue</span>
+                <span className="font-semibold text-gray-950 dark:text-slate-50">
+                  {selectedSport === 'training'
+                    ? getValues('custom_trail_text') || 'Training venue not set'
+                    : selectedTrailForSummary?.name || 'General event'}
+                </span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500 dark:text-slate-400">Date & time</span>
+                <span className="font-semibold text-gray-950 dark:text-slate-50">
+                  {getValues('event_date') || 'Not set'}
+                </span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-gray-500 dark:text-slate-400">Payment</span>
+                <span className="font-semibold text-gray-950 dark:text-slate-50">
+                  {isPaidEvent ? `NPR ${getValues('price_npr') || 0}` : 'Free event'}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1191,6 +1326,38 @@ export default function EventForm({
             >
               Cancel
             </button>
+          </div>
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={goToPreviousStep}
+              disabled={isFirstStep}
+              className="rounded-2xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Previous
+            </button>
+            <div className="text-xs font-semibold text-gray-500 dark:text-slate-400">
+              Step {activeStepIndex + 1} of {EVENT_FORM_STEPS.length}
+            </div>
+            {!isLastStep ? (
+              <button
+                type="button"
+                onClick={goToNextStep}
+                className="rounded-2xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 dark:bg-lime-300 dark:text-green-950 dark:hover:bg-lime-200"
+              >
+                Continue
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActiveStep('setup')}
+                className="rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/35 dark:text-emerald-100"
+              >
+                Review Setup
+              </button>
+            )}
           </div>
         </form>
       )}

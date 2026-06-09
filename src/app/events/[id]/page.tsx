@@ -13,6 +13,56 @@ import { cancelEvent, leaveEvent } from '@/services/events/events.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { ESEWA_ENABLED } from '@/lib/feature-flags';
 import { resizeImageToDataUrl } from '@/lib/image';
+import * as Dialog from '@radix-ui/react-dialog';
+import EventForm from '@/components/feature-components/event-form/event-form';
+import CommunityEventForm from '@/components/feature-components/community-event-form/community-event-form';
+import { COMMUNITY_NAME } from '@/lib/branding';
+
+function wrapPosterText(value: string, maxLength = 34) {
+  const words = value.trim().split(/\s+/);
+  const lines: string[] = [];
+  let current = '';
+
+  words.forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxLength && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  });
+
+  if (current) lines.push(current);
+  return lines.slice(0, 3);
+}
+
+function loadPosterImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function drawPosterTextLines(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number
+) {
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, y + index * lineHeight);
+  });
+}
+
+function truncatePosterText(value: string, maxLength: number) {
+  const trimmed = value.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  return `${trimmed.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -74,6 +124,7 @@ export default function EventDetailPage() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrDraftImage, setQrDraftImage] = useState<string | null>(null);
   const [savingQr, setSavingQr] = useState(false);
+  const [showEditEventModal, setShowEditEventModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
   const canCancel =
@@ -393,6 +444,11 @@ export default function EventDetailPage() {
     );
   }
 
+  const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || '').trim().toLowerCase();
+  const isCommunityEvent =
+    (event.organizer_name || '').toLowerCase().includes(COMMUNITY_NAME.toLowerCase()) ||
+    (adminEmail && (event.organizer_email || '').toLowerCase() === adminEmail);
+
   const initiateEsewaPayment = async () => {
     if (!booking?.id) {
       setPaymentActionStatus('Booking record not found yet.');
@@ -562,6 +618,144 @@ export default function EventDetailPage() {
     }
   };
 
+  const shareEvent = async () => {
+    if (!event) return;
+    const shareUrl = window.location.href;
+    const shareText = `${event.title}${event.city ? ` in ${event.city}` : ''}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: event.title,
+          text: shareText,
+          url: shareUrl,
+        });
+        setActionStatus('Event share sheet opened.');
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      setActionStatus('Event link copied.');
+    } catch {
+      await navigator.clipboard.writeText(shareUrl);
+      setActionStatus('Event link copied.');
+    }
+  };
+
+  const downloadEventPoster = async () => {
+    if (!event) return;
+    const dateLabel = new Date(event.event_date).toLocaleString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    const titleLines = wrapPosterText(event.title, 28);
+    const trailName = event.trail?.name || event.city || 'Local ride';
+    const meta = [
+      dateLabel,
+      event.meeting_point ? `Meet: ${event.meeting_point}` : '',
+      Number(event.price_npr || 0) > 0 ? `NPR ${event.price_npr}` : 'Free',
+    ].filter(Boolean);
+    const alert = event.trail_alert ? truncatePosterText(event.trail_alert, 118) : '';
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setActionStatus('Unable to generate poster.');
+      return;
+    }
+
+    const logo = await loadPosterImage('/icons/logo-transparent-source.png');
+    const bg = ctx.createLinearGradient(0, 0, 1080, 1350);
+    bg.addColorStop(0, '#052e1b');
+    bg.addColorStop(0.52, '#064e3b');
+    bg.addColorStop(1, '#84cc16');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, 1080, 1350);
+
+    const glow = ctx.createRadialGradient(800, 260, 20, 800, 260, 640);
+    glow.addColorStop(0, 'rgba(217, 249, 157, 0.72)');
+    glow.addColorStop(1, 'rgba(217, 249, 157, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, 1080, 1350);
+
+    ctx.fillStyle = 'rgba(190, 242, 100, 0.14)';
+    ctx.beginPath();
+    ctx.arc(930, 190, 230, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.globalAlpha = 0.08;
+    ctx.translate(610, 520);
+    ctx.rotate(-0.14);
+    ctx.drawImage(logo, -70, -40, 560, 560);
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.drawImage(logo, 660, 850, 320, 320);
+    ctx.restore();
+
+    ctx.drawImage(logo, 78, 68, 82, 82);
+    ctx.fillStyle = '#d9f99d';
+    ctx.font = '800 34px Arial, sans-serif';
+    ctx.letterSpacing = '8px';
+    ctx.fillText('LOCOXPERTS EVENT', 184, 122);
+    ctx.letterSpacing = '0px';
+
+    ctx.fillStyle = '#f7fee7';
+    ctx.font = '900 78px Arial, sans-serif';
+    drawPosterTextLines(ctx, titleLines, 80, 260, 88);
+
+    ctx.fillStyle = '#d9f99d';
+    ctx.font = '800 36px Arial, sans-serif';
+    ctx.fillText(truncatePosterText(trailName, 42), 80, 560);
+
+    ctx.fillStyle = '#ecfccb';
+    ctx.font = '700 34px Arial, sans-serif';
+    drawPosterTextLines(ctx, meta.map((line) => truncatePosterText(line, 52)), 80, 650, 54);
+
+    if (alert) {
+      ctx.fillStyle = 'rgba(2, 44, 34, 0.78)';
+      ctx.beginPath();
+      ctx.roundRect(70, 880, 940, 170, 34);
+      ctx.fill();
+      ctx.fillStyle = '#bef264';
+      ctx.font = '900 28px Arial, sans-serif';
+      ctx.letterSpacing = '4px';
+      ctx.fillText('TRAIL ALERT', 105, 930);
+      ctx.letterSpacing = '0px';
+      ctx.fillStyle = '#f7fee7';
+      ctx.font = '700 30px Arial, sans-serif';
+      drawPosterTextLines(ctx, wrapPosterText(alert, 48).slice(0, 2), 105, 985, 40);
+    }
+
+    ctx.fillStyle = '#f7fee7';
+    ctx.font = '800 30px Arial, sans-serif';
+    ctx.fillText('Find local trails and guides', 80, 1235);
+    ctx.fillStyle = '#d9f99d';
+    ctx.font = '700 28px Arial, sans-serif';
+    ctx.fillText(truncatePosterText(window.location.href, 62), 80, 1285);
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setActionStatus('Unable to generate poster.');
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${event.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'event'}-poster.png`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setActionStatus('Event poster PNG generated.');
+    }, 'image/png');
+  };
+
 
   return (
     <>
@@ -608,6 +802,20 @@ export default function EventDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={shareEvent}
+              className="inline-flex items-center rounded-xl border border-emerald-600 px-4 py-2 text-sm font-bold text-emerald-700 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+            >
+              Share Event
+            </button>
+            <button
+              type="button"
+              onClick={downloadEventPoster}
+              className="inline-flex items-center rounded-xl border border-lime-300 bg-lime-50 px-4 py-2 text-sm font-bold text-green-900 transition duration-200 hover:-translate-y-0.5 hover:bg-lime-100 dark:border-lime-700 dark:bg-lime-950/30 dark:text-lime-100 dark:hover:bg-lime-900/40"
+            >
+              Download Poster
+            </button>
             {event.host_user_id && (
               <button
                 type="button"
@@ -615,6 +823,15 @@ export default function EventDetailPage() {
                 className="inline-flex items-center rounded-xl border border-emerald-600 px-4 py-2 text-sm font-bold text-emerald-700 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
               >
                 View Expert Profile
+              </button>
+            )}
+            {canCancel && (
+              <button
+                type="button"
+                onClick={() => setShowEditEventModal(true)}
+                className="inline-flex items-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+              >
+                Edit Event
               </button>
             )}
             {canCancel && (
@@ -696,6 +913,14 @@ export default function EventDetailPage() {
                     Open in Google Maps
                   </a>
                 </div>
+              </div>
+            )}
+            {event.trail_alert && (
+              <div className="rounded-2xl border border-lime-200 bg-lime-50 px-4 py-3 text-sm text-green-950 dark:border-lime-900/60 dark:bg-lime-950/25 dark:text-lime-100">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-green-700 dark:text-lime-300">
+                  Trail Alert
+                </p>
+                <p className="mt-1 leading-6">{event.trail_alert}</p>
               </div>
             )}
           </div>
@@ -1422,6 +1647,53 @@ export default function EventDetailPage() {
           </div>
         </div>
       )}
+      <Dialog.Root open={showEditEventModal} onOpenChange={setShowEditEventModal}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[94vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-950">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-xl font-black text-gray-950 dark:text-white">
+                  {isCommunityEvent ? 'Edit Community Event' : 'Edit Event'}
+                </Dialog.Title>
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  {isCommunityEvent
+                    ? 'Update the community ride format, trail, schedule, and participant notice.'
+                    : 'Update event details, payment QR, trail alert, and route context.'}
+                </p>
+              </div>
+              <Dialog.Close className="rounded-full border border-gray-300 px-3 py-1 text-xs font-bold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+                Close
+              </Dialog.Close>
+            </div>
+            {eventId && isCommunityEvent ? (
+              <CommunityEventForm
+                mode="edit"
+                event={event}
+                onCompleted={async () => {
+                  await refreshEventAndBooking();
+                  setShowEditEventModal(false);
+                  setActionStatus('Community event updated successfully.');
+                }}
+                onCancel={() => setShowEditEventModal(false)}
+              />
+            ) : eventId ? (
+              <EventForm
+                mode="edit"
+                editEventId={eventId}
+                embedded
+                initialUser={user}
+                onCompleted={async () => {
+                  await refreshEventAndBooking();
+                  setShowEditEventModal(false);
+                  setActionStatus('Event updated successfully.');
+                }}
+                onCancel={() => setShowEditEventModal(false)}
+              />
+            ) : null}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
       {imagePreview && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900">

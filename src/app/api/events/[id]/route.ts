@@ -15,6 +15,7 @@ export async function GET(
         e.id,
         e.title,
         e.description,
+        e.trail_alert,
         e.trail_id,
         e.event_date,
         e.organizer_name,
@@ -35,6 +36,7 @@ export async function GET(
         t.name as trail_name,
         t.description as trail_description,
         t.difficulty as trail_difficulty,
+        t.sport_type as trail_sport_type,
         t.location as trail_location,
         t.latitude as trail_latitude,
         t.longitude as trail_longitude,
@@ -59,6 +61,7 @@ export async function GET(
       id: row.id,
       title: row.title,
       description: row.description,
+      trail_alert: row.trail_alert,
       trail_id: row.trail_id,
       trail:
         row.trail_id && row.trail_table_id
@@ -67,6 +70,7 @@ export async function GET(
               name: row.trail_name,
               description: row.trail_description,
               difficulty: row.trail_difficulty,
+              sport_type: row.trail_sport_type,
               location: row.trail_location,
               latitude: row.trail_latitude,
               longitude: row.trail_longitude,
@@ -136,45 +140,42 @@ export async function PATCH(
       );
     }
 
+    const updateParams: unknown[] = [];
+    const updates: string[] = [];
+    const addUpdate = (column: string, value: unknown) => {
+      updateParams.push(value);
+      updates.push(`${column} = $${updateParams.length}`);
+    };
+
+    if (Object.prototype.hasOwnProperty.call(body, 'title')) addUpdate('title', body.title || null);
+    if (Object.prototype.hasOwnProperty.call(body, 'description')) addUpdate('description', body.description ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'trail_alert')) addUpdate('trail_alert', body.trail_alert ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'trail_id')) addUpdate('trail_id', body.trail_id ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'event_date')) addUpdate('event_date', body.event_date || null);
+    if (Object.prototype.hasOwnProperty.call(body, 'organizer_name')) addUpdate('organizer_name', body.organizer_name ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'organizer_email')) addUpdate('organizer_email', body.organizer_email ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'meeting_point')) addUpdate('meeting_point', body.meeting_point ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'difficulty')) addUpdate('difficulty', body.difficulty ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'required_expertise')) addUpdate('required_expertise', body.required_expertise ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'sport_type')) addUpdate('sport_type', body.sport_type ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'city')) addUpdate('city', body.city ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'price_npr')) addUpdate('price_npr', body.price_npr ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'max_participants')) addUpdate('max_participants', body.max_participants ?? null);
+    if (Object.prototype.hasOwnProperty.call(body, 'qr_image_url')) addUpdate('qr_image_url', body.qr_image_url ?? null);
+
+    if (updates.length === 0) {
+      return NextResponse.json({ event: eventRow }, { status: 200 });
+    }
+
+    updateParams.push(eventId);
     const result = await pool.query(
       `
       UPDATE events
-      SET
-        title = COALESCE($1, title),
-        description = COALESCE($2, description),
-        trail_id = COALESCE($3, trail_id),
-        event_date = COALESCE($4, event_date),
-        organizer_name = COALESCE($5, organizer_name),
-        organizer_email = COALESCE($6, organizer_email),
-        meeting_point = COALESCE($7, meeting_point),
-        difficulty = COALESCE($8, difficulty),
-        required_expertise = COALESCE($9, required_expertise),
-        sport_type = COALESCE($10, sport_type),
-        city = COALESCE($11, city),
-        price_npr = COALESCE($12, price_npr),
-        max_participants = COALESCE($13, max_participants),
-        qr_image_url = COALESCE($14, qr_image_url),
-        updated_at = NOW()
-      WHERE id = $15
+      SET ${updates.join(', ')}, updated_at = NOW()
+      WHERE id = $${updateParams.length}
       RETURNING *
       `,
-      [
-        body.title || null,
-        body.description ?? null,
-        body.trail_id ?? null,
-        body.event_date || null,
-        body.organizer_name ?? null,
-        body.organizer_email ?? null,
-        body.meeting_point ?? null,
-        body.difficulty ?? null,
-        body.required_expertise ?? null,
-        body.sport_type ?? null,
-        body.city ?? null,
-        body.price_npr ?? null,
-        body.max_participants ?? null,
-        body.qr_image_url ?? null,
-        eventId,
-      ]
+      updateParams
     );
 
     return NextResponse.json({ event: result.rows[0] }, { status: 200 });

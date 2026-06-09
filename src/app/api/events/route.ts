@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
         e.id,
         e.title,
         e.description,
+        e.trail_alert,
         e.trail_id,
         e.event_date,
         e.organizer_name,
@@ -149,6 +150,7 @@ export async function GET(request: NextRequest) {
       id: row.id,
       title: row.title,
       description: row.description,
+      trail_alert: row.trail_alert,
       trail_id: row.trail_id,
       trail:
         row.trail_id && row.trail_table_id
@@ -209,6 +211,7 @@ export async function POST(request: NextRequest) {
     const {
       title,
       description,
+      trail_alert,
       trail_id,
       event_date,
       organizer_name,
@@ -308,6 +311,7 @@ export async function POST(request: NextRequest) {
       INSERT INTO events (
         title,
         description,
+        trail_alert,
         trail_id,
         event_date,
         organizer_name,
@@ -322,13 +326,14 @@ export async function POST(request: NextRequest) {
         qr_image_url,
         host_user_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
     `;
 
     const result = await pool.query(query, [
       title,
       description || null,
+      trail_alert || null,
       trail_id || null,
       event_date,
       organizer_name || null,
