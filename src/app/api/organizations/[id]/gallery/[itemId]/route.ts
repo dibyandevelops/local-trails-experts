@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { isAllowedImageUrl } from '@/lib/image-url';
 
 const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MAX_CAPTION_LENGTH = 160;
 
 function buildLookup(idOrSlug: string) {
   if (UUID_V4_REGEX.test(idOrSlug)) {
@@ -102,6 +104,19 @@ export async function PATCH(
       image_url?: string;
       caption?: string | null;
     };
+    const imageUrl =
+      typeof body.image_url === 'string' ? body.image_url.trim() : null;
+    const caption = typeof body.caption === 'string' ? body.caption.trim() : body.caption;
+
+    if (imageUrl && !isAllowedImageUrl(imageUrl)) {
+      return NextResponse.json(
+        { error: 'image_url must be a valid HTTPS image URL or supported image upload' },
+        { status: 400 }
+      );
+    }
+    if (typeof caption === 'string' && caption.length > MAX_CAPTION_LENGTH) {
+      return NextResponse.json({ error: 'caption is too long' }, { status: 400 });
+    }
 
     const result = await pool.query(
       `
@@ -116,8 +131,8 @@ export async function PATCH(
       RETURNING id, organization_id, image_url, caption, created_at
       `,
       [
-        body.image_url ?? null,
-        body.caption ?? null,
+        imageUrl,
+        caption ?? null,
         itemId,
         organizationId,
       ]

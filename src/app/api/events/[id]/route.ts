@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { Event, CreateEventInput } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
+import { isAllowedImageUrl } from '@/lib/image-url';
+
+const MAX_EVENT_TITLE_LENGTH = 160;
+const MAX_EVENT_DESCRIPTION_LENGTH = 5000;
+const MAX_EVENT_ALERT_LENGTH = 500;
+const MAX_EVENT_TEXT_LENGTH = 240;
+const MAX_QR_IMAGE_LENGTH = 500_000;
 
 export async function GET(
   _request: NextRequest,
@@ -146,22 +153,73 @@ export async function PATCH(
       updateParams.push(value);
       updates.push(`${column} = $${updateParams.length}`);
     };
+    const hasField = (field: keyof CreateEventInput) =>
+      Object.prototype.hasOwnProperty.call(body, field);
+    const getText = (field: keyof CreateEventInput) =>
+      typeof body[field] === 'string' ? String(body[field]).trim() : body[field];
 
-    if (Object.prototype.hasOwnProperty.call(body, 'title')) addUpdate('title', body.title || null);
-    if (Object.prototype.hasOwnProperty.call(body, 'description')) addUpdate('description', body.description ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'trail_alert')) addUpdate('trail_alert', body.trail_alert ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'trail_id')) addUpdate('trail_id', body.trail_id ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'event_date')) addUpdate('event_date', body.event_date || null);
-    if (Object.prototype.hasOwnProperty.call(body, 'organizer_name')) addUpdate('organizer_name', body.organizer_name ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'organizer_email')) addUpdate('organizer_email', body.organizer_email ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'meeting_point')) addUpdate('meeting_point', body.meeting_point ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'difficulty')) addUpdate('difficulty', body.difficulty ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'required_expertise')) addUpdate('required_expertise', body.required_expertise ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'sport_type')) addUpdate('sport_type', body.sport_type ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'city')) addUpdate('city', body.city ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'price_npr')) addUpdate('price_npr', body.price_npr ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'max_participants')) addUpdate('max_participants', body.max_participants ?? null);
-    if (Object.prototype.hasOwnProperty.call(body, 'qr_image_url')) addUpdate('qr_image_url', body.qr_image_url ?? null);
+    if (
+      (hasField('title') && String(body.title || '').trim().length > MAX_EVENT_TITLE_LENGTH) ||
+      (hasField('description') && String(body.description || '').length > MAX_EVENT_DESCRIPTION_LENGTH) ||
+      (hasField('trail_alert') && String(body.trail_alert || '').length > MAX_EVENT_ALERT_LENGTH) ||
+      (hasField('organizer_name') && String(body.organizer_name || '').length > MAX_EVENT_TEXT_LENGTH) ||
+      (hasField('meeting_point') && String(body.meeting_point || '').length > MAX_EVENT_TEXT_LENGTH) ||
+      (hasField('city') && String(body.city || '').length > MAX_EVENT_TEXT_LENGTH)
+    ) {
+      return NextResponse.json({ error: 'Event details are too long.' }, { status: 400 });
+    }
+    if (
+      hasField('organizer_email') &&
+      body.organizer_email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.organizer_email).trim())
+    ) {
+      return NextResponse.json({ error: 'Invalid organizer email.' }, { status: 400 });
+    }
+    if (
+      hasField('max_participants') &&
+      (!Number.isInteger(Number(body.max_participants)) ||
+        Number(body.max_participants) < 1 ||
+        Number(body.max_participants) > 500)
+    ) {
+      return NextResponse.json(
+        { error: 'max_participants must be between 1 and 500.' },
+        { status: 400 }
+      );
+    }
+    if (
+      hasField('price_npr') &&
+      (!Number.isFinite(Number(body.price_npr)) ||
+        Number(body.price_npr) < 0 ||
+        Number(body.price_npr) > 1_000_000)
+    ) {
+      return NextResponse.json({ error: 'Invalid event price.' }, { status: 400 });
+    }
+    if (
+      hasField('qr_image_url') &&
+      body.qr_image_url &&
+      !isAllowedImageUrl(String(body.qr_image_url), MAX_QR_IMAGE_LENGTH)
+    ) {
+      return NextResponse.json(
+        { error: 'QR image must be a valid HTTPS image URL or supported image upload.' },
+        { status: 400 }
+      );
+    }
+
+    if (hasField('title')) addUpdate('title', getText('title') || null);
+    if (hasField('description')) addUpdate('description', getText('description') ?? null);
+    if (hasField('trail_alert')) addUpdate('trail_alert', getText('trail_alert') ?? null);
+    if (hasField('trail_id')) addUpdate('trail_id', body.trail_id ?? null);
+    if (hasField('event_date')) addUpdate('event_date', body.event_date || null);
+    if (hasField('organizer_name')) addUpdate('organizer_name', getText('organizer_name') ?? null);
+    if (hasField('organizer_email')) addUpdate('organizer_email', getText('organizer_email') ?? null);
+    if (hasField('meeting_point')) addUpdate('meeting_point', getText('meeting_point') ?? null);
+    if (hasField('difficulty')) addUpdate('difficulty', getText('difficulty') ?? null);
+    if (hasField('required_expertise')) addUpdate('required_expertise', getText('required_expertise') ?? null);
+    if (hasField('sport_type')) addUpdate('sport_type', getText('sport_type') ?? null);
+    if (hasField('city')) addUpdate('city', getText('city') ?? null);
+    if (hasField('price_npr')) addUpdate('price_npr', body.price_npr ?? null);
+    if (hasField('max_participants')) addUpdate('max_participants', body.max_participants ?? null);
+    if (hasField('qr_image_url')) addUpdate('qr_image_url', getText('qr_image_url') ?? null);
 
     if (updates.length === 0) {
       return NextResponse.json({ event: eventRow }, { status: 200 });

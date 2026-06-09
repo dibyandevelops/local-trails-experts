@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { firebaseAdminMessaging } from '@/lib/firebase-admin';
 import { absoluteUrl } from '@/lib/seo';
+import type { SendResponse } from 'firebase-admin/messaging';
 
 type PushPayload = {
   title: string;
@@ -60,15 +61,15 @@ export async function sendPushToUserIds(userIds: string[], payload: PushPayload)
   });
 
   const invalidTokens = response.responses
-    .map((res, index) => ({ res, token: tokens[index] }))
+    .map((res: SendResponse, index: number) => ({ res, token: tokens[index] }))
     .filter(
-      ({ res }) =>
+      ({ res }: { res: SendResponse; token: string }) =>
         !res.success &&
         (res.error?.code === 'messaging/registration-token-not-registered' ||
           res.error?.code === 'messaging/invalid-registration-token' ||
           res.error?.code === 'messaging/mismatched-credential')
     )
-    .map(({ token }) => token);
+    .map(({ token }: { res: SendResponse; token: string }) => token);
 
   await cleanupInvalidTokens(invalidTokens);
 

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { isAllowedImageUrl } from '@/lib/image-url';
 
 const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MAX_CAPTION_LENGTH = 160;
 
 function buildLookup(idOrSlug: string) {
   if (UUID_V4_REGEX.test(idOrSlug)) {
@@ -103,6 +105,16 @@ export async function POST(
     if (!imageUrl) {
       return NextResponse.json({ error: 'image_url is required' }, { status: 400 });
     }
+    if (!isAllowedImageUrl(imageUrl)) {
+      return NextResponse.json(
+        { error: 'image_url must be a valid HTTPS image URL or supported image upload' },
+        { status: 400 }
+      );
+    }
+    const caption = body.caption?.trim() || null;
+    if (caption && caption.length > MAX_CAPTION_LENGTH) {
+      return NextResponse.json({ error: 'caption is too long' }, { status: 400 });
+    }
 
     const result = await pool.query(
       `
@@ -110,7 +122,7 @@ export async function POST(
       VALUES ($1, $2, $3, $4, $5)
       RETURNING id, organization_id, image_url, caption, created_at
       `,
-      [organization.id, imageUrl, body.caption?.trim() || null, 0, auth.sub]
+      [organization.id, imageUrl, caption, 0, auth.sub]
     );
 
     return NextResponse.json({ item: result.rows[0] }, { status: 201 });

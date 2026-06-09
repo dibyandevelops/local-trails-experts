@@ -2,20 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
+import { isAllowedImageUrl } from '@/lib/image-url';
 
 const MAX_PROOF_IMAGE_URL_LENGTH = 350_000;
 const MAX_TRANSACTION_REFERENCE_LENGTH = 120;
-
-function isAllowedProofImage(value: string) {
-  if (value.length > MAX_PROOF_IMAGE_URL_LENGTH) return false;
-  if (value.startsWith('data:image/')) return true;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(
   request: NextRequest,
@@ -53,7 +43,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    if (!isAllowedProofImage(proofImageUrl)) {
+    if (!isAllowedImageUrl(proofImageUrl, MAX_PROOF_IMAGE_URL_LENGTH)) {
       return NextResponse.json(
         { error: 'Payment proof must be a valid image upload or HTTPS image URL.' },
         { status: 400 }

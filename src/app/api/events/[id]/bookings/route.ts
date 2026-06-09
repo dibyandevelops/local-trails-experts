@@ -97,8 +97,11 @@ export async function POST(
     const body = await request.json();
     const spots = Number(body.spots || 1);
 
-    if (!Number.isFinite(spots) || spots < 1) {
-      return NextResponse.json({ error: 'spots must be at least 1' }, { status: 400 });
+    if (!Number.isInteger(spots) || spots < 1 || spots > 10) {
+      return NextResponse.json(
+        { error: 'spots must be a whole number between 1 and 10' },
+        { status: 400 }
+      );
     }
 
     const client = await pool.connect();
@@ -121,6 +124,7 @@ export async function POST(
                price_npr, organizer_email
         FROM events
         WHERE id = $1
+        FOR UPDATE
         LIMIT 1
         `,
         [eventId]

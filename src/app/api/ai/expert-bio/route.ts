@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { rateLimit } from '@/lib/rate-limit';
+import { getAuthFromRequest } from '@/lib/auth';
 
 type ExpertBioInput = {
   name?: string;
@@ -38,6 +39,11 @@ function buildPrompt(data: ExpertBioInput) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const limited = await rateLimit(request, 'ai-expert-bio', 5, 60);
     if (limited) return limited;
 
@@ -50,6 +56,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as ExpertBioInput;
+    if (
+      String(body.name || '').length > 160 ||
+      String(body.city || '').length > 160 ||
+      String(body.language || '').length > 80 ||
+      (Array.isArray(body.sports) && body.sports.join(',').length > 500)
+    ) {
+      return NextResponse.json({ error: 'Prompt fields are too long.' }, { status: 400 });
+    }
     const prompt = buildPrompt(body);
 
     const client = new GoogleGenAI({ apiKey });

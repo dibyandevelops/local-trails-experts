@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { parseGPX } from '@/lib/gpx-parser';
 import { getAuthFromRequest } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
+
+const MAX_GPX_BYTES = 2 * 1024 * 1024;
 
 function estimateTimeHours(distanceKm: number, elevationGainM: number) {
   const baseHours = distanceKm / 10;
@@ -15,12 +18,23 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const limited = await rateLimit(request, 'trail-route-upload', 10, 60);
+    if (limited) return limited;
+
     const auth = getAuthFromRequest(request);
     if (!auth || auth.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
+    const contentLength = Number(request.headers.get('content-length') || 0);
+    if (contentLength > MAX_GPX_BYTES * 2) {
+      return NextResponse.json(
+        { error: 'Upload is too large. Please use a smaller GPX file.' },
+        { status: 413 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -41,9 +55,21 @@ export async function POST(
         { status: 400 }
       );
     }
+    if (file.size > MAX_GPX_BYTES) {
+      return NextResponse.json(
+        { error: 'GPX file is too large. Please keep it under 2 MB.' },
+        { status: 413 }
+      );
+    }
 
     // Read file content
     const fileContent = await file.text();
+    if (fileContent.length > MAX_GPX_BYTES) {
+      return NextResponse.json(
+        { error: 'GPX file is too large. Please keep it under 2 MB.' },
+        { status: 413 }
+      );
+    }
 
     // Parse GPX file
     const routeData = await parseGPX(fileContent);

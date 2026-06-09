@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthFromRequest } from '@/lib/auth';
 import { parseGPX } from '@/lib/gpx-parser';
+import { rateLimit } from '@/lib/rate-limit';
+
+const MAX_GPX_BYTES = 2 * 1024 * 1024;
 
 function estimateTimeHours(distanceKm: number, elevationGainM: number) {
   const baseHours = distanceKm / 10;
@@ -11,9 +14,20 @@ function estimateTimeHours(distanceKm: number, elevationGainM: number) {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, 'parse-gpx', 10, 60);
+    if (limited) return limited;
+
     const auth = getAuthFromRequest(request);
     if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const contentLength = Number(request.headers.get('content-length') || 0);
+    if (contentLength > MAX_GPX_BYTES * 2) {
+      return NextResponse.json(
+        { error: 'Upload is too large. Please use a smaller GPX file.' },
+        { status: 413 }
+      );
     }
 
     const formData = await request.formData();
@@ -29,8 +43,22 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (file.size > MAX_GPX_BYTES) {
+      return NextResponse.json(
+        { error: 'GPX file is too large. Please keep it under 2 MB.' },
+        { status: 413 }
+      );
+    }
 
-    const routeData = await parseGPX(await file.text());
+    const gpxText = await file.text();
+    if (gpxText.length > MAX_GPX_BYTES) {
+      return NextResponse.json(
+        { error: 'GPX file is too large. Please keep it under 2 MB.' },
+        { status: 413 }
+      );
+    }
+
+    const routeData = await parseGPX(gpxText);
     const distance_km = Number(routeData.totalDistance.toFixed(2));
     const elevation_gain_m = Math.round(routeData.elevationGain);
     const estimated_time_hours = estimateTimeHours(distance_km, elevation_gain_m);

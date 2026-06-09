@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { rateLimit } from '@/lib/rate-limit';
+import { getAuthFromRequest } from '@/lib/auth';
 
 type TrailDescriptionInput = {
   name?: string;
@@ -36,6 +37,11 @@ function buildPrompt(data: TrailDescriptionInput) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAuthFromRequest(request);
+    if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const limited = await rateLimit(request, 'ai-trail-description', 5, 60);
     if (limited) return limited;
 
@@ -48,8 +54,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as TrailDescriptionInput;
+    if (
+      String(body.name || '').length > 160 ||
+      String(body.location || '').length > 240 ||
+      String(body.sport_type || '').length > 80 ||
+      String(body.difficulty || '').length > 80
+    ) {
+      return NextResponse.json({ error: 'Prompt fields are too long.' }, { status: 400 });
+    }
     const prompt = buildPrompt(body);
-    console.log(prompt, 'prompt')
     const client = new GoogleGenAI({ apiKey });
     const result = await client.models.generateContent({
       model: 'gemini-2.5-flash-lite',

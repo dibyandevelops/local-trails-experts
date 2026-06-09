@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { rateLimit } from '@/lib/rate-limit';
+import { isAllowedImageUrl } from '@/lib/image-url';
 
 const SUPPORTABLE_STATUSES = new Set(['active', 'looking_for_funds']);
+const MAX_DONATION_NPR = 10_000_000;
+const MAX_PROOF_IMAGE_LENGTH = 2_500_000;
 
 function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== 'string') return null;
@@ -17,7 +20,7 @@ function isEmail(value: string | null) {
 
 function isValidProofImage(value: string | null) {
   if (!value) return false;
-  return /^data:image\/(png|jpe?g|webp);base64,/i.test(value) && value.length <= 2_500_000;
+  return isAllowedImageUrl(value, MAX_PROOF_IMAGE_LENGTH);
 }
 
 export async function POST(
@@ -44,11 +47,17 @@ export async function POST(
     const proofImageUrl = cleanText(body.proof_image_url, 2_500_000);
     const wantsProgressUpdates = Boolean(body.wants_progress_updates);
 
-    if (!Number.isFinite(amountNpr) || amountNpr <= 0) {
-      return NextResponse.json({ error: 'Donation amount must be greater than 0.' }, { status: 400 });
+    if (!Number.isFinite(amountNpr) || amountNpr <= 0 || amountNpr > MAX_DONATION_NPR) {
+      return NextResponse.json(
+        { error: 'Donation amount must be between NPR 1 and NPR 10,000,000.' },
+        { status: 400 }
+      );
     }
-    if (!Number.isFinite(paidAmountNpr) || paidAmountNpr <= 0) {
-      return NextResponse.json({ error: 'Paid amount must be greater than 0.' }, { status: 400 });
+    if (!Number.isFinite(paidAmountNpr) || paidAmountNpr <= 0 || paidAmountNpr > MAX_DONATION_NPR) {
+      return NextResponse.json(
+        { error: 'Paid amount must be between NPR 1 and NPR 10,000,000.' },
+        { status: 400 }
+      );
     }
     if (supporterEmail && !isEmail(supporterEmail)) {
       return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });

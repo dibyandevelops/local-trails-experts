@@ -23,6 +23,13 @@ function withOnboardingParam(nextPath: string) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+function safeNextPath(value: string | undefined) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) {
+    return '/trails';
+  }
+  return value;
+}
+
 export async function GET(request: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -39,7 +46,7 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const expectedState = request.cookies.get(STATE_COOKIE)?.value;
-  const next = request.cookies.get(NEXT_COOKIE)?.value || '/trails';
+  const next = safeNextPath(request.cookies.get(NEXT_COOKIE)?.value);
   const modeCookie = request.cookies.get(MODE_COOKIE)?.value;
   const mode =
     modeCookie === 'connect' || modeCookie === 'register' ? modeCookie : 'login';

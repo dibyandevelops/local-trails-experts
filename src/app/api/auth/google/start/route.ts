@@ -7,6 +7,13 @@ const NEXT_COOKIE = 'mtb_google_oauth_next';
 const MODE_COOKIE = 'mtb_google_oauth_mode';
 const ROLE_COOKIE = 'mtb_google_oauth_role';
 
+function safeNextPath(value: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) {
+    return '/trails';
+  }
+  return value;
+}
+
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
@@ -17,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 
   const url = new URL(request.url);
-  const next = url.searchParams.get('next') || '/trails';
+  const next = safeNextPath(url.searchParams.get('next'));
   const rawMode = url.searchParams.get('mode');
   const mode =
     rawMode === 'connect' || rawMode === 'register' ? rawMode : 'login';

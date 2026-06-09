@@ -6,6 +6,13 @@ import { COMMUNITY_NAME } from '@/lib/branding';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 import { sendEmailSafe } from '@/lib/email';
 import { sendPushToUserIds } from '@/lib/push';
+import { isAllowedImageUrl } from '@/lib/image-url';
+
+const MAX_EVENT_TITLE_LENGTH = 160;
+const MAX_EVENT_DESCRIPTION_LENGTH = 5000;
+const MAX_EVENT_ALERT_LENGTH = 500;
+const MAX_EVENT_TEXT_LENGTH = 240;
+const MAX_QR_IMAGE_LENGTH = 500_000;
 
 type TrailRequestContext = {
   id: string;
@@ -303,6 +310,41 @@ export async function POST(request: NextRequest) {
     if (!title || !event_date || !required_expertise) {
       return NextResponse.json(
         { error: 'Missing required fields: title, event_date, required_expertise' },
+        { status: 400 }
+      );
+    }
+    if (
+      title.length > MAX_EVENT_TITLE_LENGTH ||
+      (description && description.length > MAX_EVENT_DESCRIPTION_LENGTH) ||
+      (trail_alert && trail_alert.length > MAX_EVENT_ALERT_LENGTH) ||
+      (organizer_name && organizer_name.length > MAX_EVENT_TEXT_LENGTH) ||
+      (meeting_point && meeting_point.length > MAX_EVENT_TEXT_LENGTH) ||
+      (city && city.length > MAX_EVENT_TEXT_LENGTH)
+    ) {
+      return NextResponse.json({ error: 'Event details are too long.' }, { status: 400 });
+    }
+    if (
+      organizer_email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(organizer_email).trim())
+    ) {
+      return NextResponse.json({ error: 'Invalid organizer email.' }, { status: 400 });
+    }
+    if (
+      !Number.isInteger(Number(max_participants)) ||
+      Number(max_participants) < 1 ||
+      Number(max_participants) > 500
+    ) {
+      return NextResponse.json(
+        { error: 'max_participants must be between 1 and 500.' },
+        { status: 400 }
+      );
+    }
+    if (!Number.isFinite(Number(price_npr)) || Number(price_npr) < 0 || Number(price_npr) > 1_000_000) {
+      return NextResponse.json({ error: 'Invalid event price.' }, { status: 400 });
+    }
+    if (qr_image_url && !isAllowedImageUrl(String(qr_image_url), MAX_QR_IMAGE_LENGTH)) {
+      return NextResponse.json(
+        { error: 'QR image must be a valid HTTPS image URL or supported image upload.' },
         { status: 400 }
       );
     }
