@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Event, SportType, User } from '@/types';
+import type { Event, ExpertRideProgram, ExpertiseLevel, SportType, User } from '@/types';
 import { apiClient } from '@/services/api/client';
 import { ApiPath } from '@/services/api/paths';
 
@@ -85,5 +85,108 @@ export async function fetchExpertStravaSummary(
       throw new Error(apiError?.error || 'Failed to fetch Strava summary');
     }
     throw new Error('Failed to fetch Strava summary');
+  }
+}
+
+export async function fetchExpertRidePrograms(signal?: AbortSignal) {
+  try {
+    const { data } = await apiClient.get<{ programs: ExpertRideProgram[] }>(
+      '/api/expert-ride-programs',
+      { signal }
+    );
+    return data.programs || [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to fetch ride programs');
+    }
+    throw new Error('Failed to fetch ride programs');
+  }
+}
+
+export async function fetchMyExpertRidePrograms(signal?: AbortSignal) {
+  try {
+    const { data } = await apiClient.get<{ programs: ExpertRideProgram[] }>(
+      '/api/experts/me/ride-programs',
+      { signal }
+    );
+    return data.programs || [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to fetch your ride programs');
+    }
+    throw new Error('Failed to fetch your ride programs');
+  }
+}
+
+export type SaveExpertRideProgramPayload = {
+  trail_id: string;
+  description?: string;
+  price_npr?: number | null;
+  max_group_size?: number;
+  duration_note?: string;
+  meeting_point_note?: string;
+  skill_level?: ExpertiseLevel;
+  is_active?: boolean;
+};
+
+export async function saveMyExpertRideProgram(payload: SaveExpertRideProgramPayload) {
+  try {
+    const { data } = await apiClient.post<{ programs: ExpertRideProgram[] }>(
+      '/api/experts/me/ride-programs',
+      payload
+    );
+    return data.programs || [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to save ride program');
+    }
+    throw new Error('Failed to save ride program');
+  }
+}
+
+export async function updateMyExpertRideProgram(programId: string, payload: { is_active?: boolean }) {
+  try {
+    const { data } = await apiClient.patch<{ programs: ExpertRideProgram[] }>(
+      '/api/experts/me/ride-programs',
+      { id: programId, ...payload }
+    );
+    return data.programs || [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to update ride program');
+    }
+    throw new Error('Failed to update ride program');
+  }
+}
+
+export type RequestExpertRideProgramPayload = {
+  preferred_date: string;
+  preferred_time?: string;
+  group_size?: number;
+  requester_phone?: string;
+  offered_price_npr?: number | null;
+  notes?: string;
+};
+
+export async function requestExpertRideProgram(
+  programId: string,
+  payload: RequestExpertRideProgramPayload
+) {
+  try {
+    const { data } = await apiClient.post<{ success: boolean }>(
+      `/api/expert-ride-programs/${programId}/request`,
+      payload
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to submit ride request');
+    }
+    throw new Error('Failed to submit ride request');
   }
 }

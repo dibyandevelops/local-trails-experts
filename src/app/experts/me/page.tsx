@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Event, EventParticipant, User, SportType } from '@/types';
+import type { Event, EventParticipant, ExpertRideProgram, User, SportType } from '@/types';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
@@ -32,6 +32,26 @@ type ExpertTrailRequest = {
   trail_location: string | null;
 };
 
+type ExpertRideProgramRequest = {
+  id: string;
+  program_id: string;
+  requester_name: string | null;
+  requester_email: string;
+  requester_phone: string | null;
+  preferred_date: string;
+  preferred_time: string | null;
+  group_size: number;
+  offered_price_npr: number | null;
+  notes: string | null;
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  created_at: string;
+  program_title: string | null;
+  trail_name: string | null;
+  trail_slug: string | null;
+  trail_location: string | null;
+  expert_availability_weekdays: string[] | null;
+};
+
 type ExpertTrail = {
   id: string;
   slug?: string | null;
@@ -54,17 +74,23 @@ export default function ExpertProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<ExpertEventWithParticipants[]>([]);
   const [trailRequests, setTrailRequests] = useState<ExpertTrailRequest[]>([]);
+  const [rideProgramRequests, setRideProgramRequests] = useState<ExpertRideProgramRequest[]>([]);
   const [createdTrails, setCreatedTrails] = useState<ExpertTrail[]>([]);
   const [associatedTrails, setAssociatedTrails] = useState<ExpertTrail[]>([]);
   const [availableTrails, setAvailableTrails] = useState<ExpertTrail[]>([]);
+  const [ridePrograms, setRidePrograms] = useState<ExpertRideProgram[]>([]);
   const [selectedAssociatedTrailIds, setSelectedAssociatedTrailIds] = useState<string[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTrailRequests, setLoadingTrailRequests] = useState(true);
   const [loadingTrails, setLoadingTrails] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingAssociatedTrails, setSavingAssociatedTrails] = useState(false);
+  const [savingRideProgram, setSavingRideProgram] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [trailAssociationMessage, setTrailAssociationMessage] = useState<string | null>(null);
+  const [rideProgramMessage, setRideProgramMessage] = useState<string | null>(null);
+  const [rideProgramRequestMessage, setRideProgramRequestMessage] = useState<string | null>(null);
+  const [updatingRideProgramRequestId, setUpdatingRideProgramRequestId] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [requestForEvent, setRequestForEvent] = useState<ExpertTrailRequest | null>(
@@ -94,6 +120,15 @@ export default function ExpertProfilePage() {
     verificationAchievements: '',
     verificationStravaUrl: '',
     verificationLinks: '',
+  });
+  const [rideProgramForm, setRideProgramForm] = useState({
+    trailId: '',
+    description: '',
+    priceNpr: '',
+    maxGroupSize: '4',
+    durationNote: '',
+    meetingPointNote: '',
+    skillLevel: 'intermediate',
   });
   const initials =
     editForm.name
@@ -223,22 +258,29 @@ export default function ExpertProfilePage() {
         if (!currentUser || currentUser.role !== 'expert') {
           setLoadingEvents(false);
           setLoadingTrailRequests(false);
+          setLoadingTrails(false);
           return;
         }
 
-        const [eventsRes, requestsRes, trailsRes] = await Promise.all([
+        const [eventsRes, requestsRes, trailsRes, programsRes, programRequestsRes] = await Promise.all([
           fetch(`/api/experts/${currentUser.id}/events`),
           fetch('/api/experts/me/alerts'),
           fetch('/api/experts/me/trails'),
+          fetch('/api/experts/me/ride-programs'),
+          fetch('/api/experts/me/ride-program-requests'),
         ]);
         const eventsData = await eventsRes.json();
         const requestsData = await requestsRes.json();
         const trailsData = await trailsRes.json();
+        const programsData = await programsRes.json();
+        const programRequestsData = await programRequestsRes.json();
         setEvents(eventsData.events || []);
         setTrailRequests(requestsData.requests || []);
         setCreatedTrails(trailsData.created_trails || trailsData.trails || []);
         setAssociatedTrails(trailsData.associated_trails || []);
         setAvailableTrails(trailsData.available_trails || []);
+        setRidePrograms(programsData.programs || []);
+        setRideProgramRequests(programRequestsData.requests || []);
         setSelectedAssociatedTrailIds(
           (trailsData.associated_trails || []).map((trail: ExpertTrail) => trail.id)
         );
@@ -292,6 +334,101 @@ export default function ExpertProfilePage() {
       );
     } finally {
       setSavingAssociatedTrails(false);
+    }
+  };
+
+  const saveRideProgram = async () => {
+    setSavingRideProgram(true);
+    setRideProgramMessage(null);
+    try {
+      if (!rideProgramForm.trailId) {
+        throw new Error('Select one of your associated trails first.');
+      }
+
+      const response = await fetch('/api/experts/me/ride-programs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trail_id: rideProgramForm.trailId,
+          description: rideProgramForm.description.trim() || null,
+          price_npr: rideProgramForm.priceNpr ? Number(rideProgramForm.priceNpr) : null,
+          max_group_size: rideProgramForm.maxGroupSize ? Number(rideProgramForm.maxGroupSize) : 4,
+          duration_note: rideProgramForm.durationNote.trim() || null,
+          meeting_point_note: rideProgramForm.meetingPointNote.trim() || null,
+          skill_level: rideProgramForm.skillLevel,
+          is_active: true,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to save ride program');
+      }
+      setRidePrograms(data.programs || []);
+      setRideProgramForm((prev) => ({
+        ...prev,
+        trailId: '',
+        description: '',
+        priceNpr: '',
+        durationNote: '',
+        meetingPointNote: '',
+      }));
+      setRideProgramMessage('Ride program saved.');
+    } catch (error) {
+      setRideProgramMessage(
+        error instanceof Error ? error.message : 'Failed to save ride program.'
+      );
+    } finally {
+      setSavingRideProgram(false);
+    }
+  };
+
+  const toggleRideProgramActive = async (programId: string, isActive: boolean) => {
+    setRideProgramMessage(null);
+    try {
+      const response = await fetch('/api/experts/me/ride-programs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: programId, is_active: isActive }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update ride program');
+      }
+      setRidePrograms(data.programs || []);
+      setRideProgramMessage(isActive ? 'Ride program is live.' : 'Ride program is paused.');
+    } catch (error) {
+      setRideProgramMessage(
+        error instanceof Error ? error.message : 'Failed to update ride program.'
+      );
+    }
+  };
+
+  const updateRideProgramRequestStatus = async (
+    requestId: string,
+    status: ExpertRideProgramRequest['status']
+  ) => {
+    setRideProgramRequestMessage(null);
+    setUpdatingRideProgramRequestId(requestId);
+    try {
+      const response = await fetch('/api/experts/me/ride-program-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: requestId, status }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update ride request');
+      }
+      setRideProgramRequests((prev) =>
+        prev.map((request) => (request.id === requestId ? { ...request, status } : request))
+      );
+      setRideProgramRequestMessage(`Ride request marked ${status}.`);
+    } catch (error) {
+      setRideProgramRequestMessage(
+        error instanceof Error ? error.message : 'Failed to update ride request.'
+      );
+    } finally {
+      setUpdatingRideProgramRequestId(null);
     }
   };
 
@@ -487,6 +624,117 @@ export default function ExpertProfilePage() {
             <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{editForm.bio?.trim() || 'Not added'}</p>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Ride Program Participants
+            </h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+              Requests from participants for your Ride with Experts programs.
+            </p>
+          </div>
+          {rideProgramRequests.length > 0 && (
+            <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+              {rideProgramRequests.length} request{rideProgramRequests.length === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
+        {rideProgramRequestMessage && (
+          <p className="mb-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
+            {rideProgramRequestMessage}
+          </p>
+        )}
+        {rideProgramRequests.length === 0 ? (
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            No ride program participant requests yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {rideProgramRequests.map((request) => (
+              <div
+                key={request.id}
+                className="rounded-xl border border-gray-200 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+              >
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                        {request.program_title || request.trail_name || 'Ride program request'}
+                      </p>
+                      <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold capitalize text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {request.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                      {request.trail_location || 'Trail location not set'}
+                      {request.expert_availability_weekdays?.length
+                        ? ` · Your availability: ${request.expert_availability_weekdays.join(', ')}`
+                        : ' · Flexible availability'}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    Requested <DateText value={request.created_at} pattern="PPP p" />
+                  </p>
+                </div>
+                <div className="mt-3 grid gap-2 text-xs text-gray-600 dark:text-slate-300 md:grid-cols-2">
+                  <p>
+                    Participant: {request.requester_name || 'Participant'} ({request.requester_email})
+                  </p>
+                  <p>
+                    Preferred: {request.preferred_date}
+                    {request.preferred_time ? ` at ${request.preferred_time}` : ''}
+                  </p>
+                  <p>Group size: {request.group_size}</p>
+                  <p>
+                    Offered amount:{' '}
+                    {request.offered_price_npr ? `NPR ${request.offered_price_npr}` : 'Not added'}
+                  </p>
+                  {request.requester_phone && <p>Phone: {request.requester_phone}</p>}
+                </div>
+                {request.notes && (
+                  <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                    {request.notes}
+                  </p>
+                )}
+                {['pending', 'accepted'].includes(request.status) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {request.status === 'pending' && (
+                      <button
+                        type="button"
+                        onClick={() => updateRideProgramRequestStatus(request.id, 'accepted')}
+                        disabled={updatingRideProgramRequestId === request.id}
+                        className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+                      >
+                        Accept
+                      </button>
+                    )}
+                    {request.status === 'accepted' && (
+                      <button
+                        type="button"
+                        onClick={() => updateRideProgramRequestStatus(request.id, 'completed')}
+                        disabled={updatingRideProgramRequestId === request.id}
+                        className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
+                      >
+                        Mark completed
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => updateRideProgramRequestStatus(request.id, 'declined')}
+                      disabled={updatingRideProgramRequestId === request.id}
+                      className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section id="trail-requests" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -735,6 +983,194 @@ export default function ExpertProfilePage() {
           </button>
           {trailAssociationMessage && (
             <p className="text-sm text-gray-600 dark:text-slate-300">{trailAssociationMessage}</p>
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Ride Programs
+            </h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+              Create requestable ride offers from trails associated with your expert profile.
+              The public title is generated as Ride with {editForm.name || 'you'} to trail name.
+            </p>
+          </div>
+          <Link
+            href="/ride-with-experts"
+            className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
+          >
+            View public page
+          </Link>
+        </div>
+
+        {rideProgramMessage && (
+          <p className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
+            {rideProgramMessage}
+          </p>
+        )}
+
+        {associatedTrails.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-300">
+            Associate at least one trail above before creating a ride program.
+          </p>
+        ) : (
+          <div className="grid gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950/35 md:grid-cols-2">
+            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              Associated trail
+              <select
+                value={rideProgramForm.trailId}
+                onChange={(event) =>
+                  setRideProgramForm((prev) => ({ ...prev, trailId: event.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              >
+                <option value="">Select trail</option>
+                {associatedTrails.map((trail) => (
+                  <option key={trail.id} value={trail.id}>
+                    {trail.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              Skill level
+              <select
+                value={rideProgramForm.skillLevel}
+                onChange={(event) =>
+                  setRideProgramForm((prev) => ({ ...prev, skillLevel: event.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              >
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+                <option value="expert">Expert</option>
+              </select>
+            </label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              Max group size
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={rideProgramForm.maxGroupSize}
+                onChange={(event) =>
+                  setRideProgramForm((prev) => ({ ...prev, maxGroupSize: event.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              Price note in NPR
+              <input
+                type="number"
+                min={0}
+                value={rideProgramForm.priceNpr}
+                onChange={(event) =>
+                  setRideProgramForm((prev) => ({ ...prev, priceNpr: event.target.value }))
+                }
+                placeholder="Optional"
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              Duration note
+              <input
+                value={rideProgramForm.durationNote}
+                onChange={(event) =>
+                  setRideProgramForm((prev) => ({ ...prev, durationNote: event.target.value }))
+                }
+                placeholder="2-3 hours, half day, etc."
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              Meeting point note
+              <input
+                value={rideProgramForm.meetingPointNote}
+                onChange={(event) =>
+                  setRideProgramForm((prev) => ({ ...prev, meetingPointNote: event.target.value }))
+                }
+                placeholder="Coordinate after request, shop pickup, etc."
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
+              Short description
+              <textarea
+                rows={3}
+                value={rideProgramForm.description}
+                onChange={(event) =>
+                  setRideProgramForm((prev) => ({ ...prev, description: event.target.value }))
+                }
+                placeholder="What makes this ride worth joining?"
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+            <div className="md:col-span-2">
+              <button
+                type="button"
+                onClick={saveRideProgram}
+                disabled={savingRideProgram}
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingRideProgram ? 'Saving...' : 'Save ride program'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-5 space-y-3">
+          {ridePrograms.length === 0 ? (
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              No ride programs created yet.
+            </p>
+          ) : (
+            ridePrograms.map((program) => (
+              <div
+                key={program.id}
+                className="rounded-xl border border-gray-200 p-4 dark:border-slate-800 dark:bg-slate-950/35"
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                        {program.title}
+                      </h3>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                          program.is_active
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200'
+                            : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300'
+                        }`}
+                      >
+                        {program.is_active ? 'Live' : 'Paused'}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                      {program.trail_location || 'Trail location not set'}
+                      {program.price_npr ? ` · NPR ${program.price_npr}` : ''}
+                      {program.max_group_size ? ` · Up to ${program.max_group_size} riders` : ''}
+                    </p>
+                    {program.description && (
+                      <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                        {program.description}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleRideProgramActive(program.id, !program.is_active)}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                  >
+                    {program.is_active ? 'Pause' : 'Make live'}
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </section>

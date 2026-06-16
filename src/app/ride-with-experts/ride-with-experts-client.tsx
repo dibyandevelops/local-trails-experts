@@ -1,16 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { MapPin, ShieldCheck, Star, Users } from 'lucide-react';
-import TrailRequestModal from '@/components/feature-components/trail-request/trail-request-modal';
+import { FormEvent, useMemo, useState } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CalendarDays, Clock, MapPin, Mountain, ShieldCheck, Star, Users, X } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
-import { fetchExperts } from '@/services/experts/experts.service';
-import { fetchTrails, requestTrail } from '@/services/trails/trails.service';
-import type { Trail, User } from '@/types';
+import {
+  fetchExpertRidePrograms,
+  requestExpertRideProgram,
+  type RequestExpertRideProgramPayload,
+} from '@/services/experts/experts.service';
+import { getSportLabel } from '@/services/constants/sports';
+import type { ExpertRideProgram } from '@/types';
 
 const primaryButtonClass =
   'inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300';
@@ -18,6 +21,7 @@ const secondaryButtonClass =
   'inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-4 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-50 dark:border-emerald-700/70 dark:bg-slate-950/70 dark:text-emerald-100 dark:hover:bg-emerald-950/45';
 const cardClass =
   'border border-emerald-200/80 bg-white/92 shadow-sm dark:border-emerald-900/60 dark:bg-slate-950/72';
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function getInitials(name: string) {
   return (
@@ -31,93 +35,84 @@ function getInitials(name: string) {
   );
 }
 
-function getExpertName(expert: User) {
-  return expert.name || expert.email.split('@')[0] || 'Local expert';
+function getExpertName(program: ExpertRideProgram) {
+  return program.expert_name || program.expert_email?.split('@')[0] || 'Local expert';
 }
 
-function getExpertSpecialty(expert: User) {
-  const sports = Array.isArray(expert.sports) ? expert.sports : [];
-  if (sports.includes('mtb')) return 'MTB route support';
-  if (sports.includes('cycling')) return 'Cycling support';
-  if (sports.includes('hiking')) return 'Trail support';
-  return 'Local ride support';
+function getTrailName(program: ExpertRideProgram) {
+  return program.trail_name || 'selected trail';
 }
 
-function getAssociatedTrailNames(expert: User) {
-  return (expert.associated_trails || [])
-    .map((trail) => trail.name)
-    .filter(Boolean)
-    .slice(0, 2);
+function getRequestedWeekday(date: string) {
+  if (!date) return null;
+  const parsed = new Date(`${date.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return WEEKDAYS[parsed.getDay()];
+}
+
+function getDateError(program: ExpertRideProgram | null, preferredDate: string) {
+  if (!program || !preferredDate) return '';
+  const requestedWeekday = getRequestedWeekday(preferredDate);
+  if (!requestedWeekday) return 'Select a valid date.';
+  const availability = Array.isArray(program.expert_availability_weekdays)
+    ? program.expert_availability_weekdays
+    : [];
+  if (availability.length > 0 && !availability.includes(requestedWeekday)) {
+    return `${getExpertName(program)} is marked available on ${availability.join(', ')}.`;
+  }
+  return '';
+}
+
+function createInitialForm(currentUserPhone?: string | null) {
+  return {
+    preferredDate: '',
+    preferredTime: '',
+    groupSize: '1',
+    requesterPhone: currentUserPhone || '',
+    offeredPriceNpr: '',
+    notes: '',
+  };
 }
 
 export default function RideWithExpertsClient() {
+  const queryClient = useQueryClient();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
-  const [requestOpen, setRequestOpen] = useState(false);
-  const [requestExpertId, setRequestExpertId] = useState<string | null>(null);
+  const [requestProgram, setRequestProgram] = useState<ExpertRideProgram | null>(null);
   const [requestMessage, setRequestMessage] = useState('');
-  const [submitDisabledReason, setSubmitDisabledReason] = useState('');
+  const [form, setForm] = useState(createInitialForm());
 
-  const { data: experts = [], isLoading: loadingExperts, isError } = useQuery({
-    queryKey: QUERY_KEYS.experts.list({ verified: true }),
-    queryFn: ({ signal }) => fetchExperts({ verified: true }, signal),
+  const {
+    data: programs = [],
+    isLoading: loadingPrograms,
+    isError,
+  } = useQuery({
+    queryKey: QUERY_KEYS.experts.ridePrograms,
+    queryFn: ({ signal }) => fetchExpertRidePrograms(signal),
   });
 
-  const { data: trails = [] } = useQuery<Trail[]>({
-    queryKey: QUERY_KEYS.trails.list({}),
-    queryFn: ({ signal }) => fetchTrails({}, signal),
-    enabled: requestOpen,
-  });
+  const featuredProgram = programs[0];
+  const remainingPrograms = useMemo(() => programs.slice(1), [programs]);
+  const dateError = getDateError(requestProgram, form.preferredDate);
 
   const requestMutation = useMutation({
-    mutationFn: (payload: {
-      trailId: string;
-      description: string;
-      expert_user_id?: string;
-      preferred_date: string;
-      preferred_time?: string;
-      offered_price_npr?: number | null;
-      nearest_point?: string;
-      needs_paid_shuttle?: boolean;
-    }) =>
-      requestTrail(payload.trailId, {
-        description: payload.description,
-        expert_user_id: payload.expert_user_id,
-        preferred_date: payload.preferred_date,
-        preferred_time: payload.preferred_time,
-        offered_price_npr: payload.offered_price_npr,
-        nearest_point: payload.nearest_point,
-        needs_paid_shuttle: payload.needs_paid_shuttle,
-      }),
-    onSuccess: () => {
-      setRequestMessage('Request submitted. The expert/admin team can review and coordinate the ride.');
-      setRequestOpen(false);
-      setRequestExpertId(null);
+    mutationFn: ({ programId, payload }: { programId: string; payload: RequestExpertRideProgramPayload }) =>
+      requestExpertRideProgram(programId, payload),
+    onSuccess: async () => {
+      setRequestMessage('Request submitted. The expert can review it and coordinate the ride.');
+      setRequestProgram(null);
+      setForm(createInitialForm(currentUser?.phone));
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.experts.ridePrograms });
     },
     onError: (error) => {
       setRequestMessage(error instanceof Error ? error.message : 'Failed to submit request.');
     },
   });
 
-  const trailOptions = useMemo(
-    () =>
-      trails.map((trail) => ({
-        id: trail.id,
-        name: trail.name,
-        sport_type: trail.sport_type,
-      })),
-    [trails]
-  );
-
-  const featuredExpert = experts[0];
-  const remainingExperts = experts.slice(1);
-
-  const openRequest = (expert: User) => {
-    setRequestExpertId(expert.id);
+  const openRequest = (program: ExpertRideProgram) => {
     setRequestMessage('');
 
     if (loadingUser) {
-      setSubmitDisabledReason('Checking your account. Please try again in a second.');
-      setRequestOpen(true);
+      setRequestMessage('Checking your account. Please try again in a second.');
       return;
     }
 
@@ -129,7 +124,7 @@ export default function RideWithExpertsClient() {
       window.dispatchEvent(
         new CustomEvent('open-register', {
           detail: {
-            message: `Create a participant account to request a ride with ${getExpertName(expert)}.`,
+            message: `Create a participant account to request ${program.title}.`,
             next,
           },
         })
@@ -138,131 +133,269 @@ export default function RideWithExpertsClient() {
     }
 
     if (currentUser.role !== 'participant') {
-      setSubmitDisabledReason('Ride requests are available for participants only.');
-    } else {
-      setSubmitDisabledReason('');
+      setRequestMessage('Ride requests are available for participants only.');
+      return;
     }
 
-    setRequestOpen(true);
+    setForm(createInitialForm(currentUser.phone));
+    setRequestProgram(program);
+  };
+
+  const submitRequest = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!requestProgram || requestMutation.isPending) return;
+    const error = getDateError(requestProgram, form.preferredDate);
+    if (error) {
+      setRequestMessage(error);
+      return;
+    }
+    if (!form.preferredDate) {
+      setRequestMessage('Please select a preferred date.');
+      return;
+    }
+
+    requestMutation.mutate({
+      programId: requestProgram.id,
+      payload: {
+        preferred_date: form.preferredDate,
+        preferred_time: form.preferredTime || undefined,
+        group_size: form.groupSize ? Number(form.groupSize) : 1,
+        requester_phone: form.requesterPhone || undefined,
+        offered_price_npr: form.offeredPriceNpr ? Number(form.offeredPriceNpr) : null,
+        notes: form.notes || undefined,
+      },
+    });
   };
 
   return (
     <section className="container mx-auto space-y-6 px-4 py-8 md:py-10">
       <div className={`rounded-[2rem] ${cardClass} p-5 backdrop-blur md:p-7`}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/50 dark:text-emerald-100">
-            Ride with experts
-          </span>
-          <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-gray-950 dark:text-white md:text-5xl">
-            Request a ride with a local expert.
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-300">
-            Pick an expert, choose your preferred trail and timing, then send a request. Public
-            scheduled rides still live under Events.
-          </p>
-          {requestMessage && !requestOpen && (
-            <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 dark:border-emerald-800/70 dark:bg-emerald-950/35 dark:text-emerald-100">
-              {requestMessage}
+          <div>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/50 dark:text-emerald-100">
+              Ride with experts
+            </span>
+            <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-gray-950 dark:text-white md:text-5xl">
+              Request a guided ride on expert-selected trails.
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-300">
+              Each ride is created by a verified expert from trails they have associated with their profile.
+              Pick the ride, choose a preferred date, then coordinate after the expert accepts.
             </p>
-          )}
+            {requestMessage && !requestProgram && (
+              <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 dark:border-emerald-800/70 dark:bg-emerald-950/35 dark:text-emerald-100">
+                {requestMessage}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/experts" className={secondaryButtonClass}>
+              Expert directory
+            </Link>
+            <Link href="/events?upcoming=true" className={primaryButtonClass}>
+              Scheduled rides
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/experts"
-            className={secondaryButtonClass}
-          >
-            Browse all experts
-          </Link>
-          <Link
-            href="/events?upcoming=true"
-            className={primaryButtonClass}
-          >
-            Scheduled rides
-          </Link>
-        </div>
-      </div>
       </div>
 
-      {loadingExperts ? (
+      {loadingPrograms ? (
         <RideWithExpertsSkeleton />
       ) : isError ? (
         <EmptyState
-          title="Experts could not load."
-          description="Try the experts page while we reload this request surface."
+          title="Ride programs could not load."
+          description="Try the expert directory while we reload this request surface."
           ctaHref="/experts"
           ctaLabel="Browse experts"
         />
-      ) : experts.length === 0 ? (
+      ) : programs.length === 0 ? (
         <EmptyState
-          title="No verified experts are listed yet."
-          description="Verified experts will appear here when their profiles are approved."
+          title="No expert ride programs are live yet."
+          description="Verified experts can create ride programs from trails associated with their profiles."
           ctaHref="/experts/join"
           ctaLabel="Apply as expert"
         />
       ) : (
         <>
-          {featuredExpert && (
-            <FeaturedExpertCard expert={featuredExpert} onRequest={() => openRequest(featuredExpert)} />
+          {featuredProgram && (
+            <FeaturedProgramCard program={featuredProgram} onRequest={() => openRequest(featuredProgram)} />
           )}
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {remainingExperts.map((expert) => (
-              <ExpertRequestCard
-                key={expert.id}
-                expert={expert}
-                onRequest={() => openRequest(expert)}
-              />
+            {remainingPrograms.map((program) => (
+              <ProgramCard key={program.id} program={program} onRequest={() => openRequest(program)} />
             ))}
           </div>
         </>
       )}
 
-      <TrailRequestModal
-        open={requestOpen}
+      <Dialog.Root
+        open={Boolean(requestProgram)}
         onOpenChange={(open) => {
-          setRequestOpen(open);
           if (!open) {
-            setRequestExpertId(null);
-            setSubmitDisabledReason('');
+            setRequestProgram(null);
             setRequestMessage('');
           }
         }}
-        trailOptions={trailOptions}
-        preselectedExpertId={requestExpertId}
-        experts={experts.map((expert) => ({
-          id: expert.id,
-          name: expert.name,
-          email: expert.email,
-        }))}
-        expertsBetaEnabled={EXPERTS_BETA_ENABLED}
-        isSubmitting={requestMutation.isPending}
-        submitDisabledReason={submitDisabledReason}
-        message={requestMessage}
-        onMessageChange={setRequestMessage}
-        onSubmit={(payload) => requestMutation.mutate(payload)}
-      />
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-emerald-200 bg-white p-5 shadow-2xl dark:border-emerald-900/70 dark:bg-slate-950 md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-xl font-black text-gray-950 dark:text-white">
+                  Request this ride
+                </Dialog.Title>
+                {requestProgram && (
+                  <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                    {requestProgram.title}
+                  </Dialog.Description>
+                )}
+              </div>
+              <Dialog.Close className="rounded-full border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900">
+                <X className="h-4 w-4" />
+              </Dialog.Close>
+            </div>
+
+            {requestProgram && (
+              <form onSubmit={submitRequest} className="mt-5 space-y-4">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
+                  <p className="font-bold">Available dates</p>
+                  <p className="mt-1 text-xs leading-5">
+                    {requestProgram.expert_availability_weekdays?.length
+                      ? requestProgram.expert_availability_weekdays.join(', ')
+                      : 'Flexible. Select your preferred date and the expert will confirm.'}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                    Preferred date
+                    <input
+                      type="date"
+                      value={form.preferredDate}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, preferredDate: event.target.value }))
+                      }
+                      required
+                      className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    />
+                  </label>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                    Preferred time
+                    <input
+                      type="time"
+                      value={form.preferredTime}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, preferredTime: event.target.value }))
+                      }
+                      className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    />
+                  </label>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                    Group size
+                    <input
+                      type="number"
+                      min={1}
+                      max={requestProgram.max_group_size || 50}
+                      value={form.groupSize}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, groupSize: event.target.value }))
+                      }
+                      className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    />
+                  </label>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                    Phone
+                    <input
+                      value={form.requesterPhone}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, requesterPhone: event.target.value }))
+                      }
+                      placeholder="Optional"
+                      className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    />
+                  </label>
+                </div>
+
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-200">
+                  Offered amount in NPR
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.offeredPriceNpr}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, offeredPriceNpr: event.target.value }))
+                    }
+                    placeholder={requestProgram.price_npr ? `Suggested: NPR ${requestProgram.price_npr}` : 'Optional'}
+                    className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </label>
+
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-200">
+                  Notes for the expert
+                  <textarea
+                    rows={4}
+                    value={form.notes}
+                    onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                    placeholder="Skill level, bike type, pickup needs, or route expectations."
+                    className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </label>
+
+                {(dateError || requestMessage) && (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-100">
+                    {dateError || requestMessage}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={requestMutation.isPending || Boolean(dateError)}
+                  className={`${primaryButtonClass} w-full disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  {requestMutation.isPending ? 'Submitting...' : 'Send request'}
+                </button>
+              </form>
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </section>
   );
 }
 
-function FeaturedExpertCard({ expert, onRequest }: { expert: User; onRequest: () => void }) {
-  const name = getExpertName(expert);
-  const trailNames = getAssociatedTrailNames(expert);
+function FeaturedProgramCard({
+  program,
+  onRequest,
+}: {
+  program: ExpertRideProgram;
+  onRequest: () => void;
+}) {
+  const expertName = getExpertName(program);
+  const trailName = getTrailName(program);
 
   return (
     <article className={`grid overflow-hidden rounded-[2rem] ${cardClass} lg:grid-cols-[0.78fr_1.22fr]`}>
       <div className="relative min-h-72 bg-emerald-950 p-6 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(45,212,191,0.22),transparent_36%),linear-gradient(135deg,rgba(6,78,59,0.94),rgba(2,6,23,0.98))]" />
+        {program.trail_image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={program.trail_image_url}
+            alt={trailName}
+            className="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-screen"
+          />
+        )}
         <div className="relative flex h-full flex-col justify-between">
-          <ExpertAvatar expert={expert} name={name} size="large" />
+          <ProgramAvatar program={program} expertName={expertName} size="large" />
           <div>
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/30 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-50">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Verified expert
+              Verified expert offer
             </span>
             <p className="mt-3 text-sm font-semibold text-emerald-50/75">
-              {expert.city || 'Kathmandu'} based expert
+              {program.expert_city || 'Kathmandu'} based expert
             </p>
           </div>
         </div>
@@ -270,112 +403,111 @@ function FeaturedExpertCard({ expert, onRequest }: { expert: User; onRequest: ()
 
       <div className="p-6 md:p-8">
         <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
-          Featured host
+          Featured ride
         </p>
         <h2 className="mt-3 text-3xl font-black leading-tight text-gray-950 dark:text-white md:text-5xl">
-          Ride with {name}
+          Ride with {expertName} to {trailName}
         </h2>
         <p className="mt-4 line-clamp-4 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-300">
-          {expert.bio ||
-            `${name} can help riders plan a local trail session based on preferred date, skill level, and route goals.`}
+          {program.description ||
+            `${expertName} can guide a local ride on ${trailName} based on your preferred date, skill level, and route goals.`}
         </p>
-        <ExpertMeta expert={expert} trailNames={trailNames} />
+        <ProgramMeta program={program} />
         <div className="mt-6 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onRequest}
-            className={primaryButtonClass}
-          >
-            Request ride with {name.split(' ')[0] || 'expert'}
+          <button type="button" onClick={onRequest} className={primaryButtonClass}>
+            Request this ride
           </button>
-          <Link
-            href={`/experts/${expert.id}`}
-            className={secondaryButtonClass}
-          >
-            View profile
+          <Link href={`/experts/${program.expert_user_id}`} className={secondaryButtonClass}>
+            View expert
           </Link>
+          {program.trail_slug && (
+            <Link href={`/trails/${program.trail_slug}`} className={secondaryButtonClass}>
+              View trail
+            </Link>
+          )}
         </div>
       </div>
     </article>
   );
 }
 
-function ExpertRequestCard({ expert, onRequest }: { expert: User; onRequest: () => void }) {
-  const name = getExpertName(expert);
-  const trailNames = getAssociatedTrailNames(expert);
+function ProgramCard({ program, onRequest }: { program: ExpertRideProgram; onRequest: () => void }) {
+  const expertName = getExpertName(program);
+  const trailName = getTrailName(program);
 
   return (
     <article className={`flex h-full flex-col rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg dark:hover:border-emerald-700/70 ${cardClass}`}>
       <div className="flex items-center gap-3">
-        <ExpertAvatar expert={expert} name={name} />
+        <ProgramAvatar program={program} expertName={expertName} />
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
             Ride with
           </p>
-          <h3 className="text-lg font-black text-gray-950 dark:text-white">{name}</h3>
+          <h3 className="text-lg font-black text-gray-950 dark:text-white">{expertName}</h3>
         </div>
       </div>
 
-      <p className="mt-4 text-sm leading-6 text-gray-600 dark:text-slate-300">
-        {expert.bio || `${getExpertSpecialty(expert)} around ${expert.city || 'Kathmandu'}.`}
+      <h4 className="mt-4 text-xl font-black leading-tight text-gray-950 dark:text-white">
+        {trailName}
+      </h4>
+      <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
+        {program.description || `${program.expert_city || 'Kathmandu'} ride support for ${trailName}.`}
       </p>
-      <ExpertMeta expert={expert} trailNames={trailNames} compact />
+      <ProgramMeta program={program} compact />
       <div className="mt-auto flex flex-wrap gap-2 pt-5">
-        <button
-          type="button"
-          onClick={onRequest}
-          className={`${primaryButtonClass} flex-1`}
-        >
+        <button type="button" onClick={onRequest} className={`${primaryButtonClass} flex-1`}>
           Request ride
         </button>
-        <Link
-          href={`/experts/${expert.id}`}
-          className={secondaryButtonClass}
-        >
-          Profile
+        <Link href={`/experts/${program.expert_user_id}`} className={secondaryButtonClass}>
+          Expert
         </Link>
       </div>
     </article>
   );
 }
 
-function ExpertMeta({
-  expert,
-  trailNames,
-  compact = false,
-}: {
-  expert: User;
-  trailNames: string[];
-  compact?: boolean;
-}) {
+function ProgramMeta({ program, compact = false }: { program: ExpertRideProgram; compact?: boolean }) {
+  const availability = program.expert_availability_weekdays?.length
+    ? program.expert_availability_weekdays.join(', ')
+    : 'Flexible dates';
+
   return (
     <div className={`mt-5 grid gap-2 ${compact ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-slate-300 sm:grid-cols-2`}>
       <p className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 font-semibold text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
         <MapPin className="h-4 w-4" />
-        {expert.city || 'Kathmandu'}
+        {program.trail_location || program.expert_city || 'Kathmandu'}
       </p>
       <p className="flex items-center gap-2 rounded-2xl border border-teal-100 bg-teal-50 px-3 py-2 font-semibold text-teal-950 dark:border-teal-900/60 dark:bg-teal-950/25 dark:text-teal-100">
-        <Users className="h-4 w-4" />
-        {getExpertSpecialty(expert)}
+        <Mountain className="h-4 w-4" />
+        {program.trail_sport_type ? getSportLabel(program.trail_sport_type) : 'MTB ride'}
       </p>
       <p className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-3 py-2 font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-100">
         <Star className="h-4 w-4" />
-        {expert.review_count ? `${expert.average_rating?.toFixed(1) || '5.0'} rating` : 'New host'}
+        {program.review_count ? `${program.average_rating?.toFixed(1) || '5.0'} rating` : 'New host'}
       </p>
-      <p className="rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 font-semibold text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
-        {trailNames.length > 0 ? trailNames.join(', ') : 'Choose your trail'}
+      <p className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 font-semibold text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-100">
+        <CalendarDays className="h-4 w-4" />
+        {availability}
+      </p>
+      <p className="flex items-center gap-2 rounded-2xl border border-lime-100 bg-lime-50 px-3 py-2 font-semibold text-lime-900 dark:border-lime-900/50 dark:bg-lime-950/20 dark:text-lime-100">
+        <Users className="h-4 w-4" />
+        Up to {program.max_group_size || 1} rider{program.max_group_size === 1 ? '' : 's'}
+      </p>
+      <p className="flex items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 font-semibold text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
+        <Clock className="h-4 w-4" />
+        {program.duration_note || (program.price_npr ? `NPR ${program.price_npr}` : program.skill_level)}
       </p>
     </div>
   );
 }
 
-function ExpertAvatar({
-  expert,
-  name,
+function ProgramAvatar({
+  program,
+  expertName,
   size = 'normal',
 }: {
-  expert: User;
-  name: string;
+  program: ExpertRideProgram;
+  expertName: string;
   size?: 'normal' | 'large';
 }) {
   const sizeClass = size === 'large' ? 'h-24 w-24 text-2xl' : 'h-14 w-14 text-sm';
@@ -384,11 +516,11 @@ function ExpertAvatar({
     <div
       className={`${sizeClass} overflow-hidden rounded-3xl border border-emerald-200 bg-emerald-100 font-black text-emerald-900 shadow-sm dark:border-emerald-800/70 dark:bg-emerald-950/70 dark:text-emerald-100`}
     >
-      {expert.profile_photo_url ? (
+      {program.expert_profile_photo_url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={expert.profile_photo_url} alt={name} className="h-full w-full object-cover" />
+        <img src={program.expert_profile_photo_url} alt={expertName} className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center">{getInitials(name)}</div>
+        <div className="flex h-full w-full items-center justify-center">{getInitials(expertName)}</div>
       )}
     </div>
   );
@@ -427,10 +559,7 @@ function EmptyState({
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-gray-600 dark:text-slate-300">
         {description}
       </p>
-      <Link
-        href={ctaHref}
-        className={`mt-5 ${primaryButtonClass}`}
-      >
+      <Link href={ctaHref} className={`mt-5 ${primaryButtonClass}`}>
         {ctaLabel}
       </Link>
     </div>

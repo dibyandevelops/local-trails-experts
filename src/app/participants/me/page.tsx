@@ -37,6 +37,32 @@ type ParticipantTrailRequest = {
   created_at: string;
 };
 
+type ParticipantRideProgramRequest = {
+  id: string;
+  program_id: string;
+  expert_user_id: string;
+  trail_id: string;
+  requester_phone: string | null;
+  preferred_date: string;
+  preferred_time: string | null;
+  group_size: number;
+  offered_price_npr: number | null;
+  notes: string | null;
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  created_at: string;
+  program_title: string | null;
+  max_group_size: number;
+  price_npr: number | null;
+  duration_note: string | null;
+  meeting_point_note: string | null;
+  trail_name: string | null;
+  trail_slug: string | null;
+  trail_location: string | null;
+  expert_name: string | null;
+  expert_email: string | null;
+  expert_availability_weekdays: string[] | null;
+};
+
 type ParticipantBooking = {
   id: string;
   event_id: string;
@@ -65,6 +91,15 @@ const WEEKDAYS = [
   'Sunday',
 ] as const;
 
+const DATE_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function getRequestedWeekday(date: string | null) {
+  if (!date) return null;
+  const parsed = new Date(`${date.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return DATE_WEEKDAYS[parsed.getDay()];
+}
+
 export default function ParticipantProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
@@ -73,6 +108,7 @@ export default function ParticipantProfilePage() {
   const [events, setEvents] = useState<ParticipantEvent[]>([]);
   const [bookings, setBookings] = useState<ParticipantBooking[]>([]);
   const [trailRequests, setTrailRequests] = useState<ParticipantTrailRequest[]>([]);
+  const [rideProgramRequests, setRideProgramRequests] = useState<ParticipantRideProgramRequest[]>([]);
   const [experts, setExperts] = useState<ExpertOption[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
@@ -84,6 +120,7 @@ export default function ParticipantProfilePage() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
+  const [rideProgramRequestMessage, setRideProgramRequestMessage] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',

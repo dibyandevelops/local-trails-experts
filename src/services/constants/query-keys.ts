@@ -102,6 +102,8 @@ export const QUERY_KEYS = {
     events: (expertId?: string) => ['experts-events', expertId || ''] as const,
     strava: (expertId?: string) => ['experts-strava', expertId || ''] as const,
     reviews: (expertId?: string) => ['expert-reviews', expertId || ''] as const,
+    ridePrograms: ['expert-ride-programs'] as const,
+    myRidePrograms: ['experts-me-ride-programs'] as const,
   },
   stores: {
     all: () => ['stores'] as const,

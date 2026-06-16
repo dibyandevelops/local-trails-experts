@@ -215,6 +215,59 @@ export interface JoinEventInput {
   expertise_level: ExpertiseLevel;
 }
 
+export interface ExpertRideProgram {
+  id: string;
+  expert_user_id: string;
+  trail_id: string;
+  title: string;
+  description: string | null;
+  price_npr: number | null;
+  max_group_size: number;
+  duration_note: string | null;
+  meeting_point_note: string | null;
+  skill_level: ExpertiseLevel;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  expert_name?: string | null;
+  expert_email?: string | null;
+  expert_city?: string | null;
+  expert_bio?: string | null;
+  expert_profile_photo_url?: string | null;
+  expert_availability_weekdays?: string[] | null;
+  average_rating?: number | null;
+  review_count?: number | null;
+  trail_name?: string | null;
+  trail_slug?: string | null;
+  trail_location?: string | null;
+  trail_sport_type?: SportType | null;
+  trail_difficulty?: Difficulty | null;
+  trail_image_url?: string | null;
+}
+
+export interface ExpertRideProgramRequest {
+  id: string;
+  program_id: string;
+  expert_user_id: string;
+  trail_id: string;
+  requester_user_id: string | null;
+  requester_name: string | null;
+  requester_email: string;
+  requester_phone: string | null;
+  preferred_date: string;
+  preferred_time: string | null;
+  group_size: number;
+  offered_price_npr: number | null;
+  notes: string | null;
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+  program_title?: string | null;
+  trail_name?: string | null;
+  trail_slug?: string | null;
+  trail_location?: string | null;
+}
+
 export interface User {
   id: string;
   name: string | null;
