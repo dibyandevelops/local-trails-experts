@@ -74,10 +74,10 @@ const discoveryPaths = [
     cta: 'Browse trails',
   },
   {
-    title: 'Local Experts',
-    description: 'Find verified riders and guides who know local routes and conditions.',
-    href: '/experts',
-    cta: 'Browse experts',
+    title: 'Ride with Experts',
+    description: 'Request local ride support from verified experts based on your preferred trail and timing.',
+    href: '/ride-with-experts',
+    cta: 'Request a ride',
   },
   {
     title: 'Trail Builders',

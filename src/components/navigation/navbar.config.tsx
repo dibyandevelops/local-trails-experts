@@ -6,6 +6,7 @@ import {
   House,
   Map,
   MapPinned,
+  Mountain,
   PlusCircle,
   Sparkles,
   Store,
@@ -19,15 +20,16 @@ export const navGroups: NavGroup[] = [
     label: 'Explore',
     items: [
       { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Ride with Experts', href: '/ride-with-experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      {
-        label: 'Experts',
-        href: '/experts',
-        showFor: ['anonymous', 'participant', 'expert', 'admin'],
-      },
       { label: 'Trail Builders', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Campaigns', href: '/campaigns', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Cycle Hubs', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      {
+        label: 'Expert Directory',
+        href: '/experts',
+        showFor: ['anonymous', 'participant', 'expert', 'admin'],
+      },
     ],
   },
   {
@@ -60,6 +62,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/home': House,
   '/trails': Map,
   '/events': CalendarDays,
+  '/ride-with-experts': Mountain,
   '/community-rides': Bike,
   '/experts': Users,
   '/organizations': Users,

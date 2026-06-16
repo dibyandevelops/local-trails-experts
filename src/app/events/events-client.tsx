@@ -90,7 +90,6 @@ export default function EventsPageClient() {
         patch.showUpcoming = parsedUpcoming;
       }
     }
-
     if (Object.keys(patch).length > 0) {
       setEventsFilterDraft(patch);
     }
@@ -116,7 +115,7 @@ export default function EventsPageClient() {
     if (selectedCity) params.set('city', selectedCity);
     if (selectedSport) params.set('sport', selectedSport);
     if (selectedExpertise) params.set('expertise', selectedExpertise);
-      if (showOnlyUpcoming) params.set('upcoming', 'true');
+    if (showOnlyUpcoming) params.set('upcoming', 'true');
 
     const query = params.toString();
     if (query === lastSyncedQuery.current) {

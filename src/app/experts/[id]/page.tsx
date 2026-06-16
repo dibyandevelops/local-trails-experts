@@ -527,7 +527,7 @@ export default function ExpertDetailPage() {
               </p>
               <div className="mt-4 flex flex-col gap-2">
                 <Link
-                  href={`/events?expert=${expert.id}`}
+                  href={`/events?expert=${expert.id}&upcoming=true`}
                   className="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-green-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
                 >
                   View Events
@@ -735,11 +735,37 @@ export default function ExpertDetailPage() {
         </DetailSection>
       )}
 
-      <DetailSection title={`Upcoming events with ${expert.name || 'this expert'}`} eyebrow="Events">
+      <DetailSection
+        title={`Upcoming events with ${expert.name || 'this expert'}`}
+        eyebrow="Events"
+        action={
+          <Link
+            href={`/events?expert=${expert.id}&upcoming=true`}
+            className="inline-flex rounded-full border border-emerald-300 px-3 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
+          >
+            View all events
+          </Link>
+        }
+      >
         {upcomingEvents.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
-            No upcoming events listed yet. Request trail support or browse other events.
-          </p>
+          <div className="rounded-2xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
+            <p>No upcoming events listed yet.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={openRequestModal}
+                className="inline-flex rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-800"
+              >
+                Request trail activity
+              </button>
+              <Link
+                href="/ride-with-experts"
+                className="inline-flex rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Browse expert rides
+              </Link>
+            </div>
+          </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {upcomingEvents.map((event) => (

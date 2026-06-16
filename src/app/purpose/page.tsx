@@ -182,7 +182,7 @@ export default async function PurposePage() {
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
             <p>• Free digital map of Nepal trails</p>
-            <p>• Expert-led events and trainings</p>
+            <p>• Expert ride requests and trainings</p>
             <p>• Trail build, fix, and signage work across Nepal routes</p>
           </div>
         </div>
