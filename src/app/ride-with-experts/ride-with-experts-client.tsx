@@ -12,6 +12,13 @@ import { fetchExperts } from '@/services/experts/experts.service';
 import { fetchTrails, requestTrail } from '@/services/trails/trails.service';
 import type { Trail, User } from '@/types';
 
+const primaryButtonClass =
+  'inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300';
+const secondaryButtonClass =
+  'inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-4 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-50 dark:border-emerald-700/70 dark:bg-slate-950/70 dark:text-emerald-100 dark:hover:bg-emerald-950/45';
+const cardClass =
+  'border border-emerald-200/80 bg-white/92 shadow-sm dark:border-emerald-900/60 dark:bg-slate-950/72';
+
 function getInitials(name: string) {
   return (
     name
@@ -141,20 +148,21 @@ export default function RideWithExpertsClient() {
 
   return (
     <section className="container mx-auto space-y-6 px-4 py-8 md:py-10">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className={`rounded-[2rem] ${cardClass} p-5 backdrop-blur md:p-7`}>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <span className="rounded-full border border-emerald-200 bg-white/75 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800 shadow-sm dark:border-emerald-900/70 dark:bg-emerald-950/50 dark:text-lime-100">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/50 dark:text-emerald-100">
             Ride with experts
           </span>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-gray-950 dark:text-white md:text-5xl">
+          <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-gray-950 dark:text-white md:text-5xl">
             Request a ride with a local expert.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-300">
-            Pick the expert first, then choose your preferred trail, date, time, group plan, and
-            budget in the request. Scheduled public rides still live under Events.
+            Pick an expert, choose your preferred trail and timing, then send a request. Public
+            scheduled rides still live under Events.
           </p>
           {requestMessage && !requestOpen && (
-            <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
+            <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 dark:border-emerald-800/70 dark:bg-emerald-950/35 dark:text-emerald-100">
               {requestMessage}
             </p>
           )}
@@ -162,17 +170,18 @@ export default function RideWithExpertsClient() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/experts"
-            className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-4 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-50 dark:border-emerald-800 dark:bg-slate-950/80 dark:text-emerald-100 dark:hover:bg-emerald-950/60"
+            className={secondaryButtonClass}
           >
             Browse all experts
           </Link>
           <Link
             href="/events?upcoming=true"
-            className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 dark:bg-lime-300 dark:text-emerald-950 dark:hover:bg-lime-200"
+            className={primaryButtonClass}
           >
             Scheduled rides
           </Link>
         </div>
+      </div>
       </div>
 
       {loadingExperts ? (
@@ -242,17 +251,17 @@ function FeaturedExpertCard({ expert, onRequest }: { expert: User; onRequest: ()
   const trailNames = getAssociatedTrailNames(expert);
 
   return (
-    <article className="grid overflow-hidden rounded-[2rem] border border-emerald-200 bg-white/90 shadow-sm dark:border-emerald-900/70 dark:bg-slate-950/80 lg:grid-cols-[0.82fr_1.18fr]">
-      <div className="relative min-h-72 bg-emerald-950 p-6 text-white dark:bg-black/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(132,204,22,0.35),transparent_35%),linear-gradient(135deg,rgba(6,78,59,0.92),rgba(2,6,23,0.98))]" />
+    <article className={`grid overflow-hidden rounded-[2rem] ${cardClass} lg:grid-cols-[0.78fr_1.22fr]`}>
+      <div className="relative min-h-72 bg-emerald-950 p-6 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(45,212,191,0.22),transparent_36%),linear-gradient(135deg,rgba(6,78,59,0.94),rgba(2,6,23,0.98))]" />
         <div className="relative flex h-full flex-col justify-between">
           <ExpertAvatar expert={expert} name={name} size="large" />
           <div>
-            <span className="inline-flex items-center gap-1 rounded-full border border-lime-300/40 bg-lime-300/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-lime-100">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/30 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-50">
               <ShieldCheck className="h-3.5 w-3.5" />
               Verified expert
             </span>
-            <p className="mt-3 text-sm font-semibold text-emerald-50/80">
+            <p className="mt-3 text-sm font-semibold text-emerald-50/75">
               {expert.city || 'Kathmandu'} based expert
             </p>
           </div>
@@ -260,7 +269,7 @@ function FeaturedExpertCard({ expert, onRequest }: { expert: User; onRequest: ()
       </div>
 
       <div className="p-6 md:p-8">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700 dark:text-lime-200">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
           Featured host
         </p>
         <h2 className="mt-3 text-3xl font-black leading-tight text-gray-950 dark:text-white md:text-5xl">
@@ -275,13 +284,13 @@ function FeaturedExpertCard({ expert, onRequest }: { expert: User; onRequest: ()
           <button
             type="button"
             onClick={onRequest}
-            className="inline-flex rounded-full bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 dark:bg-lime-300 dark:text-emerald-950 dark:hover:bg-lime-200"
+            className={primaryButtonClass}
           >
             Request ride with {name.split(' ')[0] || 'expert'}
           </button>
           <Link
             href={`/experts/${expert.id}`}
-            className="inline-flex rounded-full border border-emerald-300 bg-white px-5 py-3 text-sm font-bold text-emerald-900 transition hover:bg-emerald-50 dark:border-emerald-800 dark:bg-slate-950/80 dark:text-emerald-100 dark:hover:bg-emerald-950/60"
+            className={secondaryButtonClass}
           >
             View profile
           </Link>
@@ -296,11 +305,11 @@ function ExpertRequestCard({ expert, onRequest }: { expert: User; onRequest: () 
   const trailNames = getAssociatedTrailNames(expert);
 
   return (
-    <article className="flex h-full flex-col rounded-3xl border border-emerald-200 bg-white/90 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg dark:border-emerald-900/70 dark:bg-slate-950/78 dark:hover:border-lime-700/70">
+    <article className={`flex h-full flex-col rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg dark:hover:border-emerald-700/70 ${cardClass}`}>
       <div className="flex items-center gap-3">
         <ExpertAvatar expert={expert} name={name} />
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-lime-200">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
             Ride with
           </p>
           <h3 className="text-lg font-black text-gray-950 dark:text-white">{name}</h3>
@@ -315,13 +324,13 @@ function ExpertRequestCard({ expert, onRequest }: { expert: User; onRequest: () 
         <button
           type="button"
           onClick={onRequest}
-          className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 dark:bg-lime-300 dark:text-emerald-950 dark:hover:bg-lime-200"
+          className={`${primaryButtonClass} flex-1`}
         >
           Request ride
         </button>
         <Link
           href={`/experts/${expert.id}`}
-          className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-4 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-50 dark:border-emerald-800 dark:bg-slate-950/80 dark:text-emerald-100 dark:hover:bg-emerald-950/60"
+          className={secondaryButtonClass}
         >
           Profile
         </Link>
@@ -341,19 +350,19 @@ function ExpertMeta({
 }) {
   return (
     <div className={`mt-5 grid gap-2 ${compact ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-slate-300 sm:grid-cols-2`}>
-      <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 font-semibold text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100">
+      <p className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 font-semibold text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
         <MapPin className="h-4 w-4" />
         {expert.city || 'Kathmandu'}
       </p>
-      <p className="flex items-center gap-2 rounded-2xl bg-lime-50 px-3 py-2 font-semibold text-lime-900 dark:bg-lime-950/35 dark:text-lime-100">
+      <p className="flex items-center gap-2 rounded-2xl border border-teal-100 bg-teal-50 px-3 py-2 font-semibold text-teal-950 dark:border-teal-900/60 dark:bg-teal-950/25 dark:text-teal-100">
         <Users className="h-4 w-4" />
         {getExpertSpecialty(expert)}
       </p>
-      <p className="flex items-center gap-2 rounded-2xl bg-slate-100 px-3 py-2 font-semibold text-slate-800 dark:bg-slate-900 dark:text-slate-100">
+      <p className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-3 py-2 font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-100">
         <Star className="h-4 w-4" />
         {expert.review_count ? `${expert.average_rating?.toFixed(1) || '5.0'} rating` : 'New host'}
       </p>
-      <p className="rounded-2xl bg-amber-50 px-3 py-2 font-semibold text-amber-900 dark:bg-amber-950/35 dark:text-amber-100">
+      <p className="rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 font-semibold text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
         {trailNames.length > 0 ? trailNames.join(', ') : 'Choose your trail'}
       </p>
     </div>
@@ -373,7 +382,7 @@ function ExpertAvatar({
 
   return (
     <div
-      className={`${sizeClass} overflow-hidden rounded-3xl border border-emerald-200 bg-emerald-100 font-black text-emerald-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950 dark:text-lime-100`}
+      className={`${sizeClass} overflow-hidden rounded-3xl border border-emerald-200 bg-emerald-100 font-black text-emerald-900 shadow-sm dark:border-emerald-800/70 dark:bg-emerald-950/70 dark:text-emerald-100`}
     >
       {expert.profile_photo_url ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -413,14 +422,14 @@ function EmptyState({
   ctaLabel: string;
 }) {
   return (
-    <div className="rounded-3xl border border-dashed border-emerald-300 bg-white/85 p-8 text-center shadow-sm dark:border-emerald-800 dark:bg-slate-950/75">
+    <div className="rounded-3xl border border-dashed border-emerald-300 bg-white/85 p-8 text-center shadow-sm dark:border-emerald-800/70 dark:bg-slate-950/75">
       <h3 className="text-xl font-black text-gray-950 dark:text-white">{title}</h3>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-gray-600 dark:text-slate-300">
         {description}
       </p>
       <Link
         href={ctaHref}
-        className="mt-5 inline-flex rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 dark:bg-lime-300 dark:text-emerald-950 dark:hover:bg-lime-200"
+        className={`mt-5 ${primaryButtonClass}`}
       >
         {ctaLabel}
       </Link>

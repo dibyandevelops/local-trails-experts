@@ -170,8 +170,8 @@ export default function TrailRequestModal({
 
   const modalBody = (
     <>
-      <h2 className="text-lg font-semibold text-gray-900">Request Trail Activity</h2>
-      <p className="mt-1 text-sm text-gray-600">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Request Trail Activity</h2>
+      <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
         {selectedTrailName
           ? `Trail: ${selectedTrailName}`
           : expertsBetaEnabled
@@ -181,7 +181,7 @@ export default function TrailRequestModal({
 
       <div className="mt-4 space-y-3">
       {message && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
           {message}
         </div>
       )}
@@ -215,30 +215,30 @@ export default function TrailRequestModal({
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Preferred Date</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Preferred Date</label>
         <input
           type="date"
           value={preferredDate}
           min={todayYmd}
           onChange={(event) => setPreferredDate(event.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
             Preferred Time
           </label>
           <input
             type="time"
             value={preferredTime}
             onChange={(event) => setPreferredTime(event.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
             Offered Price (NPR)
           </label>
           <input
@@ -247,36 +247,36 @@ export default function TrailRequestModal({
             step={1}
             value={offeredPriceNpr}
             onChange={(event) => setOfferedPriceNpr(event.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
             placeholder="Optional"
           />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Nearest Meeting Point</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Nearest Meeting Point</label>
         <input
           type="text"
           value={nearestPoint}
           onChange={(event) => setNearestPoint(event.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
           placeholder="e.g., Chobhar gate, near bus stop"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">Notes</label>
         <textarea
           rows={4}
           value={requestDescription}
           onChange={(event) => setRequestDescription(event.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
           placeholder="Share key expectations: fitness level, pace, route preferences, safety needs, and any special requests."
         />
       </div>
 
       {shuttleEligible && (
-        <label className="flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+        <label className="flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100">
           <input
             type="checkbox"
             checked={needsPaidShuttle}
@@ -289,7 +289,7 @@ export default function TrailRequestModal({
         </label>
       )}
 
-      <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+      <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
         <input
           type="checkbox"
           checked={acceptRisk}
@@ -307,7 +307,7 @@ export default function TrailRequestModal({
       <button
         type="button"
         onClick={() => handleOpenChange(false)}
-        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
       >
         Cancel
       </button>
@@ -315,14 +315,14 @@ export default function TrailRequestModal({
         type="button"
         onClick={validateAndSubmit}
         disabled={Boolean(submitDisabledReason) || isSubmitting || !acceptRisk}
-        className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+        className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
         title={submitDisabledReason || undefined}
       >
         {isSubmitting ? 'Submitting...' : 'Submit Request'}
       </button>
     </div>
       {submitDisabledReason && (
-        <p className="mt-2 text-right text-xs text-amber-700">{submitDisabledReason}</p>
+        <p className="mt-2 text-right text-xs text-amber-700 dark:text-amber-300">{submitDisabledReason}</p>
       )}
     </>
   );
@@ -332,7 +332,7 @@ export default function TrailRequestModal({
       <div className="fixed inset-0 z-50">
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 grid place-items-center p-4">
-          <section className="w-[92vw] max-w-lg rounded-xl bg-white p-5 shadow-xl">{modalBody}</section>
+          <section className="w-[92vw] max-w-lg rounded-xl bg-white p-5 shadow-xl dark:bg-slate-950">{modalBody}</section>
         </div>
       </div>
     );
@@ -341,9 +341,9 @@ export default function TrailRequestModal({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange} modal={!isMobileViewport}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45" />
         <div className="fixed inset-0 z-50 grid place-items-center p-4">
-          <Dialog.Content className="w-[92vw] max-w-lg rounded-xl bg-white p-5 shadow-xl">
+          <Dialog.Content className="w-[92vw] max-w-lg rounded-xl bg-white p-5 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-950">
             {modalBody}
           </Dialog.Content>
         </div>
