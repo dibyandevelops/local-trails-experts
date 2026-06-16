@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const [trailRequestsRes, eventJoinsRes] = await Promise.all([
+    const [trailRequestsRes, eventJoinsRes, rideProgramRequestsRes] = await Promise.all([
       pool.query(
         `
         SELECT
@@ -50,13 +50,47 @@ export async function GET(request: NextRequest) {
         `,
         [auth.sub]
       ),
+      pool.query(
+        `
+        SELECT
+          r.id,
+          r.program_id,
+          r.requester_user_id,
+          r.requester_name,
+          r.requester_email,
+          r.requester_phone,
+          to_char(r.preferred_date::date, 'YYYY-MM-DD') AS preferred_date,
+          r.preferred_time,
+          r.group_size,
+          r.offered_price_npr,
+          r.notes,
+          r.status,
+          r.created_at,
+          p.title AS program_title,
+          t.name AS trail_name,
+          t.slug AS trail_slug,
+          t.location AS trail_location
+        FROM expert_ride_program_requests r
+        JOIN expert_ride_programs p ON p.id = r.program_id
+        JOIN trails t ON t.id = r.trail_id
+        WHERE r.expert_user_id = $1
+          AND r.status IN ('pending', 'accepted')
+        ORDER BY r.created_at DESC
+        LIMIT 50
+        `,
+        [auth.sub]
+      ),
     ]);
 
     return NextResponse.json(
       {
         requests: trailRequestsRes.rows,
         eventJoins: eventJoinsRes.rows,
-        unreadCount: trailRequestsRes.rows.length + eventJoinsRes.rows.length,
+        rideProgramRequests: rideProgramRequestsRes.rows,
+        unreadCount:
+          trailRequestsRes.rows.length +
+          eventJoinsRes.rows.length +
+          rideProgramRequestsRes.rows.length,
       },
       { status: 200 }
     );

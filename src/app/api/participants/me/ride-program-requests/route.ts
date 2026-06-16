@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
         p.price_npr,
         p.duration_note,
         p.meeting_point_note,
+        p.availability_weekdays AS program_availability_weekdays,
+        p.available_time_note,
         t.name AS trail_name,
         t.slug AS trail_slug,
         t.location AS trail_location,

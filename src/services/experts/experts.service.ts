@@ -127,6 +127,8 @@ export type SaveExpertRideProgramPayload = {
   max_group_size?: number;
   duration_note?: string;
   meeting_point_note?: string;
+  availability_weekdays?: string[];
+  available_time_note?: string;
   skill_level?: ExpertiseLevel;
   is_active?: boolean;
 };
@@ -177,7 +179,7 @@ export async function requestExpertRideProgram(
   payload: RequestExpertRideProgramPayload
 ) {
   try {
-    const { data } = await apiClient.post<{ success: boolean }>(
+    const { data } = await apiClient.post<{ success: boolean; updated?: boolean }>(
       `/api/expert-ride-programs/${programId}/request`,
       payload
     );

@@ -75,6 +75,9 @@ export async function GET(request: NextRequest) {
       ...row,
       price_npr: row.price_npr === null ? null : Number(row.price_npr),
       max_group_size: Number(row.max_group_size || 1),
+      availability_weekdays: Array.isArray(row.availability_weekdays)
+        ? row.availability_weekdays
+        : [],
       average_rating: Number(row.review_count || 0) > 0 ? Number(row.average_rating || 0) : 5,
       review_count: Number(row.review_count || 0),
       expert_availability_weekdays: Array.isArray(row.expert_availability_weekdays)

@@ -49,8 +49,19 @@ type ExpertRideProgramRequest = {
   trail_name: string | null;
   trail_slug: string | null;
   trail_location: string | null;
+  program_availability_weekdays?: string[] | null;
   expert_availability_weekdays: string[] | null;
 };
+
+const PROGRAM_WEEKDAYS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
 
 type ExpertTrail = {
   id: string;
@@ -128,6 +139,8 @@ export default function ExpertProfilePage() {
     maxGroupSize: '4',
     durationNote: '',
     meetingPointNote: '',
+    availabilityWeekdays: [] as string[],
+    availableTimeNote: '',
     skillLevel: 'intermediate',
   });
   const initials =
@@ -355,6 +368,8 @@ export default function ExpertProfilePage() {
           max_group_size: rideProgramForm.maxGroupSize ? Number(rideProgramForm.maxGroupSize) : 4,
           duration_note: rideProgramForm.durationNote.trim() || null,
           meeting_point_note: rideProgramForm.meetingPointNote.trim() || null,
+          availability_weekdays: rideProgramForm.availabilityWeekdays,
+          available_time_note: rideProgramForm.availableTimeNote.trim() || null,
           skill_level: rideProgramForm.skillLevel,
           is_active: true,
         }),
@@ -371,6 +386,8 @@ export default function ExpertProfilePage() {
         priceNpr: '',
         durationNote: '',
         meetingPointNote: '',
+        availabilityWeekdays: [],
+        availableTimeNote: '',
       }));
       setRideProgramMessage('Ride program saved.');
     } catch (error) {
@@ -670,8 +687,10 @@ export default function ExpertProfilePage() {
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                       {request.trail_location || 'Trail location not set'}
-                      {request.expert_availability_weekdays?.length
-                        ? ` · Your availability: ${request.expert_availability_weekdays.join(', ')}`
+                      {request.program_availability_weekdays?.length
+                        ? ` · Program availability: ${request.program_availability_weekdays.join(', ')}`
+                        : request.expert_availability_weekdays?.length
+                          ? ` · Profile availability: ${request.expert_availability_weekdays.join(', ')}`
                         : ' · Flexible availability'}
                     </p>
                   </div>
@@ -1099,6 +1118,51 @@ export default function ExpertProfilePage() {
               />
             </label>
             <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
+              Program time note
+              <input
+                value={rideProgramForm.availableTimeNote}
+                onChange={(event) =>
+                  setRideProgramForm((prev) => ({ ...prev, availableTimeNote: event.target.value }))
+                }
+                placeholder="Morning only, after 7 AM, weekends before noon, etc."
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+            <div className="md:col-span-2">
+              <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                Program weekdays
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                Leave empty to inherit your profile availability.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PROGRAM_WEEKDAYS.map((day) => {
+                  const selected = rideProgramForm.availabilityWeekdays.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() =>
+                        setRideProgramForm((prev) => ({
+                          ...prev,
+                          availabilityWeekdays: selected
+                            ? prev.availabilityWeekdays.filter((item) => item !== day)
+                            : [...prev.availabilityWeekdays, day],
+                        }))
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                        selected
+                          ? 'border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100'
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
               Short description
               <textarea
                 rows={3}
@@ -1154,6 +1218,13 @@ export default function ExpertProfilePage() {
                       {program.trail_location || 'Trail location not set'}
                       {program.price_npr ? ` · NPR ${program.price_npr}` : ''}
                       {program.max_group_size ? ` · Up to ${program.max_group_size} riders` : ''}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                      Availability:{' '}
+                      {program.availability_weekdays?.length
+                        ? program.availability_weekdays.join(', ')
+                        : 'Inherits profile availability'}
+                      {program.available_time_note ? ` · ${program.available_time_note}` : ''}
                     </p>
                     {program.description && (
                       <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">

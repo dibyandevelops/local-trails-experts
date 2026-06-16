@@ -54,9 +54,14 @@ function getDateError(program: ExpertRideProgram | null, preferredDate: string) 
   if (!program || !preferredDate) return '';
   const requestedWeekday = getRequestedWeekday(preferredDate);
   if (!requestedWeekday) return 'Select a valid date.';
-  const availability = Array.isArray(program.expert_availability_weekdays)
+  const programAvailability = Array.isArray(program.availability_weekdays)
+    ? program.availability_weekdays
+    : [];
+  const expertAvailability = Array.isArray(program.expert_availability_weekdays)
     ? program.expert_availability_weekdays
     : [];
+  const availability =
+    programAvailability.length > 0 ? programAvailability : expertAvailability;
   if (availability.length > 0 && !availability.includes(requestedWeekday)) {
     return `${getExpertName(program)} is marked available on ${availability.join(', ')}.`;
   }
@@ -97,8 +102,12 @@ export default function RideWithExpertsClient() {
   const requestMutation = useMutation({
     mutationFn: ({ programId, payload }: { programId: string; payload: RequestExpertRideProgramPayload }) =>
       requestExpertRideProgram(programId, payload),
-    onSuccess: async () => {
-      setRequestMessage('Request submitted. The expert can review it and coordinate the ride.');
+    onSuccess: async (data) => {
+      setRequestMessage(
+        data.updated
+          ? 'Existing request updated. The expert can review the latest details.'
+          : 'Request submitted. The expert can review it and coordinate the ride.'
+      );
       setRequestProgram(null);
       setForm(createInitialForm(currentUser?.phone));
       await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.experts.ridePrograms });
@@ -262,9 +271,12 @@ export default function RideWithExpertsClient() {
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
                   <p className="font-bold">Available dates</p>
                   <p className="mt-1 text-xs leading-5">
-                    {requestProgram.expert_availability_weekdays?.length
-                      ? requestProgram.expert_availability_weekdays.join(', ')
+                    {requestProgram.availability_weekdays?.length
+                      ? requestProgram.availability_weekdays.join(', ')
+                      : requestProgram.expert_availability_weekdays?.length
+                        ? requestProgram.expert_availability_weekdays.join(', ')
                       : 'Flexible. Select your preferred date and the expert will confirm.'}
+                    {requestProgram.available_time_note ? ` · ${requestProgram.available_time_note}` : ''}
                   </p>
                 </div>
 
@@ -467,8 +479,10 @@ function ProgramCard({ program, onRequest }: { program: ExpertRideProgram; onReq
 }
 
 function ProgramMeta({ program, compact = false }: { program: ExpertRideProgram; compact?: boolean }) {
-  const availability = program.expert_availability_weekdays?.length
-    ? program.expert_availability_weekdays.join(', ')
+  const availability = program.availability_weekdays?.length
+    ? program.availability_weekdays.join(', ')
+    : program.expert_availability_weekdays?.length
+      ? program.expert_availability_weekdays.join(', ')
     : 'Flexible dates';
 
   return (
@@ -487,7 +501,7 @@ function ProgramMeta({ program, compact = false }: { program: ExpertRideProgram;
       </p>
       <p className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 font-semibold text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-100">
         <CalendarDays className="h-4 w-4" />
-        {availability}
+        {program.available_time_note ? `${availability} · ${program.available_time_note}` : availability}
       </p>
       <p className="flex items-center gap-2 rounded-2xl border border-lime-100 bg-lime-50 px-3 py-2 font-semibold text-lime-900 dark:border-lime-900/50 dark:bg-lime-950/20 dark:text-lime-100">
         <Users className="h-4 w-4" />

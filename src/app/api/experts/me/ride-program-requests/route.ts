@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
         p.title AS program_title,
         p.max_group_size,
         p.price_npr,
+        p.availability_weekdays AS program_availability_weekdays,
+        p.available_time_note,
         t.name AS trail_name,
         t.slug AS trail_slug,
         t.location AS trail_location,

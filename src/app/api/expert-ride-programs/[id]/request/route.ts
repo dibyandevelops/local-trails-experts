@@ -54,6 +54,8 @@ export async function POST(
         p.trail_id,
         p.title,
         p.max_group_size,
+        p.availability_weekdays AS program_availability_weekdays,
+        p.available_time_note,
         u.availability_weekdays,
         u.name AS expert_name,
         t.name AS trail_name
@@ -79,9 +81,13 @@ export async function POST(
       return NextResponse.json({ error: `Group size cannot exceed ${program.max_group_size}.` }, { status: 400 });
     }
 
-    const availableWeekdays = Array.isArray(program.availability_weekdays)
+    const programWeekdays = Array.isArray(program.program_availability_weekdays)
+      ? program.program_availability_weekdays
+      : [];
+    const expertWeekdays = Array.isArray(program.availability_weekdays)
       ? program.availability_weekdays
       : [];
+    const availableWeekdays = programWeekdays.length > 0 ? programWeekdays : expertWeekdays;
     const requestedWeekday = WEEKDAYS[preferredDate.getDay()];
     if (availableWeekdays.length > 0 && !availableWeekdays.includes(requestedWeekday)) {
       return NextResponse.json(

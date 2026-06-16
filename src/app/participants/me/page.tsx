@@ -55,6 +55,8 @@ type ParticipantRideProgramRequest = {
   price_npr: number | null;
   duration_note: string | null;
   meeting_point_note: string | null;
+  program_availability_weekdays?: string[] | null;
+  available_time_note?: string | null;
   trail_name: string | null;
   trail_slug: string | null;
   trail_location: string | null;
@@ -172,21 +174,25 @@ export default function ParticipantProfilePage() {
       try {
         if (!currentUser || currentUser.role !== 'participant') {
           setLoadingEvents(false);
+          setLoadingBookings(false);
           setLoadingRequests(false);
           return;
         }
-        const [eventsRes, requestsRes, expertsRes, bookingsRes] = await Promise.all([
+        const [eventsRes, requestsRes, rideRequestsRes, expertsRes, bookingsRes] = await Promise.all([
           fetch('/api/participants/me/events'),
           fetch('/api/participants/me/trail-requests'),
+          fetch('/api/participants/me/ride-program-requests'),
           fetch('/api/experts?verified=true'),
           fetch('/api/bookings/me'),
         ]);
         const eventsData = await eventsRes.json();
         const requestsData = await requestsRes.json();
+        const rideRequestsData = await rideRequestsRes.json();
         const expertsData = await expertsRes.json();
         const bookingsData = await bookingsRes.json();
         setEvents(eventsData.events || []);
         setTrailRequests(requestsData.requests || []);
+        setRideProgramRequests(rideRequestsData.requests || []);
         setExperts(expertsData.experts || []);
         setBookings(bookingsData.bookings || []);
       } catch (error) {
@@ -280,6 +286,67 @@ export default function ParticipantProfilePage() {
       setMessage('Unable to update profile.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updateRideProgramRequest = async (request: ParticipantRideProgramRequest) => {
+    setRideProgramRequestMessage(null);
+    if (!request.preferred_date) {
+      setRideProgramRequestMessage('Please select a preferred date.');
+      return;
+    }
+
+    try {
+      setSavingRequestId(request.id);
+      const response = await fetch(`/api/participants/me/ride-program-requests/${request.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preferred_date: request.preferred_date,
+          preferred_time: request.preferred_time,
+          requester_phone: request.requester_phone,
+          group_size: request.group_size,
+          offered_price_npr: request.offered_price_npr,
+          notes: request.notes,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update ride request');
+      }
+      setRideProgramRequestMessage('Ride request updated.');
+    } catch (error) {
+      setRideProgramRequestMessage(
+        error instanceof Error ? error.message : 'Failed to update ride request.'
+      );
+    } finally {
+      setSavingRequestId(null);
+    }
+  };
+
+  const cancelRideProgramRequest = async (requestId: string) => {
+    setRideProgramRequestMessage(null);
+    try {
+      setCancellingRequestId(requestId);
+      const response = await fetch(`/api/participants/me/ride-program-requests/${requestId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to cancel ride request');
+      }
+      setRideProgramRequests((prev) =>
+        prev.map((request) =>
+          request.id === requestId ? { ...request, status: 'cancelled' } : request
+        )
+      );
+      setRideProgramRequestMessage('Ride request cancelled.');
+    } catch (error) {
+      setRideProgramRequestMessage(
+        error instanceof Error ? error.message : 'Failed to cancel ride request.'
+      );
+    } finally {
+      setCancellingRequestId(null);
     }
   };
 
@@ -395,6 +462,227 @@ export default function ParticipantProfilePage() {
             <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{editForm.bio?.trim() || 'Not added'}</p>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Ride with Experts Requests
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              Manage requested expert ride programs separately from scheduled events.
+            </p>
+          </div>
+          <Link
+            href="/ride-with-experts"
+            className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+          >
+            Browse rides
+          </Link>
+        </div>
+        {rideProgramRequestMessage && (
+          <p className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+            {rideProgramRequestMessage}
+          </p>
+        )}
+        {rideProgramRequests.length === 0 ? (
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            You have not requested any expert ride programs yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {rideProgramRequests.map((request) => {
+              const requestedWeekday = getRequestedWeekday(request.preferred_date);
+              const programWeekdays = Array.isArray(request.program_availability_weekdays)
+                ? request.program_availability_weekdays
+                : [];
+              const expertWeekdays = Array.isArray(request.expert_availability_weekdays)
+                ? request.expert_availability_weekdays
+                : [];
+              const availableWeekdays =
+                programWeekdays.length > 0 ? programWeekdays : expertWeekdays;
+              const dateMatchesAvailability =
+                !requestedWeekday ||
+                availableWeekdays.length === 0 ||
+                availableWeekdays.includes(requestedWeekday);
+              const canEdit = ['pending', 'accepted'].includes(request.status);
+
+              return (
+                <div
+                  key={request.id}
+                  className="rounded-lg border border-gray-200 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+                >
+                  <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                          {request.program_title || request.trail_name || 'Expert ride request'}
+                        </p>
+                        <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold capitalize text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                          {request.status}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                        Expert: {request.expert_name || request.expert_email || 'Expert'}
+                        {request.trail_location ? ` · ${request.trail_location}` : ''}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      Requested <DateText value={request.created_at} pattern="PPP p" />
+                    </p>
+                  </div>
+
+                  <div className="mb-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
+                    <span className="font-semibold">
+                      {programWeekdays.length > 0 ? 'Program availability: ' : 'Expert availability: '}
+                    </span>
+                    {availableWeekdays.length > 0 ? availableWeekdays.join(', ') : 'Flexible'}
+                    {request.available_time_note ? ` · ${request.available_time_note}` : ''}
+                    {requestedWeekday && (
+                      <span
+                        className={
+                          dateMatchesAvailability
+                            ? 'ml-2 font-semibold text-emerald-700 dark:text-emerald-200'
+                            : 'ml-2 font-semibold text-red-700 dark:text-red-200'
+                        }
+                      >
+                        Selected date is {requestedWeekday}
+                        {dateMatchesAvailability ? '' : ' and does not match availability'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
+                        Preferred date
+                      </label>
+                      <input
+                        type="date"
+                        min={new Date().toISOString().slice(0, 10)}
+                        value={request.preferred_date?.slice(0, 10) || ''}
+                        disabled={!canEdit}
+                        onChange={(event) => {
+                          const nextDate = event.target.value;
+                          setRideProgramRequests((prev) =>
+                            prev.map((item) =>
+                              item.id === request.id ? { ...item, preferred_date: nextDate } : item
+                            )
+                          );
+                        }}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
+                        Preferred time
+                      </label>
+                      <input
+                        type="time"
+                        value={request.preferred_time || ''}
+                        disabled={!canEdit}
+                        onChange={(event) => {
+                          const nextTime = event.target.value;
+                          setRideProgramRequests((prev) =>
+                            prev.map((item) =>
+                              item.id === request.id ? { ...item, preferred_time: nextTime } : item
+                            )
+                          );
+                        }}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
+                        Group size
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={request.max_group_size || 50}
+                        value={request.group_size || 1}
+                        disabled={!canEdit}
+                        onChange={(event) => {
+                          const groupSize = Number(event.target.value || 1);
+                          setRideProgramRequests((prev) =>
+                            prev.map((item) =>
+                              item.id === request.id ? { ...item, group_size: groupSize } : item
+                            )
+                          );
+                        }}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
+                        Offered amount
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={request.offered_price_npr ?? ''}
+                        disabled={!canEdit}
+                        placeholder={request.price_npr ? `Suggested NPR ${request.price_npr}` : 'Optional'}
+                        onChange={(event) => {
+                          const nextPrice = event.target.value ? Number(event.target.value) : null;
+                          setRideProgramRequests((prev) =>
+                            prev.map((item) =>
+                              item.id === request.id
+                                ? { ...item, offered_price_npr: nextPrice }
+                                : item
+                            )
+                          );
+                        }}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
+                        Notes
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={request.notes || ''}
+                        disabled={!canEdit}
+                        onChange={(event) => {
+                          const notes = event.target.value;
+                          setRideProgramRequests((prev) =>
+                            prev.map((item) =>
+                              item.id === request.id ? { ...item, notes } : item
+                            )
+                          );
+                        }}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  {canEdit && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateRideProgramRequest(request)}
+                        disabled={savingRequestId === request.id || !dateMatchesAvailability}
+                        className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-60 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200"
+                      >
+                        {savingRequestId === request.id ? 'Updating...' : 'Update request'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => cancelRideProgramRequest(request.id)}
+                        disabled={cancellingRequestId === request.id}
+                        className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+                      >
+                        {cancellingRequestId === request.id ? 'Cancelling...' : 'Cancel request'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">

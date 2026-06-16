@@ -55,6 +55,7 @@ export async function PATCH(
         r.program_id,
         r.status,
         p.max_group_size,
+        p.availability_weekdays AS program_availability_weekdays,
         u.name AS expert_name,
         u.availability_weekdays
       FROM expert_ride_program_requests r
@@ -76,9 +77,13 @@ export async function PATCH(
       return NextResponse.json({ error: `Group size cannot exceed ${existing.max_group_size}.` }, { status: 400 });
     }
 
-    const availableWeekdays = Array.isArray(existing.availability_weekdays)
+    const programWeekdays = Array.isArray(existing.program_availability_weekdays)
+      ? existing.program_availability_weekdays
+      : [];
+    const expertWeekdays = Array.isArray(existing.availability_weekdays)
       ? existing.availability_weekdays
       : [];
+    const availableWeekdays = programWeekdays.length > 0 ? programWeekdays : expertWeekdays;
     const requestedWeekday = WEEKDAYS[preferredDate.getDay()];
     if (availableWeekdays.length > 0 && !availableWeekdays.includes(requestedWeekday)) {
       return NextResponse.json(

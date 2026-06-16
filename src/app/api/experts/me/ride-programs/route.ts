@@ -4,12 +4,24 @@ import { getAuthFromRequest } from '@/lib/auth';
 import type { ExpertRideProgram, ExpertiseLevel } from '@/types';
 
 const VALID_LEVELS = new Set(['beginner', 'intermediate', 'advanced', 'expert']);
+const VALID_WEEKDAYS = new Set([
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+]);
 
 function normalizeProgramRow(row: any): ExpertRideProgram {
   return {
     ...row,
     price_npr: row.price_npr === null ? null : Number(row.price_npr),
     max_group_size: Number(row.max_group_size || 1),
+    availability_weekdays: Array.isArray(row.availability_weekdays)
+      ? row.availability_weekdays
+      : [],
   };
 }
 
@@ -67,6 +79,12 @@ export async function POST(request: NextRequest) {
     const description = String(body?.description || '').trim();
     const durationNote = String(body?.duration_note || '').trim();
     const meetingPointNote = String(body?.meeting_point_note || '').trim();
+    const availableTimeNote = String(body?.available_time_note || '').trim();
+    const availabilityWeekdays = Array.isArray(body?.availability_weekdays)
+      ? body.availability_weekdays
+          .map((day: unknown) => String(day).trim())
+          .filter((day: string) => VALID_WEEKDAYS.has(day))
+      : [];
     const skillLevel = String(body?.skill_level || 'intermediate').trim() as ExpertiseLevel;
     const priceRaw = body?.price_npr;
     const groupSize = Math.max(1, Math.min(50, Number(body?.max_group_size || 4)));
@@ -122,10 +140,12 @@ export async function POST(request: NextRequest) {
         max_group_size,
         duration_note,
         meeting_point_note,
+        availability_weekdays,
+        available_time_note,
         skill_level,
         is_active
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12)
       ON CONFLICT (expert_user_id, trail_id, title)
       DO UPDATE SET
         description = EXCLUDED.description,
@@ -133,6 +153,8 @@ export async function POST(request: NextRequest) {
         max_group_size = EXCLUDED.max_group_size,
         duration_note = EXCLUDED.duration_note,
         meeting_point_note = EXCLUDED.meeting_point_note,
+        availability_weekdays = EXCLUDED.availability_weekdays,
+        available_time_note = EXCLUDED.available_time_note,
         skill_level = EXCLUDED.skill_level,
         is_active = EXCLUDED.is_active,
         updated_at = NOW()
@@ -146,6 +168,8 @@ export async function POST(request: NextRequest) {
         groupSize,
         durationNote || null,
         meetingPointNote || null,
+        availabilityWeekdays.length > 0 ? JSON.stringify(availabilityWeekdays) : null,
+        availableTimeNote || null,
         skillLevel,
         isActive,
       ]

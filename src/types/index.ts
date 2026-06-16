@@ -225,6 +225,8 @@ export interface ExpertRideProgram {
   max_group_size: number;
   duration_note: string | null;
   meeting_point_note: string | null;
+  availability_weekdays?: string[] | null;
+  available_time_note?: string | null;
   skill_level: ExpertiseLevel;
   is_active: boolean;
   created_at: string;
