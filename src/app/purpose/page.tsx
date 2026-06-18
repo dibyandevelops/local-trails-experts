@@ -3,10 +3,26 @@ import Link from 'next/link';
 import { getImpactStats } from '@/lib/impact-stats';
 
 export const metadata: Metadata = {
-  title: 'Purpose',
+  title: 'Purpose: Nepal Trails, Local Experts & Ride Infrastructure',
   description:
-    'The Nepal Trail Hub agenda: map Nepal trails for everyone, support local experts, and fund trail building, trail fixes, and signage across Nepal.',
+    'LocoXperts helps riders discover Nepal trails, request local expert ride support, find bike services, and support organizations improving trail infrastructure.',
   alternates: { canonical: '/purpose' },
+  keywords: [
+    'Nepal trail platform',
+    'Kathmandu MTB trails',
+    'ride with experts Nepal',
+    'local MTB guides Nepal',
+    'trail organizations Nepal',
+    'bike services Kathmandu',
+    'trail campaigns Nepal',
+  ],
+  openGraph: {
+    title: 'Purpose: Nepal Trails, Local Experts & Ride Infrastructure',
+    description:
+      'Discover the LocoXperts agenda for mapped trails, expert ride support, bike services, campaigns, and stronger Nepal trail infrastructure.',
+    url: '/purpose',
+    type: 'website',
+  },
 };
 
 function Badge({
@@ -68,27 +84,26 @@ export default async function PurposePage() {
 
         <div className="max-w-3xl">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge tone="emerald">Nepal Trail Hub</Badge>
-            <Badge tone="amber">Build + Fix + Explore</Badge>
+            <Badge tone="emerald">LocoXperts Purpose</Badge>
+            <Badge tone="amber">Map + Ride + Support</Badge>
             <Badge tone="sky">Nepal Focus</Badge>
-            <Badge tone="slate">Tourism & Local Economy</Badge>
+            <Badge tone="slate">Local Trail Economy</Badge>
           </div>
 
           <h1 className="text-balance text-4xl font-extrabold leading-tight text-gray-900 dark:text-gray-100 md:text-5xl">
-            Put Nepal&apos;s trails on the map and build what riders need next.
+            Make Nepal&apos;s trails easier to find, ride, support, and maintain.
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
-            We are building a simple, free platform so riders can discover and navigate
-            trails across Nepal, while local experts showcase their knowledge through
-            events and trainings.
+            LocoXperts brings trail maps, route guides, local experts, organizations,
+            campaigns, ride support, and bike services into one practical place for riders.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            Immediate ground focus: new and improved trail lines across key riding
-            regions in Nepal, with clear signage and practical maintenance.
+            Immediate focus: Kathmandu Valley and nearby riding zones, with better trail
+            discovery, safer ride planning, and clearer support options before riders go.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            The model is expert-first and autonomous: experts keep event earnings.
-            Sponsor and community funding supports mapping, trail work, and infrastructure.
+            The model is community-first: experts can offer practical ride support,
+            organizations can show their work, and campaigns can fund trail maintenance.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -99,10 +114,10 @@ export default async function PurposePage() {
               Browse trails
             </Link>
             <Link
-              href="/events"
+              href="/ride-with-experts"
               className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-green-700 px-7 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30 md:text-base"
             >
-              Browse events
+              Ride with experts
             </Link>
           </div>
         </div>
@@ -152,8 +167,8 @@ export default async function PurposePage() {
             </svg>
           }
         >
-          A platform to publish trails, run events, offer trainings, and grow a
-          real local business around trail expertise.
+          A platform to publish expertise, associate trails, offer ride support,
+          and grow a real local profile around verified trail knowledge.
         </Card>
         <Card
           title="For communities and villages"
@@ -182,8 +197,8 @@ export default async function PurposePage() {
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
             <p>• Free digital map of Nepal trails</p>
-            <p>• Expert ride requests and trainings</p>
-            <p>• Trail build, fix, and signage work across Nepal routes</p>
+            <p>• Expert ride requests, route advice, and local support</p>
+            <p>• Trail build, fix, signage, and campaign work across Nepal routes</p>
           </div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
@@ -243,8 +258,8 @@ export default async function PurposePage() {
             What we build (offline) + what we ship (online)
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-            The platform makes trails discoverable and events easy to join. The
-            community work keeps routes safe, sustainable, and rideable.
+            The platform makes trails discoverable and expert support easier to request.
+            The community work keeps routes safer, sustainable, and rideable.
           </p>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-slate-200">
             <p>
@@ -254,8 +269,8 @@ export default async function PurposePage() {
             </p>
             <p>
               • <span className="font-semibold">Online:</span> Route discovery,
-              expert profiles, event listings, and a marketplace for guided
-              experiences.
+              expert profiles, ride requests, organization pages, campaigns,
+              and nearby cycle hubs.
             </p>
           </div>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -282,10 +297,9 @@ export default async function PurposePage() {
             The goal isn&apos;t a one-time project—it&apos;s an ecosystem.
           </p>
           <p className="mt-4 text-sm text-emerald-100">
-            Trails built by communities are listed on the platform. Certified
-            experts lead rides and trainings on those trails. A portion of guided
-            experience revenue can support trail upkeep and maintenance over
-            time.
+            Trails supported by communities are listed on the platform. Experts can
+            offer ride support on trails they know well. Campaigns and organization
+            pages help riders understand who is maintaining the local riding network.
           </p>
         </div>
       </section>

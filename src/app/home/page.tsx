@@ -6,33 +6,36 @@ import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } fr
 import { jsonLdStringify } from '@/lib/jsonld';
 
 export const metadata: Metadata = {
-  title: 'Best Site to View MTB Trails in Nepal',
+  title: 'Kathmandu MTB Trails, Local Experts & Ride Support',
   description:
-    'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
+    'Find Kathmandu and Nepal MTB trails, route guides, local experts, ride support, organizations, campaigns, and bike services in one place.',
   keywords: [
+    'Kathmandu MTB trails',
     'best MTB trails in Nepal',
     'mountain bike trails Nepal',
     'Nepal MTB trail map',
+    'ride with experts Nepal',
     'bike routes Nepal',
     'trail discovery Nepal',
     'local cycling guides Nepal',
     'local trail guides Nepal',
+    'cycle hubs Kathmandu',
     'LocoXperts',
   ],
   alternates: { canonical: '/home' },
   openGraph: {
-    title: 'Best Site to View MTB Trails in Nepal',
+    title: 'Kathmandu MTB Trails, Local Experts & Ride Support',
     description:
-      'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
+      'Find Kathmandu and Nepal MTB trails, route guides, local experts, ride support, organizations, campaigns, and bike services in one place.',
     url: '/home',
     type: 'website',
     images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE_PATH), width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Best Site to View MTB Trails in Nepal',
+    title: 'Kathmandu MTB Trails, Local Experts & Ride Support',
     description:
-      'Discover mountain bike trails in Nepal with GPX-ready route guides, local expert support, and easy event booking.',
+      'Find Kathmandu and Nepal MTB trails, route guides, local experts, ride support, organizations, campaigns, and bike services in one place.',
     images: [absoluteUrl(DEFAULT_OG_IMAGE_PATH)],
   },
 };
@@ -60,7 +63,7 @@ const featuredTrails = [
   },
   {
     title: 'Start with easier routes',
-    description: 'Filter beginner-friendly options before moving into harder trails and expert-led rides.',
+    description: 'Filter beginner-friendly options before moving into harder trails and expert ride support.',
     href: '/trails?difficulty=easy',
     meta: 'New riders',
   },
@@ -80,10 +83,10 @@ const discoveryPaths = [
     cta: 'Request a ride',
   },
   {
-    title: 'Trail Builders',
-    description: 'See organizations building, maintaining, and supporting Nepal trails.',
+    title: 'Organizations',
+    description: 'See the local groups building, maintaining, and supporting Nepal trails.',
     href: '/organizations',
-    cta: 'View builders',
+    cta: 'View organizations',
   },
   {
     title: 'Campaigns',
@@ -96,7 +99,7 @@ const discoveryPaths = [
 const planningSteps = [
   'Search a trail or place.',
   'Check route guide, map, difficulty, alerts, and services.',
-  'Request ride support or join an expert-led event.',
+  'Request expert ride support or find nearby bike services.',
 ];
 
 export default function Home() {
@@ -134,16 +137,16 @@ export default function Home() {
               Experts
             </span>
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text dark:border-emerald-700/60 dark:bg-emerald-900/35 dark:text-emerald-100">
-              Trail Builders
+              Organizations
             </span>
           </div>
 
           <h1 className="text-balance text-4xl font-black leading-tight text-gray-950 dark:text-gray-100 md:text-6xl lg:text-7xl">
-            Find trails, experts, and ride support in Nepal.
+            Find Kathmandu trails, local experts, and ride support.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-gray-600 dark:text-gray-300 md:text-lg">
-            Search by trail, place, builder, or riding style. Open route maps, check safety context,
-            and connect with local experts when you need support.
+            Search trails by place or riding style, open route maps, check safety context,
+            request expert ride support, and find bike services near your next ride.
           </p>
 
           <form
@@ -245,8 +248,8 @@ export default function Home() {
               Choose what you need today
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-              The homepage should work like a launchpad: search trails first, then move into expert
-              support, builders, campaigns, and ride infrastructure.
+              Start with trail search, then move into expert ride support, organizations,
+              campaigns, cycle hubs, and community ride infrastructure.
             </p>
           </div>
           <JoinAdventureButton className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-green-700 px-5 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-lime-300/45 dark:bg-lime-300/10 dark:text-lime-50 dark:hover:bg-lime-300/20" />
@@ -303,7 +306,7 @@ export default function Home() {
             Trails need more than maps.
           </h2>
           <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
-            LocoXperts connects route information with experts, trail builders, campaigns,
+            LocoXperts connects route information with experts, organizations, campaigns,
             services, and cycle hubs so riders can make better decisions before they go.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -314,10 +317,10 @@ export default function Home() {
               Find cycle hubs →
             </Link>
             <Link
-              href="/events"
+              href="/ride-with-experts"
               className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-sm font-semibold text-emerald-900 hover:bg-white dark:border-emerald-800/60 dark:bg-emerald-950/25 dark:text-emerald-100 dark:hover:bg-emerald-900/35"
             >
-              Join ride events →
+              Request expert rides →
             </Link>
             <Link
               href="/campaigns"
@@ -344,8 +347,8 @@ export default function Home() {
             Know a trail or run local rides?
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-            Help grow the trail network by adding routes, running events, sharing local knowledge,
-            or supporting campaign work.
+            Help grow the trail network by adding routes, sharing local knowledge,
+            creating expert ride programs, or supporting campaign work.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
