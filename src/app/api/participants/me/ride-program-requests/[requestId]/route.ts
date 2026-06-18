@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { sendPushToUserIds } from '@/lib/push';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -141,7 +142,7 @@ export async function DELETE(
       UPDATE expert_ride_program_requests
       SET status = 'cancelled', updated_at = NOW()
       WHERE id = $1 AND requester_user_id = $2 AND status IN ('pending', 'accepted')
-      RETURNING id
+      RETURNING id, expert_user_id, requester_name
       `,
       [requestId, auth.sub]
     );
@@ -149,6 +150,24 @@ export async function DELETE(
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Ride request not found or cannot be cancelled.' }, { status: 404 });
     }
+
+    const cancelledRequest = result.rows[0];
+    const programResult = await pool.query(
+      `
+      SELECT p.title
+      FROM expert_ride_program_requests r
+      JOIN expert_ride_programs p ON p.id = r.program_id
+      WHERE r.id = $1
+      LIMIT 1
+      `,
+      [requestId]
+    );
+    const programTitle = programResult.rows[0]?.title || 'a ride request';
+    await sendPushToUserIds([cancelledRequest.expert_user_id], {
+      title: 'Ride request cancelled',
+      body: `${cancelledRequest.requester_name || 'A participant'} cancelled ${programTitle}.`,
+      url: '/experts/me',
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

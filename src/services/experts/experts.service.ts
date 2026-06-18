@@ -1,5 +1,12 @@
 import axios from 'axios';
-import type { Event, ExpertRideProgram, ExpertiseLevel, SportType, User } from '@/types';
+import type {
+  Event,
+  ExpertRideProgram,
+  ExpertRideProgramRequest,
+  ExpertiseLevel,
+  SportType,
+  User,
+} from '@/types';
 import { apiClient } from '@/services/api/client';
 import { ApiPath } from '@/services/api/paths';
 
@@ -190,5 +197,21 @@ export async function requestExpertRideProgram(
       throw new Error(apiError?.error || 'Failed to submit ride request');
     }
     throw new Error('Failed to submit ride request');
+  }
+}
+
+export async function fetchMyExpertRideProgramRequests(signal?: AbortSignal) {
+  try {
+    const { data } = await apiClient.get<{ requests: ExpertRideProgramRequest[] }>(
+      '/api/participants/me/ride-program-requests',
+      { signal }
+    );
+    return data.requests || [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to fetch your ride requests');
+    }
+    throw new Error('Failed to fetch your ride requests');
   }
 }

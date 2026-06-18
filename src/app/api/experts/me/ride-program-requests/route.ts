@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { sendPushToUserIds } from '@/lib/push';
 
 const VALID_STATUSES = new Set(['pending', 'accepted', 'declined', 'completed', 'cancelled']);
 
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
         r.group_size,
         r.offered_price_npr,
         r.notes,
+        r.expert_response_note,
         r.status,
         r.created_at,
         r.updated_at,
@@ -69,6 +71,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const requestId = String(body?.id || '').trim();
     const status = String(body?.status || '').trim();
+    const expertResponseNote = String(body?.expert_response_note || '').trim();
 
     if (!requestId) {
       return NextResponse.json({ error: 'Request id is required.' }, { status: 400 });
@@ -80,15 +83,45 @@ export async function PATCH(request: NextRequest) {
     const result = await pool.query(
       `
       UPDATE expert_ride_program_requests
-      SET status = $3, updated_at = NOW()
+      SET status = $3, expert_response_note = $4, updated_at = NOW()
       WHERE id = $1 AND expert_user_id = $2
-      RETURNING id
+      RETURNING id, requester_user_id, requester_name, status, expert_response_note
       `,
-      [requestId, auth.sub, status]
+      [requestId, auth.sub, status, expertResponseNote || null]
     );
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Ride program request not found.' }, { status: 404 });
+    }
+
+    const updatedRequest = result.rows[0];
+    if (updatedRequest.requester_user_id) {
+      const programResult = await pool.query(
+        `
+        SELECT p.title
+        FROM expert_ride_program_requests r
+        JOIN expert_ride_programs p ON p.id = r.program_id
+        WHERE r.id = $1
+        LIMIT 1
+        `,
+        [requestId]
+      );
+      const programTitle = programResult.rows[0]?.title || 'your ride request';
+      const statusCopy: Record<string, string> = {
+        accepted: 'accepted',
+        declined: 'declined',
+        completed: 'marked completed',
+        cancelled: 'cancelled',
+        pending: 'moved back to pending',
+      };
+      const noteSuffix = updatedRequest.expert_response_note
+        ? ` Note: ${updatedRequest.expert_response_note}`
+        : '';
+      await sendPushToUserIds([updatedRequest.requester_user_id], {
+        title: 'Ride request updated',
+        body: `${programTitle} was ${statusCopy[status] || status}.${noteSuffix}`,
+        url: '/participants/me',
+      });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

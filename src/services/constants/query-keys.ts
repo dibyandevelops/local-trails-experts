@@ -104,6 +104,7 @@ export const QUERY_KEYS = {
     reviews: (expertId?: string) => ['expert-reviews', expertId || ''] as const,
     ridePrograms: ['expert-ride-programs'] as const,
     myRidePrograms: ['experts-me-ride-programs'] as const,
+    myRideProgramRequests: ['participants-me-ride-program-requests'] as const,
   },
   stores: {
     all: () => ['stores'] as const,
@@ -138,6 +139,7 @@ export const QUERY_KEYS = {
       ['admin', 'expert-applications', status || 'all'] as const,
     pendingTrails: ['admin', 'pending-trails'] as const,
     trailRequests: ['admin', 'trail-requests'] as const,
+    ridePrograms: ['admin', 'ride-programs'] as const,
     users: (role?: string) => ['admin', 'users', role || 'all'] as const,
   },
 } as const;

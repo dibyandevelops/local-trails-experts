@@ -48,6 +48,7 @@ type ParticipantRideProgramRequest = {
   group_size: number;
   offered_price_npr: number | null;
   notes: string | null;
+  expert_response_note?: string | null;
   status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
   created_at: string;
   program_title: string | null;
@@ -123,6 +124,7 @@ export default function ParticipantProfilePage() {
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [rideProgramRequestMessage, setRideProgramRequestMessage] = useState<string | null>(null);
+  const [selectedRideProgramRequestId, setSelectedRideProgramRequestId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -135,6 +137,8 @@ export default function ParticipantProfilePage() {
   });
 
   const sportOptions = TRAIL_SPORTS;
+  const selectedRideProgramRequest =
+    rideProgramRequests.find((request) => request.id === selectedRideProgramRequestId) || null;
 
   useEffect(() => {
     setUser(currentUser || null);
@@ -491,8 +495,82 @@ export default function ParticipantProfilePage() {
             You have not requested any expert ride programs yet.
           </p>
         ) : (
-          <div className="space-y-3">
-            {rideProgramRequests.map((request) => {
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800">
+            <table className="w-full min-w-[680px] text-left text-sm">
+              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-slate-950 dark:text-slate-400">
+                <tr>
+                  <th className="px-3 py-2">Ride</th>
+                  <th className="px-3 py-2">Expert</th>
+                  <th className="px-3 py-2">Preferred</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rideProgramRequests.map((request) => (
+                  <tr key={request.id} className="border-t border-gray-200 align-middle dark:border-slate-800">
+                    <td className="px-3 py-3">
+                      <p className="max-w-[300px] text-sm font-semibold text-gray-900 dark:text-slate-100">
+                        {request.program_title || request.trail_name || 'Expert ride request'}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                        {request.trail_location || 'Trail location not set'}
+                      </p>
+                    </td>
+                    <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
+                      {request.expert_name || request.expert_email || 'Expert'}
+                    </td>
+                    <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
+                      <p>{request.preferred_date?.slice(0, 10) || 'Not selected'}</p>
+                      {request.preferred_time && <p>{request.preferred_time}</p>}
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold capitalize text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {request.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRideProgramRequestId(request.id)}
+                        className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+                      >
+                        View details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <Dialog.Root
+        open={Boolean(selectedRideProgramRequest)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedRideProgramRequestId(null);
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[95vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                  Ride request details
+                </Dialog.Title>
+                <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  View full information and update your request if it is still active.
+                </Dialog.Description>
+              </div>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                Close
+              </Dialog.Close>
+            </div>
+
+            {selectedRideProgramRequest && (() => {
+              const request = selectedRideProgramRequest;
               const requestedWeekday = getRequestedWeekday(request.preferred_date);
               const programWeekdays = Array.isArray(request.program_availability_weekdays)
                 ? request.program_availability_weekdays
@@ -509,36 +587,34 @@ export default function ParticipantProfilePage() {
               const canEdit = ['pending', 'accepted'].includes(request.status);
 
               return (
-                <div
-                  key={request.id}
-                  className="rounded-lg border border-gray-200 p-4 dark:border-slate-800 dark:bg-slate-950/40"
-                >
-                  <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                          {request.program_title || request.trail_name || 'Expert ride request'}
-                        </p>
-                        <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold capitalize text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                          {request.status}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                        Expert: {request.expert_name || request.expert_email || 'Expert'}
-                        {request.trail_location ? ` · ${request.trail_location}` : ''}
-                      </p>
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+                        {request.program_title || request.trail_name || 'Expert ride request'}
+                      </h3>
+                      <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold capitalize text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {request.status}
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">
-                      Requested <DateText value={request.created_at} pattern="PPP p" />
-                    </p>
+                    <div className="mt-3 grid gap-2 text-xs text-gray-600 dark:text-slate-300 md:grid-cols-2">
+                      <p>Expert: {request.expert_name || request.expert_email || 'Expert'}</p>
+                      <p>Trail: {request.trail_name || 'Trail not set'}</p>
+                      <p>Location: {request.trail_location || 'Not set'}</p>
+                      <p>Requested: <DateText value={request.created_at} pattern="PPP p" /></p>
+                      <p>Max group size: {request.max_group_size || 'Not set'}</p>
+                      <p>Suggested price: {request.price_npr ? 'NPR ' + request.price_npr : 'Not set'}</p>
+                      {request.duration_note && <p>Duration: {request.duration_note}</p>}
+                      {request.meeting_point_note && <p>Meeting: {request.meeting_point_note}</p>}
+                    </div>
                   </div>
 
-                  <div className="mb-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
+                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
                     <span className="font-semibold">
                       {programWeekdays.length > 0 ? 'Program availability: ' : 'Expert availability: '}
                     </span>
                     {availableWeekdays.length > 0 ? availableWeekdays.join(', ') : 'Flexible'}
-                    {request.available_time_note ? ` · ${request.available_time_note}` : ''}
+                    {request.available_time_note ? ' · ' + request.available_time_note : ''}
                     {requestedWeekday && (
                       <span
                         className={
@@ -553,11 +629,16 @@ export default function ParticipantProfilePage() {
                     )}
                   </div>
 
+                  {request.expert_response_note && (
+                    <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/35 dark:text-blue-100">
+                      <span className="font-semibold">Expert response: </span>
+                      {request.expert_response_note}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
-                        Preferred date
-                      </label>
+                    <label className="text-xs font-medium text-gray-600 dark:text-slate-300">
+                      Preferred date
                       <input
                         type="date"
                         min={new Date().toISOString().slice(0, 10)}
@@ -571,13 +652,11 @@ export default function ParticipantProfilePage() {
                             )
                           );
                         }}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
                       />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
-                        Preferred time
-                      </label>
+                    </label>
+                    <label className="text-xs font-medium text-gray-600 dark:text-slate-300">
+                      Preferred time
                       <input
                         type="time"
                         value={request.preferred_time || ''}
@@ -590,13 +669,11 @@ export default function ParticipantProfilePage() {
                             )
                           );
                         }}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
                       />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
-                        Group size
-                      </label>
+                    </label>
+                    <label className="text-xs font-medium text-gray-600 dark:text-slate-300">
+                      Group size
                       <input
                         type="number"
                         min={1}
@@ -611,19 +688,17 @@ export default function ParticipantProfilePage() {
                             )
                           );
                         }}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
                       />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
-                        Offered amount
-                      </label>
+                    </label>
+                    <label className="text-xs font-medium text-gray-600 dark:text-slate-300">
+                      Offered amount
                       <input
                         type="number"
                         min={0}
                         value={request.offered_price_npr ?? ''}
                         disabled={!canEdit}
-                        placeholder={request.price_npr ? `Suggested NPR ${request.price_npr}` : 'Optional'}
+                        placeholder={request.price_npr ? 'NPR ' + request.price_npr : 'Optional'}
                         onChange={(event) => {
                           const nextPrice = event.target.value ? Number(event.target.value) : null;
                           setRideProgramRequests((prev) =>
@@ -634,13 +709,11 @@ export default function ParticipantProfilePage() {
                             )
                           );
                         }}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
                       />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300">
-                        Notes
-                      </label>
+                    </label>
+                    <label className="text-xs font-medium text-gray-600 dark:text-slate-300 md:col-span-2">
+                      Notes
                       <textarea
                         rows={3}
                         value={request.notes || ''}
@@ -653,13 +726,13 @@ export default function ParticipantProfilePage() {
                             )
                           );
                         }}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800"
                       />
-                    </div>
+                    </label>
                   </div>
 
-                  {canEdit && (
-                    <div className="mt-3 flex flex-wrap gap-2">
+                  {canEdit ? (
+                    <div className="flex flex-wrap justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => updateRideProgramRequest(request)}
@@ -677,13 +750,17 @@ export default function ParticipantProfilePage() {
                         {cancellingRequestId === request.id ? 'Cancelling...' : 'Cancel request'}
                       </button>
                     </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-slate-400">
+                      This request cannot be edited because it is {request.status}.
+                    </p>
                   )}
                 </div>
               );
-            })}
-          </div>
-        )}
-      </section>
+            })()}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-3">

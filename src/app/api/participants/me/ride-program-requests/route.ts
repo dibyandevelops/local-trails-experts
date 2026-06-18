@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
         r.group_size,
         r.offered_price_npr,
         r.notes,
+        r.expert_response_note,
         r.status,
         r.created_at,
         r.updated_at,

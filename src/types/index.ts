@@ -261,6 +261,7 @@ export interface ExpertRideProgramRequest {
   group_size: number;
   offered_price_npr: number | null;
   notes: string | null;
+  expert_response_note?: string | null;
   status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
   created_at: string;
   updated_at: string;

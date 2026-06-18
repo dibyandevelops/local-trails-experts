@@ -8,12 +8,13 @@ import { CalendarDays, Clock, MapPin, Mountain, ShieldCheck, Star, Users, X } fr
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import {
+  fetchMyExpertRideProgramRequests,
   fetchExpertRidePrograms,
   requestExpertRideProgram,
   type RequestExpertRideProgramPayload,
 } from '@/services/experts/experts.service';
 import { getSportLabel } from '@/services/constants/sports';
-import type { ExpertRideProgram } from '@/types';
+import type { ExpertRideProgram, ExpertRideProgramRequest } from '@/types';
 
 const primaryButtonClass =
   'inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300';
@@ -79,6 +80,10 @@ function createInitialForm(currentUserPhone?: string | null) {
   };
 }
 
+function isActiveRequest(status?: ExpertRideProgramRequest['status']) {
+  return status === 'pending' || status === 'accepted';
+}
+
 export default function RideWithExpertsClient() {
   const queryClient = useQueryClient();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
@@ -95,9 +100,25 @@ export default function RideWithExpertsClient() {
     queryFn: ({ signal }) => fetchExpertRidePrograms(signal),
   });
 
+  const { data: myRequests = [] } = useQuery({
+    queryKey: QUERY_KEYS.experts.myRideProgramRequests,
+    queryFn: ({ signal }) => fetchMyExpertRideProgramRequests(signal),
+    enabled: currentUser?.role === 'participant',
+  });
+
+  const requestByProgramId = useMemo(() => {
+    const entries = myRequests
+      .filter((request) => isActiveRequest(request.status))
+      .map((request) => [request.program_id, request] as const);
+    return new Map(entries);
+  }, [myRequests]);
+
   const featuredProgram = programs[0];
   const remainingPrograms = useMemo(() => programs.slice(1), [programs]);
   const dateError = getDateError(requestProgram, form.preferredDate);
+  const existingRequestForModal = requestProgram
+    ? requestByProgramId.get(requestProgram.id)
+    : undefined;
 
   const requestMutation = useMutation({
     mutationFn: ({ programId, payload }: { programId: string; payload: RequestExpertRideProgramPayload }) =>
@@ -111,6 +132,7 @@ export default function RideWithExpertsClient() {
       setRequestProgram(null);
       setForm(createInitialForm(currentUser?.phone));
       await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.experts.ridePrograms });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.experts.myRideProgramRequests });
     },
     onError: (error) => {
       setRequestMessage(error instanceof Error ? error.message : 'Failed to submit request.');
@@ -146,7 +168,23 @@ export default function RideWithExpertsClient() {
       return;
     }
 
-    setForm(createInitialForm(currentUser.phone));
+    const existingRequest = requestByProgramId.get(program.id);
+    setForm(
+      existingRequest
+        ? {
+            preferredDate: existingRequest.preferred_date?.slice(0, 10) || '',
+            preferredTime: existingRequest.preferred_time || '',
+            groupSize: String(existingRequest.group_size || 1),
+            requesterPhone: existingRequest.requester_phone || currentUser.phone || '',
+            offeredPriceNpr:
+              existingRequest.offered_price_npr === null ||
+              existingRequest.offered_price_npr === undefined
+                ? ''
+                : String(existingRequest.offered_price_npr),
+            notes: existingRequest.notes || '',
+          }
+        : createInitialForm(currentUser.phone)
+    );
     setRequestProgram(program);
   };
 
@@ -227,12 +265,21 @@ export default function RideWithExpertsClient() {
       ) : (
         <>
           {featuredProgram && (
-            <FeaturedProgramCard program={featuredProgram} onRequest={() => openRequest(featuredProgram)} />
+            <FeaturedProgramCard
+              program={featuredProgram}
+              existingRequest={requestByProgramId.get(featuredProgram.id)}
+              onRequest={() => openRequest(featuredProgram)}
+            />
           )}
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {remainingPrograms.map((program) => (
-              <ProgramCard key={program.id} program={program} onRequest={() => openRequest(program)} />
+              <ProgramCard
+                key={program.id}
+                program={program}
+                existingRequest={requestByProgramId.get(program.id)}
+                onRequest={() => openRequest(program)}
+              />
             ))}
           </div>
         </>
@@ -253,7 +300,7 @@ export default function RideWithExpertsClient() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Dialog.Title className="text-xl font-black text-gray-950 dark:text-white">
-                  Request this ride
+                  {existingRequestForModal ? 'Update ride request' : 'Request this ride'}
                 </Dialog.Title>
                 {requestProgram && (
                   <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
@@ -268,6 +315,11 @@ export default function RideWithExpertsClient() {
 
             {requestProgram && (
               <form onSubmit={submitRequest} className="mt-5 space-y-4">
+                {existingRequestForModal && (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900 dark:border-emerald-800/70 dark:bg-emerald-950/40 dark:text-emerald-100">
+                    You already requested this ride. Changes here will update your existing request.
+                  </div>
+                )}
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
                   <p className="font-bold">Available dates</p>
                   <p className="mt-1 text-xs leading-5">
@@ -366,7 +418,11 @@ export default function RideWithExpertsClient() {
                   disabled={requestMutation.isPending || Boolean(dateError)}
                   className={`${primaryButtonClass} w-full disabled:cursor-not-allowed disabled:opacity-60`}
                 >
-                  {requestMutation.isPending ? 'Submitting...' : 'Send request'}
+                  {requestMutation.isPending
+                    ? 'Submitting...'
+                    : existingRequestForModal
+                      ? 'Update request'
+                      : 'Send request'}
                 </button>
               </form>
             )}
@@ -379,9 +435,11 @@ export default function RideWithExpertsClient() {
 
 function FeaturedProgramCard({
   program,
+  existingRequest,
   onRequest,
 }: {
   program: ExpertRideProgram;
+  existingRequest?: ExpertRideProgramRequest;
   onRequest: () => void;
 }) {
   const expertName = getExpertName(program);
@@ -417,6 +475,7 @@ function FeaturedProgramCard({
         <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
           Featured ride
         </p>
+        {existingRequest && <RequestStatusBadge request={existingRequest} className="mt-3" />}
         <h2 className="mt-3 text-3xl font-black leading-tight text-gray-950 dark:text-white md:text-5xl">
           Ride with {expertName} to {trailName}
         </h2>
@@ -427,8 +486,13 @@ function FeaturedProgramCard({
         <ProgramMeta program={program} />
         <div className="mt-6 flex flex-wrap gap-2">
           <button type="button" onClick={onRequest} className={primaryButtonClass}>
-            Request this ride
+            {existingRequest ? 'Update request' : 'Request this ride'}
           </button>
+          {existingRequest && (
+            <Link href="/participants/me" className={secondaryButtonClass}>
+              View request
+            </Link>
+          )}
           <Link href={`/experts/${program.expert_user_id}`} className={secondaryButtonClass}>
             View expert
           </Link>
@@ -443,7 +507,15 @@ function FeaturedProgramCard({
   );
 }
 
-function ProgramCard({ program, onRequest }: { program: ExpertRideProgram; onRequest: () => void }) {
+function ProgramCard({
+  program,
+  existingRequest,
+  onRequest,
+}: {
+  program: ExpertRideProgram;
+  existingRequest?: ExpertRideProgramRequest;
+  onRequest: () => void;
+}) {
   const expertName = getExpertName(program);
   const trailName = getTrailName(program);
 
@@ -462,19 +534,48 @@ function ProgramCard({ program, onRequest }: { program: ExpertRideProgram; onReq
       <h4 className="mt-4 text-xl font-black leading-tight text-gray-950 dark:text-white">
         {trailName}
       </h4>
+      {existingRequest && <RequestStatusBadge request={existingRequest} className="mt-3" />}
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
         {program.description || `${program.expert_city || 'Kathmandu'} ride support for ${trailName}.`}
       </p>
       <ProgramMeta program={program} compact />
       <div className="mt-auto flex flex-wrap gap-2 pt-5">
         <button type="button" onClick={onRequest} className={`${primaryButtonClass} flex-1`}>
-          Request ride
+          {existingRequest ? 'Update request' : 'Request ride'}
         </button>
+        {existingRequest && (
+          <Link href="/participants/me" className={secondaryButtonClass}>
+            Request
+          </Link>
+        )}
         <Link href={`/experts/${program.expert_user_id}`} className={secondaryButtonClass}>
           Expert
         </Link>
       </div>
     </article>
+  );
+}
+
+function RequestStatusBadge({
+  request,
+  className = '',
+}: {
+  request: ExpertRideProgramRequest;
+  className?: string;
+}) {
+  const date = request.preferred_date?.slice(0, 10);
+
+  return (
+    <div
+      className={`inline-flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900 dark:border-emerald-800/70 dark:bg-emerald-950/45 dark:text-emerald-100 ${className}`}
+    >
+      <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-white dark:bg-emerald-300 dark:text-emerald-950">
+        Requested
+      </span>
+      <span className="capitalize">{request.status}</span>
+      {date && <span>Preferred {date}</span>}
+      {request.preferred_time && <span>{request.preferred_time}</span>}
+    </div>
   );
 }
 

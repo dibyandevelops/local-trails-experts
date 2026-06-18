@@ -43,6 +43,7 @@ type ExpertRideProgramRequest = {
   group_size: number;
   offered_price_npr: number | null;
   notes: string | null;
+  expert_response_note: string | null;
   status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
   created_at: string;
   program_title: string | null;
@@ -79,6 +80,11 @@ type ExpertEventWithParticipants = Event & {
   participants?: EventParticipant[];
 };
 
+type RideProgramRequestAction = {
+  request: ExpertRideProgramRequest;
+  status: ExpertRideProgramRequest['status'];
+} | null;
+
 export default function ExpertProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
@@ -102,6 +108,9 @@ export default function ExpertProfilePage() {
   const [rideProgramMessage, setRideProgramMessage] = useState<string | null>(null);
   const [rideProgramRequestMessage, setRideProgramRequestMessage] = useState<string | null>(null);
   const [updatingRideProgramRequestId, setUpdatingRideProgramRequestId] = useState<string | null>(null);
+  const [rideProgramRequestAction, setRideProgramRequestAction] =
+    useState<RideProgramRequestAction>(null);
+  const [rideProgramResponseNote, setRideProgramResponseNote] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [requestForEvent, setRequestForEvent] = useState<ExpertTrailRequest | null>(
@@ -422,7 +431,8 @@ export default function ExpertProfilePage() {
 
   const updateRideProgramRequestStatus = async (
     requestId: string,
-    status: ExpertRideProgramRequest['status']
+    status: ExpertRideProgramRequest['status'],
+    responseNote = ''
   ) => {
     setRideProgramRequestMessage(null);
     setUpdatingRideProgramRequestId(requestId);
@@ -430,22 +440,62 @@ export default function ExpertProfilePage() {
       const response = await fetch('/api/experts/me/ride-program-requests', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: requestId, status }),
+        body: JSON.stringify({
+          id: requestId,
+          status,
+          expert_response_note: responseNote.trim() || null,
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.error || 'Failed to update ride request');
       }
       setRideProgramRequests((prev) =>
-        prev.map((request) => (request.id === requestId ? { ...request, status } : request))
+        prev.map((request) =>
+          request.id === requestId
+            ? {
+                ...request,
+                status,
+                expert_response_note: responseNote.trim() || null,
+              }
+            : request
+        )
       );
       setRideProgramRequestMessage(`Ride request marked ${status}.`);
+      return true;
     } catch (error) {
       setRideProgramRequestMessage(
         error instanceof Error ? error.message : 'Failed to update ride request.'
       );
+      return false;
     } finally {
       setUpdatingRideProgramRequestId(null);
+    }
+  };
+
+  const openRideProgramRequestAction = (
+    request: ExpertRideProgramRequest,
+    status: ExpertRideProgramRequest['status']
+  ) => {
+    setRideProgramRequestAction({ request, status });
+    setRideProgramResponseNote(request.expert_response_note || '');
+    setRideProgramRequestMessage(null);
+  };
+
+  const closeRideProgramRequestAction = () => {
+    setRideProgramRequestAction(null);
+    setRideProgramResponseNote('');
+  };
+
+  const confirmRideProgramRequestAction = async () => {
+    if (!rideProgramRequestAction) return;
+    const updated = await updateRideProgramRequestStatus(
+      rideProgramRequestAction.request.id,
+      rideProgramRequestAction.status,
+      rideProgramResponseNote
+    );
+    if (updated) {
+      closeRideProgramRequestAction();
     }
   };
 
@@ -718,36 +768,41 @@ export default function ExpertProfilePage() {
                     {request.notes}
                   </p>
                 )}
+                {request.expert_response_note && (
+                  <p className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
+                    Expert note: {request.expert_response_note}
+                  </p>
+                )}
                 {['pending', 'accepted'].includes(request.status) && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {request.status === 'pending' && (
+                      {request.status === 'pending' && (
+                        <button
+                          type="button"
+                          onClick={() => openRideProgramRequestAction(request, 'accepted')}
+                          disabled={updatingRideProgramRequestId === request.id}
+                          className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+                        >
+                          Accept
+                        </button>
+                      )}
+                      {request.status === 'accepted' && (
+                        <button
+                          type="button"
+                          onClick={() => openRideProgramRequestAction(request, 'completed')}
+                          disabled={updatingRideProgramRequestId === request.id}
+                          className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
+                        >
+                          Mark completed
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => updateRideProgramRequestStatus(request.id, 'accepted')}
+                        onClick={() => openRideProgramRequestAction(request, 'declined')}
                         disabled={updatingRideProgramRequestId === request.id}
-                        className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+                        className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
                       >
-                        Accept
+                        Decline
                       </button>
-                    )}
-                    {request.status === 'accepted' && (
-                      <button
-                        type="button"
-                        onClick={() => updateRideProgramRequestStatus(request.id, 'completed')}
-                        disabled={updatingRideProgramRequestId === request.id}
-                        className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
-                      >
-                        Mark completed
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => updateRideProgramRequestStatus(request.id, 'declined')}
-                      disabled={updatingRideProgramRequestId === request.id}
-                      className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
-                    >
-                      Decline
-                    </button>
                   </div>
                 )}
               </div>
@@ -1594,6 +1649,108 @@ export default function ExpertProfilePage() {
                 </button>
               </div>
             </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root
+        open={Boolean(rideProgramRequestAction)}
+        onOpenChange={(open) => {
+          if (!open) closeRideProgramRequestAction();
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 shadow-2xl dark:bg-slate-950">
+            {rideProgramRequestAction && (() => {
+              const { request, status } = rideProgramRequestAction;
+              const actionLabel =
+                status === 'accepted'
+                  ? 'Accept ride request'
+                  : status === 'declined'
+                    ? 'Decline ride request'
+                    : status === 'completed'
+                      ? 'Complete ride request'
+                      : 'Update ride request';
+              const placeholder =
+                status === 'accepted'
+                  ? 'Meeting point, timing, contact instruction, or what the participant should prepare.'
+                  : status === 'declined'
+                    ? 'Short reason or alternate suggestion.'
+                    : status === 'completed'
+                      ? 'Optional closing note or follow-up.'
+                      : 'Optional response note.';
+
+              return (
+                <div>
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div>
+                      <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                        {actionLabel}
+                      </Dialog.Title>
+                      <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                        Add an optional note. The participant will see it and receive it in the notification.
+                      </Dialog.Description>
+                    </div>
+                    <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                      Close
+                    </Dialog.Close>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                    <p className="font-semibold text-gray-900 dark:text-slate-100">
+                      {request.program_title || request.trail_name || 'Ride request'}
+                    </p>
+                    <p className="mt-1">
+                      Participant: {request.requester_name || 'Participant'} ({request.requester_email})
+                    </p>
+                    <p className="mt-1">
+                      Preferred: {request.preferred_date}
+                      {request.preferred_time ? ' at ' + request.preferred_time : ''}
+                    </p>
+                    <p className="mt-1">Group size: {request.group_size}</p>
+                    {request.notes && (
+                      <p className="mt-2 rounded-lg bg-white px-3 py-2 dark:bg-slate-950">
+                        Participant note: {request.notes}
+                      </p>
+                    )}
+                  </div>
+
+                  <label className="mt-4 block text-sm font-semibold text-gray-700 dark:text-slate-200">
+                    Response note
+                    <textarea
+                      rows={4}
+                      value={rideProgramResponseNote}
+                      onChange={(event) => setRideProgramResponseNote(event.target.value)}
+                      placeholder={placeholder}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    />
+                  </label>
+
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={closeRideProgramRequestAction}
+                      className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmRideProgramRequestAction}
+                      disabled={updatingRideProgramRequestId === request.id}
+                      className={
+                        status === 'declined'
+                          ? 'rounded-lg bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800 disabled:opacity-60'
+                          : 'rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60'
+                      }
+                    >
+                      {updatingRideProgramRequestId === request.id ? 'Saving...' : actionLabel}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
