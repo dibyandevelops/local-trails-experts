@@ -2,14 +2,30 @@ import type { Metadata } from 'next';
 import RideWithExpertsClient from './ride-with-experts-client';
 
 export const metadata: Metadata = {
-  title: 'Ride with Local Experts | LocoXperts',
+  title: 'Ride with Experts in Kathmandu | LocoXperts',
   description:
-    'Request a local ride with verified MTB and trail experts around Kathmandu.',
+    'Request MTB rides with verified local experts on Kathmandu and Nepal trails. Choose a trail, preferred date, group size, and coordinate after the expert accepts.',
+  keywords: [
+    'ride with experts Kathmandu',
+    'MTB guides Kathmandu',
+    'mountain bike experts Nepal',
+    'guided MTB rides Nepal',
+    'Kathmandu trail experts',
+    'LocoXperts ride support',
+  ],
+  alternates: { canonical: '/ride-with-experts' },
+  openGraph: {
+    title: 'Ride with Experts in Kathmandu',
+    description:
+      'Request MTB rides with verified local experts on Kathmandu and Nepal trails.',
+    url: '/ride-with-experts',
+    type: 'website',
+  },
 };
 
 export default function RideWithExpertsPage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_30%),linear-gradient(180deg,#f0fdf4_0%,#ffffff_48%,#f8fafc_100%)] pb-12 text-slate-950 dark:bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.12),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(132,204,22,0.1),transparent_30%),linear-gradient(180deg,#020617_0%,#061712_52%,#020617_100%)] dark:text-slate-50">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.13),transparent_30%),linear-gradient(180deg,#f7fee7_0%,#ffffff_42%,#f8fafc_100%)] pb-12 text-slate-950 dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.08),transparent_28%),linear-gradient(180deg,#07110f_0%,#0f172a_48%,#020617_100%)] dark:text-slate-50">
       <RideWithExpertsClient />
     </main>
   );

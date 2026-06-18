@@ -99,7 +99,8 @@ export default function ExpertProfilePage() {
   const [selectedAssociatedTrailIds, setSelectedAssociatedTrailIds] = useState<string[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTrailRequests, setLoadingTrailRequests] = useState(true);
-  const [loadingTrails, setLoadingTrails] = useState(true);
+  const [loadingTrails, setLoadingTrails] = useState(false);
+  const [hasLoadedTrails, setHasLoadedTrails] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savingAssociatedTrails, setSavingAssociatedTrails] = useState(false);
   const [savingRideProgram, setSavingRideProgram] = useState(false);
@@ -122,6 +123,8 @@ export default function ExpertProfilePage() {
   const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [rideProgramModalOpen, setRideProgramModalOpen] = useState(false);
+  const [associatedTrailsModalOpen, setAssociatedTrailsModalOpen] = useState(false);
   const [verificationSaving, setVerificationSaving] = useState(false);
   const [participantsEventTitle, setParticipantsEventTitle] = useState('');
   const [participantsList, setParticipantsList] = useState<EventParticipant[]>([]);
@@ -164,6 +167,15 @@ export default function ExpertProfilePage() {
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
+  const pendingRideProgramRequests = useMemo(
+    () => rideProgramRequests.filter((request) => request.status === 'pending'),
+    [rideProgramRequests]
+  );
+  const activeRidePrograms = useMemo(
+    () => ridePrograms.filter((program) => program.is_active),
+    [ridePrograms]
+  );
+  const pausedRidePrograms = ridePrograms.length - activeRidePrograms.length;
   const sortedAvailableTrails = useMemo(() => {
     const savedAssociated = new Set(associatedTrails.map((trail) => trail.id));
     return [...availableTrails].sort((a, b) => {
@@ -280,43 +292,66 @@ export default function ExpertProfilePage() {
         if (!currentUser || currentUser.role !== 'expert') {
           setLoadingEvents(false);
           setLoadingTrailRequests(false);
-          setLoadingTrails(false);
           return;
         }
 
-        const [eventsRes, requestsRes, trailsRes, programsRes, programRequestsRes] = await Promise.all([
+        const [eventsRes, requestsRes, programsRes, programRequestsRes] = await Promise.all([
           fetch(`/api/experts/${currentUser.id}/events`),
           fetch('/api/experts/me/alerts'),
-          fetch('/api/experts/me/trails'),
           fetch('/api/experts/me/ride-programs'),
           fetch('/api/experts/me/ride-program-requests'),
         ]);
         const eventsData = await eventsRes.json();
         const requestsData = await requestsRes.json();
-        const trailsData = await trailsRes.json();
         const programsData = await programsRes.json();
         const programRequestsData = await programRequestsRes.json();
         setEvents(eventsData.events || []);
         setTrailRequests(requestsData.requests || []);
-        setCreatedTrails(trailsData.created_trails || trailsData.trails || []);
-        setAssociatedTrails(trailsData.associated_trails || []);
-        setAvailableTrails(trailsData.available_trails || []);
         setRidePrograms(programsData.programs || []);
         setRideProgramRequests(programRequestsData.requests || []);
-        setSelectedAssociatedTrailIds(
-          (trailsData.associated_trails || []).map((trail: ExpertTrail) => trail.id)
-        );
       } catch (error) {
         console.error('Error loading expert profile', error);
       } finally {
         setLoadingEvents(false);
         setLoadingTrailRequests(false);
-        setLoadingTrails(false);
       }
     };
 
     fetchEventsAndRequests();
   }, [currentUser]);
+
+  const loadExpertTrails = async (force = false) => {
+    if (!currentUser || currentUser.role !== 'expert') return;
+    if (hasLoadedTrails && !force) return;
+    setLoadingTrails(true);
+    setTrailAssociationMessage(null);
+    try {
+      const response = await fetch('/api/experts/me/trails');
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to load expert trails');
+      }
+      setCreatedTrails(data.created_trails || data.trails || []);
+      setAssociatedTrails(data.associated_trails || []);
+      setAvailableTrails(data.available_trails || []);
+      setSelectedAssociatedTrailIds(
+        (data.associated_trails || []).map((trail: ExpertTrail) => trail.id)
+      );
+      setHasLoadedTrails(true);
+    } catch (error) {
+      setTrailAssociationMessage(
+        error instanceof Error ? error.message : 'Failed to load expert trails.'
+      );
+    } finally {
+      setLoadingTrails(false);
+    }
+  };
+
+  useEffect(() => {
+    if (associatedTrailsModalOpen || rideProgramModalOpen) {
+      void loadExpertTrails();
+    }
+  }, [associatedTrailsModalOpen, rideProgramModalOpen]);
 
   const toggleAssociatedTrail = (trailId: string) => {
     setTrailAssociationMessage(null);
@@ -349,7 +384,9 @@ export default function ExpertProfilePage() {
       setSelectedAssociatedTrailIds(
         (data.associated_trails || []).map((trail: ExpertTrail) => trail.id)
       );
+      setHasLoadedTrails(true);
       setTrailAssociationMessage('Associated trails updated.');
+      setAssociatedTrailsModalOpen(false);
     } catch (error) {
       setTrailAssociationMessage(
         error instanceof Error ? error.message : 'Failed to update associated trails.'
@@ -399,6 +436,7 @@ export default function ExpertProfilePage() {
         availableTimeNote: '',
       }));
       setRideProgramMessage('Ride program saved.');
+      setRideProgramModalOpen(false);
     } catch (error) {
       setRideProgramMessage(
         error instanceof Error ? error.message : 'Failed to save ride program.'
@@ -499,7 +537,7 @@ export default function ExpertProfilePage() {
     }
   };
 
-  if (loadingUser || loadingEvents || loadingTrailRequests || loadingTrails) {
+  if (loadingUser || loadingEvents || loadingTrailRequests) {
     return <div className="text-gray-600 dark:text-slate-300">Loading profile...</div>;
   }
 
@@ -533,282 +571,473 @@ export default function ExpertProfilePage() {
           </p>
         </div>
       </section>
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Google Login
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-slate-300">
-              Connect your Google account to enable one-tap login
-            </p>
+      <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="border-b border-gray-200 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 md:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="h-20 w-20 overflow-hidden rounded-3xl border border-emerald-200 bg-emerald-100 dark:border-slate-700 dark:bg-slate-800">
+                {editForm.profilePhotoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={editForm.profilePhotoUrl}
+                    alt={editForm.name || 'Expert profile'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xl font-black text-emerald-900 dark:text-emerald-100">
+                    {initials}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-2xl font-black text-gray-950 dark:text-white">
+                    {editForm.name || 'Expert profile'}
+                  </h2>
+                  {user.is_verified_expert ? (
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200">
+                      Verified Expert
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+                      Pending Verification
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  {editForm.city || 'City not added'} · {selectedSports.length > 0 ? selectedSports.map((sport) => getSportLabel(sport as SportType)).join(', ') : 'Sports not added'}
+                </p>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-700 dark:text-slate-200">
+                  {editForm.bio?.trim() || 'Add a short bio so riders understand your trail knowledge, riding style, and experience.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setProfileModalOpen(true)}
+                className="inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              >
+                Edit profile
+              </button>
+              <button
+                type="button"
+                onClick={() => setVerificationModalOpen(true)}
+                className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
+              >
+                Update verification
+              </button>
+            </div>
           </div>
-          {user.google_sub ? (
-            <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-              Connected
-            </span>
-          ) : (
-            <Link
-              href={`/api/auth/google/start?mode=connect&next=${encodeURIComponent('/experts/me')}`}
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-            >
-              Connect Google
-            </Link>
-          )}
         </div>
-        {googleNotice && (
-          <p className="mt-3 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-            {googleNotice}
-          </p>
-        )}
-        {!user.google_sub && (
-          <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
-            For security, the Google email must match your expert account email.
-          </p>
-        )}
-      </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Profile Details</h2>
-            <p className="text-sm text-gray-600 dark:text-slate-300">
-              Keep your public expert information and verification details updated.
+        <div className="p-5 md:p-6">
+          {message && (
+            <p
+              className={`mb-4 rounded-xl border px-3 py-2 text-sm ${
+                message.toLowerCase().includes('select at least one sport') ||
+                message.toLowerCase().includes('accept the terms')
+                  ? 'border-red-100 bg-red-50 text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200'
+                  : 'border-green-100 bg-green-50 text-green-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200'
+              }`}
+            >
+              {message}
             </p>
+          )}
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Email</p>
+              <p className="mt-1 truncate text-sm font-semibold text-gray-900 dark:text-slate-100">{user.email || 'Not added'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Phone</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-slate-100">{editForm.phone || 'Not added'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Google Login</p>
+              {user.google_sub ? (
+                <span className="mt-1 inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
+                  Connected
+                </span>
+              ) : (
+                <Link
+                  href={`/api/auth/google/start?mode=connect&next=${encodeURIComponent('/experts/me')}`}
+                  className="mt-1 inline-flex text-sm font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300"
+                >
+                  Connect Google
+                </Link>
+              )}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setProfileModalOpen(true)}
-              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-            >
-              Edit profile
-            </button>
-            <button
-              type="button"
-              onClick={() => setVerificationModalOpen(true)}
-              className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
-            >
-              Update verification
-            </button>
-          </div>
-        </div>
-        {STRAVA_ENABLED && (
-          <>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              {stravaSummary?.connected ? (
-                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800 dark:bg-orange-950/50 dark:text-orange-200">
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {STRAVA_ENABLED && (
+              stravaSummary?.connected ? (
+                <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800 dark:bg-orange-950/50 dark:text-orange-200">
                   Strava Connected
                 </span>
               ) : (
                 <Link
                   href={`${ApiPath.StravaAuthorize}?mode=connect`}
-                  className="inline-flex items-center rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200 dark:hover:bg-orange-900/50"
+                  className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200 dark:hover:bg-orange-900/50"
                 >
                   Connect with Strava
                 </Link>
-              )}
-              {stravaSummary?.syncedAt && (
-                <span className="text-xs text-gray-500 dark:text-slate-400">
-                  Last synced <DateText value={stravaSummary.syncedAt} pattern="PPP p" />
-                </span>
-              )}
-            </div>
-            {stravaSummary?.connected && (
-              <div className="mb-4 flex flex-wrap items-center gap-3 text-[11px] text-orange-700 dark:text-orange-200">
-                {stravaSummary?.profile?.id && (
-                  <a
-                    href={`https://www.strava.com/athletes/${stravaSummary.profile.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-semibold text-orange-700 underline decoration-orange-400 dark:text-orange-200"
-                  >
-                    View on Strava
-                  </a>
-                )}
-                <span className="uppercase tracking-wide">Powered by Strava</span>
-              </div>
+              )
             )}
-          </>
-        )}
-        {user.is_verified_expert ? (
-          <span className="mb-4 inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800 dark:bg-emerald-950/50 dark:text-emerald-200">
-            Verified Expert
-          </span>
-        ) : (
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-              Pending Verification
-            </span>
-            <button
-              type="button"
-              onClick={() => setVerificationModalOpen(true)}
-              className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
-            >
-              Complete verification details
-            </button>
+            {stravaSummary?.syncedAt && (
+              <span className="text-xs text-gray-500 dark:text-slate-400">
+                Last synced <DateText value={stravaSummary.syncedAt} pattern="PPP p" />
+              </span>
+            )}
+            {stravaSummary?.connected && stravaSummary?.profile?.id && (
+              <a
+                href={`https://www.strava.com/athletes/${stravaSummary.profile.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-semibold text-orange-700 underline decoration-orange-400 dark:text-orange-200"
+              >
+                View on Strava
+              </a>
+            )}
+            {!user.is_verified_expert && (
+              <button
+                type="button"
+                onClick={() => setVerificationModalOpen(true)}
+                className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
+              >
+                Complete verification details
+              </button>
+            )}
           </div>
-        )}
-        {message && (
-          <p
-            className={`text-sm border rounded-lg px-3 py-2 mb-3 ${
-              message.toLowerCase().includes('select at least one sport') ||
-              message.toLowerCase().includes('accept the terms')
-                ? 'border-red-100 bg-red-50 text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200'
-                : 'border-green-100 bg-green-50 text-green-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200'
-            }`}
-          >
-            {message}
-          </p>
-        )}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Full name</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.name || 'Not added'}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Email</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{user.email || 'Not added'}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Phone</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.phone || 'Not added'}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">City</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.city || 'Not added'}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Sports</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
-              {selectedSports.length > 0
-                ? selectedSports.map((sport) => getSportLabel(sport as SportType)).join(', ')
-                : 'Not added'}
+
+          {googleNotice && (
+            <p className="mt-4 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+              {googleNotice}
             </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Bio</p>
-            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{editForm.bio?.trim() || 'Not added'}</p>
-          </div>
+          )}
+          {!user.google_sub && (
+            <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
+              For security, the Google email must match your expert account email.
+            </p>
+          )}
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-3 flex items-center justify-between gap-3">
+      <section id="associated-trails" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Ride Program Participants
+              Trails Associated With You
             </h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-              Requests from participants for your Ride with Experts programs.
+              Pin public trails you guide, ride, or know well. Open the picker only when you need to update them.
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {associatedTrails.length > 0 ? (
+                associatedTrails.slice(0, 6).map((trail) => (
+                  <Link
+                    key={`associated-summary-${trail.id}`}
+                    href={`/trails/${trail.slug || trail.id}`}
+                    className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-100"
+                  >
+                    {trail.name}
+                  </Link>
+                ))
+              ) : (
+                <span className="text-sm text-gray-500 dark:text-slate-400">
+                  {hasLoadedTrails ? 'No associated trails selected yet.' : 'Open the picker to load available trails.'}
+                </span>
+              )}
+              {associatedTrails.length > 6 && (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  +{associatedTrails.length - 6} more
+                </span>
+              )}
+            </div>
           </div>
-          {rideProgramRequests.length > 0 && (
-            <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
-              {rideProgramRequests.length} request{rideProgramRequests.length === 1 ? '' : 's'}
+          <div className="flex flex-col items-start gap-2 md:items-end">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+              {selectedAssociatedTrailIds.length}/12 selected
             </span>
-          )}
+            <button
+              type="button"
+              onClick={() => setAssociatedTrailsModalOpen(true)}
+              className="rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              Manage associated trails
+            </button>
+          </div>
         </div>
-        {rideProgramRequestMessage && (
-          <p className="mb-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
-            {rideProgramRequestMessage}
+        {trailAssociationMessage && !associatedTrailsModalOpen && (
+          <p className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-100">
+            {trailAssociationMessage}
           </p>
         )}
-        {rideProgramRequests.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-slate-300">
-            No ride program participant requests yet.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {rideProgramRequests.map((request) => (
-              <div
-                key={request.id}
-                className="rounded-xl border border-gray-200 p-4 dark:border-slate-800 dark:bg-slate-950/40"
-              >
-                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+      </section>
+
+      <section className="overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <span className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-800 dark:border-slate-600 dark:bg-slate-800 dark:text-emerald-200">
+                Ride with Experts
+              </span>
+              <h2 className="mt-3 text-2xl font-black text-gray-950 dark:text-white">
+                Manage ride programs and participant requests
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600 dark:text-slate-300">
+                Create requestable rides from trails associated with your expert profile, review participant
+                requests, and pause or publish offers from one place.
+              </p>
+            </div>
+            <Link
+              href="/ride-with-experts"
+              className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-emerald-500"
+            >
+              View public page
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-emerald-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Pending requests</p>
+              <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{pendingRideProgramRequests.length}</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Live programs</p>
+              <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{activeRidePrograms.length}</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Associated trails</p>
+              <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{associatedTrails.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6 p-5 md:p-6">
+          {(rideProgramMessage || rideProgramRequestMessage) && (
+            <div className="space-y-2">
+              {rideProgramMessage && (
+                <p className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-100">
+                  {rideProgramMessage}
+                </p>
+              )}
+              {rideProgramRequestMessage && (
+                <p className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-100">
+                  {rideProgramRequestMessage}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-950/60">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                        {request.program_title || request.trail_name || 'Ride program request'}
-                      </p>
-                      <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold capitalize text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                        {request.status}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                      {request.trail_location || 'Trail location not set'}
-                      {request.program_availability_weekdays?.length
-                        ? ` · Program availability: ${request.program_availability_weekdays.join(', ')}`
-                        : request.expert_availability_weekdays?.length
-                          ? ` · Profile availability: ${request.expert_availability_weekdays.join(', ')}`
-                        : ' · Flexible availability'}
+                    <h3 className="text-base font-bold text-gray-950 dark:text-white">Create a ride program</h3>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                      Keep creation separate from request review. Open the form when you are ready to publish a new ride offer.
+                    </p>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
+                      Public title is generated as Ride with {editForm.name || 'you'} to the selected trail.
                     </p>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-slate-400">
-                    Requested <DateText value={request.created_at} pattern="PPP p" />
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setRideProgramModalOpen(true)}
+                    disabled={loadingTrails || (hasLoadedTrails && associatedTrails.length === 0)}
+                    className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loadingTrails ? 'Loading trails...' : 'New ride program'}
+                  </button>
                 </div>
-                <div className="mt-3 grid gap-2 text-xs text-gray-600 dark:text-slate-300 md:grid-cols-2">
-                  <p>
-                    Participant: {request.requester_name || 'Participant'} ({request.requester_email})
-                  </p>
-                  <p>
-                    Preferred: {request.preferred_date}
-                    {request.preferred_time ? ` at ${request.preferred_time}` : ''}
-                  </p>
-                  <p>Group size: {request.group_size}</p>
-                  <p>
-                    Offered amount:{' '}
-                    {request.offered_price_npr ? `NPR ${request.offered_price_npr}` : 'Not added'}
-                  </p>
-                  {request.requester_phone && <p>Phone: {request.requester_phone}</p>}
-                </div>
-                {request.notes && (
-                  <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-slate-800 dark:text-slate-200">
-                    {request.notes}
-                  </p>
-                )}
-                {request.expert_response_note && (
-                  <p className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
-                    Expert note: {request.expert_response_note}
-                  </p>
-                )}
-                {['pending', 'accepted'].includes(request.status) && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                      {request.status === 'pending' && (
-                        <button
-                          type="button"
-                          onClick={() => openRideProgramRequestAction(request, 'accepted')}
-                          disabled={updatingRideProgramRequestId === request.id}
-                          className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-                        >
-                          Accept
-                        </button>
-                      )}
-                      {request.status === 'accepted' && (
-                        <button
-                          type="button"
-                          onClick={() => openRideProgramRequestAction(request, 'completed')}
-                          disabled={updatingRideProgramRequestId === request.id}
-                          className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
-                        >
-                          Mark completed
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => openRideProgramRequestAction(request, 'declined')}
-                        disabled={updatingRideProgramRequestId === request.id}
-                        className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
-                      >
-                        Decline
-                      </button>
+                {associatedTrails.length === 0 && (
+                  <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-white px-4 py-3 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    Associate at least one trail before creating ride programs. Use the associated trails section below.
                   </div>
                 )}
               </div>
-            ))}
+
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-950/60">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-gray-950 dark:text-white">Incoming ride requests</h3>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                    Accept, decline, or complete participant requests with an optional response note.
+                  </p>
+                </div>
+                {rideProgramRequests.length > 0 && (
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-slate-800 dark:text-emerald-200">
+                    {rideProgramRequests.length} total
+                  </span>
+                )}
+              </div>
+
+              {rideProgramRequests.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                  No ride requests yet. When participants request your public programs, they will appear here.
+                </div>
+              ) : (
+                <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+                  {rideProgramRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                    >
+                      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-bold text-gray-950 dark:text-slate-100">
+                              {request.program_title || request.trail_name || 'Ride request'}
+                            </p>
+                            <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold capitalize text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                              {request.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                            {request.trail_location || 'Trail location not set'}
+                            {request.program_availability_weekdays?.length
+                              ? ` · Program availability: ${request.program_availability_weekdays.join(', ')}`
+                              : request.expert_availability_weekdays?.length
+                                ? ` · Profile availability: ${request.expert_availability_weekdays.join(', ')}`
+                              : ' · Flexible availability'}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                          <DateText value={request.created_at} pattern="PP" />
+                        </p>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 text-xs text-gray-600 dark:text-slate-300 sm:grid-cols-2">
+                        <p>Participant: {request.requester_name || 'Participant'}</p>
+                        <p>Preferred: {request.preferred_date}{request.preferred_time ? ` at ${request.preferred_time}` : ''}</p>
+                        <p>Group size: {request.group_size}</p>
+                        <p>Offer: {request.offered_price_npr ? `NPR ${request.offered_price_npr}` : 'Not added'}</p>
+                        {request.requester_phone && <p>Phone: {request.requester_phone}</p>}
+                        <p className="truncate">Email: {request.requester_email}</p>
+                      </div>
+
+                      {request.notes && (
+                        <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                          {request.notes}
+                        </p>
+                      )}
+                      {request.expert_response_note && (
+                        <p className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-100">
+                          Expert note: {request.expert_response_note}
+                        </p>
+                      )}
+
+                      {['pending', 'accepted'].includes(request.status) && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {request.status === 'pending' && (
+                            <button
+                              type="button"
+                              onClick={() => openRideProgramRequestAction(request, 'accepted')}
+                              disabled={updatingRideProgramRequestId === request.id}
+                              className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                            >
+                              Accept
+                            </button>
+                          )}
+                          {request.status === 'accepted' && (
+                            <button
+                              type="button"
+                              onClick={() => openRideProgramRequestAction(request, 'completed')}
+                              disabled={updatingRideProgramRequestId === request.id}
+                              className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200"
+                            >
+                              Mark completed
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => openRideProgramRequestAction(request, 'declined')}
+                            disabled={updatingRideProgramRequestId === request.id}
+                            className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-950/60">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-base font-bold text-gray-950 dark:text-white">Your ride programs</h3>
+                  {pausedRidePrograms > 0 && (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                      {pausedRidePrograms} paused
+                    </span>
+                  )}
+                </div>
+
+                {ridePrograms.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    No ride programs created yet.
+                  </p>
+                ) : (
+                  <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+                    {ridePrograms.map((program) => (
+                      <div
+                        key={program.id}
+                        className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="text-sm font-bold text-gray-950 dark:text-slate-100">
+                                {program.title}
+                              </h4>
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                                  program.is_active
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
+                                    : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300'
+                                }`}
+                              >
+                                {program.is_active ? 'Live' : 'Paused'}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                              {program.trail_location || 'Trail location not set'}
+                              {program.price_npr ? ` · NPR ${program.price_npr}` : ''}
+                              {program.max_group_size ? ` · Up to ${program.max_group_size} riders` : ''}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                              Availability:{' '}
+                              {program.availability_weekdays?.length
+                                ? program.availability_weekdays.join(', ')
+                                : 'Inherits profile availability'}
+                              {program.available_time_note ? ` · ${program.available_time_note}` : ''}
+                            </p>
+                            {program.description && (
+                              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                                {program.description}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleRideProgramActive(program.id, !program.is_active)}
+                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                          >
+                            {program.is_active ? 'Pause' : 'Make live'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
           </div>
-        )}
+        </div>
       </section>
 
       <section id="trail-requests" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -962,350 +1191,21 @@ export default function ExpertProfilePage() {
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Trails Associated With You
-            </h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-              Pin public trails you guide, ride, or know well. These appear on your public expert profile.
-            </p>
-          </div>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
-            {selectedAssociatedTrailIds.length}/12 selected
-          </span>
-        </div>
-
-        {associatedTrails.length > 0 && (
-          <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/30">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-              Currently shown on profile
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {associatedTrails.map((trail) => (
-                <Link
-                  key={`associated-${trail.id}`}
-                  href={`/trails/${trail.slug || trail.id}`}
-                  className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/50"
-                >
-                  {trail.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {availableTrails.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-slate-300">
-            No approved visible trails are available to associate yet.
-          </p>
-        ) : (
-          <div className="max-h-80 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-800">
-            <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-950 dark:text-slate-400">
-                <tr>
-                  <th className="px-3 py-2">Select</th>
-                  <th className="px-3 py-2">Trail</th>
-                  <th className="px-3 py-2">Location</th>
-                  <th className="px-3 py-2">Sport</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedAvailableTrails.map((trail) => {
-                  const checked = selectedAssociatedTrailIds.includes(trail.id);
-                  return (
-                    <tr key={`available-${trail.id}`} className="border-t border-gray-200 dark:border-slate-800">
-                      <td className="px-3 py-3">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleAssociatedTrail(trail.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
-                          aria-label={`Associate ${trail.name}`}
-                        />
-                      </td>
-                      <td className="px-3 py-3">
-                        <Link
-                          href={`/trails/${trail.slug || trail.id}`}
-                          className="text-sm font-semibold text-gray-900 hover:text-green-700 dark:text-slate-100 dark:hover:text-emerald-300"
-                        >
-                          {trail.name}
-                        </Link>
-                      </td>
-                      <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
-                        {trail.location || '—'}
-                      </td>
-                      <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
-                        {trail.sport_type ? getSportLabel(trail.sport_type as SportType) : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={saveAssociatedTrails}
-            disabled={savingAssociatedTrails}
-            className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {savingAssociatedTrails ? 'Saving...' : 'Save associated trails'}
-          </button>
-          {trailAssociationMessage && (
-            <p className="text-sm text-gray-600 dark:text-slate-300">{trailAssociationMessage}</p>
-          )}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Ride Programs
-            </h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-              Create requestable ride offers from trails associated with your expert profile.
-              The public title is generated as Ride with {editForm.name || 'you'} to trail name.
-            </p>
-          </div>
-          <Link
-            href="/ride-with-experts"
-            className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
-          >
-            View public page
-          </Link>
-        </div>
-
-        {rideProgramMessage && (
-          <p className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
-            {rideProgramMessage}
-          </p>
-        )}
-
-        {associatedTrails.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-300">
-            Associate at least one trail above before creating a ride program.
-          </p>
-        ) : (
-          <div className="grid gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950/35 md:grid-cols-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              Associated trail
-              <select
-                value={rideProgramForm.trailId}
-                onChange={(event) =>
-                  setRideProgramForm((prev) => ({ ...prev, trailId: event.target.value }))
-                }
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                <option value="">Select trail</option>
-                {associatedTrails.map((trail) => (
-                  <option key={trail.id} value={trail.id}>
-                    {trail.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              Skill level
-              <select
-                value={rideProgramForm.skillLevel}
-                onChange={(event) =>
-                  setRideProgramForm((prev) => ({ ...prev, skillLevel: event.target.value }))
-                }
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-                <option value="expert">Expert</option>
-              </select>
-            </label>
-            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              Max group size
-              <input
-                type="number"
-                min={1}
-                max={50}
-                value={rideProgramForm.maxGroupSize}
-                onChange={(event) =>
-                  setRideProgramForm((prev) => ({ ...prev, maxGroupSize: event.target.value }))
-                }
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-            </label>
-            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              Price note in NPR
-              <input
-                type="number"
-                min={0}
-                value={rideProgramForm.priceNpr}
-                onChange={(event) =>
-                  setRideProgramForm((prev) => ({ ...prev, priceNpr: event.target.value }))
-                }
-                placeholder="Optional"
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-            </label>
-            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              Duration note
-              <input
-                value={rideProgramForm.durationNote}
-                onChange={(event) =>
-                  setRideProgramForm((prev) => ({ ...prev, durationNote: event.target.value }))
-                }
-                placeholder="2-3 hours, half day, etc."
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-            </label>
-            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              Meeting point note
-              <input
-                value={rideProgramForm.meetingPointNote}
-                onChange={(event) =>
-                  setRideProgramForm((prev) => ({ ...prev, meetingPointNote: event.target.value }))
-                }
-                placeholder="Coordinate after request, shop pickup, etc."
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-            </label>
-            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
-              Program time note
-              <input
-                value={rideProgramForm.availableTimeNote}
-                onChange={(event) =>
-                  setRideProgramForm((prev) => ({ ...prev, availableTimeNote: event.target.value }))
-                }
-                placeholder="Morning only, after 7 AM, weekends before noon, etc."
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-            </label>
-            <div className="md:col-span-2">
-              <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-                Program weekdays
-              </p>
-              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                Leave empty to inherit your profile availability.
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {PROGRAM_WEEKDAYS.map((day) => {
-                  const selected = rideProgramForm.availabilityWeekdays.includes(day);
-                  return (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() =>
-                        setRideProgramForm((prev) => ({
-                          ...prev,
-                          availabilityWeekdays: selected
-                            ? prev.availabilityWeekdays.filter((item) => item !== day)
-                            : [...prev.availabilityWeekdays, day],
-                        }))
-                      }
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                        selected
-                          ? 'border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100'
-                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
-              Short description
-              <textarea
-                rows={3}
-                value={rideProgramForm.description}
-                onChange={(event) =>
-                  setRideProgramForm((prev) => ({ ...prev, description: event.target.value }))
-                }
-                placeholder="What makes this ride worth joining?"
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-            </label>
-            <div className="md:col-span-2">
-              <button
-                type="button"
-                onClick={saveRideProgram}
-                disabled={savingRideProgram}
-                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {savingRideProgram ? 'Saving...' : 'Save ride program'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-5 space-y-3">
-          {ridePrograms.length === 0 ? (
-            <p className="text-sm text-gray-600 dark:text-slate-300">
-              No ride programs created yet.
-            </p>
-          ) : (
-            ridePrograms.map((program) => (
-              <div
-                key={program.id}
-                className="rounded-xl border border-gray-200 p-4 dark:border-slate-800 dark:bg-slate-950/35"
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
-                        {program.title}
-                      </h3>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                          program.is_active
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200'
-                            : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300'
-                        }`}
-                      >
-                        {program.is_active ? 'Live' : 'Paused'}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                      {program.trail_location || 'Trail location not set'}
-                      {program.price_npr ? ` · NPR ${program.price_npr}` : ''}
-                      {program.max_group_size ? ` · Up to ${program.max_group_size} riders` : ''}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                      Availability:{' '}
-                      {program.availability_weekdays?.length
-                        ? program.availability_weekdays.join(', ')
-                        : 'Inherits profile availability'}
-                      {program.available_time_note ? ` · ${program.available_time_note}` : ''}
-                    </p>
-                    {program.description && (
-                      <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-                        {program.description}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleRideProgramActive(program.id, !program.is_active)}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-                  >
-                    {program.is_active ? 'Pause' : 'Make live'}
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
           Trails You Created
         </h2>
-        {createdTrails.length === 0 ? (
+        {!hasLoadedTrails ? (
+          <div className="flex flex-col gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-4 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+            <span>Trail data loads when you manage associated trails.</span>
+            <button
+              type="button"
+              onClick={() => setAssociatedTrailsModalOpen(true)}
+              className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-slate-800"
+            >
+              Load trails
+            </button>
+          </div>
+        ) : createdTrails.length === 0 ? (
           <p className="text-sm text-gray-600 dark:text-slate-300">
             You have not created any trails yet.
           </p>
@@ -1414,6 +1314,136 @@ export default function ExpertProfilePage() {
           </div>
         )}
       </section>
+
+      <Dialog.Root open={associatedTrailsModalOpen} onOpenChange={setAssociatedTrailsModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[88vh] w-[94vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-950">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-slate-800">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                  Manage associated trails
+                </Dialog.Title>
+                <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  Select public trails you guide, ride, or know well. These appear on your public expert profile.
+                </Dialog.Description>
+              </div>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                Close
+              </Dialog.Close>
+            </div>
+
+            <div className="max-h-[calc(88vh-82px)] overflow-y-auto p-5">
+              {loadingTrails ? (
+                <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-sm font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                  Loading trails...
+                </div>
+              ) : (
+                <>
+                  {trailAssociationMessage && (
+                    <p className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-100">
+                      {trailAssociationMessage}
+                    </p>
+                  )}
+
+                  {associatedTrails.length > 0 && (
+                    <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                        Currently shown on profile
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {associatedTrails.map((trail) => (
+                          <Link
+                            key={`associated-${trail.id}`}
+                            href={`/trails/${trail.slug || trail.id}`}
+                            className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-100"
+                          >
+                            {trail.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {availableTrails.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                      No approved visible trails are available to associate yet.
+                    </p>
+                  ) : (
+                    <div className="max-h-96 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-800">
+                      <table className="w-full text-left text-sm">
+                        <thead className="sticky top-0 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-950 dark:text-slate-400">
+                          <tr>
+                            <th className="px-3 py-2">Select</th>
+                            <th className="px-3 py-2">Trail</th>
+                            <th className="px-3 py-2">Location</th>
+                            <th className="px-3 py-2">Sport</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedAvailableTrails.map((trail) => {
+                            const checked = selectedAssociatedTrailIds.includes(trail.id);
+                            return (
+                              <tr key={`available-${trail.id}`} className="border-t border-gray-200 dark:border-slate-800">
+                                <td className="px-3 py-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleAssociatedTrail(trail.id)}
+                                    className="h-4 w-4 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
+                                    aria-label={`Associate ${trail.name}`}
+                                  />
+                                </td>
+                                <td className="px-3 py-3">
+                                  <Link
+                                    href={`/trails/${trail.slug || trail.id}`}
+                                    className="text-sm font-semibold text-gray-900 hover:text-green-700 dark:text-slate-100 dark:hover:text-emerald-300"
+                                  >
+                                    {trail.name}
+                                  </Link>
+                                </td>
+                                <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
+                                  {trail.location || '—'}
+                                </td>
+                                <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
+                                  {trail.sport_type ? getSportLabel(trail.sport_type as SportType) : '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-4 dark:border-slate-800">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">
+                      {selectedAssociatedTrailIds.length}/12 selected
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAssociatedTrailsModalOpen(false)}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveAssociatedTrails}
+                        disabled={savingAssociatedTrails}
+                        className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {savingAssociatedTrails ? 'Saving...' : 'Save associated trails'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <Dialog.Root
         open={createEventOpen}
@@ -1649,6 +1679,190 @@ export default function ExpertProfilePage() {
                 </button>
               </div>
             </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={rideProgramModalOpen} onOpenChange={setRideProgramModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[88vh] w-[94vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-950">
+            <div className="mb-4 flex items-start justify-between gap-4 border-b border-gray-200 pb-3 dark:border-slate-800">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                  Create ride program
+                </Dialog.Title>
+                <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  Create a requestable ride from one of your associated trails.
+                </Dialog.Description>
+              </div>
+              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                Close
+              </Dialog.Close>
+            </div>
+
+            {loadingTrails ? (
+              <div className="grid min-h-56 place-items-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-sm font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                Loading associated trails...
+              </div>
+            ) : associatedTrails.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                Associate at least one trail before creating a ride program.
+              </div>
+            ) : (
+              <>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
+                Associated trail
+                <select
+                  value={rideProgramForm.trailId}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({ ...prev, trailId: event.target.value }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="">Select trail</option>
+                  {associatedTrails.map((trail) => (
+                    <option key={trail.id} value={trail.id}>
+                      {trail.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                Skill level
+                <select
+                  value={rideProgramForm.skillLevel}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({ ...prev, skillLevel: event.target.value }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                Max group size
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={rideProgramForm.maxGroupSize}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({ ...prev, maxGroupSize: event.target.value }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                Price in NPR
+                <input
+                  type="number"
+                  min={0}
+                  value={rideProgramForm.priceNpr}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({ ...prev, priceNpr: event.target.value }))
+                  }
+                  placeholder="Optional"
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                Duration note
+                <input
+                  value={rideProgramForm.durationNote}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({ ...prev, durationNote: event.target.value }))
+                  }
+                  placeholder="2-3 hours, half day, etc."
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
+                Meeting point note
+                <input
+                  value={rideProgramForm.meetingPointNote}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({ ...prev, meetingPointNote: event.target.value }))
+                  }
+                  placeholder="Coordinate after request, shop pickup, etc."
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
+                Time note
+                <input
+                  value={rideProgramForm.availableTimeNote}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({ ...prev, availableTimeNote: event.target.value }))
+                  }
+                  placeholder="Morning only, after 7 AM, weekends before noon, etc."
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </label>
+              <div className="md:col-span-2">
+                <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">Available weekdays</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Leave empty to inherit your profile availability.</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {PROGRAM_WEEKDAYS.map((day) => {
+                    const selected = rideProgramForm.availabilityWeekdays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() =>
+                          setRideProgramForm((prev) => ({
+                            ...prev,
+                            availabilityWeekdays: selected
+                              ? prev.availabilityWeekdays.filter((item) => item !== day)
+                              : [...prev.availabilityWeekdays, day],
+                          }))
+                        }
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                          selected
+                            ? 'border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100'
+                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
+                Short description
+                <textarea
+                  rows={4}
+                  value={rideProgramForm.description}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({ ...prev, description: event.target.value }))
+                  }
+                  placeholder="What makes this ride worth requesting?"
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </label>
+            </div>
+
+              </>
+            )}
+
+            <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-gray-200 pt-4 dark:border-slate-800">
+              <Dialog.Close className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                Cancel
+              </Dialog.Close>
+              <button
+                type="button"
+                onClick={saveRideProgram}
+                disabled={savingRideProgram || loadingTrails || associatedTrails.length === 0}
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingRideProgram ? 'Saving...' : 'Save ride program'}
+              </button>
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
