@@ -155,6 +155,74 @@ const TBN_TRAIL_UPDATES = [
   },
 ];
 
+const RIDE_WITH_EXPERT_PROGRAMS = [
+  {
+    expertIndex: 0,
+    trailIndex: 0,
+    description:
+      'A focused enduro ride with line choice, braking points, and safe sessioning through the main technical sections.',
+    price_npr: 3500,
+    max_group_size: 4,
+    duration_note: '2.5-3 hours',
+    meeting_point_note: 'Meet at the closest trailhead after confirmation.',
+    availability_weekdays: ['Saturday', 'Sunday'],
+    available_time_note: 'Morning starts preferred',
+    skill_level: 'intermediate',
+  },
+  {
+    expertIndex: 0,
+    trailIndex: 1,
+    description:
+      'Trail builder-led ride focused on sustainable line use, flow sections, and current trail condition notes.',
+    price_npr: 3000,
+    max_group_size: 5,
+    duration_note: 'Half day',
+    meeting_point_note: 'Exact meet-up point shared after request approval.',
+    availability_weekdays: ['Friday', 'Saturday'],
+    available_time_note: 'Before noon',
+    skill_level: 'intermediate',
+  },
+  {
+    expertIndex: 1,
+    trailIndex: 0,
+    description:
+      'A friendly technical skills ride for riders who want local route context and safer progression on enduro terrain.',
+    price_npr: 2500,
+    max_group_size: 3,
+    duration_note: '2 hours',
+    meeting_point_note: 'Meet near the main access road.',
+    availability_weekdays: ['Wednesday', 'Saturday'],
+    available_time_note: 'Early morning or late afternoon',
+    skill_level: 'beginner',
+  },
+  {
+    expertIndex: 1,
+    trailIndex: 1,
+    description:
+      'Guided route session with local trail notes, bypass options, and support planning for first-time riders.',
+    price_npr: 3200,
+    max_group_size: 4,
+    duration_note: '3 hours',
+    meeting_point_note: 'Meet-up finalized after request.',
+    availability_weekdays: ['Sunday'],
+    available_time_note: 'Morning only',
+    skill_level: 'intermediate',
+  },
+  {
+    expertIndex: 0,
+    trailIndex: 2,
+    description:
+      'Advanced terrain session for confident riders looking to understand line choice and trail maintenance context.',
+    price_npr: 4500,
+    max_group_size: 3,
+    duration_note: 'Half day',
+    meeting_point_note: 'Trailhead meet-up shared after confirmation.',
+    availability_weekdays: ['Saturday'],
+    available_time_note: '6:30 AM start',
+    skill_level: 'advanced',
+  },
+];
+
 const CYCLE_HUBS = [
   {
     name: 'Epic Mountain Bike',
@@ -530,6 +598,124 @@ async function ensureTrailUpdate(client, trailId, organizationId, userId, update
   return true;
 }
 
+async function getExpertAssociatedTrails(client, expertUserId) {
+  const result = await client.query(
+    `
+    SELECT t.id, t.slug, t.name
+    FROM expert_trails et
+    JOIN trails t ON t.id = et.trail_id
+    WHERE et.expert_user_id = $1
+      AND t.status = 'approved'
+      AND COALESCE(t.is_hidden, FALSE) = FALSE
+    ORDER BY et.sort_order ASC NULLS LAST, et.created_at ASC
+    `,
+    [expertUserId]
+  );
+  return result.rows;
+}
+
+async function ensureExpertTrailAssociations(client, expertUserIds, trails) {
+  let inserted = 0;
+  for (const [expertIndex, expertUserId] of expertUserIds.entries()) {
+    const selectedTrails = trails.slice(0, 3);
+    for (const [trailIndex, trail] of selectedTrails.entries()) {
+      const result = await client.query(
+        `
+        INSERT INTO expert_trails (expert_user_id, trail_id, sort_order)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (expert_user_id, trail_id)
+        DO UPDATE SET sort_order = EXCLUDED.sort_order
+        RETURNING (xmax = 0) AS inserted
+        `,
+        [expertUserId, trail.id, expertIndex * 10 + trailIndex]
+      );
+      if (result.rows[0]?.inserted) inserted++;
+    }
+  }
+  return inserted;
+}
+
+async function ensureRideProgram(client, expertUserId, expertName, trail, program) {
+  const title = `Ride with ${expertName} to ${trail.name}`;
+  const existing = await client.query(
+    `
+    SELECT id
+    FROM expert_ride_programs
+    WHERE expert_user_id = $1
+      AND trail_id = $2
+      AND title = $3
+    LIMIT 1
+    `,
+    [expertUserId, trail.id, title]
+  );
+
+  if (existing.rows.length) {
+    await client.query(
+      `
+      UPDATE expert_ride_programs
+      SET
+        description = $2,
+        price_npr = $3,
+        max_group_size = $4,
+        duration_note = $5,
+        meeting_point_note = $6,
+        availability_weekdays = $7::jsonb,
+        available_time_note = $8,
+        skill_level = $9,
+        is_active = TRUE,
+        updated_at = NOW()
+      WHERE id = $1
+      `,
+      [
+        existing.rows[0].id,
+        program.description,
+        program.price_npr,
+        program.max_group_size,
+        program.duration_note,
+        program.meeting_point_note,
+        JSON.stringify(program.availability_weekdays),
+        program.available_time_note,
+        program.skill_level,
+      ]
+    );
+    return false;
+  }
+
+  await client.query(
+    `
+    INSERT INTO expert_ride_programs (
+      expert_user_id,
+      trail_id,
+      title,
+      description,
+      price_npr,
+      max_group_size,
+      duration_note,
+      meeting_point_note,
+      availability_weekdays,
+      available_time_note,
+      skill_level,
+      is_active
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, TRUE)
+    `,
+    [
+      expertUserId,
+      trail.id,
+      title,
+      program.description,
+      program.price_npr,
+      program.max_group_size,
+      program.duration_note,
+      program.meeting_point_note,
+      JSON.stringify(program.availability_weekdays),
+      program.available_time_note,
+      program.skill_level,
+    ]
+  );
+  return true;
+}
+
 async function seedTrailBuildersNepal() {
   return withPool(async (pool) => {
     const client = await pool.connect();
@@ -600,6 +786,36 @@ async function seedTrailBuildersNepal() {
         cycleHubResults.push(await ensureCycleHub(client, store));
       }
 
+      const expertIds = [adminUserId, editorUserId];
+      const expertTrailAssociationsInserted = await ensureExpertTrailAssociations(
+        client,
+        expertIds,
+        associatedTrails
+      );
+      const expertTrailsByIndex = [];
+      for (const expertId of expertIds) {
+        expertTrailsByIndex.push(await getExpertAssociatedTrails(client, expertId));
+      }
+
+      const rideProgramResults = [];
+      for (const program of RIDE_WITH_EXPERT_PROGRAMS) {
+        const expert = TBN_USERS[program.expertIndex];
+        const expertUserId = expertIds[program.expertIndex];
+        const expertTrails = expertTrailsByIndex[program.expertIndex] || [];
+        const trail = expertTrails[program.trailIndex];
+
+        if (!expertUserId || !trail) {
+          console.warn(
+            `Skipping ride program for expert index ${program.expertIndex}, trail index ${program.trailIndex} - no associated trail found`
+          );
+          continue;
+        }
+
+        rideProgramResults.push(
+          await ensureRideProgram(client, expertUserId, expert.name, trail, program)
+        );
+      }
+
       await client.query('COMMIT');
 
       console.log('Trail Builders Nepal seed completed successfully.');
@@ -610,6 +826,8 @@ async function seedTrailBuildersNepal() {
       console.log(`- Services inserted: ${serviceResults.filter(Boolean).length}`);
       console.log(`- Trail updates inserted: ${updateResults.filter(Boolean).length}`);
       console.log(`- Cycle hubs inserted: ${cycleHubResults.filter(Boolean).length}`);
+      console.log(`- Expert trail associations inserted: ${expertTrailAssociationsInserted}`);
+      console.log(`- Ride with Experts programs inserted: ${rideProgramResults.filter(Boolean).length}`);
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
