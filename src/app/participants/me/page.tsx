@@ -87,11 +87,17 @@ type ExpertOption = {
 const profileActionButtonClass =
   'inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-950 transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-emerald-700/70 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/80';
 
+const profileWarningButtonClass =
+  'inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-950 transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-amber-500/80 dark:bg-amber-950/80 dark:text-white dark:hover:border-amber-400 dark:hover:bg-amber-900/80';
+
 const floatingProfileActionButtonClass =
-  'fixed bottom-20 right-4 z-40 inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-950 shadow-lg transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-emerald-700/70 dark:bg-slate-900 dark:text-emerald-100 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/80';
+  'fixed bottom-20 right-4 z-40 inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-950 shadow-lg transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-amber-500/80 dark:bg-slate-900 dark:text-white dark:hover:border-amber-400 dark:hover:bg-amber-950/80';
 
 const profileActionIconClass =
   'flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-emerald-700 text-[10px] font-black leading-none text-white dark:bg-emerald-500 dark:text-slate-950';
+
+const profileWarningIconClass =
+  'flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500 text-[10px] font-black leading-none text-white dark:bg-amber-400 dark:text-slate-950';
 
 const WEEKDAYS = [
   'Monday',
@@ -429,10 +435,12 @@ export default function ParticipantProfilePage() {
             <button
               type="button"
               onClick={() => setProfileModalOpen(true)}
-              className={profileActionButtonClass}
+              className={isProfileComplete ? profileActionButtonClass : profileWarningButtonClass}
             >
-              <span className={profileActionIconClass}>E</span>
-              Edit profile
+              <span className={isProfileComplete ? profileActionIconClass : profileWarningIconClass}>
+                {isProfileComplete ? 'E' : '!'}
+              </span>
+              {isProfileComplete ? 'Edit profile' : 'Complete profile'}
             </button>
           </div>
         </div>
@@ -1162,7 +1170,7 @@ export default function ParticipantProfilePage() {
           onClick={() => setProfileModalOpen(true)}
           className={floatingProfileActionButtonClass}
         >
-          <span className={profileActionIconClass}>E</span>
+          <span className={profileWarningIconClass}>!</span>
           Complete profile
         </button>
       )}
