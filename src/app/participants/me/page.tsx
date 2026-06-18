@@ -84,6 +84,15 @@ type ExpertOption = {
   email: string;
 };
 
+const profileActionButtonClass =
+  'inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-950 transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-emerald-700/70 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/80';
+
+const floatingProfileActionButtonClass =
+  'fixed bottom-20 right-4 z-40 inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-950 shadow-lg transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-emerald-700/70 dark:bg-slate-900 dark:text-emerald-100 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/80';
+
+const profileActionIconClass =
+  'flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-emerald-700 text-[10px] font-black leading-none text-white dark:bg-emerald-500 dark:text-slate-950';
+
 const WEEKDAYS = [
   'Monday',
   'Tuesday',
@@ -376,95 +385,133 @@ export default function ParticipantProfilePage() {
           </p>
         </div>
       </section>
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Google Login</h2>
-            <p className="text-sm text-gray-600 dark:text-slate-300">
-              Connect your Google account to enable one-tap login
-            </p>
-          </div>
-          {user.google_sub ? (
-            <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 dark:border-emerald-700/60 dark:bg-emerald-950/50 dark:text-emerald-200">
-              Connected
-            </span>
-          ) : (
-            <Link
-              href={`/api/auth/google/start?mode=connect&next=${encodeURIComponent('/participants/me')}`}
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+      <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="border-b border-gray-200 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 md:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="h-20 w-20 overflow-hidden rounded-3xl border border-emerald-200 bg-emerald-100 dark:border-slate-700 dark:bg-slate-800">
+                {editForm.profilePhotoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={editForm.profilePhotoUrl}
+                    alt={editForm.name || 'Participant profile'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xl font-black text-emerald-900 dark:text-emerald-100">
+                    {initials}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-2xl font-black text-gray-950 dark:text-white">
+                    {editForm.name || 'Participant profile'}
+                  </h2>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      isProfileComplete
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200'
+                    }`}
+                  >
+                    {isProfileComplete ? 'Profile ready' : 'Profile incomplete'}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                  {editForm.city || 'City not added'} · {parseSelectedSports().length > 0 ? parseSelectedSports().map((sport) => getSportLabel(sport)).join(', ') : 'Sports not added'}
+                </p>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-700 dark:text-slate-200">
+                  {editForm.bio?.trim() || 'Add a short riding profile so experts can understand your interests, availability, and ride expectations.'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setProfileModalOpen(true)}
+              className={profileActionButtonClass}
             >
-              Connect Google
-            </Link>
+              <span className={profileActionIconClass}>E</span>
+              Edit profile
+            </button>
+          </div>
+        </div>
+
+        <div className="p-5 md:p-6">
+          {message && (
+            <p className="mb-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              {message}
+            </p>
+          )}
+          {!isProfileComplete && (
+            <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+              Your profile is incomplete. Add your details to improve ride requests and expert coordination.
+            </p>
+          )}
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Email</p>
+              <p className="mt-1 truncate text-sm font-semibold text-gray-900 dark:text-slate-100">{user.email || 'Not added'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Phone</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-slate-100">{editForm.phone?.trim() || 'Not added'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Google Login</p>
+              {user.google_sub ? (
+                <span className="mt-1 inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
+                  Connected
+                </span>
+              ) : (
+                <Link
+                  href={`/api/auth/google/start?mode=connect&next=${encodeURIComponent('/participants/me')}`}
+                  className="mt-1 inline-flex text-sm font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300"
+                >
+                  Connect Google
+                </Link>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {editForm.availabilityWeekdays.length > 0 ? (
+              editForm.availabilityWeekdays.map((day) => (
+                <span key={day} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  {day}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-gray-500 dark:text-slate-400">Availability not added</span>
+            )}
+          </div>
+
+          {googleNotice && (
+            <p className="mt-4 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-emerald-700/50 dark:bg-emerald-950/40 dark:text-emerald-200">
+              {googleNotice}
+            </p>
+          )}
+          {!user.google_sub && (
+            <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
+              For security, the Google email must match your participant account email.
+            </p>
           )}
         </div>
-        {googleNotice && (
-          <p className="mt-3 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-emerald-700/50 dark:bg-emerald-950/40 dark:text-emerald-200">
-            {googleNotice}
-          </p>
-        )}
-        {!user.google_sub && (
-          <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
-            For security, the Google email must match your participant account email.
-          </p>
-        )}
       </section>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Profile details</h2>
-            <p className="text-sm text-gray-600 dark:text-slate-300">Keep your profile complete so requests and bookings work smoothly.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setProfileModalOpen(true)}
-            className="inline-flex items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
-          >
-            Edit profile
-          </button>
+      <section className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Expert ride requests</p>
+          <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{rideProgramRequests.length}</p>
         </div>
-        {!isProfileComplete && (
-          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-            Your profile is incomplete. Add your details to improve matching with local experts.
-          </p>
-        )}
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Name</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.name?.trim() || 'Not added'}</p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Email</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{user.email || 'Not added'}</p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">City</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.city?.trim() || 'Not added'}</p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Phone</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">{editForm.phone?.trim() || 'Not added'}</p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Sports</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
-              {parseSelectedSports().length > 0
-                ? parseSelectedSports().map((sport) => getSportLabel(sport)).join(', ')
-                : 'Not added'}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Availability</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-slate-100">
-              {editForm.availabilityWeekdays.length > 0
-                ? editForm.availabilityWeekdays.join(', ')
-                : 'Not added'}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Bio</p>
-            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{editForm.bio?.trim() || 'Not added'}</p>
-          </div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Joined events</p>
+          <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{events.length}</p>
+        </div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Paid bookings</p>
+          <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{paidBookings.length}</p>
         </div>
       </section>
 
@@ -1113,8 +1160,9 @@ export default function ParticipantProfilePage() {
         <button
           type="button"
           onClick={() => setProfileModalOpen(true)}
-          className="fixed bottom-20 right-4 z-40 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-lg hover:bg-emerald-700"
+          className={floatingProfileActionButtonClass}
         >
+          <span className={profileActionIconClass}>E</span>
           Complete profile
         </button>
       )}

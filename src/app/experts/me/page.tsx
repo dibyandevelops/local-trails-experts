@@ -85,6 +85,21 @@ type RideProgramRequestAction = {
   status: ExpertRideProgramRequest['status'];
 } | null;
 
+const profileActionButtonClass =
+  'inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-950 transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-emerald-700/70 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/80';
+
+const verificationActionButtonClass =
+  'inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-950 transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-amber-500/80 dark:bg-amber-950/80 dark:text-white dark:hover:border-amber-400 dark:hover:bg-amber-900/80';
+
+const floatingVerificationActionButtonClass =
+  'fixed bottom-4 right-4 z-40 inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-950 shadow-lg transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-amber-500/80 dark:bg-slate-900 dark:text-white dark:hover:border-amber-400 dark:hover:bg-amber-950/80';
+
+const profileActionIconClass =
+  'flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-emerald-700 text-[10px] font-black leading-none text-white dark:bg-emerald-500 dark:text-slate-950';
+
+const verificationActionIconClass =
+  'flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500 text-[10px] font-black leading-none text-white dark:bg-amber-400 dark:text-slate-950';
+
 export default function ExpertProfilePage() {
   const router = useRouter();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
@@ -616,15 +631,17 @@ export default function ExpertProfilePage() {
               <button
                 type="button"
                 onClick={() => setProfileModalOpen(true)}
-                className="inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                className={profileActionButtonClass}
               >
+                <span className={profileActionIconClass}>E</span>
                 Edit profile
               </button>
               <button
                 type="button"
                 onClick={() => setVerificationModalOpen(true)}
-                className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
+                className={verificationActionButtonClass}
               >
+                <span className={verificationActionIconClass}>!</span>
                 Update verification
               </button>
             </div>
@@ -705,8 +722,9 @@ export default function ExpertProfilePage() {
               <button
                 type="button"
                 onClick={() => setVerificationModalOpen(true)}
-                className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
+                className={verificationActionButtonClass}
               >
+                <span className={verificationActionIconClass}>!</span>
                 Complete verification details
               </button>
             )}
@@ -764,8 +782,9 @@ export default function ExpertProfilePage() {
             <button
               type="button"
               onClick={() => setAssociatedTrailsModalOpen(true)}
-              className="rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+              className={profileActionButtonClass}
             >
+              <span className={profileActionIconClass}>T</span>
               Manage associated trails
             </button>
           </div>
@@ -848,8 +867,9 @@ export default function ExpertProfilePage() {
                     type="button"
                     onClick={() => setRideProgramModalOpen(true)}
                     disabled={loadingTrails || (hasLoadedTrails && associatedTrails.length === 0)}
-                    className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className={`${profileActionButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
                   >
+                    <span className={profileActionIconClass}>+</span>
                     {loadingTrails ? 'Loading trails...' : 'New ride program'}
                   </button>
                 </div>
@@ -2094,8 +2114,9 @@ export default function ExpertProfilePage() {
         <button
           type="button"
           onClick={() => setVerificationModalOpen(true)}
-          className="fixed bottom-4 right-4 z-40 rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold text-white shadow-lg hover:bg-amber-600"
+          className={floatingVerificationActionButtonClass}
         >
+          <span className={verificationActionIconClass}>!</span>
           Complete verification
         </button>
       )}
