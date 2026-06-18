@@ -63,6 +63,57 @@ export type TrailInterestRequest = {
   created_at: string;
 };
 
+export type AdminRideProgram = {
+  id: string;
+  expert_user_id: string;
+  trail_id: string;
+  title: string;
+  description: string | null;
+  price_npr: number | null;
+  max_group_size: number;
+  duration_note: string | null;
+  meeting_point_note: string | null;
+  availability_weekdays: string[] | null;
+  available_time_note: string | null;
+  skill_level: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  expert_name: string | null;
+  expert_email: string;
+  trail_name: string;
+  trail_slug: string | null;
+  trail_location: string | null;
+  request_count: number;
+  pending_request_count: number;
+};
+
+export type AdminRideProgramRequest = {
+  id: string;
+  program_id: string;
+  expert_user_id: string;
+  trail_id: string;
+  requester_user_id: string | null;
+  requester_name: string | null;
+  requester_email: string;
+  requester_phone: string | null;
+  preferred_date: string;
+  preferred_time: string | null;
+  group_size: number;
+  offered_price_npr: number | null;
+  notes: string | null;
+  expert_response_note: string | null;
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+  program_title: string;
+  expert_name: string | null;
+  expert_email: string;
+  trail_name: string;
+  trail_slug: string | null;
+  trail_location: string | null;
+};
+
 export type AdminUser = {
   id: string;
   name: string | null;
@@ -212,6 +263,33 @@ export async function fetchAdminTrailRequests() {
     return data.requests || [];
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to fetch trail requests'));
+  }
+}
+
+export async function fetchAdminRidePrograms() {
+  try {
+    const { data } = await apiClient.get<{
+      programs: AdminRideProgram[];
+      requests: AdminRideProgramRequest[];
+    }>('/api/admin/ride-programs');
+    return {
+      programs: data.programs || [],
+      requests: data.requests || [],
+    };
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to fetch ride programs'));
+  }
+}
+
+export async function updateAdminRideProgramVisibility(programId: string, isActive: boolean) {
+  try {
+    const { data } = await apiClient.patch<{ program: Pick<AdminRideProgram, 'id' | 'is_active'> }>(
+      '/api/admin/ride-programs',
+      { id: programId, is_active: isActive }
+    );
+    return data.program;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update ride program'));
   }
 }
 
