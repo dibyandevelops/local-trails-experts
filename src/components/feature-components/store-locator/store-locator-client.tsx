@@ -79,26 +79,29 @@ function StoreCard({
             {store.phone}
           </a>
         )}
+      </div>
+
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <a
+          href={`https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-emerald-700 bg-emerald-700 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-800 dark:border-lime-300 dark:bg-lime-300 dark:text-emerald-950 dark:hover:bg-lime-200"
+          onClick={(event) => event.stopPropagation()}
+        >
+          Navigate with Google Map
+        </a>
         {store.website && (
           <a
             href={store.website}
             target="_blank"
             rel="noreferrer"
-            className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+            className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
             onClick={(event) => event.stopPropagation()}
           >
             Website
           </a>
         )}
-        <a
-          href={`https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
-          onClick={(event) => event.stopPropagation()}
-        >
-          Navigate
-        </a>
       </div>
     </article>
   );
@@ -118,6 +121,7 @@ export default function StoreLocatorClient() {
     maxLng: number;
   } | null>(null);
   const [useBoundsFilter, setUseBoundsFilter] = useState(false);
+  const [mapOptionsOpen, setMapOptionsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
 
@@ -237,13 +241,6 @@ export default function StoreLocatorClient() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={requestNearby}
-            className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-          >
-            Use my location
-          </button>
           <Dialog.Root>
             <Dialog.Trigger asChild>
               <button className="inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">
@@ -275,7 +272,7 @@ export default function StoreLocatorClient() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-center">
+      <div className="mt-4">
         <input
           type="search"
           value={searchInput}
@@ -283,37 +280,6 @@ export default function StoreLocatorClient() {
           placeholder="Search by shop, location, repair, rental..."
           className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
-        <label className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-          <input
-            type="checkbox"
-            checked={useBoundsFilter}
-            onChange={(event) => setUseBoundsFilter(event.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-          />
-          Map area only
-        </label>
-        <div className="inline-flex overflow-hidden rounded-full border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-            <button
-              type="button"
-              aria-pressed={mapStyleMode === 'map'}
-              onClick={() => setMapStyleMode('map')}
-              className={`px-3 py-1 transition ${
-                mapStyleMode === 'map' ? 'bg-white' : 'hover:bg-emerald-100'
-              }`}
-            >
-              Map
-            </button>
-            <button
-              type="button"
-              aria-pressed={mapStyleMode === 'satellite'}
-              onClick={() => setMapStyleMode('satellite')}
-              className={`px-3 py-1 transition ${
-                mapStyleMode === 'satellite' ? 'bg-white' : 'hover:bg-emerald-100'
-              }`}
-            >
-              Satellite
-            </button>
-          </div>
       </div>
 
       {locationMessage && (
@@ -323,7 +289,66 @@ export default function StoreLocatorClient() {
       )}
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="relative h-[520px] overflow-hidden rounded-3xl border border-emerald-200/70 dark:border-emerald-900/60">
+        <div className="relative order-2 h-[420px] overflow-hidden rounded-3xl border border-emerald-200/70 dark:border-emerald-900/60 sm:h-[520px] lg:order-1">
+          <div className="absolute left-3 top-3 z-10 flex flex-col items-start gap-2">
+            <button
+              type="button"
+              onClick={requestNearby}
+              className="inline-flex items-center justify-center rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm backdrop-blur hover:bg-emerald-50 dark:border-slate-700/80 dark:bg-slate-950/90 dark:text-emerald-200 dark:hover:bg-slate-900"
+            >
+              Use my location
+            </button>
+            <div className="overflow-hidden rounded-xl border border-white/80 bg-white/95 shadow-sm backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/90">
+              <button
+                type="button"
+                onClick={() => setMapOptionsOpen((open) => !open)}
+                aria-expanded={mapOptionsOpen}
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900"
+              >
+                Map options
+                <span aria-hidden="true">{mapOptionsOpen ? '-' : '+'}</span>
+              </button>
+              {mapOptionsOpen && (
+                <div className="space-y-2 border-t border-gray-100 p-2 dark:border-slate-800">
+                  <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900">
+                    <input
+                      type="checkbox"
+                      checked={useBoundsFilter}
+                      onChange={(event) => setUseBoundsFilter(event.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    Show current map area only
+                  </label>
+                  <div className="inline-flex overflow-hidden rounded-lg border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                    <button
+                      type="button"
+                      aria-pressed={mapStyleMode === 'map'}
+                      onClick={() => setMapStyleMode('map')}
+                      className={`px-3 py-1.5 transition ${
+                        mapStyleMode === 'map'
+                          ? 'bg-white text-emerald-900 dark:bg-emerald-800 dark:text-white'
+                          : 'hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                      }`}
+                    >
+                      Map
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={mapStyleMode === 'satellite'}
+                      onClick={() => setMapStyleMode('satellite')}
+                      className={`px-3 py-1.5 transition ${
+                        mapStyleMode === 'satellite'
+                          ? 'bg-white text-emerald-900 dark:bg-emerald-800 dark:text-white'
+                          : 'hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                      }`}
+                    >
+                      Satellite
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
           <Map
             ref={mapRef}
             initialViewState={mapCenter}
@@ -431,7 +456,7 @@ export default function StoreLocatorClient() {
           </button>
         </div>
 
-        <aside className="rounded-3xl border border-gray-200 bg-gray-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+        <aside className="order-1 rounded-3xl border border-gray-200 bg-gray-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40 lg:order-2">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-gray-950 dark:text-slate-50">
@@ -455,7 +480,7 @@ export default function StoreLocatorClient() {
             )}
           </div>
 
-          <div className="mt-4 max-h-[448px] space-y-4 overflow-y-auto pr-1">
+          <div className="mt-4 max-h-[520px] space-y-4 overflow-y-auto pr-1 lg:max-h-[448px]">
             {isLoading && (
               <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                 Loading cycle hubs...
