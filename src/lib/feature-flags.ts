@@ -17,6 +17,6 @@ export const ESEWA_ENABLED = parseBooleanFlag(
 );
 
 export const EMAIL_NOTIFICATIONS_ENABLED = parseBooleanFlag(
-  process.env.NOTIFICATIONS_EMAIL_ENABLED,
+  process.env.NOTIFICATIONS_EMAIL_ENABLED || process.env.EMAIL_NOTIFICATIONS_ENABLED,
   true
 );

@@ -22,6 +22,10 @@ function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
+function maskEmail(value: string) {
+  return value.replace(/[A-Z0-9._%+-]+@([A-Z0-9.-]+\.[A-Z]{2,})/gi, '***@$1');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const limited = await rateLimit(request, 'forgot-password', 5, 60);
@@ -83,12 +87,20 @@ export async function POST(request: NextRequest) {
         name: user.name,
       });
 
-      await sendEmailSafe({
+      const emailResult = await sendEmailSafe({
         to: user.email,
         subject,
         text,
         html,
         dedupeKey: `password-reset:${user.id}`,
+      });
+      console.info('Password reset email result:', {
+        to: maskEmail(user.email),
+        sent: emailResult.sent,
+        skipped: 'skipped' in emailResult ? emailResult.skipped : false,
+        provider: 'provider' in emailResult ? emailResult.provider : undefined,
+        reason: 'reason' in emailResult ? emailResult.reason : undefined,
+        error: 'error' in emailResult ? emailResult.error : undefined,
       });
     }
 
