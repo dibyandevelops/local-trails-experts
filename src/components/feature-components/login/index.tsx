@@ -4,7 +4,8 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
-import { loginUser } from '@/services/auth/auth.service';
+import { useForm } from 'react-hook-form';
+import { loginUser, requestPasswordReset } from '@/services/auth/auth.service';
 
 interface ILoginComponentProps {
   embedded?: boolean;
@@ -12,6 +13,10 @@ interface ILoginComponentProps {
   onOpenRegister?: () => void;
   next?: string | null;
 }
+
+type ForgotPasswordForm = {
+  identifier: string;
+};
 
 const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   { embedded = false, onLoggedIn, onOpenRegister, next = null },
@@ -23,7 +28,16 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
+  const [mode, setMode] = React.useState<'login' | 'forgot'>('login');
   const errorRef = React.useRef<HTMLParagraphElement | null>(null);
+  const {
+    register,
+    handleSubmit: handleForgotSubmit,
+    setValue: setForgotValue,
+    formState: { errors: forgotErrors },
+  } = useForm<ForgotPasswordForm>({
+    defaultValues: { identifier: '' },
+  });
 
   React.useEffect(() => {
     if (error) {
@@ -59,6 +73,17 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
     },
   });
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: requestPasswordReset,
+    onSuccess: (data) => {
+      setError(null);
+      setNotice(data.message || 'If an account exists, a password reset link has been sent.');
+    },
+    onError: (mutationError: Error) => {
+      setError(mutationError.message || 'Failed to request password reset.');
+    },
+  });
+
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = React.useCallback(
     (e) => {
       e.preventDefault();
@@ -76,6 +101,25 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
     },
     [identifier, password, loginMutation],
   );
+
+  const openForgotPassword = () => {
+    setError(null);
+    setNotice(null);
+    setForgotValue('identifier', identifier.trim());
+    setMode('forgot');
+  };
+
+  const backToLogin = () => {
+    setError(null);
+    setNotice(null);
+    setMode('login');
+  };
+
+  const handleForgotPassword = handleForgotSubmit((values) => {
+    setError(null);
+    setNotice(null);
+    forgotPasswordMutation.mutate(values.identifier.trim());
+  });
 
   return (
     <div className="mx-auto max-w-lg">
@@ -102,15 +146,90 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
           </div>
         </div>
       )}
-      <form
-        onSubmit={handleSubmit}
-        className={
-          embedded
-            ? 'space-y-4'
-            : 'space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900'
-        }
-        noValidate
-      >
+      {mode === 'forgot' ? (
+        <form
+          onSubmit={handleForgotPassword}
+          className={
+            embedded
+              ? 'space-y-4'
+              : 'space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900'
+          }
+          noValidate
+        >
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/50 dark:text-amber-100">
+            Enter your email or phone number. If we find an account, we&apos;ll send a secure reset link to its email address.
+          </div>
+          {notice && !error && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+            >
+              {notice}
+            </div>
+          )}
+          <div>
+            <label
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+              htmlFor="forgot-identifier"
+            >
+              Email or phone number
+            </label>
+            <input
+              id="forgot-identifier"
+              type="text"
+              autoComplete="username"
+              placeholder="you@example.com or +9779812345678"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100 dark:placeholder:text-slate-400"
+              aria-invalid={!!forgotErrors.identifier || !!error}
+              {...register('identifier', {
+                required: 'Enter your email or phone number.',
+                validate: (value) =>
+                  value.trim().length > 0 || 'Enter your email or phone number.',
+              })}
+            />
+            {forgotErrors.identifier?.message && (
+              <p className="mt-1 text-xs font-semibold text-red-600 dark:text-red-300">
+                {forgotErrors.identifier.message}
+              </p>
+            )}
+          </div>
+          {error && (
+            <p
+              ref={errorRef}
+              tabIndex={-1}
+              role="alert"
+              aria-live="assertive"
+              className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+            >
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={forgotPasswordMutation.isPending}
+            className="w-full rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
+          >
+            {forgotPasswordMutation.isPending ? 'Sending reset link...' : 'Send reset link'}
+          </button>
+          <button
+            type="button"
+            onClick={backToLogin}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+          >
+            Back to login
+          </button>
+        </form>
+      ) : (
+        <form
+          onSubmit={handleSubmit}
+          className={
+            embedded
+              ? 'space-y-4'
+              : 'space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900'
+          }
+          noValidate
+        >
         {notice && !error && (
           <div
             role="status"
@@ -188,6 +307,16 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
           </p>
         )}
 
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={openForgotPassword}
+            className="text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+          >
+            Forgot password?
+          </button>
+        </div>
+
         <button
           type="submit"
           disabled={loginMutation.isPending}
@@ -243,7 +372,8 @@ const LoginComponent: React.FunctionComponent<ILoginComponentProps> = (
             </Link>
           )}
         </p>
-      </form>
+        </form>
+      )}
     </div>
   );
 };

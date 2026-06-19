@@ -30,6 +30,12 @@ type BookingEmailInput = {
   eventId?: string | null;
 };
 
+type PasswordResetEmailInput = {
+  appUrl: string;
+  resetUrl: string;
+  name?: string | null;
+};
+
 export function getAppUrl() {
   return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
     .trim()
@@ -156,6 +162,26 @@ export function buildWelcomeEmail({ name, appUrl, role }: WelcomeEmailInput) {
     bodyText: 'Welcome to LocoXperts. Your account is ready!',
     ctas,
     profilePath: isExpert ? '/experts/me' : '/participants/me',
+  });
+}
+
+export function buildPasswordResetEmail({
+  appUrl,
+  resetUrl,
+  name,
+}: PasswordResetEmailInput) {
+  return buildBrandedEmail({
+    subject: 'Reset your LocoXperts password',
+    appUrl,
+    headline: 'Reset your password',
+    subhead: 'Use this secure link to create a new password.',
+    greetingName: name || undefined,
+    bodyHtml:
+      'We received a request to reset your LocoXperts password. This link expires in 1 hour. If you did not request this, you can ignore this email.',
+    bodyText:
+      'We received a request to reset your LocoXperts password. This link expires in 1 hour. If you did not request this, you can ignore this email.',
+    ctas: [{ label: 'Reset password', href: resetUrl, variant: 'primary' }],
+    profilePath: '/login',
   });
 }
 

@@ -18,6 +18,11 @@ type LoginResponse = {
   };
 };
 
+type PasswordResetResponse = {
+  success: boolean;
+  message?: string;
+};
+
 export async function fetchCurrentUser(
   signal?: AbortSignal
 ): Promise<User | null> {
@@ -54,5 +59,42 @@ export async function loginUser(
       throw new Error(apiError?.error || 'Login failed. Please try again.');
     }
     throw new Error('Login failed. Please try again.');
+  }
+}
+
+export async function requestPasswordReset(
+  identifier: string
+): Promise<PasswordResetResponse> {
+  try {
+    const { data } = await apiClient.post<PasswordResetResponse>(
+      '/api/auth/forgot-password',
+      { identifier }
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to request password reset.');
+    }
+    throw new Error('Failed to request password reset.');
+  }
+}
+
+export async function resetPassword(payload: {
+  token: string;
+  password: string;
+}): Promise<PasswordResetResponse> {
+  try {
+    const { data } = await apiClient.post<PasswordResetResponse>(
+      '/api/auth/reset-password',
+      payload
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiError = error.response?.data as { error?: string } | undefined;
+      throw new Error(apiError?.error || 'Failed to reset password.');
+    }
+    throw new Error('Failed to reset password.');
   }
 }
