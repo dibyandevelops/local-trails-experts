@@ -12,7 +12,7 @@ import DesktopNavbar from './desktop-navbar';
 import MobileNavbar from './mobile-navbar';
 import NavbarBrand from './navbar-brand';
 import { navGroups, navItems } from './navbar.config';
-import type { NavItem } from './navbar.types';
+import type { NavItem, NotificationsData } from './navbar.types';
 
 type NavbarProps = {
   initialUser?: User | null;
@@ -24,16 +24,16 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { data: user = null, isLoading: loadingUser } = useCurrentUser(initialUser);
-  const { data: alertsData } = useQuery<{ unreadCount: number }>({
-    queryKey: ['expert-alerts-count', user?.id],
+  const { data: notificationsData } = useQuery<NotificationsData>({
+    queryKey: ['me-notifications', user?.id, user?.role],
     queryFn: async () => {
-      const response = await fetch('/api/experts/me/alerts', { cache: 'no-store' });
+      const response = await fetch('/api/me/notifications', { cache: 'no-store' });
       if (!response.ok) {
-        throw new Error('Failed to fetch expert alerts');
+        throw new Error('Failed to fetch notifications');
       }
       return response.json();
     },
-    enabled: user?.role === 'expert',
+    enabled: Boolean(user),
     refetchInterval: 30000,
     retry: false,
   });
@@ -242,7 +242,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             navGroups={navGroups}
             user={user}
             loadingUser={loadingUser}
-            alertsData={alertsData}
+            notificationsData={notificationsData}
             openGroup={openGroup}
             hoverCloseTimeout={hoverCloseTimeout}
             accountInitial={accountInitial}
@@ -264,7 +264,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           navGroups={navGroups}
           user={user}
           loadingUser={loadingUser}
-          alertsData={alertsData}
+          notificationsData={notificationsData}
           accountActionLabel={accountActionLabel}
           canSeeItem={canSeeItem}
           isNavItemActive={isNavItemActive}

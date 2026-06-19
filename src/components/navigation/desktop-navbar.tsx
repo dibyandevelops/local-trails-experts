@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Bell, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import ThemeToggle from '@/components/theme-toggle';
 import type { MutableRefObject } from 'react';
-import type { AlertsData, NavbarUser, NavGroup, NavItem } from './navbar.types';
+import type { NavbarUser, NavGroup, NavItem, NotificationsData } from './navbar.types';
+import { NotificationsDropdown } from './notifications-dropdown';
 import {
   activeMenuItemClass,
   dropdownContentClass,
@@ -19,7 +20,7 @@ type DesktopNavbarProps = {
   navGroups: NavGroup[];
   user: NavbarUser;
   loadingUser: boolean;
-  alertsData?: AlertsData;
+  notificationsData?: NotificationsData;
   openGroup: string | null;
   hoverCloseTimeout: MutableRefObject<ReturnType<typeof setTimeout> | null>;
   accountInitial: string;
@@ -55,7 +56,7 @@ export default function DesktopNavbar({
   navGroups,
   user,
   loadingUser,
-  alertsData,
+  notificationsData,
   openGroup,
   hoverCloseTimeout,
   accountInitial,
@@ -176,21 +177,7 @@ export default function DesktopNavbar({
 
       <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 text-sm font-semibold transition-colors hover:bg-white/15" />
 
-      {!loadingUser && user?.role === 'expert' && (
-        <Link
-          href="/experts/me#trail-requests"
-          className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full border border-white/15 bg-white/10 leading-none transition-colors hover:bg-white/15"
-          aria-label="View expert alerts"
-          title="View trail request alerts"
-        >
-          <Bell className="h-4 w-4" aria-hidden="true" />
-          {(alertsData?.unreadCount || 0) > 0 && (
-            <span className="absolute -right-1 -top-1 rounded-full bg-lime-300 px-1.5 py-0.5 text-[10px] font-bold text-green-950">
-              {alertsData?.unreadCount}
-            </span>
-          )}
-        </Link>
-      )}
+      {!loadingUser && user && <NotificationsDropdown data={notificationsData} />}
 
       {!loadingUser && !user && (
         <button

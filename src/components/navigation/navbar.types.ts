@@ -19,6 +19,19 @@ export type NavGroup = {
 
 export type NavbarUser = User | null;
 
-export type AlertsData = {
+export type NotificationTone = 'info' | 'success' | 'warning' | 'danger';
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  href: string;
+  createdAt: string;
+  tone: NotificationTone;
+};
+
+export type NotificationsData = {
   unreadCount: number;
+  notifications: NotificationItem[];
 };

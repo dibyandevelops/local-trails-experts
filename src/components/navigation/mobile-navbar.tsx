@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { Bell } from 'lucide-react';
 import ThemeToggle from '@/components/theme-toggle';
-import type { AlertsData, NavbarUser, NavGroup, NavItem } from './navbar.types';
+import type { NavbarUser, NavGroup, NavItem, NotificationsData } from './navbar.types';
 import { activeMenuItemClass, getNavIcon, mobileItemClass } from './navbar.config';
+import { MobileNotifications } from './notifications-dropdown';
 
 type MobileNavbarProps = {
   mobileOpen: boolean;
@@ -10,7 +10,7 @@ type MobileNavbarProps = {
   navGroups: NavGroup[];
   user: NavbarUser;
   loadingUser: boolean;
-  alertsData?: AlertsData;
+  notificationsData?: NotificationsData;
   accountActionLabel: string;
   canSeeItem: (item: NavItem) => boolean;
   isNavItemActive: (href: string) => boolean;
@@ -44,7 +44,7 @@ export default function MobileNavbar({
   navGroups,
   user,
   loadingUser,
-  alertsData,
+  notificationsData,
   accountActionLabel,
   canSeeItem,
   isNavItemActive,
@@ -98,22 +98,8 @@ export default function MobileNavbar({
 
         <ThemeToggle className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-white/15" />
 
-        {!loadingUser && user?.role === 'expert' && (
-          <Link
-            href="/experts/me#trail-requests"
-            className={`${mobileItemClass} text-emerald-50 hover:bg-white/10`}
-            onClick={closeMobileMenu}
-          >
-            <span className="inline-flex items-center gap-2">
-              <Bell className="h-4 w-4" aria-hidden="true" />
-              <span>Alerts</span>
-              {(alertsData?.unreadCount || 0) > 0 && (
-                <span className="rounded-full bg-lime-300 px-1.5 py-0.5 text-[10px] font-bold text-green-950">
-                  {alertsData?.unreadCount}
-                </span>
-              )}
-            </span>
-          </Link>
+        {!loadingUser && user && (
+          <MobileNotifications data={notificationsData} onNavigate={closeMobileMenu} />
         )}
 
         {!loadingUser && !user && (
