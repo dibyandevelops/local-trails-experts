@@ -1,29 +1,7 @@
 import type { Metadata } from 'next';
-import pool from '@/lib/db';
+import { getExpertSeo } from '@/lib/data/public-experts';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
-
-async function getExpertSeo(id: string) {
-  const result = await pool.query(
-    `
-    SELECT id, name, bio, city, is_verified_expert, updated_at
-    FROM users
-    WHERE id = $1 AND role = 'expert'
-    LIMIT 1
-    `,
-    [id]
-  );
-  return result.rows[0] as
-    | {
-        id: string;
-        name: string | null;
-        bio: string | null;
-        city: string | null;
-        is_verified_expert: boolean;
-        updated_at: Date | string | null;
-      }
-    | undefined;
-}
 
 export async function generateMetadata(
   _props: { params: Promise<{ id: string }> }
@@ -84,11 +62,11 @@ export default async function ExpertLayout(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
-  let expert: Awaited<ReturnType<typeof getExpertSeo>> | undefined;
+  let expert: Awaited<ReturnType<typeof getExpertSeo>>;
   try {
     expert = await getExpertSeo(id);
   } catch {
-    expert = undefined;
+    expert = null;
   }
 
   const expertUrl = absoluteUrl(`/experts/${id}`);

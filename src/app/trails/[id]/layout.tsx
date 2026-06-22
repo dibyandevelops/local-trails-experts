@@ -1,50 +1,7 @@
 import type { Metadata } from 'next';
-import pool from '@/lib/db';
+import { getTrailSeo } from '@/lib/data/public-trails';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
-
-async function getTrailSeo(id: string) {
-  const result = await pool.query(
-    `
-    SELECT
-      id,
-      slug,
-      name,
-      description,
-      location,
-      latitude,
-      longitude,
-      difficulty,
-      sport_type,
-      image_url,
-      trail_images,
-      updated_at
-    FROM trails
-    WHERE (slug = $1 OR id::text = $1)
-      AND status = 'approved'
-      AND is_hidden = FALSE
-    ORDER BY CASE WHEN slug = $1 THEN 0 ELSE 1 END
-    LIMIT 1
-    `,
-    [id]
-  );
-  return result.rows[0] as
-    | {
-        id: string;
-        slug: string | null;
-        name: string;
-        description: string | null;
-        location: string;
-        latitude: number | null;
-        longitude: number | null;
-        difficulty: string;
-        sport_type: string | null;
-        image_url: string | null;
-        trail_images: string[] | null;
-        updated_at: Date | string | null;
-      }
-    | undefined;
-}
 
 export async function generateMetadata(
   _props: { params: Promise<{ id: string }> }
@@ -110,11 +67,11 @@ export default async function TrailLayout(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
-  let trail: Awaited<ReturnType<typeof getTrailSeo>> | undefined;
+  let trail: Awaited<ReturnType<typeof getTrailSeo>>;
   try {
     trail = await getTrailSeo(id);
   } catch {
-    trail = undefined;
+    trail = null;
   }
 
   const trailPath = `/trails/${trail?.slug || trail?.id || id}`;

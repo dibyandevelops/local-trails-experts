@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import pool from '@/lib/db';
+import { getPublicCampaigns, type CampaignRow } from '@/lib/data/public-campaigns';
 
 export const metadata: Metadata = {
   title: 'Trail Campaigns',
@@ -9,25 +9,11 @@ export const metadata: Metadata = {
   alternates: { canonical: '/campaigns' },
 };
 
-type CampaignRow = {
-  id: string;
-  title: string;
-  description: string | null;
-  target_amount_npr: string;
-  raised_amount_npr: string;
-  status: 'active' | 'looking_for_funds' | 'completed' | 'paused';
-  starts_at: string | null;
-  ends_at: string | null;
-  organization_name: string;
-  organization_slug: string;
-  trail_name: string | null;
-};
-
 function formatDate(dateLike: string | null) {
   if (!dateLike) return null;
   const parsed = new Date(dateLike);
   if (Number.isNaN(parsed.getTime())) return null;
-    return parsed.toLocaleDateString('en-NP', { year: 'numeric', month: 'short', day: 'numeric' });
+  return parsed.toLocaleDateString('en-NP', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function canSponsorCampaign(status: CampaignRow['status']) {
@@ -40,37 +26,7 @@ function formatCampaignStatus(status: CampaignRow['status']) {
 }
 
 export default async function CampaignsPage() {
-  const result = await pool.query(
-    `
-    SELECT
-      fc.id,
-      fc.title,
-      fc.description,
-      fc.target_amount_npr::text,
-      fc.raised_amount_npr::text,
-      fc.status,
-      fc.starts_at::text,
-      fc.ends_at::text,
-      o.name AS organization_name,
-      o.slug AS organization_slug,
-      t.name AS trail_name
-    FROM fundraising_campaigns fc
-    JOIN organizations o ON o.id = fc.organization_id
-    LEFT JOIN trails t ON t.id = fc.trail_id
-    WHERE fc.status IN ('active', 'looking_for_funds', 'completed', 'paused')
-      AND o.is_active = TRUE
-    ORDER BY
-      CASE fc.status
-        WHEN 'looking_for_funds' THEN 1
-        WHEN 'active' THEN 1
-        WHEN 'paused' THEN 2
-        ELSE 3
-      END,
-      fc.created_at DESC
-    `
-  );
-
-  const campaigns = result.rows as CampaignRow[];
+  const campaigns = await getPublicCampaigns();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">

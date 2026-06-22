@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import pool from '@/lib/db';
+import { getPublicSitemapRows } from '@/lib/data/public-sitemap';
 import { absoluteUrl } from '@/lib/seo';
 
 export const runtime = 'nodejs';
@@ -46,37 +46,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const [trailsResult, eventsResult, expertsResult] = await Promise.all([
-      pool.query(
-        `
-        SELECT id, updated_at, image_url, trail_images
-        FROM trails
-        WHERE status = 'approved' AND is_hidden = FALSE
-        ORDER BY updated_at DESC
-        LIMIT 5000
-        `
-      ),
-      pool.query(
-        `
-        SELECT id, updated_at
-        FROM events
-        WHERE event_date >= NOW() - INTERVAL '180 days'
-        ORDER BY updated_at DESC
-        LIMIT 5000
-        `
-      ),
-      pool.query(
-        `
-        SELECT id, updated_at
-        FROM users
-        WHERE role = 'expert' AND is_verified_expert = TRUE
-        ORDER BY updated_at DESC
-        LIMIT 5000
-        `
-      ),
-    ]);
+    const { trails: trailRows, events: eventRows, experts: expertRows } =
+      await getPublicSitemapRows();
 
-    const trails = (trailsResult.rows || []).map((row: any) => ({
+    const trails = trailRows.map((row) => ({
       url: absoluteUrl(`/trails/${row.id}`),
       lastModified: isoDate(row.updated_at),
       changeFrequency: 'weekly' as const,
@@ -84,14 +57,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       images: normalizeImageUrls(row.image_url, row.trail_images),
     }));
 
-    const events = (eventsResult.rows || []).map((row: any) => ({
+    const events = eventRows.map((row) => ({
       url: absoluteUrl(`/events/${row.id}`),
       lastModified: isoDate(row.updated_at),
       changeFrequency: 'weekly' as const,
       priority: 0.6,
     }));
 
-    const experts = (expertsResult.rows || []).map((row: any) => ({
+    const experts = expertRows.map((row) => ({
       url: absoluteUrl(`/experts/${row.id}`),
       lastModified: isoDate(row.updated_at),
       changeFrequency: 'monthly' as const,

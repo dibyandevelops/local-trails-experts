@@ -1,46 +1,11 @@
 import Link from 'next/link';
-import pool from '@/lib/db';
 import OrganizationAvatar from '@/components/feature-components/organizations/organization-avatar';
+import { getPublicOrganizations } from '@/lib/data/public-organizations';
 
 export const dynamic = 'force-dynamic';
 
-type OrganizationRow = {
-  id: string;
-  slug: string;
-  name: string;
-  tagline: string | null;
-  logo_url: string | null;
-  city: string | null;
-  country: string | null;
-  is_verified: boolean;
-  member_count: number;
-  trail_count: number;
-};
-
 export default async function OrganizationsPage() {
-  const result = await pool.query(
-    `
-    SELECT
-      o.id,
-      o.slug,
-      o.name,
-      o.tagline,
-      o.logo_url,
-      o.city,
-      o.country,
-      o.is_verified,
-      COUNT(DISTINCT om.user_id)::int AS member_count,
-      COUNT(DISTINCT to2.trail_id)::int AS trail_count
-    FROM organizations o
-    LEFT JOIN organization_members om ON om.organization_id = o.id AND om.status = 'active'
-    LEFT JOIN trail_organizations to2 ON to2.organization_id = o.id
-    WHERE o.is_active = TRUE
-    GROUP BY o.id
-    ORDER BY o.is_verified DESC, o.created_at DESC
-    `
-  );
-
-  const organizations = result.rows as OrganizationRow[];
+  const organizations = await getPublicOrganizations();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">

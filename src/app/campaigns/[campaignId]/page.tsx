@@ -1,29 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import pool from '@/lib/db';
 import CampaignSupportModal from '@/components/feature-components/campaigns/campaign-support-modal';
-
-type CampaignDetail = {
-  id: string;
-  title: string;
-  description: string | null;
-  target_amount_npr: string;
-  raised_amount_npr: string;
-  qr_image_url: string | null;
-  payment_note: string | null;
-  status: 'active' | 'looking_for_funds' | 'completed' | 'paused';
-  starts_at: string | null;
-  ends_at: string | null;
-  organization_name: string;
-  organization_slug: string;
-  organization_contact_email: string | null;
-  organization_contact_phone: string | null;
-  organization_whatsapp_url: string | null;
-  trail_id: string | null;
-  trail_name: string | null;
-  updated_at: string;
-};
+import {
+  getPublicCampaignDetail,
+  getPublicCampaignMetadata,
+  type CampaignDetail,
+} from '@/lib/data/public-campaigns';
 
 function formatDate(dateLike: string | null) {
   if (!dateLike) return null;
@@ -47,29 +30,17 @@ export async function generateMetadata({
   params: Promise<{ campaignId: string }>;
 }): Promise<Metadata> {
   const { campaignId } = await params;
-  const result = await pool.query(
-    `
-    SELECT fc.title, fc.description
-    FROM fundraising_campaigns fc
-    JOIN organizations o ON o.id = fc.organization_id
-    WHERE fc.id = $1
-      AND fc.status IN ('active', 'looking_for_funds', 'completed', 'paused')
-      AND o.is_active = TRUE
-    LIMIT 1
-    `,
-    [campaignId]
-  );
+  const campaign = await getPublicCampaignMetadata(campaignId);
 
-  if (!result.rows.length) {
+  if (!campaign) {
     return {
       title: 'Campaign not found',
     };
   }
 
-  const row = result.rows[0] as { title: string; description: string | null };
   return {
-    title: row.title,
-    description: row.description || 'Support this trail campaign.',
+    title: campaign.title,
+    description: campaign.description || 'Support this trail campaign.',
     alternates: { canonical: `/campaigns/${campaignId}` },
   };
 }
@@ -80,43 +51,12 @@ export default async function CampaignDetailPage({
   params: Promise<{ campaignId: string }>;
 }) {
   const { campaignId } = await params;
-  const result = await pool.query(
-    `
-    SELECT
-      fc.id,
-      fc.title,
-      fc.description,
-      fc.target_amount_npr::text,
-      fc.raised_amount_npr::text,
-      fc.qr_image_url,
-      fc.payment_note,
-      fc.status,
-      fc.starts_at::text,
-      fc.ends_at::text,
-      fc.updated_at::text,
-      o.name AS organization_name,
-      o.slug AS organization_slug,
-      o.contact_email AS organization_contact_email,
-      o.contact_phone AS organization_contact_phone,
-      o.whatsapp_url AS organization_whatsapp_url,
-      t.id AS trail_id,
-      t.name AS trail_name
-    FROM fundraising_campaigns fc
-    JOIN organizations o ON o.id = fc.organization_id
-    LEFT JOIN trails t ON t.id = fc.trail_id
-    WHERE fc.id = $1
-      AND fc.status IN ('active', 'looking_for_funds', 'completed', 'paused')
-      AND o.is_active = TRUE
-    LIMIT 1
-    `,
-    [campaignId]
-  );
+  const campaign = await getPublicCampaignDetail(campaignId);
 
-  if (!result.rows.length) {
+  if (!campaign) {
     notFound();
   }
 
-  const campaign = result.rows[0] as CampaignDetail;
   const target = Number(campaign.target_amount_npr || 0);
   const raised = Number(campaign.raised_amount_npr || 0);
   const progress = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : 0;
