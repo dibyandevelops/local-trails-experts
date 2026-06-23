@@ -116,6 +116,19 @@ export default async function Home() {
         </div>
       </section>
 
+      <div className="mx-auto max-w-5xl px-4 pt-6 md:px-8 md:pt-8">
+        <p className="max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-400">
+          If LocoXperts helps you find better rides, consider{' '}
+          <Link
+            href="/support-locoxperts"
+            className="font-bold text-emerald-800 underline underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
+          >
+            supporting the developer
+          </Link>
+          {' '}so the platform can stay alive, improve, and remain useful for local riders.
+        </p>
+      </div>
+
       <nav
         aria-label="Explore LocoXperts"
         className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-3 px-4 py-6 text-sm font-semibold text-gray-600 dark:text-slate-400 md:px-8 md:py-8"

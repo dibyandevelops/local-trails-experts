@@ -77,6 +77,12 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
         <p>Reach out for collaboration, trail mapping, and weekend ride planning.</p>
         <div className="flex flex-wrap gap-2">
           <a
+            href="/support-locoxperts"
+            className="inline-flex items-center rounded-full border border-transparent px-3 py-1.5 text-xs font-semibold text-emerald-800 underline-offset-4 transition hover:text-emerald-700 hover:underline dark:text-lime-200 dark:hover:text-lime-100"
+          >
+            Support LocoXperts
+          </a>
+          <a
             href={individualWhatsappLink}
             target="_blank"
             rel="noreferrer noopener"

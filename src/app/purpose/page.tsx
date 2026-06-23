@@ -243,7 +243,7 @@ export default async function PurposePage() {
               Support active campaigns
             </Link>
             <Link
-              href="/donate"
+              href="/support-locoxperts"
               className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-green-700 px-6 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 dark:border-green-500 dark:text-green-200 dark:hover:bg-green-900/30"
             >
               Contribute to the trail fund
