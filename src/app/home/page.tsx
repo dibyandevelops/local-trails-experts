@@ -101,7 +101,11 @@ export default async function Home() {
                 className="mt-8 inline-block max-w-2xl border-l-2 border-emerald-800 bg-white/35 py-3 pl-4 pr-5 text-sm text-emerald-950 backdrop-blur-sm transition hover:border-emerald-600 hover:bg-white/50 hover:text-emerald-700 dark:border-lime-300 dark:bg-slate-900/45 dark:text-slate-200 dark:hover:bg-slate-900/70 dark:hover:text-lime-100"
               >
                 <span className="text-xs font-black uppercase tracking-[0.18em]">
-                  {spotlight.type === 'event' ? 'Now' : 'Expert'}
+                  {spotlight.type === 'event'
+                    ? 'Now'
+                    : spotlight.type === 'ride'
+                      ? 'Expert'
+                      : 'Idea'}
                 </span>
                 <span className="mx-2 text-emerald-700 dark:text-emerald-300">/</span>
                 <span>{spotlight.title}</span>

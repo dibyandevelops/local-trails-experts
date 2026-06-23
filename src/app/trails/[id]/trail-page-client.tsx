@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Map, {
   FullscreenControl,
@@ -610,7 +610,9 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   initialTrail,
 }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const autoRequestHandledRef = useRef(false);
   const { data: currentUser, isLoading: loadingCurrentUser } = useCurrentUser();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -1397,6 +1399,15 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     setRequestMessage(null);
     setRequestModalOpen(true);
   };
+
+  useEffect(() => {
+    if (autoRequestHandledRef.current) return;
+    if (searchParams.get('request') !== 'ride') return;
+    if (loadingCurrentUser) return;
+
+    autoRequestHandledRef.current = true;
+    handleOpenRequestRide();
+  }, [loadingCurrentUser, searchParams]);
 
   const handleOpenReviewModal = () => {
     if (loadingCurrentUser) {

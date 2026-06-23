@@ -14,6 +14,12 @@ type HomeSpotlight =
       title: string;
       href: string;
       meta: string | null;
+    }
+  | {
+      type: 'idea';
+      title: string;
+      href: string;
+      meta: string | null;
     };
 
 function formatDate(value: Date | string | null) {
@@ -82,5 +88,45 @@ export async function getHomeSpotlight(): Promise<HomeSpotlight | null> {
     console.warn('home: failed to fetch spotlight', error);
   }
 
-  return null;
+  try {
+    const trailResult = await pool.query(
+      `
+      SELECT id, slug, name, location, difficulty
+      FROM trails
+      WHERE status = 'approved'
+        AND COALESCE(is_hidden, FALSE) = FALSE
+      ORDER BY RANDOM()
+      LIMIT 1
+      `
+    );
+
+    const trail = trailResult.rows[0] as
+      | {
+          id: string;
+          slug: string | null;
+          name: string;
+          location: string | null;
+          difficulty: string | null;
+        }
+      | undefined;
+
+    if (trail) {
+      const trailPath = encodeURIComponent(trail.slug || trail.id);
+      return {
+        type: 'idea',
+        title: `Want to ride ${trail.name} this weekend?`,
+        href: `/trails/${trailPath}?request=ride`,
+        meta: [trail.location, trail.difficulty].filter(Boolean).join(' · ') || 'Open the trail and request a ride.',
+      };
+    }
+  } catch (error) {
+    console.warn('home: failed to fetch random trail spotlight', error);
+  }
+
+  return {
+    type: 'idea',
+    title: 'Want to ride a local trail this weekend?',
+    href: '/trails',
+    meta: 'Find a route and request help from the trail page.',
+  };
 }

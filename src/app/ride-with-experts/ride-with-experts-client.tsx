@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Clock, MapPin, Mountain, ShieldCheck, Star, Users, X } from 'lucide-react';
@@ -91,7 +92,9 @@ function isActiveRequest(status?: ExpertRideProgramRequest['status']) {
 
 export default function RideWithExpertsClient() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
+  const autoRequestHandledRef = useRef(false);
   const [requestProgram, setRequestProgram] = useState<ExpertRideProgram | null>(null);
   const [requestMessage, setRequestMessage] = useState('');
   const {
@@ -200,6 +203,15 @@ export default function RideWithExpertsClient() {
     );
     setRequestProgram(program);
   };
+
+  useEffect(() => {
+    if (autoRequestHandledRef.current) return;
+    if (searchParams.get('request') !== 'random') return;
+    if (loadingPrograms || loadingUser || !featuredProgram) return;
+
+    autoRequestHandledRef.current = true;
+    openRequest(featuredProgram);
+  }, [featuredProgram, loadingPrograms, loadingUser, searchParams]);
 
   const submitRequest: SubmitHandler<RideRequestFormValues> = (values) => {
     if (!requestProgram || requestMutation.isPending) return;
