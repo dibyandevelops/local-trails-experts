@@ -1,5 +1,6 @@
 
 import type { Metadata, Viewport } from 'next';
+import { Space_Grotesk } from 'next/font/google';
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
@@ -22,6 +23,12 @@ import './globals.css';
 import MainContent from '@/components/main-content';
 
 const ICON_VERSION = '20260604-pwa-safe-area';
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-app',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(getPublicAppUrl()),
@@ -110,7 +117,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body className={spaceGrotesk.variable}>
         <SpeedInsights />
         <Analytics />
         <PWARegister />
