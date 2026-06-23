@@ -34,6 +34,7 @@ import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal'
 import { getKomootNavigateUrl } from '@/lib/komoot';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import TrailRequestModal from '@/components/feature-components/trail-request/trail-request-modal';
+import UnderlineSearchForm from '@/components/ui/underline-search-form';
 import {
   getDifficultyLabel,
   TRAIL_DIFFICULTY_OPTIONS,
@@ -675,29 +676,15 @@ function TrailsPageContent() {
             )}
           </div>
         </div>
-        <form className="relative mt-5" onSubmit={handleSearch}>
-          <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-            <div className="min-w-0">
-              <label htmlFor="trails-search" className="sr-only">
-                Search trails
-              </label>
-              <input
-                id="trails-search"
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
-                className="w-full rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/20 dark:border-emerald-700/50 dark:bg-slate-950/75 dark:text-slate-50 dark:placeholder:text-emerald-100/40 dark:focus:border-emerald-500/70"
-              />
-            </div>
-            <button
-              type="submit"
-              className="rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
-            >
-              Search
-            </button>
-          </div>
-        </form>
+        <UnderlineSearchForm
+          id="trails-search"
+          label="Search trails"
+          placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
+          value={searchInput}
+          onChange={setSearchInput}
+          onSubmit={handleSearch}
+          className="relative mt-5"
+        />
         {hasActiveFilters && (
           <div className="relative mt-4 flex flex-wrap items-center gap-2">
             {search && (

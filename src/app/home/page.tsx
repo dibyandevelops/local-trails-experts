@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import UnderlineSearchForm from '@/components/ui/underline-search-form';
 import { getHomeSpotlight } from '@/lib/data/public-home';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
@@ -85,30 +86,14 @@ export default async function Home() {
               Search local routes, meet the experts who know them, and find support before the ride.
             </p>
 
-            <form
+            <UnderlineSearchForm
+              id="home-trail-search"
+              label="Search trails"
               action="/trails"
               method="get"
-              className="mt-7 max-w-3xl border-b-2 border-emerald-950 bg-transparent pb-2 dark:border-lime-300"
-            >
-              <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
-                <label htmlFor="home-trail-search" className="sr-only">
-                  Search trails
-                </label>
-                <input
-                  id="home-trail-search"
-                  name="search"
-                  type="search"
-                  placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
-                  className="min-h-[54px] w-full border-0 bg-transparent px-0 text-xl font-black text-gray-950 outline-none placeholder:text-gray-500 focus:ring-0 dark:text-slate-50 dark:placeholder:text-slate-500 md:text-2xl"
-                />
-                <button
-                  type="submit"
-                  className="justify-self-start pb-2 text-sm font-black text-emerald-950 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100 md:justify-self-end"
-                >
-                  Search
-                </button>
-              </div>
-            </form>
+              placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
+              className="mt-7"
+            />
 
             {spotlight && (
               <Link

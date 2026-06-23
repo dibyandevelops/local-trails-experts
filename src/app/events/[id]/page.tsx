@@ -46,6 +46,14 @@ function loadPosterImage(src: string) {
   });
 }
 
+async function loadPosterFonts() {
+  await Promise.allSettled([
+    document.fonts?.load('700 28px "Space Grotesk"'),
+    document.fonts?.load('800 36px "Space Grotesk"'),
+    document.fonts?.load('900 78px "Space Grotesk"'),
+  ]);
+}
+
 function drawPosterTextLines(
   ctx: CanvasRenderingContext2D,
   lines: string[],
@@ -643,6 +651,7 @@ export default function EventDetailPage() {
 
   const downloadEventPoster = async () => {
     if (!event) return;
+    await loadPosterFonts();
     const dateLabel = new Date(event.event_date).toLocaleString(undefined, {
       weekday: 'short',
       month: 'short',
@@ -650,13 +659,14 @@ export default function EventDetailPage() {
       hour: 'numeric',
       minute: '2-digit',
     });
-    const titleLines = wrapPosterText(event.title, 28);
+    const titleLines = wrapPosterText(event.title, 26);
     const trailName = event.trail?.name || event.city || 'Local ride';
-    const meta = [
-      dateLabel,
-      event.meeting_point ? `Meet: ${event.meeting_point}` : '',
-      Number(event.price_npr || 0) > 0 ? `NPR ${event.price_npr}` : 'Free',
-    ].filter(Boolean);
+    const infoItems = [
+      { label: 'When', value: dateLabel },
+      { label: 'Trail', value: trailName },
+      { label: 'Meeting Point', value: event.meeting_point || event.city || 'Shared after registration' },
+      { label: 'Fee', value: Number(event.price_npr || 0) > 0 ? `NPR ${event.price_npr}` : 'Free' },
+    ];
     const alert = event.trail_alert ? truncatePosterText(event.trail_alert, 118) : '';
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
@@ -669,9 +679,9 @@ export default function EventDetailPage() {
 
     const logo = await loadPosterImage('/icons/logo-transparent-source.png');
     const bg = ctx.createLinearGradient(0, 0, 1080, 1350);
-    bg.addColorStop(0, '#052e1b');
-    bg.addColorStop(0.52, '#064e3b');
-    bg.addColorStop(1, '#84cc16');
+    bg.addColorStop(0, '#04130d');
+    bg.addColorStop(0.58, '#063824');
+    bg.addColorStop(1, '#365314');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, 1080, 1350);
 
@@ -700,22 +710,33 @@ export default function EventDetailPage() {
 
     ctx.drawImage(logo, 78, 68, 82, 82);
     ctx.fillStyle = '#d9f99d';
-    ctx.font = '800 34px Arial, sans-serif';
+    ctx.font = '800 34px "Space Grotesk", Arial, sans-serif';
     ctx.letterSpacing = '8px';
-    ctx.fillText('LOCOXPERTS EVENT', 184, 122);
+    ctx.fillText('LOCOXPERTS', 184, 122);
     ctx.letterSpacing = '0px';
 
     ctx.fillStyle = '#f7fee7';
-    ctx.font = '900 78px Arial, sans-serif';
-    drawPosterTextLines(ctx, titleLines, 80, 260, 88);
+    ctx.font = '900 82px "Space Grotesk", Arial, sans-serif';
+    drawPosterTextLines(ctx, titleLines, 80, 270, 90);
 
     ctx.fillStyle = '#d9f99d';
-    ctx.font = '800 36px Arial, sans-serif';
-    ctx.fillText(truncatePosterText(trailName, 42), 80, 560);
+    ctx.font = '800 34px "Space Grotesk", Arial, sans-serif';
+    ctx.fillText('Ride plan', 80, 555);
 
-    ctx.fillStyle = '#ecfccb';
-    ctx.font = '700 34px Arial, sans-serif';
-    drawPosterTextLines(ctx, meta.map((line) => truncatePosterText(line, 52)), 80, 650, 54);
+    infoItems.forEach((item, index) => {
+      const x = index % 2 === 0 ? 80 : 565;
+      const y = 620 + Math.floor(index / 2) * 145;
+      ctx.fillStyle = 'rgba(2, 44, 34, 0.72)';
+      ctx.beginPath();
+      ctx.roundRect(x, y, 435, 106, 28);
+      ctx.fill();
+      ctx.fillStyle = '#bef264';
+      ctx.font = '800 22px "Space Grotesk", Arial, sans-serif';
+      ctx.fillText(item.label.toUpperCase(), x + 28, y + 38);
+      ctx.fillStyle = '#f7fee7';
+      ctx.font = '800 30px "Space Grotesk", Arial, sans-serif';
+      ctx.fillText(truncatePosterText(item.value, 28), x + 28, y + 78);
+    });
 
     if (alert) {
       ctx.fillStyle = 'rgba(2, 44, 34, 0.78)';
@@ -723,20 +744,20 @@ export default function EventDetailPage() {
       ctx.roundRect(70, 880, 940, 170, 34);
       ctx.fill();
       ctx.fillStyle = '#bef264';
-      ctx.font = '900 28px Arial, sans-serif';
+      ctx.font = '900 28px "Space Grotesk", Arial, sans-serif';
       ctx.letterSpacing = '4px';
       ctx.fillText('TRAIL ALERT', 105, 930);
       ctx.letterSpacing = '0px';
       ctx.fillStyle = '#f7fee7';
-      ctx.font = '700 30px Arial, sans-serif';
+      ctx.font = '700 30px "Space Grotesk", Arial, sans-serif';
       drawPosterTextLines(ctx, wrapPosterText(alert, 48).slice(0, 2), 105, 985, 40);
     }
 
     ctx.fillStyle = '#f7fee7';
-    ctx.font = '800 30px Arial, sans-serif';
-    ctx.fillText('Find local trails and guides', 80, 1235);
+    ctx.font = '800 30px "Space Grotesk", Arial, sans-serif';
+    ctx.fillText('Find trails, experts, and ride support', 80, 1235);
     ctx.fillStyle = '#d9f99d';
-    ctx.font = '700 28px Arial, sans-serif';
+    ctx.font = '700 28px "Space Grotesk", Arial, sans-serif';
     ctx.fillText(truncatePosterText(window.location.href, 62), 80, 1285);
 
     canvas.toBlob((blob) => {
