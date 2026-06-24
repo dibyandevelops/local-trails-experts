@@ -5,6 +5,7 @@ import {
   fetchPublicTrailByIdentifier,
   getPublicTrailStaticParams,
 } from '@/lib/data/public-trails';
+import { getPublicRideNotesForTrail } from '@/lib/data/public-ride-notes';
 
 export const revalidate = 300;
 
@@ -28,5 +29,15 @@ export default async function TrailPage({ params }: { params: Promise<Params> })
     redirect(`/trails/${initialTrail.slug}`);
   }
 
-  return <TrailPageClient trailId={initialTrail?.id || identifier} initialTrail={initialTrail} />;
+  const rideNotes = initialTrail?.id
+    ? await getPublicRideNotesForTrail(initialTrail.id, 3)
+    : [];
+
+  return (
+    <TrailPageClient
+      trailId={initialTrail?.id || identifier}
+      initialTrail={initialTrail}
+      rideNotes={rideNotes}
+    />
+  );
 }

@@ -16,6 +16,7 @@ import OrganizationsPanel from '@/components/admin/organizations-panel';
 import FundraisingCampaignsPanel from '@/components/admin/fundraising-campaigns-panel';
 import ImpactStatsPanel from '@/components/admin/impact-stats-panel';
 import RideProgramsPanel from '@/components/admin/ride-programs-panel';
+import RideNotesPanel from '@/components/admin/ride-notes-panel';
 
 function AdminSection({
   id,
@@ -71,6 +72,7 @@ export default function AdminPage() {
           <UpcomingEventsPanel />
         </div>
         <RideProgramsPanel />
+        <RideNotesPanel />
         <OrganizationMembersPanel />
         <OrganizationsPanel />
         <FundraisingCampaignsPanel />

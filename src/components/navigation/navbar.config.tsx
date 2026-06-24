@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CircleDollarSign,
   Dumbbell,
+  NotebookText,
   House,
   Map,
   MapPinned,
@@ -21,6 +22,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Ride with Experts', href: '/ride-with-experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Ride Notes', href: '/ride-notes', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Trail Builders', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Campaigns', href: '/campaigns', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
@@ -63,6 +65,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/trails': Map,
   '/events': CalendarDays,
   '/ride-with-experts': Mountain,
+  '/ride-notes': NotebookText,
   '/community-rides': Bike,
   '/experts': Users,
   '/organizations': Users,

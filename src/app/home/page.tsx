@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import HomeTrailSearch from '@/components/home/home-trail-search';
 import { getHomeFeaturedTrails, getHomeSpotlight } from '@/lib/data/public-home';
+import { getPublicRideNotes, type PublicRideNote } from '@/lib/data/public-ride-notes';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
 
@@ -43,6 +44,7 @@ export const metadata: Metadata = {
 const featureActions = [
   { label: 'Find trails', href: '/trails' },
   { label: 'Ride with experts', href: '/ride-with-experts' },
+  { label: 'Ride notes', href: '/ride-notes' },
   { label: 'Bike shops and support', href: '/store-locator' },
   { label: 'Local organizations', href: '/organizations' },
   { label: 'Trail campaigns', href: '/campaigns' },
@@ -50,10 +52,17 @@ const featureActions = [
   { label: 'Join as an expert', href: '/experts/join' },
 ];
 
+function getRideNoteMeta(note: PublicRideNote) {
+  return [note.trail_name, note.expert_name ? `By ${note.expert_name}` : '']
+    .filter(Boolean)
+    .join(' / ');
+}
+
 export default async function Home() {
-  const [spotlight, featuredTrails] = await Promise.all([
+  const [spotlight, featuredTrails, rideNotes] = await Promise.all([
     getHomeSpotlight(),
     getHomeFeaturedTrails(5),
+    getPublicRideNotes(3),
   ]);
   const websiteJsonLd = jsonLdStringify({
     '@context': 'https://schema.org',
@@ -111,6 +120,40 @@ export default async function Home() {
                   </span>
                 )}
               </Link>
+            )}
+
+            {rideNotes.length > 0 && (
+              <div className="mt-8 max-w-3xl border-t border-emerald-950/15 pt-4 dark:border-lime-300/20">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-950 dark:text-lime-200">
+                    Ride notes
+                  </p>
+                  <Link
+                    href="/ride-notes"
+                    className="text-xs font-black text-emerald-950 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
+                  >
+                    Read more
+                  </Link>
+                </div>
+                <div className="grid gap-x-6 sm:grid-cols-3">
+                  {rideNotes.map((note) => (
+                    <Link
+                      key={note.id}
+                      href={`/ride-notes/${note.slug}`}
+                      className="group border-b border-emerald-950/10 py-3 transition hover:border-emerald-700/40 dark:border-lime-300/10 dark:hover:border-lime-200/50"
+                    >
+                      <span className="block line-clamp-2 text-sm font-black text-gray-950 group-hover:text-emerald-800 dark:text-slate-50 dark:group-hover:text-lime-200">
+                        {note.title}
+                      </span>
+                      {getRideNoteMeta(note) && (
+                        <span className="mt-1 block truncate text-xs text-gray-600 dark:text-slate-400">
+                          {getRideNoteMeta(note)}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>

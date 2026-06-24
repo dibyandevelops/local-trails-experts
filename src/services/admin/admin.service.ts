@@ -114,6 +114,59 @@ export type AdminRideProgramRequest = {
   trail_location: string | null;
 };
 
+export type AdminRideNoteCategory =
+  | 'trail_guide'
+  | 'expert_note'
+  | 'ride_report'
+  | 'safety'
+  | 'trail_work'
+  | 'ride_note';
+
+export type AdminRideNote = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content: string;
+  cover_image_url: string | null;
+  category: AdminRideNoteCategory;
+  status: 'draft' | 'published';
+  trail_id: string | null;
+  expert_user_id: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  trail_name: string | null;
+  trail_slug: string | null;
+  expert_name: string | null;
+};
+
+export type AdminRideNoteTrailOption = {
+  id: string;
+  name: string;
+  slug: string | null;
+  location: string | null;
+};
+
+export type AdminRideNoteExpertOption = {
+  id: string;
+  name: string | null;
+  email: string;
+  city: string | null;
+};
+
+export type AdminRideNoteInput = {
+  id?: string;
+  title: string;
+  excerpt?: string;
+  content: string;
+  cover_image_url?: string;
+  category: AdminRideNoteCategory;
+  status: 'draft' | 'published';
+  trail_id?: string;
+  expert_user_id?: string;
+};
+
 export type AdminUser = {
   id: string;
   name: string | null;
@@ -290,6 +343,53 @@ export async function updateAdminRideProgramVisibility(programId: string, isActi
     return data.program;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to update ride program'));
+  }
+}
+
+export async function fetchAdminRideNotes() {
+  try {
+    const { data } = await apiClient.get<{
+      notes: AdminRideNote[];
+      trails: AdminRideNoteTrailOption[];
+      experts: AdminRideNoteExpertOption[];
+    }>('/api/admin/ride-notes');
+    return {
+      notes: data.notes || [],
+      trails: data.trails || [],
+      experts: data.experts || [],
+    };
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to fetch ride notes'));
+  }
+}
+
+export async function createAdminRideNote(input: AdminRideNoteInput) {
+  try {
+    const { data } = await apiClient.post<{ note: AdminRideNote }>('/api/admin/ride-notes', input);
+    return data.note;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to create ride note'));
+  }
+}
+
+export async function updateAdminRideNote(input: AdminRideNoteInput & { id: string }) {
+  try {
+    const { data } = await apiClient.patch<{ note: AdminRideNote }>('/api/admin/ride-notes', input);
+    return data.note;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update ride note'));
+  }
+}
+
+export async function deleteAdminRideNote(noteId: string) {
+  try {
+    const { data } = await apiClient.delete<{ note: Pick<AdminRideNote, 'id' | 'title'> }>(
+      '/api/admin/ride-notes',
+      { params: { id: noteId } }
+    );
+    return data.note;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to delete ride note'));
   }
 }
 

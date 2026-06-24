@@ -55,6 +55,7 @@ const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
 type TrailPageClientProps = {
   trailId: string;
   initialTrail: Trail | null;
+  rideNotes?: TrailRideNote[];
 };
 
 type GeoJSON = {
@@ -90,6 +91,16 @@ type TrailUpdateLog = {
   created_at: string;
   organization_name?: string | null;
   actor_name?: string | null;
+};
+type TrailRideNote = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  category: string;
+  published_at: string | null;
+  created_at: string;
+  expert_name: string | null;
 };
 type TrailService = {
   id: string;
@@ -364,6 +375,7 @@ function CampaignSupportDropdown({ campaigns }: CampaignSupportDropdownProps) {
 const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   trailId,
   initialTrail,
+  rideNotes = [],
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -2001,6 +2013,56 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 />
                 {getSafetyLabelText(label)}
               </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {rideNotes.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                Ride Notes
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Local notes for this trail
+              </h2>
+              <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+                Trail guides, expert notes, and updates connected to this route.
+              </p>
+            </div>
+            <a
+              href="/ride-notes"
+              className="text-xs font-bold text-emerald-800 underline underline-offset-4 hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
+            >
+              View all notes
+            </a>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {rideNotes.map((note) => (
+              <a
+                key={note.id}
+                href={`/ride-notes/${note.slug}`}
+                className="group rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-50/70 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30"
+              >
+                <span className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">
+                  {note.category.replace(/_/g, ' ')}
+                </span>
+                <h3 className="mt-2 line-clamp-2 text-sm font-black text-gray-950 group-hover:text-emerald-800 dark:text-slate-50 dark:group-hover:text-lime-200">
+                  {note.title}
+                </h3>
+                {note.excerpt && (
+                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-gray-600 dark:text-slate-300">
+                    {note.excerpt}
+                  </p>
+                )}
+                {note.expert_name && (
+                  <p className="mt-3 text-xs font-semibold text-gray-500 dark:text-slate-400">
+                    By {note.expert_name}
+                  </p>
+                )}
+              </a>
             ))}
           </div>
         </section>

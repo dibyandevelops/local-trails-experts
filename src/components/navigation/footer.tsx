@@ -17,6 +17,7 @@ function buildMailto(params: { to?: string; subject: string; body: string }) {
 const FEATURE_LINKS = [
   { label: 'Trail map', href: '/trails' },
   { label: 'Ride with experts', href: '/ride-with-experts' },
+  { label: 'Ride notes', href: '/ride-notes' },
   { label: 'Events', href: '/events' },
   { label: 'Expert directory', href: '/experts' },
   { label: 'Trail builders', href: '/organizations' },
