@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -19,15 +20,6 @@ import { getSafetyLabelText } from '@/lib/trail-safety';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Toast from '@radix-ui/react-toast';
-import Map, {
-  FullscreenControl,
-  Layer,
-  Marker,
-  NavigationControl,
-  ScaleControl,
-  Source,
-} from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import EventForm from '@/components/feature-components/event-form/event-form';
 import { getMapLibreCompatibleMapStyle, type MapStyleMode } from '@/lib/map-styles';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
@@ -65,6 +57,15 @@ import {
 } from '@/components/feature-components/trails/trails-page-options';
 
 const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
+
+const TrailsMapPreview = dynamic(() => import('./trails-map-preview'), {
+  ssr: false,
+  loading: () => (
+    <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
+      Loading map...
+    </div>
+  ),
+});
 
 type TrailsPageParam = { offset: number; limit: number };
 type ExpertTrailsResponse = {
@@ -495,10 +496,14 @@ function TrailsPageContent() {
     },
   });
 
-  const trails = (data?.pages.flatMap((pageData) => pageData.trails) || []).map((trail) => ({
-    ...trail,
-    isRequested: Boolean(requestedByTrailId[trail.id]),
-  }));
+  const trails = useMemo(
+    () =>
+      (data?.pages.flatMap((pageData) => pageData.trails) || []).map((trail) => ({
+        ...trail,
+        isRequested: Boolean(requestedByTrailId[trail.id]),
+      })),
+    [data?.pages, requestedByTrailId]
+  );
   const isAdmin = user?.role === 'admin';
   const isParticipant = user?.role === 'participant';
   const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
@@ -532,51 +537,6 @@ function TrailsPageContent() {
     }
   }, [mapStyleMode]);
 
-  const getMapBounds = (routeData: RouteData) => {
-    if (!routeData?.coordinates?.length) return null;
-    const lats = routeData.coordinates.map((c) => c.latitude);
-    const lons = routeData.coordinates.map((c) => c.longitude);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLon = Math.min(...lons);
-    const maxLon = Math.max(...lons);
-    return {
-      minLat,
-      maxLat,
-      minLon,
-      maxLon,
-      centerLat: (minLat + maxLat) / 2,
-      centerLon: (minLon + maxLon) / 2,
-    };
-  };
-
-  const getInitialZoom = (bounds: {
-    minLat: number;
-    maxLat: number;
-    minLon: number;
-    maxLon: number;
-  }) => {
-    const latSpan = Math.abs(bounds.maxLat - bounds.minLat);
-    const lonSpan = Math.abs(bounds.maxLon - bounds.minLon);
-    const maxSpan = Math.max(latSpan, lonSpan);
-    if (maxSpan < 0.004) return 16;
-    if (maxSpan < 0.008) return 15;
-    if (maxSpan < 0.02) return 14;
-    if (maxSpan < 0.05) return 13;
-    if (maxSpan < 0.1) return 12;
-    if (maxSpan < 0.25) return 11;
-    if (maxSpan < 0.6) return 10;
-    return 9;
-  };
-
-  const getRouteGeoJSON = (routeData: RouteData) => ({
-    type: 'Feature',
-    geometry: {
-      type: 'LineString',
-      coordinates: routeData.coordinates.map((c) => [c.longitude, c.latitude]),
-    },
-  });
-
   useEffect(() => {
     if (didRestoreScroll.current) return;
     if (isInitialLoading) return;
@@ -585,12 +545,28 @@ function TrailsPageContent() {
       didRestoreScroll.current = true;
       return;
     }
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: y, behavior: 'auto' });
-    });
-    clearTrailsScrollPosition();
-    didRestoreScroll.current = true;
-  }, [isInitialLoading, trails.length]);
+    let cancelled = false;
+    let attempts = 0;
+    const restore = () => {
+      if (cancelled) return;
+      attempts += 1;
+      const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScrollY >= y || attempts >= 12 || !hasNextPage) {
+        window.scrollTo({ top: Math.min(y, Math.max(0, maxScrollY)), behavior: 'auto' });
+        clearTrailsScrollPosition();
+        didRestoreScroll.current = true;
+        return;
+      }
+      window.setTimeout(() => {
+        void fetchNextPage();
+        requestAnimationFrame(restore);
+      }, 80);
+    };
+    requestAnimationFrame(restore);
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchNextPage, hasNextPage, isInitialLoading, trails.length]);
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -613,6 +589,7 @@ function TrailsPageContent() {
       (entries) => {
         const firstEntry = entries[0];
         if (!firstEntry?.isIntersecting) return;
+        if (!didRestoreScroll.current) return;
         if (!hasNextPage || isFetchingNextPage || isLoading) return;
         fetchNextPage();
       },
@@ -1156,144 +1133,12 @@ function TrailsPageContent() {
                 </div>
               </div>
             ) : mapTrailDetail?.route_data?.coordinates?.length ? (
-              <Map
-                initialViewState={(() => {
-                  const routeData = mapTrailDetail.route_data as RouteData;
-                  const bounds = getMapBounds(routeData);
-                  if (bounds) {
-                    return {
-                      longitude: bounds.centerLon,
-                      latitude: bounds.centerLat,
-                      zoom: getInitialZoom(bounds),
-                    };
-                  }
-                  return {
-                    longitude: mapTrailDetail.longitude || 0,
-                    latitude: mapTrailDetail.latitude || 0,
-                    zoom: 12,
-                  };
-                })()}
-                style={{ width: '100%', height: 'calc(82vh - 52px)' }}
+              <TrailsMapPreview
+                trail={mapTrailDetail}
                 mapStyle={mapStyle}
-              >
-                <div className="absolute left-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
-                  <button
-                    type="button"
-                    aria-pressed={mapStyleMode === 'satellite'}
-                    onClick={() => setMapStyleMode('satellite')}
-                    className={`px-3 py-2 text-xs font-semibold transition ${
-                      mapStyleMode === 'satellite'
-                        ? 'bg-white/15 text-white'
-                        : 'text-white/80 hover:bg-white/10'
-                    }`}
-                    title="Satellite imagery with places/labels"
-                  >
-                    Satellite
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={mapStyleMode === 'map'}
-                    onClick={() => setMapStyleMode('map')}
-                    className={`px-3 py-2 text-xs font-semibold transition ${
-                      mapStyleMode === 'map'
-                        ? 'bg-white/15 text-white'
-                        : 'text-white/80 hover:bg-white/10'
-                    }`}
-                    title="Simple map view with places"
-                  >
-                    Map
-                  </button>
-                </div>
-                <NavigationControl position="top-right" showCompass showZoom />
-                <FullscreenControl position="top-right" />
-                <ScaleControl position="bottom-left" unit="metric" />
-                <Source
-                  id="modal-route"
-                  type="geojson"
-                  data={
-                    getRouteGeoJSON(
-                      mapTrailDetail.route_data as RouteData,
-                    ) as any
-                  }
-                >
-                  <Layer
-                    id="modal-route-glow"
-                    type="line"
-                    paint={{
-                      'line-color': '#10b981',
-                      'line-width': 10,
-                      'line-opacity': 0.25,
-                      'line-blur': 1.2,
-                    }}
-                  />
-                  <Layer
-                    id="modal-route-core"
-                    type="line"
-                    paint={{
-                      'line-color': '#34d399',
-                      'line-width': 4.5,
-                      'line-opacity': 0.98,
-                    }}
-                  />
-                </Source>
-                {mapTrailDetail?.route_data?.coordinates?.length ? (
-                  <Layer
-                    id="modal-route-arrows-layer"
-                    type="symbol"
-                    source="modal-route"
-                    layout={{
-                      'symbol-placement': 'line',
-                      'symbol-spacing': 120,
-                      'text-field': '›',
-                      'text-size': 28,
-                      'text-rotation-alignment': 'map',
-                      'text-keep-upright': false,
-                      'text-offset': [0, 0],
-                      'text-allow-overlap': true,
-                      'text-ignore-placement': true,
-                    }}
-                    paint={{
-                      'text-color': '#16a34a',
-                      'text-halo-color': '#0f172a',
-                      'text-halo-width': 1.2,
-                    }}
-                  />
-                ) : null}
-                <Marker
-                  longitude={
-                    (mapTrailDetail.route_data as RouteData).coordinates[0]
-                      .longitude
-                  }
-                  latitude={
-                    (mapTrailDetail.route_data as RouteData).coordinates[0]
-                      .latitude
-                  }
-                  anchor="bottom"
-                >
-                  <div className="rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
-                    Start
-                  </div>
-                </Marker>
-                <Marker
-                  longitude={
-                    (mapTrailDetail.route_data as RouteData).coordinates[
-                      (mapTrailDetail.route_data as RouteData).coordinates
-                        .length - 1
-                    ].longitude
-                  }
-                  latitude={
-                    (mapTrailDetail.route_data as RouteData).coordinates[
-                      (mapTrailDetail.route_data as RouteData).coordinates
-                        .length - 1
-                    ].latitude
-                  }
-                  anchor="bottom"
-                >
-                  <div className="rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white">
-                    End
-                  </div>
-                </Marker>
-              </Map>
+                mapStyleMode={mapStyleMode}
+                onMapStyleModeChange={setMapStyleMode}
+              />
             ) : (
               <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
                 No GPX route data available for this trail.
