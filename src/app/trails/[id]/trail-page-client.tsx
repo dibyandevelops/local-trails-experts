@@ -1166,6 +1166,13 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     setRequestModalOpen(true);
   };
 
+  const handlePlanRideWithExpert = () => {
+    setSelectedExpertId(
+      associatedExperts.find((expert) => expert.is_verified_expert)?.id || ''
+    );
+    handleOpenRequestRide();
+  };
+
   useEffect(() => {
     if (autoRequestHandledRef.current) return;
     if (searchParams.get('request') !== 'ride') return;
@@ -1627,6 +1634,24 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             )}
             <CampaignSupportDropdown campaigns={activeCampaigns} />
             <TrailAlertsDropdown updates={trailUpdates} />
+            {canRequestTrail && (
+              hasRequestedTrail ? (
+                <span className="inline-flex h-10 items-center rounded-full border border-green-200 bg-green-50 px-4 text-xs font-bold text-green-800 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200">
+                  Ride request sent
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handlePlanRideWithExpert}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-emerald-700 px-4 text-xs font-black text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
+                >
+                  <svg viewBox="0 0 20 20" className="h-4 w-4 fill-current" aria-hidden="true">
+                    <path d="M10 2.5a5.5 5.5 0 0 0-5.5 5.5c0 4.18 5 8.96 5.21 9.16a.42.42 0 0 0 .58 0c.21-.2 5.21-4.98 5.21-9.16A5.5 5.5 0 0 0 10 2.5Zm0 7.7A2.2 2.2 0 1 1 10 5.8a2.2 2.2 0 0 1 0 4.4Z" />
+                  </svg>
+                  Plan this ride with an expert
+                </button>
+              )
+            )}
             {trailImages.length > 0 && (
               <button
                 type="button"
@@ -1770,8 +1795,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                     </span>
                   </a>
                 )}
+                <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
               </div>
-              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{trail.location}</p>
             </div>
           </div>
 
