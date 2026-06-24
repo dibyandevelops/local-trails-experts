@@ -1,6 +1,7 @@
 import 'server-only';
 
 import pool from '@/lib/db';
+import type { Trail } from '@/types';
 
 type HomeSpotlight =
   | {
@@ -129,4 +130,60 @@ export async function getHomeSpotlight(): Promise<HomeSpotlight | null> {
     href: '/trails',
     meta: 'Find a route and request help from the trail page.',
   };
+}
+
+export async function getHomeFeaturedTrails(limit = 5): Promise<Trail[]> {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        id,
+        slug,
+        name,
+        difficulty,
+        sport_type,
+        location,
+        is_hazardous,
+        latitude,
+        longitude,
+        distance_km,
+        elevation_gain_m,
+        estimated_time_hours,
+        image_url,
+        komoot_embed_url,
+        created_at,
+        updated_at,
+        status,
+        is_hidden
+      FROM trails
+      WHERE status = 'approved'
+        AND COALESCE(is_hidden, FALSE) = FALSE
+      ORDER BY RANDOM()
+      LIMIT $1
+      `,
+      [limit]
+    );
+
+    return result.rows.map((trail) => ({
+      ...trail,
+      description: null,
+      safety_labels: [],
+      hazard_note: null,
+      hazard_updated_by: null,
+      hazard_updated_at: null,
+      average_rating: null,
+      review_count: null,
+      trail_images: [],
+      route_data: null,
+      submitted_by_user_id: null,
+      submitted_by_name: null,
+      submitted_by_email: null,
+      created_by: null,
+      created_at: trail.created_at instanceof Date ? trail.created_at.toISOString() : trail.created_at,
+      updated_at: trail.updated_at instanceof Date ? trail.updated_at.toISOString() : trail.updated_at,
+    })) as Trail[];
+  } catch (error) {
+    console.warn('home: failed to fetch featured trails', error);
+    return [];
+  }
 }

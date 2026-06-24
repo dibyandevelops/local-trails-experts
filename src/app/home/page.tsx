@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import UnderlineSearchForm from '@/components/ui/underline-search-form';
-import { getHomeSpotlight } from '@/lib/data/public-home';
+import HomeTrailSearch from '@/components/home/home-trail-search';
+import { getHomeFeaturedTrails, getHomeSpotlight } from '@/lib/data/public-home';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
 
@@ -51,7 +51,10 @@ const featureActions = [
 ];
 
 export default async function Home() {
-  const spotlight = await getHomeSpotlight();
+  const [spotlight, featuredTrails] = await Promise.all([
+    getHomeSpotlight(),
+    getHomeFeaturedTrails(5),
+  ]);
   const websiteJsonLd = jsonLdStringify({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -86,14 +89,7 @@ export default async function Home() {
               Search local routes, meet the experts who know them, and find support before the ride.
             </p>
 
-            <UnderlineSearchForm
-              id="home-trail-search"
-              label="Search trails"
-              action="/trails"
-              method="get"
-              placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
-              className="mt-7"
-            />
+            <HomeTrailSearch featuredTrails={featuredTrails} />
 
             {spotlight && (
               <Link
