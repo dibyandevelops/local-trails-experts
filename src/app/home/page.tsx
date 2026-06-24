@@ -84,17 +84,17 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: websiteJsonLd }}
       />
 
-      <section className="reveal reveal-1 relative overflow-hidden border-y border-emerald-200/70 bg-[#f5f0df] px-4 py-9 dark:border-emerald-900/60 dark:bg-slate-950 md:px-8 md:py-12 lg:px-10 lg:py-14">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(6,78,59,0.07)_1px,transparent_1px),linear-gradient(0deg,rgba(6,78,59,0.07)_1px,transparent_1px)] bg-[size:64px_64px] dark:opacity-20" />
-        <div className="pointer-events-none absolute -right-20 top-8 h-64 w-64 rounded-full bg-lime-300/25 blur-3xl dark:bg-lime-300/10" />
+      <section className="reveal reveal-1 relative overflow-hidden border-y border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-lime-50/60 px-4 py-9 dark:border-emerald-900/60 dark:from-slate-950 dark:via-slate-950 dark:to-emerald-950/40 md:px-8 md:py-12 lg:px-10 lg:py-14">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.12),transparent_30%),linear-gradient(90deg,rgba(6,78,59,0.045)_1px,transparent_1px),linear-gradient(0deg,rgba(6,78,59,0.045)_1px,transparent_1px)] bg-[size:auto,64px_64px,64px_64px] dark:opacity-25" />
+        <div className="pointer-events-none absolute -right-20 top-8 h-64 w-64 rounded-full bg-emerald-300/20 blur-3xl dark:bg-lime-300/10" />
         <div className="pointer-events-none absolute -bottom-24 left-8 h-44 w-44 rounded-full bg-emerald-700/10 blur-3xl dark:bg-emerald-400/10" />
 
         <div className="relative mx-auto max-w-5xl">
           <div className="max-w-4xl">
-            <h1 className="text-balance text-5xl font-black leading-[0.9] tracking-[-0.055em] text-gray-950 dark:text-white md:text-7xl lg:text-8xl">
+            <h1 className="text-balance text-5xl font-black leading-[0.9] tracking-[-0.055em] text-emerald-950 dark:text-white md:text-7xl lg:text-8xl">
               Find trails worth riding.
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-gray-700 dark:text-slate-300 md:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-7 text-emerald-950/75 dark:text-slate-300 md:text-lg">
               Search local routes, meet the experts who know them, and find support before the ride.
             </p>
 
@@ -103,7 +103,7 @@ export default async function Home() {
             {spotlight && (
               <Link
                 href={spotlight.href}
-                className="mt-8 inline-block max-w-2xl border-l-2 border-emerald-800 bg-white/35 py-3 pl-4 pr-5 text-sm text-emerald-950 backdrop-blur-sm transition hover:border-emerald-600 hover:bg-white/50 hover:text-emerald-700 dark:border-lime-300 dark:bg-slate-900/45 dark:text-slate-200 dark:hover:bg-slate-900/70 dark:hover:text-lime-100"
+                className="mt-8 inline-block max-w-2xl rounded-r-2xl border-l-4 border-emerald-700 bg-white/75 py-3 pl-4 pr-5 text-sm text-emerald-950 shadow-sm backdrop-blur-sm transition hover:border-emerald-600 hover:bg-white hover:text-emerald-700 dark:border-lime-300 dark:bg-slate-900/45 dark:text-slate-200 dark:hover:bg-slate-900/70 dark:hover:text-lime-100"
               >
                 <span className="text-xs font-black uppercase tracking-[0.18em]">
                   {spotlight.type === 'event'

@@ -31,6 +31,12 @@ const EXPERT_LINKS_BASE = [
   { label: 'Create trail', href: '/upload' },
 ];
 
+const SOCIAL_LINKS = [
+  { label: 'Facebook', href: 'https://facebook.com/locoxperts' },
+  { label: 'Instagram', href: 'https://instagram.com/locoxperts' },
+  { label: 'YouTube', href: 'https://youtube.com/@locoxperts' },
+];
+
 export default function Footer({ initialUser = null }: { initialUser?: User | null }) {
   const year = new Date().getFullYear();
   const brand = 'LocoXperts';
@@ -70,6 +76,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
           <FooterSupportColumn
             contactHref={contactHref}
             featureHref={featureHref}
+            socialLinks={SOCIAL_LINKS}
             onOpenFeedback={() => setFeedbackOpen(true)}
           />
         </div>

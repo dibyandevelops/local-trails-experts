@@ -3,12 +3,14 @@ import Link from 'next/link';
 type Props = {
   contactHref: string;
   featureHref: string;
+  socialLinks?: Array<{ label: string; href: string }>;
   onOpenFeedback: () => void;
 };
 
 export default function FooterSupportColumn({
   contactHref,
   featureHref,
+  socialLinks = [],
   onOpenFeedback,
 }: Props) {
   return (
@@ -56,6 +58,27 @@ export default function FooterSupportColumn({
           </Link>
         </li>
       </ul>
+      {socialLinks.length > 0 && (
+        <div className="mt-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-slate-400">
+            Social
+          </p>
+          <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+            {socialLinks.map((item) => (
+              <li key={item.href}>
+                <a
+                  className="hover:underline"
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

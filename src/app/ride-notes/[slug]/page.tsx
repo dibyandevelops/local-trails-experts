@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import RideNoteShareButton from '@/components/ride-notes/ride-note-share-button';
 import { getPublicRideNoteBySlug, getRideNoteSeo, type RideNoteCategory } from '@/lib/data/public-ride-notes';
 import { absoluteUrl, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 
@@ -72,7 +73,7 @@ export default async function RideNoteDetailPage({ params }: RideNotePageProps) 
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
-      <article className="overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <article className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         {note.cover_image_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -99,11 +100,17 @@ export default async function RideNoteDetailPage({ params }: RideNotePageProps) 
             )}
           </div>
 
-          <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-[-0.045em] text-gray-950 dark:text-white md:text-6xl">
-            {note.title}
-          </h1>
+          <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <h1 className="max-w-4xl text-4xl font-black tracking-[-0.045em] text-emerald-950 dark:text-white md:text-6xl">
+              {note.title}
+            </h1>
+            <RideNoteShareButton
+              title={note.title}
+              url={absoluteUrl(`/ride-notes/${note.slug}`)}
+            />
+          </div>
           {note.excerpt && (
-            <p className="mt-5 max-w-3xl text-base leading-7 text-gray-600 dark:text-slate-300 md:text-lg">
+            <p className="mt-5 max-w-3xl text-base leading-7 text-emerald-950/70 dark:text-slate-300 md:text-lg">
               {note.excerpt}
             </p>
           )}
@@ -134,7 +141,7 @@ export default async function RideNoteDetailPage({ params }: RideNotePageProps) 
           </div>
 
           {note.trail_name && (
-            <div className="mt-10 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+            <div className="mt-10 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 dark:border-emerald-900/60 dark:from-emerald-950/30 dark:to-slate-950">
               <p className="text-sm font-bold text-emerald-950 dark:text-emerald-100">
                 Planning this ride?
               </p>

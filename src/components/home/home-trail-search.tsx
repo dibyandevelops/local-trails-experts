@@ -53,7 +53,7 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
     <div className="mt-7 max-w-3xl">
       <form
         onSubmit={handleSubmit}
-        className="max-w-3xl border-b-2 border-emerald-950 bg-transparent pb-2 dark:border-lime-300"
+        className="max-w-3xl border-b-2 border-emerald-800 bg-transparent pb-2 dark:border-lime-300"
       >
         <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
           <label htmlFor="home-trail-search" className="sr-only">
@@ -66,12 +66,12 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
-            className="min-h-[54px] w-full border-0 bg-transparent px-0 text-xl font-black text-gray-950 outline-none placeholder:text-gray-500 focus:ring-0 dark:text-slate-50 dark:placeholder:text-slate-500 md:text-2xl"
+            className="min-h-[54px] w-full border-0 bg-transparent px-0 text-xl font-black text-emerald-950 outline-none placeholder:text-emerald-900/45 focus:ring-0 dark:text-slate-50 dark:placeholder:text-slate-500 md:text-2xl"
             autoComplete="off"
           />
           <button
             type="submit"
-            className="justify-self-start pb-2 text-sm font-black text-emerald-950 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100 md:justify-self-end"
+            className="justify-self-start pb-2 text-sm font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100 md:justify-self-end"
           >
             Search
           </button>
@@ -79,21 +79,21 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
       </form>
 
       <div className="mt-5">
-        <div className="mb-3 flex items-center justify-between gap-3 border-b border-emerald-950/15 pb-2 dark:border-lime-300/20">
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-950 dark:text-lime-200">
+        <div className="mb-3 flex items-center justify-between gap-3 border-b border-emerald-800/20 pb-2 dark:border-lime-300/20">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800 dark:text-lime-200">
             {searchEnabled ? 'Matching trails' : 'Trail ideas'}
           </p>
           {searchEnabled ? (
             <Link
               href={`/trails?search=${encodeURIComponent(trimmedQuery)}`}
-              className="text-xs font-black text-emerald-950 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
+              className="text-xs font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
             >
               View all
             </Link>
           ) : (
             <Link
               href="/trails"
-              className="text-xs font-black text-emerald-950 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
+              className="text-xs font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
             >
               See more trails
             </Link>
@@ -105,7 +105,7 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
             {Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
-                className="h-11 animate-pulse border-b border-emerald-950/10 bg-emerald-950/5 dark:border-lime-300/10 dark:bg-lime-300/5"
+                className="h-11 animate-pulse border-b border-emerald-800/10 bg-emerald-100/50 dark:border-lime-300/10 dark:bg-lime-300/5"
               />
             ))}
           </div>
@@ -115,9 +115,9 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
               <Link
                 key={trail.id}
                 href={getTrailHref(trail)}
-                className="group border-b border-emerald-950/10 py-3 transition hover:border-emerald-700/40 dark:border-lime-300/10 dark:hover:border-lime-200/50"
+                className="group border-b border-emerald-800/10 py-3 transition hover:border-emerald-700/40 dark:border-lime-300/10 dark:hover:border-lime-200/50"
               >
-                <span className="block truncate text-sm font-black text-gray-950 group-hover:text-emerald-800 dark:text-slate-50 dark:group-hover:text-lime-200">
+                <span className="block truncate text-sm font-black text-emerald-950 group-hover:text-emerald-700 dark:text-slate-50 dark:group-hover:text-lime-200">
                   {trail.name}
                 </span>
                 <span className="mt-1 block truncate text-xs text-gray-600 dark:text-slate-400">
