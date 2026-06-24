@@ -132,7 +132,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
       : []),
     ...(komootNavigateUrl ? [{ label: 'Navigate', href: komootNavigateUrl }] : []),
     ...(trail.onRequestTrail && !trail.isRequested
-      ? [{ label: 'Want to ride with a local pro?', onSelect: () => trail.onRequestTrail?.() }]
+      ? [{ label: 'Plan this ride', onSelect: () => trail.onRequestTrail?.() }]
       : []),
     ...(trail.onCancelRequest && trail.isRequested
       ? [

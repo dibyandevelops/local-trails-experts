@@ -336,7 +336,7 @@ export default function RideWithExpertsClient() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Dialog.Title className="text-xl font-black text-gray-950 dark:text-white">
-                  {existingRequestForModal ? 'Update ride request' : 'Request this ride'}
+                  {existingRequestForModal ? 'Update ride request' : 'Ride with a local'}
                 </Dialog.Title>
                 {requestProgram && (
                   <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
@@ -442,7 +442,7 @@ export default function RideWithExpertsClient() {
                     ? 'Submitting...'
                     : existingRequestForModal
                       ? 'Update request'
-                      : 'Send request'}
+                      : 'Send ride request'}
                 </button>
               </form>
             )}
@@ -508,7 +508,7 @@ function FeaturedProgramCard({
         <ProgramMeta program={program} />
         <div className="mt-6 flex flex-wrap gap-2">
           <button type="button" onClick={onRequest} className={primaryButtonClass}>
-            {existingRequest ? 'Update request' : 'Request this ride'}
+            {existingRequest ? 'Update request' : 'Ride with a local'}
           </button>
           {existingRequest && (
             <Link href="/participants/me" className={secondaryButtonClass}>
