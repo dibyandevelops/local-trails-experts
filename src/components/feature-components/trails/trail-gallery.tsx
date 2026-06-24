@@ -5,8 +5,27 @@ import { getTrailAttributionChipClass, getTrailAttributionLabel } from '@/lib/tr
 import { getDifficultyLabel } from '@/services/constants/difficulty';
 import type { TrailsViewMode } from './trail-view-toggle';
 import { storeTrailsListState } from './trails-list-state';
+import type { TrailSort } from './trails-page-options';
 
 type RequestedTrail = Trail & { isRequested?: boolean };
+
+function getDifficultyBadgeClass(difficulty: Trail['difficulty']) {
+  switch (difficulty) {
+    case 'novice':
+      return 'bg-sky-50 text-sky-800 ring-1 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-900/70';
+    case 'easy':
+      return 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-900/70';
+    case 'moderate':
+    case 'medium':
+      return 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-900/70';
+    case 'hard':
+      return 'bg-orange-50 text-orange-800 ring-1 ring-orange-200 dark:bg-orange-950/40 dark:text-orange-200 dark:ring-orange-900/70';
+    case 'expert':
+      return 'bg-rose-50 text-rose-800 ring-1 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:ring-rose-900/70';
+    default:
+      return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700';
+  }
+}
 
 type TrailGalleryProps = {
   trails: RequestedTrail[];
@@ -30,6 +49,8 @@ type TrailGalleryProps = {
   hidingTrailId?: string | null;
   unhidingTrailId?: string | null;
   associatingTrailId?: string | null;
+  sort?: TrailSort;
+  onSortChange?: (sort: TrailSort) => void;
 };
 
 export function TrailGallery({
@@ -54,15 +75,61 @@ export function TrailGallery({
   hidingTrailId,
   unhidingTrailId,
   associatingTrailId,
+  sort = 'newest',
+  onSortChange,
 }: TrailGalleryProps) {
   if (viewMode === 'quick') {
+    const sortHeaderClass =
+      'inline-flex items-center gap-1 text-left transition hover:text-emerald-700 disabled:cursor-default disabled:hover:text-gray-500 dark:hover:text-emerald-200 dark:disabled:hover:text-slate-400';
+    const getSortIndicator = (activeSorts: TrailSort[]) =>
+      activeSorts.includes(sort) ? (sort.endsWith('_desc') ? '↓' : '↑') : '↕';
+    const toggleNameSort = () => {
+      onSortChange?.(sort === 'name_asc' ? 'name_desc' : 'name_asc');
+    };
+    const toggleDistanceSort = () => {
+      onSortChange?.(sort === 'distance_asc' ? 'distance_desc' : 'distance_asc');
+    };
+    const toggleElevationSort = () => {
+      onSortChange?.(sort === 'elevation_asc' ? 'elevation_desc' : 'elevation_asc');
+    };
+    const tableGridClass =
+      'grid grid-cols-[minmax(0,1fr)_104px] md:grid-cols-[44px_minmax(0,1.45fr)_118px_190px_minmax(0,1fr)_152px]';
+
     return (
       <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-emerald-900/45 dark:bg-slate-950/70">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-gray-500 dark:border-emerald-900/50 dark:bg-slate-900/70 dark:text-slate-400 md:grid-cols-[42px_minmax(0,1.6fr)_120px_150px_minmax(0,1fr)_auto]">
+        <div className={`${tableGridClass} gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-gray-500 dark:border-emerald-900/50 dark:bg-slate-900/70 dark:text-slate-400`}>
           <span className="hidden md:block">#</span>
-          <span>Trail</span>
+          <button
+            type="button"
+            onClick={toggleNameSort}
+            disabled={!onSortChange}
+            className={sortHeaderClass}
+            title="Sort by trail name"
+          >
+            Trail <span aria-hidden="true">{getSortIndicator(['name_asc', 'name_desc'])}</span>
+          </button>
           <span className="hidden md:block">Level</span>
-          <span className="hidden md:block">Route</span>
+          <span className="hidden md:flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleDistanceSort}
+              disabled={!onSortChange}
+              className={sortHeaderClass}
+              title="Sort by distance"
+            >
+              Distance <span aria-hidden="true">{getSortIndicator(['distance_asc', 'distance_desc'])}</span>
+            </button>
+            <span className="text-gray-300 dark:text-slate-700">/</span>
+            <button
+              type="button"
+              onClick={toggleElevationSort}
+              disabled={!onSortChange}
+              className={sortHeaderClass}
+              title="Sort by elevation gain"
+            >
+              Elev. <span aria-hidden="true">{getSortIndicator(['elevation_asc', 'elevation_desc'])}</span>
+            </button>
+          </span>
           <span className="hidden md:block">Context</span>
           <span className="text-right">Actions</span>
         </div>
@@ -80,7 +147,7 @@ export function TrailGallery({
           return (
             <div
               key={trail.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-gray-100 px-4 py-3 transition last:border-b-0 hover:bg-emerald-50/50 dark:border-slate-800 dark:hover:bg-emerald-950/20 md:grid-cols-[42px_minmax(0,1.6fr)_120px_150px_minmax(0,1fr)_auto] md:items-center"
+              className={`${tableGridClass} gap-3 border-b border-gray-100 px-4 py-3 transition last:border-b-0 hover:bg-emerald-50/50 dark:border-slate-800 dark:hover:bg-emerald-950/20 md:items-center`}
             >
               <span className="hidden text-sm font-black text-gray-400 dark:text-slate-500 md:block">
                 {String(index + 1).padStart(2, '0')}
@@ -100,20 +167,19 @@ export function TrailGallery({
               </Link>
 
               <div className="hidden md:block">
-                <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${getDifficultyBadgeClass(trail.difficulty)}`}>
                   {getDifficultyLabel(trail.difficulty)}
                 </span>
               </div>
 
-              <div className="hidden text-xs font-semibold text-gray-700 dark:text-slate-200 md:block">
-                <span>
+              <div className="hidden text-xs font-semibold text-gray-700 dark:text-slate-200 md:grid md:grid-cols-2 md:gap-2">
+                <span title="Distance">
                   {Number.isFinite(distanceKm) && distanceKm > 0
                     ? `${distanceKm.toFixed(1)} km`
-                    : 'Distance -'}
+                    : 'No distance'}
                 </span>
-                <span className="mx-1.5 text-gray-300 dark:text-slate-700">/</span>
-                <span>
-                  {Number.isFinite(elevationM) && elevationM > 0 ? `${elevationM} m` : 'Elev. -'}
+                <span title="Elevation gain">
+                  {Number.isFinite(elevationM) && elevationM > 0 ? `${elevationM} m gain` : 'No elevation'}
                 </span>
               </div>
 
@@ -186,11 +252,7 @@ export function TrailGallery({
                       : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
                   }`}
                 >
-                  {associatingTrailId === trail.id
-                    ? 'Saving...'
-                      : isAssociated
-                        ? 'Pinned'
-                        : 'Pin'}
+                  {isAssociated ? 'Pinned' : 'Pin'}
                 </button>
                 )}
               </div>

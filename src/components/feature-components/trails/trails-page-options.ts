@@ -5,6 +5,7 @@ export type TrailSort =
   | 'newest'
   | 'distance_asc'
   | 'distance_desc'
+  | 'elevation_asc'
   | 'elevation_desc';
 
 export type RideProfile = '' | 'short' | 'medium' | 'long';
@@ -16,6 +17,7 @@ export const TRAIL_SORT_OPTIONS: Array<{ value: TrailSort; label: string }> = [
   { value: 'name_desc', label: 'Name (Z-A)' },
   { value: 'distance_asc', label: 'Distance (low to high)' },
   { value: 'distance_desc', label: 'Distance (high to low)' },
+  { value: 'elevation_asc', label: 'Elevation gain (low to high)' },
   { value: 'elevation_desc', label: 'Elevation gain (high to low)' },
 ];
 

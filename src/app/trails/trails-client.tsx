@@ -934,15 +934,6 @@ function TrailsPageContent() {
         </Dialog.Portal>
       </Dialog.Root>
 
-      {isRefreshingResults && (
-        <div
-          className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200"
-          role="status"
-          aria-live="polite"
-        >
-          Updating trails...
-        </div>
-      )}
       {hasTransientError && (
         <div
           className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200"
@@ -981,96 +972,110 @@ function TrailsPageContent() {
         </div>
       ) : (
         <>
-          <TrailGallery
-            trails={trails}
-            viewMode={viewMode}
-            canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
-            canRequestTrail={Boolean(isParticipant || !user)}
-            isAdmin={isAdmin}
-            onEditTrail={(trail) => {
-              router.push(`/upload?trailId=${trail.id}`);
-            }}
-            onDeleteTrail={(trailId) => deleteMutation.mutate(trailId)}
-            onHideTrail={(trailId) => hideMutation.mutate(trailId)}
-            onUnhideTrail={(trailId) => unhideMutation.mutate(trailId)}
-            deletingTrailId={deletingTrailId}
-            hidingTrailId={hidingTrailId}
-            unhidingTrailId={unhidingTrailId}
-            onViewMap={(trail) => {
-              setMapTrailSummary(trail);
-              setMapTrailId(trail.id);
-              setMapOpen(true);
-            }}
-            onOpenImageGallery={(trail) => {
-              const images = getTrailImages(trail);
-              if (!images.length) return;
-              setGalleryTrailName(trail.name || 'Trail');
-              setGalleryImages(images);
-              setGalleryOpen(true);
-            }}
-            onRequestTrail={(trail) => {
-              if (!user) {
-                const next =
-                  typeof window !== 'undefined'
-                    ? `${window.location.pathname}${window.location.search}`
-                    : '/trails';
-                window.dispatchEvent(
-                  new CustomEvent('open-register', {
-                    detail: {
-                      message:
-                        'Create a participant account to request a trail activity.',
-                      next,
-                    },
-                  }),
-                );
-                return;
+          <div
+            className={`relative transition-opacity duration-150 ${
+              isRefreshingResults ? 'opacity-70' : 'opacity-100'
+            }`}
+            aria-busy={isRefreshingResults}
+          >
+            {isRefreshingResults && (
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1 overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950">
+                <div className="h-full w-1/3 animate-[trail-refresh_900ms_ease-in-out_infinite] rounded-full bg-emerald-600 dark:bg-emerald-300" />
+              </div>
+            )}
+            <TrailGallery
+              trails={trails}
+              viewMode={viewMode}
+              canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
+              canRequestTrail={Boolean(isParticipant || !user)}
+              isAdmin={isAdmin}
+              onEditTrail={(trail) => {
+                router.push(`/upload?trailId=${trail.id}`);
+              }}
+              onDeleteTrail={(trailId) => deleteMutation.mutate(trailId)}
+              onHideTrail={(trailId) => hideMutation.mutate(trailId)}
+              onUnhideTrail={(trailId) => unhideMutation.mutate(trailId)}
+              deletingTrailId={deletingTrailId}
+              hidingTrailId={hidingTrailId}
+              unhidingTrailId={unhidingTrailId}
+              onViewMap={(trail) => {
+                setMapTrailSummary(trail);
+                setMapTrailId(trail.id);
+                setMapOpen(true);
+              }}
+              onOpenImageGallery={(trail) => {
+                const images = getTrailImages(trail);
+                if (!images.length) return;
+                setGalleryTrailName(trail.name || 'Trail');
+                setGalleryImages(images);
+                setGalleryOpen(true);
+              }}
+              onRequestTrail={(trail) => {
+                if (!user) {
+                  const next =
+                    typeof window !== 'undefined'
+                      ? `${window.location.pathname}${window.location.search}`
+                      : '/trails';
+                  window.dispatchEvent(
+                    new CustomEvent('open-register', {
+                      detail: {
+                        message:
+                          'Create a participant account to request a trail activity.',
+                        next,
+                      },
+                    }),
+                  );
+                  return;
+                }
+                if (user.role !== 'participant') {
+                  return;
+                }
+                if (trail.isRequested) {
+                  return;
+                }
+                setRequestTrailItem(trail);
+                setRequestOpen(true);
+                setRequestFeedback('');
+                setRequestModalMessage('');
+              }}
+              onCancelRequest={(trail) => {
+                if (!user || user.role !== 'participant') {
+                  return;
+                }
+                const requestId = requestedByTrailId[trail.id];
+                if (!requestId) return;
+                const confirmed = window.confirm('Cancel your trail request?');
+                if (!confirmed) return;
+                cancelRequestMutation.mutate(requestId);
+              }}
+              onCreateEvent={(trail) => {
+                setCreateEventTrailId(trail.id);
+                setCreateEventSport(trail.sport_type || 'mtb');
+                setCreateEventOpen(true);
+              }}
+              canAssociateExpertTrail={
+                user?.role === 'expert' && !loadingExpertTrails && Boolean(expertTrailsData)
               }
-              if (user.role !== 'participant') {
-                return;
-              }
-              if (trail.isRequested) {
-                return;
-              }
-              setRequestTrailItem(trail);
-              setRequestOpen(true);
-              setRequestFeedback('');
-              setRequestModalMessage('');
-            }}
-            onCancelRequest={(trail) => {
-              if (!user || user.role !== 'participant') {
-                return;
-              }
-              const requestId = requestedByTrailId[trail.id];
-              if (!requestId) return;
-              const confirmed = window.confirm('Cancel your trail request?');
-              if (!confirmed) return;
-              cancelRequestMutation.mutate(requestId);
-            }}
-            onCreateEvent={(trail) => {
-              setCreateEventTrailId(trail.id);
-              setCreateEventSport(trail.sport_type || 'mtb');
-              setCreateEventOpen(true);
-            }}
-            canAssociateExpertTrail={
-              user?.role === 'expert' && !loadingExpertTrails && Boolean(expertTrailsData)
-            }
-            associatedTrailIds={associatedTrailIds}
-            associatingTrailId={associatingTrailId}
-            onToggleExpertTrail={(trail, isAssociated) => {
-              if (user?.role !== 'expert') return;
-              expertTrailAssociationMutation.mutate({
-                trailId: trail.id,
-                isAssociated,
-              });
-            }}
-          />
+              associatedTrailIds={associatedTrailIds}
+              associatingTrailId={associatingTrailId}
+              sort={sort}
+              onSortChange={setSort}
+              onToggleExpertTrail={(trail, isAssociated) => {
+                if (user?.role !== 'expert') return;
+                expertTrailAssociationMutation.mutate({
+                  trailId: trail.id,
+                  isAssociated,
+                });
+              }}
+            />
+          </div>
 
           {isFetchingNextPage && (
             <>
               <p className="sr-only" role="status" aria-live="polite">
                 Loading more trails…
               </p>
-              <TrailsLoadMoreSkeleton />
+              <TrailsLoadMoreSkeleton viewMode={viewMode} />
             </>
           )}
           {pagination && (

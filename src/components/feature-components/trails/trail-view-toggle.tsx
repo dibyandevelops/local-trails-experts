@@ -28,7 +28,7 @@ export function TrailViewToggle({ value, onChange }: TrailViewToggleProps) {
             : 'text-gray-700 hover:bg-emerald-50 dark:text-slate-200 dark:hover:bg-emerald-950/40'
         }`}
       >
-        Quick view
+        Table view
       </button>
     </div>
   );

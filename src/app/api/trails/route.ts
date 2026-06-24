@@ -285,6 +285,8 @@ export async function GET(request: NextRequest) {
           return 't.distance_km ASC NULLS LAST, t.name ASC';
         case 'distance_desc':
           return 't.distance_km DESC NULLS LAST, t.name ASC';
+        case 'elevation_asc':
+          return 't.elevation_gain_m ASC NULLS LAST, t.name ASC';
         case 'elevation_desc':
           return 't.elevation_gain_m DESC NULLS LAST, t.name ASC';
         case 'newest':
