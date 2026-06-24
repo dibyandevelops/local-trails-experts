@@ -56,7 +56,32 @@ export async function fetchPublicTrailByIdentifier(
   const result = await pool.query(
     `
     SELECT
-      t.*,
+      t.id,
+      t.slug,
+      t.name,
+      t.description,
+      t.difficulty,
+      t.sport_type,
+      t.location,
+      t.safety_labels,
+      t.is_hazardous,
+      t.hazard_note,
+      t.hazard_updated_by,
+      t.hazard_updated_at,
+      t.latitude,
+      t.longitude,
+      t.distance_km,
+      t.elevation_gain_m,
+      t.estimated_time_hours,
+      t.image_url,
+      t.trail_images,
+      t.komoot_embed_url,
+      NULL::jsonb AS route_data,
+      t.created_at,
+      t.updated_at,
+      t.submitted_by_user_id,
+      t.status,
+      t.is_hidden,
       CASE
         WHEN u.role = 'admin' THEN 'LocoMTBGroup'
         ELSE u.name
@@ -75,36 +100,51 @@ export async function fetchPublicTrailByIdentifier(
         COUNT(*)::int AS expert_count,
         json_agg(
           json_build_object(
-            'id', expert.id,
-            'name', expert.name,
-            'email', expert.email,
-            'city', expert.city,
-            'profile_photo_url', expert.profile_photo_url,
-            'is_verified_expert', expert.is_verified_expert,
-            'average_rating', COALESCE(er.average_rating, 0),
-            'review_count', COALESCE(er.review_count, 0)
+            'id', expert_row.id,
+            'name', expert_row.name,
+            'email', expert_row.email,
+            'city', expert_row.city,
+            'profile_photo_url', expert_row.profile_photo_url,
+            'is_verified_expert', expert_row.is_verified_expert,
+            'average_rating', COALESCE(expert_row.average_rating, 0),
+            'review_count', COALESCE(expert_row.review_count, 0)
           )
           ORDER BY
-            expert.is_verified_expert DESC,
-            COALESCE(er.average_rating, 0) DESC,
-            COALESCE(er.review_count, 0) DESC,
-            (expert.profile_photo_url IS NOT NULL) DESC,
-            et.sort_order ASC,
-            et.created_at DESC
+            expert_row.is_verified_expert DESC,
+            COALESCE(expert_row.average_rating, 0) DESC,
+            COALESCE(expert_row.review_count, 0) DESC,
+            (expert_row.profile_photo_url IS NOT NULL) DESC,
+            expert_row.sort_order ASC,
+            expert_row.created_at DESC
         ) AS experts
-      FROM expert_trails et
-      JOIN users expert ON expert.id = et.expert_user_id
-      LEFT JOIN (
+      FROM (
         SELECT
-          expert_user_id,
-          AVG(rating)::float AS average_rating,
-          COUNT(*)::int AS review_count
-        FROM expert_reviews
-        GROUP BY expert_user_id
-      ) er ON er.expert_user_id = expert.id
-      WHERE et.trail_id = t.id
-        AND expert.role = 'expert'
-        AND COALESCE(expert.is_hidden, FALSE) = FALSE
+          expert.id,
+          expert.name,
+          expert.email,
+          expert.city,
+          expert.profile_photo_url,
+          expert.is_verified_expert,
+          et.sort_order,
+          et.created_at,
+          AVG(er.rating)::float AS average_rating,
+          COUNT(er.id)::int AS review_count
+        FROM expert_trails et
+        JOIN users expert ON expert.id = et.expert_user_id
+        LEFT JOIN expert_reviews er ON er.expert_user_id = expert.id
+        WHERE et.trail_id = t.id
+          AND expert.role = 'expert'
+          AND COALESCE(expert.is_hidden, FALSE) = FALSE
+        GROUP BY
+          expert.id,
+          expert.name,
+          expert.email,
+          expert.city,
+          expert.profile_photo_url,
+          expert.is_verified_expert,
+          et.sort_order,
+          et.created_at
+      ) expert_row
     ) associated_experts ON TRUE
     LEFT JOIN LATERAL (
       SELECT
