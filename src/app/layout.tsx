@@ -9,7 +9,8 @@ import Footer from '@/components/navigation/footer';
 import PWARegister from '@/components/pwa-register';
 import PushNotificationPrompt from '@/components/push-notification-prompt';
 import ParticipantBookingsFab from '@/components/navigation/participant-bookings-fab';
-import { getServerCurrentUser } from '@/lib/auth-server';
+import { getServerAuthPayload } from '@/lib/auth-server';
+import type { AuthTokenPayload } from '@/lib/auth';
 import {
   absoluteUrl,
   DEFAULT_DESCRIPTION,
@@ -18,6 +19,7 @@ import {
   SITE_NAME,
   getPublicAppUrl,
 } from '@/lib/seo';
+import type { User } from '@/types';
 
 import './globals.css';
 import MainContent from '@/components/main-content';
@@ -92,12 +94,29 @@ export const viewport: Viewport = {
   themeColor: '#ffffff',
 };
 
+function getInitialUserFromAuth(auth: AuthTokenPayload | null): User | null {
+  if (!auth) return null;
+
+  return {
+    id: auth.sub,
+    name: null,
+    email: auth.email,
+    role: auth.role,
+    bio: null,
+    city: null,
+    sports: null,
+    is_verified_expert: false,
+    created_at: '',
+    updated_at: '',
+  };
+}
+
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const initialUser = await getServerCurrentUser();
+  const initialUser = getInitialUserFromAuth(await getServerAuthPayload());
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
