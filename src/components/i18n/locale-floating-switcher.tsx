@@ -7,6 +7,7 @@ import { isLocale, stripLocale } from '@/i18n/config';
 const LOCALIZED_PATHS = new Set([
   '/home',
   '/faq',
+  '/purpose',
   '/privacy',
   '/terms',
   '/safety',
