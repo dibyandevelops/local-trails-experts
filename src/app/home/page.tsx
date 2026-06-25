@@ -5,6 +5,8 @@ import { getHomeFeaturedTrails, getHomeSpotlight } from '@/lib/data/public-home'
 import { getPublicRideNotes, type PublicRideNote } from '@/lib/data/public-ride-notes';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
+import { DEFAULT_LOCALE, type Locale } from '@/i18n/config';
+import { homeCopy } from '@/i18n/home';
 
 export const metadata: Metadata = {
   title: 'Kathmandu MTB Trails, Local Experts & Ride Support',
@@ -41,24 +43,14 @@ export const metadata: Metadata = {
   },
 };
 
-const featureActions = [
-  { label: 'Find trails', href: '/trails' },
-  { label: 'Ride with experts', href: '/ride-with-experts' },
-  { label: 'Ride notes', href: '/ride-notes' },
-  { label: 'Bike shops and support', href: '/store-locator' },
-  { label: 'Local organizations', href: '/organizations' },
-  { label: 'Trail campaigns', href: '/campaigns' },
-  { label: 'Share a trail', href: '/upload' },
-  { label: 'Join as an expert', href: '/experts/join' },
-];
-
 function getRideNoteMeta(note: PublicRideNote) {
   return [note.trail_name, note.expert_name ? `By ${note.expert_name}` : '']
     .filter(Boolean)
     .join(' / ');
 }
 
-export default async function Home() {
+export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
+  const copy = homeCopy[locale];
   const [spotlight, featuredTrails, rideNotes] = await Promise.all([
     getHomeSpotlight(),
     getHomeFeaturedTrails(5),
@@ -92,13 +84,13 @@ export default async function Home() {
         <div className="relative mx-auto max-w-5xl">
           <div className="max-w-4xl">
             <h1 className="text-balance text-5xl font-black leading-[0.9] tracking-[-0.055em] text-emerald-950 dark:text-white md:text-7xl lg:text-8xl">
-              Find trails worth riding.
+              {copy.heroTitle}
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-emerald-950/75 dark:text-slate-300 md:text-lg">
-              Search local routes, meet the experts who know them, and find support before the ride.
+              {copy.heroDescription}
             </p>
 
-            <HomeTrailSearch featuredTrails={featuredTrails} />
+            <HomeTrailSearch featuredTrails={featuredTrails} copy={copy.search} />
 
             {spotlight && (
               <Link
@@ -107,10 +99,10 @@ export default async function Home() {
               >
                 <span className="text-xs font-black uppercase tracking-[0.18em]">
                   {spotlight.type === 'event'
-                    ? 'Now'
+                    ? copy.spotlightLabels.event
                     : spotlight.type === 'ride'
-                      ? 'Expert'
-                      : 'Idea'}
+                      ? copy.spotlightLabels.ride
+                      : copy.spotlightLabels.idea}
                 </span>
                 <span className="mx-2 text-emerald-700 dark:text-emerald-300">/</span>
                 <span>{spotlight.title}</span>
@@ -126,13 +118,13 @@ export default async function Home() {
               <div className="mt-8 max-w-3xl border-t border-emerald-950/15 pt-4 dark:border-lime-300/20">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-950 dark:text-lime-200">
-                    Ride notes
+                    {copy.rideNotesTitle}
                   </p>
                   <Link
                     href="/ride-notes"
                     className="text-xs font-black text-emerald-950 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
                   >
-                    Read more
+                    {copy.readMore}
                   </Link>
                 </div>
                 <div className="grid gap-x-6 sm:grid-cols-3">
@@ -161,22 +153,22 @@ export default async function Home() {
 
       <div className="mx-auto max-w-5xl px-4 pt-6 md:px-8 md:pt-8">
         <p className="max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-400">
-          If LocoXperts helps you find better rides, consider{' '}
+          {copy.supportPrefix}{' '}
           <Link
             href="/support-locoxperts"
             className="font-bold text-emerald-800 underline underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
           >
-            supporting the developer
+            {copy.supportLink}
           </Link>
-          {' '}so the platform can stay alive, improve, and remain useful for local riders.
+          {' '}{copy.supportSuffix}
         </p>
       </div>
 
       <nav
-        aria-label="Explore LocoXperts"
+        aria-label={copy.exploreLabel}
         className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-3 px-4 py-6 text-sm font-semibold text-gray-600 dark:text-slate-400 md:px-8 md:py-8"
       >
-        {featureActions.map((item) => (
+        {copy.featureActions.map((item) => (
           <Link
             key={item.label}
             href={item.href}
@@ -189,4 +181,8 @@ export default async function Home() {
 
     </div>
   );
+}
+
+export default async function Home() {
+  return <HomePage locale="en" />;
 }

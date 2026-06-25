@@ -9,6 +9,7 @@ import Footer from '@/components/navigation/footer';
 import PWARegister from '@/components/pwa-register';
 import PushNotificationPrompt from '@/components/push-notification-prompt';
 import ParticipantBookingsFab from '@/components/navigation/participant-bookings-fab';
+import LocaleFloatingSwitcher from '@/components/i18n/locale-floating-switcher';
 import { getServerAuthPayload } from '@/lib/auth-server';
 import type { AuthTokenPayload } from '@/lib/auth';
 import {
@@ -144,6 +145,7 @@ export default async function RootLayout({
           <PushNotificationPrompt initialUser={initialUser} />
           <Navbar initialUser={initialUser} />
           <ParticipantBookingsFab />
+          <LocaleFloatingSwitcher />
           <main className="container mx-auto flex-grow px-4 py-8">{children}</main>
           <Footer initialUser={initialUser} />
         </MainContent>

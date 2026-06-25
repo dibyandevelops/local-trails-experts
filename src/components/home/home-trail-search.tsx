@@ -10,6 +10,16 @@ import type { Trail } from '@/types';
 
 type HomeTrailSearchProps = {
   featuredTrails: Trail[];
+  copy?: {
+    label: string;
+    placeholder: string;
+    button: string;
+    matchingTitle: string;
+    ideasTitle: string;
+    viewAll: string;
+    seeMore: string;
+    empty: string;
+  };
 };
 
 function getTrailHref(trail: Trail) {
@@ -27,7 +37,18 @@ function getTrailMeta(trail: Trail) {
     .join(' / ');
 }
 
-export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps) {
+const defaultCopy = {
+  label: 'Search trails',
+  placeholder: 'Search Pharping, Chitlang, enduro, Kathmandu...',
+  button: 'Search',
+  matchingTitle: 'Matching trails',
+  ideasTitle: 'Trail ideas',
+  viewAll: 'View all',
+  seeMore: 'See more trails',
+  empty: 'No trails found for this search yet. Try a broader keyword.',
+};
+
+export default function HomeTrailSearch({ featuredTrails, copy = defaultCopy }: HomeTrailSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const trimmedQuery = query.trim();
@@ -57,7 +78,7 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
       >
         <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
           <label htmlFor="home-trail-search" className="sr-only">
-            Search trails
+            {copy.label}
           </label>
           <input
             id="home-trail-search"
@@ -65,7 +86,7 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
+            placeholder={copy.placeholder}
             className="min-h-[54px] w-full border-0 bg-transparent px-0 text-xl font-black text-emerald-950 outline-none placeholder:text-emerald-900/45 focus:ring-0 dark:text-slate-50 dark:placeholder:text-slate-500 md:text-2xl"
             autoComplete="off"
           />
@@ -73,7 +94,7 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
             type="submit"
             className="justify-self-start pb-2 text-sm font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100 md:justify-self-end"
           >
-            Search
+            {copy.button}
           </button>
         </div>
       </form>
@@ -81,21 +102,21 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
       <div className="mt-5">
         <div className="mb-3 flex items-center justify-between gap-3 border-b border-emerald-800/20 pb-2 dark:border-lime-300/20">
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800 dark:text-lime-200">
-            {searchEnabled ? 'Matching trails' : 'Trail ideas'}
+            {searchEnabled ? copy.matchingTitle : copy.ideasTitle}
           </p>
           {searchEnabled ? (
             <Link
               href={`/trails?search=${encodeURIComponent(trimmedQuery)}`}
               className="text-xs font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
             >
-              View all
+              {copy.viewAll}
             </Link>
           ) : (
             <Link
               href="/trails"
               className="text-xs font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
             >
-              See more trails
+              {copy.seeMore}
             </Link>
           )}
         </div>
@@ -128,7 +149,7 @@ export default function HomeTrailSearch({ featuredTrails }: HomeTrailSearchProps
           </div>
         ) : (
           <p className="border-b border-emerald-950/10 py-3 text-sm text-gray-600 dark:border-lime-300/10 dark:text-slate-300">
-            No trails found for this search yet. Try a broader keyword.
+            {copy.empty}
           </p>
         )}
       </div>
