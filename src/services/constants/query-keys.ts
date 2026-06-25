@@ -142,5 +142,7 @@ export const QUERY_KEYS = {
     ridePrograms: ['admin', 'ride-programs'] as const,
     rideNotes: ['admin', 'ride-notes'] as const,
     users: (role?: string) => ['admin', 'users', role || 'all'] as const,
+    expertTrails: (expertUserId?: string | null) =>
+      ['admin', 'expert-trails', expertUserId || ''] as const,
   },
 } as const;

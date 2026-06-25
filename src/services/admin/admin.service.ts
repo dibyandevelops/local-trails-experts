@@ -186,6 +186,24 @@ export type AdminUser = {
   created_at: string;
 };
 
+export type AdminExpertTrail = {
+  id: string;
+  slug: string | null;
+  name: string;
+  location: string | null;
+  sport_type: string | null;
+  difficulty: string | null;
+  created_at: string;
+  is_hidden: boolean;
+  sort_order?: number | null;
+};
+
+export type AdminExpertTrailsResponse = {
+  expert: Pick<AdminUser, 'id' | 'name' | 'email' | 'role'>;
+  associated_trails: AdminExpertTrail[];
+  available_trails: AdminExpertTrail[];
+};
+
 export type OrganizationOption = {
   id: string;
   slug: string;
@@ -425,6 +443,33 @@ export async function updateAdminExpertVisibility(userId: string, isHidden: bool
     return data.user;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to update expert visibility'));
+  }
+}
+
+export async function fetchAdminExpertTrails(expertUserId: string) {
+  try {
+    const { data } = await apiClient.get<AdminExpertTrailsResponse>(
+      `/api/admin/experts/${expertUserId}/trails`
+    );
+    return {
+      expert: data.expert,
+      associated_trails: data.associated_trails || [],
+      available_trails: data.available_trails || [],
+    };
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to fetch expert trails'));
+  }
+}
+
+export async function updateAdminExpertTrails(expertUserId: string, trailIds: string[]) {
+  try {
+    const { data } = await apiClient.patch<{ associated_trails: AdminExpertTrail[] }>(
+      `/api/admin/experts/${expertUserId}/trails`,
+      { trail_ids: trailIds }
+    );
+    return data.associated_trails || [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update expert trails'));
   }
 }
 

@@ -13,6 +13,7 @@ import VerificationDetailsContent, {
 } from '@/components/ui/verification-details-content';
 import DateText from '@/components/ui/date-text';
 import AppDialog from '@/components/ui/app-dialog';
+import ExpertTrailsManagerModal from '@/components/admin/expert-trails-manager-modal';
 
 type UsersPanelProps = {
   role: 'expert' | 'participant';
@@ -37,6 +38,7 @@ function ExpertVisibilityBadge({ isHidden }: { isHidden?: boolean | null }) {
 export default function UsersPanel({ role, title, description }: UsersPanelProps) {
   const queryClient = useQueryClient();
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [trailManagerOpen, setTrailManagerOpen] = useState(false);
   const [activeUser, setActiveUser] = useState<AdminUser | null>(null);
   const {
     data: users = [],
@@ -123,7 +125,17 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                   </button>
                 </div>
                 {role === 'expert' && (
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveUser(user);
+                        setTrailManagerOpen(true);
+                      }}
+                      className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/70"
+                    >
+                      Manage trails
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleToggleExpertVisibility(user)}
@@ -248,14 +260,26 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                     <td className="px-3 py-3 text-right">
                       <div className="flex justify-end gap-2">
                         {role === 'expert' && (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleExpertVisibility(user)}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-                            disabled={visibilityMutation.isPending}
-                          >
-                            {user.is_hidden ? 'Show' : 'Hide'}
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveUser(user);
+                                setTrailManagerOpen(true);
+                              }}
+                              className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/70"
+                            >
+                              Trails
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleExpertVisibility(user)}
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                              disabled={visibilityMutation.isPending}
+                            >
+                              {user.is_hidden ? 'Show' : 'Hide'}
+                            </button>
+                          </>
                         )}
                         <button
                           type="button"
@@ -297,6 +321,15 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
           />
         </div>
       </AppDialog>
+
+      <ExpertTrailsManagerModal
+        expert={activeUser}
+        open={trailManagerOpen}
+        onOpenChange={(open) => {
+          setTrailManagerOpen(open);
+          if (!open) setActiveUser(null);
+        }}
+      />
     </section>
   );
 }
