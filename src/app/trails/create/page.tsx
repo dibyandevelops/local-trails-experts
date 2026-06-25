@@ -27,7 +27,7 @@ export default function CreateTrailPage() {
             </span>
           </div>
           <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
-            {isEditMode ? 'Edit Trail' : 'Create Trail'}
+            {isEditMode ? 'Edit Trail' : 'Upload Trails'}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
             Upload routes, add photos, and keep Nepal’s trail network up to date.
@@ -58,11 +58,11 @@ export default function CreateTrailPage() {
           ) : (
             <>
               <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
-                Add as many trails as needed in one submission. Fill each section and click &quot;Add another trail&quot; to include more, then submit.
+                Upload up to 4 trails in one submission. Add GPX files, review the details, then submit.
               </p>
               <MultiTrailSubmissionForm
                 userRole={user.role}
-                submitLabel="Create Trails"
+                submitLabel="Upload Trails"
                 onSuccess={(data) => {
                   if (data.requiresApproval) {
                     return;

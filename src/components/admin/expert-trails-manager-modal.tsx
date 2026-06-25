@@ -89,6 +89,7 @@ export default function ExpertTrailsManagerModal({
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.expertTrails(expertId) }),
         queryClient.invalidateQueries({ queryKey: ['experts'] }),
       ]);
+      onOpenChange(false);
     },
     onError: (mutationError) => {
       setNotice(

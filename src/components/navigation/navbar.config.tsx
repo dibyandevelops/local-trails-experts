@@ -39,7 +39,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: 'Create Event', href: '/events/create', showFor: ['expert', 'admin'] },
       { label: 'Organize Trainings', href: '/events/trainings/create', showFor: ['expert', 'admin'] },
-      { label: 'Create Trail', href: '/upload', showFor: ['admin', 'expert'] },
+      { label: 'Upload Trails', href: '/upload', showFor: ['admin', 'expert'] },
       {
         label: 'Trail Builder Dashboard',
         href: '/trail-builders/me',

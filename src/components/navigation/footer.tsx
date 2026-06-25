@@ -28,7 +28,7 @@ const FEATURE_LINKS = [
 
 const EXPERT_LINKS_BASE = [
   { label: 'Create event', href: '/events/create' },
-  { label: 'Create trail', href: '/upload' },
+  { label: 'Upload trails', href: '/upload' },
 ];
 
 const SOCIAL_LINKS = [

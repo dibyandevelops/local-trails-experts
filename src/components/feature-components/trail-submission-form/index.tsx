@@ -76,7 +76,7 @@ function isKomootEmbedUrl(url: string) {
 export default function TrailSubmissionForm({
   userRole,
   onSuccess,
-  submitLabel = 'Create Trail',
+  submitLabel = 'Upload Trails',
   compact = false,
 }: Props) {
   const [submitting, setSubmitting] = useState(false);

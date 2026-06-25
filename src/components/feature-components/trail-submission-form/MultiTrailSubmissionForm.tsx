@@ -18,6 +18,8 @@ import { apiClient } from '@/services/api/client';
 import { ApiPath } from '@/services/api/paths';
 import StoreLocationPicker from '@/components/feature-components/store-locator/store-location-picker';
 
+const MAX_TRAILS_PER_UPLOAD = 4;
+
 type TrailCreateForm = {
   name: string;
   description: string;
@@ -73,7 +75,7 @@ function isKomootEmbedUrl(url: string) {
 export default function MultiTrailSubmissionForm({
   userRole,
   onSuccess,
-  submitLabel = 'Create Trails',
+  submitLabel = 'Upload Trails',
 }: Props) {
   type FormValues = { trails: TrailCreateForm[]; acceptTerms: boolean };
   type Step = 1 | 2 | 3;
@@ -127,6 +129,10 @@ export default function MultiTrailSubmissionForm({
   });
 
   const addTrail = () => {
+    if (fields.length >= MAX_TRAILS_PER_UPLOAD) {
+      setError(`You can upload up to ${MAX_TRAILS_PER_UPLOAD} trails at a time.`);
+      return;
+    }
     append(createInitialForm());
     setGpxFiles((prev) => [...prev, null]);
   };
@@ -138,7 +144,8 @@ export default function MultiTrailSubmissionForm({
   };
 
   const ensureRowCount = (count: number) => {
-    const missing = count - fields.length;
+    const cappedCount = Math.min(count, MAX_TRAILS_PER_UPLOAD);
+    const missing = cappedCount - fields.length;
     if (missing <= 0) return;
     for (let i = 0; i < missing; i += 1) {
       append(createInitialForm());
@@ -238,10 +245,23 @@ export default function MultiTrailSubmissionForm({
 
   const addFilesAsTrails = async (startIndex: number, files: File[]) => {
     if (files.length === 0) return;
-    ensureRowCount(startIndex + files.length);
-    for (let i = 0; i < files.length; i += 1) {
-      await processGpxFile(startIndex + i, files[i]);
+    if (startIndex >= MAX_TRAILS_PER_UPLOAD) {
+      setError(`You can upload up to ${MAX_TRAILS_PER_UPLOAD} trails at a time.`);
+      return;
     }
+    const allowedFiles = files.slice(0, MAX_TRAILS_PER_UPLOAD - startIndex);
+    const limitMessage =
+      allowedFiles.length < files.length
+        ? `Only the first ${allowedFiles.length} file${allowedFiles.length === 1 ? '' : 's'} were added. You can upload up to ${MAX_TRAILS_PER_UPLOAD} trails at a time.`
+        : null;
+    if (allowedFiles.length < files.length) {
+      setError(limitMessage);
+    }
+    ensureRowCount(startIndex + allowedFiles.length);
+    for (let i = 0; i < allowedFiles.length; i += 1) {
+      await processGpxFile(startIndex + i, allowedFiles[i]);
+    }
+    if (limitMessage) setError(limitMessage);
   };
 
   const handleGpxChange =
@@ -594,7 +614,7 @@ export default function MultiTrailSubmissionForm({
               className={inputClass}
             />
             <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
-              Tip: You can upload as many GPX files as needed in one batch.
+              Tip: You can upload up to {MAX_TRAILS_PER_UPLOAD} GPX files in one batch.
             </p>
             {parsingGpxIndex !== null && (
               <p className="mt-2 text-xs text-green-700 dark:text-green-300">Parsing GPX files...</p>

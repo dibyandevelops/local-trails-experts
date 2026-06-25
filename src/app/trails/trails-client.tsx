@@ -57,6 +57,7 @@ import {
 } from '@/components/feature-components/trails/trails-page-options';
 
 const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
+const TRAILS_LIST_STALE_TIME_MS = 5 * 60 * 1000;
 
 const TrailsMapPreview = dynamic(() => import('./trails-map-preview'), {
   ssr: false,
@@ -289,6 +290,9 @@ function TrailsPageContent() {
       if (nextOffset >= lastPage.pagination.total) return undefined;
       return { offset: nextOffset, limit: nextPageSize } as TrailsPageParam;
     },
+    staleTime: TRAILS_LIST_STALE_TIME_MS,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });
 
@@ -648,7 +652,7 @@ function TrailsPageContent() {
                 onClick={() => router.push('/upload')}
                 className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
               >
-                Create Trail
+                Upload Trails
               </button>
             )}
           </div>

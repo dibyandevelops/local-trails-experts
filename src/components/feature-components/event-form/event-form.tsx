@@ -764,7 +764,7 @@ export default function EventForm({
         >
           {isExpertUnverified && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
-              Your expert profile is pending verification. You can create trails, but
+              Your expert profile is pending verification. You can upload trails, but
               events and trainings are disabled until an admin approves your profile.
             </div>
           )}
@@ -1385,7 +1385,7 @@ export default function EventForm({
             {currentUser?.role && (
               <TrailSubmissionForm
                 userRole={currentUser.role}
-                submitLabel="Create Trail"
+                submitLabel="Upload Trails"
                 compact
                 onSuccess={(data) => {
                     setRequestMessage('Trail created and available now. Refresh and select it.');
