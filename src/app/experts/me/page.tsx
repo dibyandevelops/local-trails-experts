@@ -17,6 +17,7 @@ import { resizeImageToDataUrl } from '@/lib/image';
 import VerificationDetailsForm from '@/components/feature-components/verification-details-form';
 import { STRAVA_ENABLED } from '@/lib/feature-flags';
 import DateText from '@/components/ui/date-text';
+import ExpertRideNotesPanel from '@/components/experts/expert-ride-notes-panel';
 
 type ExpertTrailRequest = {
   id: string;
@@ -795,6 +796,8 @@ export default function ExpertProfilePage() {
           </p>
         )}
       </section>
+
+      <ExpertRideNotesPanel />
 
       <section className="overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 md:p-6">

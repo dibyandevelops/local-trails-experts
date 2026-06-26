@@ -12,11 +12,11 @@ const categories = new Set([
   'ride_note',
 ]);
 
-const statuses = new Set(['draft', 'pending_review', 'published', 'rejected']);
+const editableStatuses = new Set(['draft', 'pending_review']);
 
-function requireAdmin(request: NextRequest) {
+function requireExpert(request: NextRequest) {
   const auth = getAuthFromRequest(request);
-  return auth?.role === 'admin' ? auth : null;
+  return auth?.role === 'expert' ? auth : null;
 }
 
 function slugify(value: string) {
@@ -67,14 +67,32 @@ function validateCoverImage(value: unknown) {
   return { value: coverImageUrl, error: null };
 }
 
+async function assertAssociatedTrail(expertUserId: string, trailId: string | null) {
+  if (!trailId) return true;
+  const result = await pool.query(
+    `
+    SELECT 1
+    FROM expert_trails et
+    JOIN trails t ON t.id = et.trail_id
+    WHERE et.expert_user_id = $1
+      AND et.trail_id = $2::uuid
+      AND t.status = 'approved'
+      AND COALESCE(t.is_hidden, FALSE) = FALSE
+    LIMIT 1
+    `,
+    [expertUserId, trailId]
+  );
+  return result.rows.length > 0;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAdmin(request);
+    const auth = requireExpert(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const [notesResult, trailsResult, expertsResult] = await Promise.all([
+    const [notesResult, trailsResult] = await Promise.all([
       pool.query(
         `
         SELECT
@@ -97,46 +115,42 @@ export async function GET(request: NextRequest) {
         FROM ride_notes rn
         LEFT JOIN trails t ON t.id = rn.trail_id
         LEFT JOIN users expert ON expert.id = rn.expert_user_id
+        WHERE rn.author_user_id = $1
+          AND rn.expert_user_id = $1
         ORDER BY rn.created_at DESC
         LIMIT 100
-        `
+        `,
+        [auth.sub]
       ),
       pool.query(
         `
-        SELECT id, name, slug, location
-        FROM trails
-        WHERE status = 'approved'
-          AND COALESCE(is_hidden, FALSE) = FALSE
-        ORDER BY name ASC
-        LIMIT 200
-        `
-      ),
-      pool.query(
-        `
-        SELECT id, name, email, city
-        FROM users
-        WHERE role = 'expert'
-          AND COALESCE(is_hidden, FALSE) = FALSE
-        ORDER BY name ASC NULLS LAST, email ASC
-        LIMIT 200
-        `
+        SELECT t.id, t.name, t.slug, t.location
+        FROM expert_trails et
+        JOIN trails t ON t.id = et.trail_id
+        WHERE et.expert_user_id = $1
+          AND t.status = 'approved'
+          AND COALESCE(t.is_hidden, FALSE) = FALSE
+        ORDER BY et.sort_order ASC, t.name ASC
+        LIMIT 100
+        `,
+        [auth.sub]
       ),
     ]);
 
     return NextResponse.json({
       notes: notesResult.rows,
       trails: trailsResult.rows,
-      experts: expertsResult.rows,
+      experts: [],
     });
   } catch (error) {
-    console.error('Error fetching admin ride notes:', error);
+    console.error('Error fetching expert ride notes:', error);
     return NextResponse.json({ error: 'Failed to fetch ride notes' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAdmin(request);
+    const auth = requireExpert(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -144,11 +158,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const title = String(body?.title || '').trim();
     const content = String(body?.content || '').trim();
-    const status = statuses.has(body?.status) ? body.status : 'draft';
-    const category = categories.has(body?.category) ? body.category : 'ride_note';
+    const status = editableStatuses.has(body?.status) ? body.status : 'draft';
+    const category = categories.has(body?.category) ? body.category : 'expert_note';
+    const trailId = normalizeNullable(body?.trail_id);
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required.' }, { status: 400 });
+    }
+
+    if (!(await assertAssociatedTrail(auth.sub, trailId))) {
+      return NextResponse.json(
+        { error: 'Experts can only link ride notes to their associated trails.' },
+        { status: 400 }
+      );
     }
 
     const coverImage = validateCoverImage(body?.cover_image_url);
@@ -172,7 +194,7 @@ export async function POST(request: NextRequest) {
         expert_user_id,
         published_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::uuid, $10::uuid, CASE WHEN $7 = 'published' THEN NOW() ELSE NULL END)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::uuid, $8, NULL)
       RETURNING *
       `,
       [
@@ -184,21 +206,20 @@ export async function POST(request: NextRequest) {
         category,
         status,
         auth.sub,
-        normalizeNullable(body?.trail_id),
-        normalizeNullable(body?.expert_user_id),
+        trailId,
       ]
     );
 
     return NextResponse.json({ note: result.rows[0] }, { status: 201 });
   } catch (error) {
-    console.error('Error creating ride note:', error);
+    console.error('Error creating expert ride note:', error);
     return NextResponse.json({ error: 'Failed to create ride note' }, { status: 500 });
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = requireAdmin(request);
+    const auth = requireExpert(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -207,11 +228,19 @@ export async function PATCH(request: NextRequest) {
     const id = String(body?.id || '').trim();
     const title = String(body?.title || '').trim();
     const content = String(body?.content || '').trim();
-    const status = statuses.has(body?.status) ? body.status : 'draft';
-    const category = categories.has(body?.category) ? body.category : 'ride_note';
+    const status = editableStatuses.has(body?.status) ? body.status : 'draft';
+    const category = categories.has(body?.category) ? body.category : 'expert_note';
+    const trailId = normalizeNullable(body?.trail_id);
 
     if (!id || !title || !content) {
       return NextResponse.json({ error: 'Id, title, and content are required.' }, { status: 400 });
+    }
+
+    if (!(await assertAssociatedTrail(auth.sub, trailId))) {
+      return NextResponse.json(
+        { error: 'Experts can only link ride notes to their associated trails.' },
+        { status: 400 }
+      );
     }
 
     const coverImage = validateCoverImage(body?.cover_image_url);
@@ -232,14 +261,13 @@ export async function PATCH(request: NextRequest) {
         category = $7,
         status = $8,
         trail_id = $9::uuid,
-        expert_user_id = $10::uuid,
-        published_at = CASE
-          WHEN $8 = 'published' AND published_at IS NULL THEN NOW()
-          WHEN $8 <> 'published' THEN NULL
-          ELSE published_at
-        END,
+        expert_user_id = $10,
+        published_at = NULL,
         updated_at = NOW()
       WHERE id = $1
+        AND author_user_id = $10
+        AND expert_user_id = $10
+        AND status <> 'published'
       RETURNING *
       `,
       [
@@ -251,25 +279,25 @@ export async function PATCH(request: NextRequest) {
         coverImage.value,
         category,
         status,
-        normalizeNullable(body?.trail_id),
-        normalizeNullable(body?.expert_user_id),
+        trailId,
+        auth.sub,
       ]
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Ride note not found.' }, { status: 404 });
+      return NextResponse.json({ error: 'Ride note not found or already published.' }, { status: 404 });
     }
 
     return NextResponse.json({ note: result.rows[0] }, { status: 200 });
   } catch (error) {
-    console.error('Error updating ride note:', error);
+    console.error('Error updating expert ride note:', error);
     return NextResponse.json({ error: 'Failed to update ride note' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = requireAdmin(request);
+    const auth = requireExpert(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -283,18 +311,21 @@ export async function DELETE(request: NextRequest) {
       `
       DELETE FROM ride_notes
       WHERE id = $1
+        AND author_user_id = $2
+        AND expert_user_id = $2
+        AND status <> 'published'
       RETURNING id, title
       `,
-      [id]
+      [id, auth.sub]
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Ride note not found.' }, { status: 404 });
+      return NextResponse.json({ error: 'Ride note not found or already published.' }, { status: 404 });
     }
 
     return NextResponse.json({ note: result.rows[0] }, { status: 200 });
   } catch (error) {
-    console.error('Error deleting ride note:', error);
+    console.error('Error deleting expert ride note:', error);
     return NextResponse.json({ error: 'Failed to delete ride note' }, { status: 500 });
   }
 }

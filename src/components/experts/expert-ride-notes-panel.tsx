@@ -7,15 +7,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import AppDialog from '@/components/ui/app-dialog';
 import { resizeImageToDataUrl } from '@/lib/image';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
-import {
-  createAdminRideNote,
-  deleteAdminRideNote,
-  fetchAdminRideNotes,
-  updateAdminRideNote,
-  type AdminRideNote,
-  type AdminRideNoteCategory,
-  type AdminRideNoteInput,
+import type {
+  AdminRideNote,
+  AdminRideNoteCategory,
 } from '@/services/admin/admin.service';
+import {
+  createExpertRideNote,
+  deleteExpertRideNote,
+  fetchExpertRideNotes,
+  updateExpertRideNote,
+  type ExpertRideNoteInput,
+} from '@/services/experts/ride-notes.service';
 
 const categories: Array<{ value: AdminRideNoteCategory; label: string }> = [
   { value: 'trail_guide', label: 'Trail guide' },
@@ -29,8 +31,24 @@ const categories: Array<{ value: AdminRideNoteCategory; label: string }> = [
 const inputClass =
   'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
 
+function getDefaultValues(note?: AdminRideNote | null): ExpertRideNoteInput {
+  return {
+    title: note?.title || '',
+    excerpt: note?.excerpt || '',
+    content: note?.content || '',
+    cover_image_url: note?.cover_image_url || '',
+    category: note?.category || 'expert_note',
+    status: note?.status === 'pending_review' ? 'pending_review' : 'draft',
+    trail_id: note?.trail_id || '',
+    expert_user_id: '',
+  };
+}
+
 function StatusBadge({ status }: { status: AdminRideNote['status'] }) {
-  const statusConfig: Record<AdminRideNote['status'], { label: string; className: string }> = {
+  const statusConfig: Record<
+    AdminRideNote['status'],
+    { label: string; className: string }
+  > = {
     draft: {
       label: 'Draft',
       className:
@@ -54,7 +72,9 @@ function StatusBadge({ status }: { status: AdminRideNote['status'] }) {
   };
   const config = statusConfig[status];
   return (
-    <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${config.className}`}>
+    <span
+      className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${config.className}`}
+    >
       {config.label}
     </span>
   );
@@ -64,23 +84,14 @@ function formatDate(value: string | null) {
   if (!value) return 'Not published';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Not published';
-  return date.toLocaleDateString('en-NP', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString('en-NP', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
-function getDefaultValues(note?: AdminRideNote | null): AdminRideNoteInput {
-  return {
-    title: note?.title || '',
-    excerpt: note?.excerpt || '',
-    content: note?.content || '',
-    cover_image_url: note?.cover_image_url || '',
-    category: note?.category || 'ride_note',
-    status: note?.status || 'draft',
-    trail_id: note?.trail_id || '',
-    expert_user_id: note?.expert_user_id || '',
-  };
-}
-
-export default function RideNotesPanel() {
+export default function ExpertRideNotesPanel() {
   const queryClient = useQueryClient();
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<AdminRideNote | null>(null);
@@ -93,26 +104,35 @@ export default function RideNotesPanel() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<AdminRideNoteInput>({
-    defaultValues: getDefaultValues(),
-  });
+  } = useForm<ExpertRideNoteInput>({ defaultValues: getDefaultValues() });
   const coverImageUrl = watch('cover_image_url');
 
   const { data, isLoading, error } = useQuery({
-    queryKey: QUERY_KEYS.admin.rideNotes,
-    queryFn: fetchAdminRideNotes,
+    queryKey: QUERY_KEYS.experts.myRideNotes,
+    queryFn: fetchExpertRideNotes,
   });
-
   const notes = data?.notes || [];
   const trails = data?.trails || [];
-  const experts = data?.experts || [];
+  const publishedCount = useMemo(
+    () => notes.filter((note) => note.status === 'published').length,
+    [notes],
+  );
+  const pendingReviewCount = useMemo(
+    () => notes.filter((note) => note.status === 'pending_review').length,
+    [notes],
+  );
 
   const invalidateNotes = async () => {
-    await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.rideNotes });
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.experts.myRideNotes,
+      }),
+      queryClient.invalidateQueries({ queryKey: ['ride-notes'] }),
+    ]);
   };
 
   const createMutation = useMutation({
-    mutationFn: createAdminRideNote,
+    mutationFn: createExpertRideNote,
     onSuccess: async () => {
       setMessage('Ride note created.');
       setEditorOpen(false);
@@ -122,7 +142,7 @@ export default function RideNotesPanel() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: updateAdminRideNote,
+    mutationFn: updateExpertRideNote,
     onSuccess: async () => {
       setMessage('Ride note updated.');
       setEditorOpen(false);
@@ -133,7 +153,7 @@ export default function RideNotesPanel() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (note: AdminRideNote) => deleteAdminRideNote(note.id),
+    mutationFn: (note: AdminRideNote) => deleteExpertRideNote(note.id),
     onSuccess: async (note) => {
       setMessage(`${note.title} deleted.`);
       setDeleteTarget(null);
@@ -143,15 +163,6 @@ export default function RideNotesPanel() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const mutationError = createMutation.error || updateMutation.error;
-
-  const publishedCount = useMemo(
-    () => notes.filter((note) => note.status === 'published').length,
-    [notes]
-  );
-  const pendingReviewCount = useMemo(
-    () => notes.filter((note) => note.status === 'pending_review').length,
-    [notes]
-  );
 
   const openCreate = () => {
     setEditingNote(null);
@@ -167,20 +178,16 @@ export default function RideNotesPanel() {
     setEditorOpen(true);
   };
 
-  const onSubmit = (values: AdminRideNoteInput) => {
+  const onSubmit = (values: ExpertRideNoteInput) => {
     const payload = {
       ...values,
       excerpt: values.excerpt?.trim() || '',
       cover_image_url: values.cover_image_url?.trim() || '',
       trail_id: values.trail_id || '',
-      expert_user_id: values.expert_user_id || '',
+      expert_user_id: '',
     };
-
-    if (editingNote) {
-      updateMutation.mutate({ ...payload, id: editingNote.id });
-    } else {
-      createMutation.mutate(payload);
-    }
+    if (editingNote) updateMutation.mutate({ ...payload, id: editingNote.id });
+    else createMutation.mutate(payload);
   };
 
   const handleCoverUpload = async (file: File | null) => {
@@ -189,30 +196,41 @@ export default function RideNotesPanel() {
       setMessage('Please upload a valid image file for the cover.');
       return;
     }
-
     try {
-      const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 1400, quality: 0.84 });
+      const dataUrl = await resizeImageToDataUrl(file, {
+        maxDimension: 1400,
+        quality: 0.84,
+      });
       if (dataUrl.length > 650_000) {
         setMessage('Cover image is too large. Please choose a smaller image.');
         return;
       }
       setValue('cover_image_url', dataUrl, { shouldDirty: true });
       setMessage('Cover image uploaded.');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Failed to upload cover image.');
+    } catch (uploadError) {
+      setMessage(
+        uploadError instanceof Error
+          ? uploadError.message
+          : 'Failed to upload cover image.',
+      );
     }
   };
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+    <section id="ride-notes" className="scroll-mt-24 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ride Notes</h2>
-          <p className="text-sm text-gray-600 dark:text-slate-300">
-            Publish trail guides, expert notes, ride reports, safety updates, and trail work stories.
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Ride Notes
+          </h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+            Write trail guides, ride reports, safety notes, and local context
+            from trails associated with you. Submitted notes go live after admin
+            approval.
           </p>
           <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-            {pendingReviewCount} pending review / {publishedCount} published / {notes.length} total
+            {pendingReviewCount} pending review / {publishedCount} published /{' '}
+            {notes.length} total
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -232,68 +250,94 @@ export default function RideNotesPanel() {
         </div>
       </div>
 
-      {message && <p className="mb-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}
+      {message && (
+        <p className="mb-3 text-sm text-emerald-700 dark:text-emerald-300">
+          {message}
+        </p>
+      )}
       {error && (
         <p className="mb-3 text-sm text-red-600 dark:text-red-300">
-          {error instanceof Error ? error.message : 'Unable to load ride notes.'}
+          {error instanceof Error
+            ? error.message
+            : 'Unable to load ride notes.'}
         </p>
       )}
 
       {isLoading ? (
-        <p className="text-sm text-gray-600 dark:text-slate-300">Loading ride notes...</p>
+        <p className="text-sm text-gray-600 dark:text-slate-300">
+          Loading ride notes...
+        </p>
       ) : notes.length === 0 ? (
         <p className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
-          No ride notes yet. Create the first note to make the public page useful.
+          No ride notes yet. Create your first note after associating at least
+          one trail.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
-          <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-slate-900 dark:text-slate-400">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-slate-950 dark:text-slate-400">
               <tr>
                 <th className="px-3 py-2">Note</th>
-                <th className="px-3 py-2">Context</th>
+                <th className="px-3 py-2">Trail</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Published</th>
                 <th className="px-3 py-2 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
-              {notes.map((note) => (
-                <tr key={note.id} className="border-t border-gray-200 dark:border-slate-700">
-                  <td className="px-3 py-3">
-                    <p className="font-semibold text-gray-900 dark:text-slate-100">{note.title}</p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">/{note.slug}</p>
-                  </td>
-                  <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
-                    <p>{note.trail_name ? `Trail: ${note.trail_name}` : 'No trail linked'}</p>
-                    <p>{note.expert_name ? `Expert: ${note.expert_name}` : 'No expert linked'}</p>
-                  </td>
-                  <td className="px-3 py-3">
-                    <StatusBadge status={note.status} />
-                  </td>
-                  <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
-                    {formatDate(note.published_at)}
-                  </td>
-                  <td className="px-3 py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(note)}
-                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(note)}
-                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200 dark:hover:bg-red-950/50"
-                    >
-                      Delete
-                    </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {notes.map((note) => {
+                const isPublished = note.status === 'published';
+                return (
+                  <tr
+                    key={note.id}
+                    className="border-t border-gray-200 dark:border-slate-700"
+                  >
+                    <td className="px-3 py-3">
+                      <p className="font-semibold text-gray-900 dark:text-slate-100">
+                        {note.title}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                        /{note.slug}
+                      </p>
+                    </td>
+                    <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
+                      {note.trail_name || 'No trail linked'}
+                    </td>
+                    <td className="px-3 py-3">
+                      <StatusBadge status={note.status} />
+                    </td>
+                    <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
+                      {formatDate(note.published_at)}
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        {isPublished ? (
+                          <span className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:border-emerald-900/60 dark:text-emerald-200">
+                            Admin controlled
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(note)}
+                              className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(note)}
+                              className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200 dark:hover:bg-red-950/50"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -303,23 +347,30 @@ export default function RideNotesPanel() {
         open={editorOpen}
         onOpenChange={setEditorOpen}
         title={editingNote ? 'Edit ride note' : 'Create ride note'}
-        description="Connect the note to a trail and expert when it helps riders understand the route."
+        description="Link the note to one of your associated trails when it helps riders understand the route."
         maxWidthClassName="max-w-3xl"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Title</label>
+            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+              Title
+            </label>
             <input
               {...register('title', { required: 'Title is required.' })}
               className={inputClass}
-              placeholder="Riding Pharping after rain"
+              placeholder="Riding Hattiban after rain"
             />
-            {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>}
+            {errors.title && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.title.message}
+              </p>
+            )}
           </div>
-
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Category</label>
+              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                Category
+              </label>
               <select {...register('category')} className={inputClass}>
                 {categories.map((category) => (
                   <option key={category.value} value={category.value}>
@@ -329,39 +380,64 @@ export default function RideNotesPanel() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Status</label>
+              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                Status
+              </label>
               <select {...register('status')} className={inputClass}>
                 <option value="draft">Draft</option>
-                <option value="pending_review">Pending review</option>
-                <option value="published">Published</option>
-                <option value="rejected">Rejected</option>
+                <option value="pending_review">Submit for review</option>
               </select>
             </div>
           </div>
-
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Excerpt</label>
+            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+              Related trail
+            </label>
+            <select {...register('trail_id')} className={inputClass}>
+              <option value="">No trail</option>
+              {trails.map((trail) => (
+                <option key={trail.id} value={trail.id}>
+                  {trail.name} {trail.location ? `- ${trail.location}` : ''}
+                </option>
+              ))}
+            </select>
+            {trails.length === 0 && (
+              <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                Associate trails first to link notes to a route.
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+              Excerpt
+            </label>
             <textarea
               {...register('excerpt')}
               rows={2}
               className={inputClass}
-              placeholder="Short summary shown on the Ride Notes page."
+              placeholder="Short summary shown on Ride Notes."
             />
           </div>
-
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Content</label>
+            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+              Content
+            </label>
             <textarea
               {...register('content', { required: 'Content is required.' })}
               rows={9}
               className={inputClass}
               placeholder="Write the note. Separate paragraphs with a blank line."
             />
-            {errors.content && <p className="mt-1 text-xs text-red-600">{errors.content.message}</p>}
+            {errors.content && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.content.message}
+              </p>
+            )}
           </div>
-
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Cover image URL</label>
+            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+              Cover image URL
+            </label>
             <div className="mt-1 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
               <input
                 {...register('cover_image_url')}
@@ -391,7 +467,9 @@ export default function RideNotesPanel() {
                 />
                 <button
                   type="button"
-                  onClick={() => setValue('cover_image_url', '', { shouldDirty: true })}
+                  onClick={() =>
+                    setValue('cover_image_url', '', { shouldDirty: true })
+                  }
                   className="w-full bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Remove cover
@@ -399,38 +477,13 @@ export default function RideNotesPanel() {
               </div>
             ) : null}
           </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Related trail</label>
-              <select {...register('trail_id')} className={inputClass}>
-                <option value="">No trail</option>
-                {trails.map((trail) => (
-                  <option key={trail.id} value={trail.id}>
-                    {trail.name} {trail.location ? `- ${trail.location}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Related expert</label>
-              <select {...register('expert_user_id')} className={inputClass}>
-                <option value="">No expert</option>
-                {experts.map((expert) => (
-                  <option key={expert.id} value={expert.id}>
-                    {expert.name || expert.email} {expert.city ? `- ${expert.city}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
           {mutationError && (
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
-              {mutationError instanceof Error ? mutationError.message : 'Unable to save ride note.'}
+              {mutationError instanceof Error
+                ? mutationError.message
+                : 'Unable to save ride note.'}
             </p>
           )}
-
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -444,7 +497,11 @@ export default function RideNotesPanel() {
               disabled={isSaving}
               className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
             >
-              {isSaving ? 'Saving...' : editingNote ? 'Update note' : 'Create note'}
+              {isSaving
+                ? 'Saving...'
+                : editingNote
+                  ? 'Update note'
+                  : 'Create note'}
             </button>
           </div>
         </form>
@@ -461,7 +518,11 @@ export default function RideNotesPanel() {
         {deleteTarget && (
           <div className="mt-5 space-y-4">
             <p className="text-sm text-gray-700 dark:text-slate-300">
-              Delete <span className="font-semibold text-gray-950 dark:text-white">{deleteTarget.title}</span>?
+              Delete{' '}
+              <span className="font-semibold text-gray-950 dark:text-white">
+                {deleteTarget.title}
+              </span>
+              ?
             </p>
             {deleteMutation.error && (
               <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">

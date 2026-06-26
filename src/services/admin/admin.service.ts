@@ -130,7 +130,7 @@ export type AdminRideNote = {
   content: string;
   cover_image_url: string | null;
   category: AdminRideNoteCategory;
-  status: 'draft' | 'published';
+  status: 'draft' | 'pending_review' | 'published' | 'rejected';
   trail_id: string | null;
   expert_user_id: string | null;
   published_at: string | null;
@@ -162,7 +162,7 @@ export type AdminRideNoteInput = {
   content: string;
   cover_image_url?: string;
   category: AdminRideNoteCategory;
-  status: 'draft' | 'published';
+  status: AdminRideNote['status'];
   trail_id?: string;
   expert_user_id?: string;
 };

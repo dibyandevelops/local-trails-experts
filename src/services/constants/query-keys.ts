@@ -105,6 +105,7 @@ export const QUERY_KEYS = {
     ridePrograms: ['expert-ride-programs'] as const,
     myRidePrograms: ['experts-me-ride-programs'] as const,
     myRideProgramRequests: ['participants-me-ride-program-requests'] as const,
+    myRideNotes: ['experts-me-ride-notes'] as const,
   },
   stores: {
     all: () => ['stores'] as const,
