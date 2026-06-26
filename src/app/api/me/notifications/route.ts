@@ -150,9 +150,17 @@ export async function GET(request: NextRequest) {
           ),
           pool.query(
             `
-            SELECT rn.id, rn.title, rn.updated_at, rn.created_at, u.name AS expert_name, u.email AS expert_email
+            SELECT
+              rn.id,
+              rn.title,
+              rn.updated_at,
+              rn.created_at,
+              u.name AS expert_name,
+              u.email AS expert_email,
+              o.name AS organization_name
             FROM ride_notes rn
             LEFT JOIN users u ON u.id = rn.expert_user_id
+            LEFT JOIN organizations o ON o.id = rn.organization_id
             WHERE rn.status = 'pending_review'
             ORDER BY rn.updated_at DESC, rn.created_at DESC
             LIMIT 5
@@ -326,7 +334,7 @@ export async function GET(request: NextRequest) {
           id: `ride-note-review-${row.id}`,
           type: 'ride_note_review',
           title: 'Ride Note pending review',
-          description: `${row.title} from ${row.expert_name || row.expert_email || 'an expert'} needs approval.`,
+          description: `${row.title} from ${row.expert_name || row.expert_email || row.organization_name || 'a contributor'} needs approval.`,
           href: '/admin#content',
           createdAt: toIsoDate(row.updated_at || row.created_at),
           tone: 'warning',

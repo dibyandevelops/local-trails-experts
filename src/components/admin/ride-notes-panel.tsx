@@ -77,6 +77,7 @@ function getDefaultValues(note?: AdminRideNote | null): AdminRideNoteInput {
     status: note?.status || 'draft',
     trail_id: note?.trail_id || '',
     expert_user_id: note?.expert_user_id || '',
+    organization_id: note?.organization_id || '',
   };
 }
 
@@ -97,6 +98,9 @@ export default function RideNotesPanel() {
     defaultValues: getDefaultValues(),
   });
   const coverImageUrl = watch('cover_image_url');
+  const selectedCategory = watch('category');
+  const usesExpertContext = ['trail_guide', 'expert_note', 'ride_report'].includes(selectedCategory);
+  const usesOrganizationContext = ['safety', 'trail_work'].includes(selectedCategory);
 
   const { data, isLoading, error } = useQuery({
     queryKey: QUERY_KEYS.admin.rideNotes,
@@ -106,6 +110,7 @@ export default function RideNotesPanel() {
   const notes = data?.notes || [];
   const trails = data?.trails || [];
   const experts = data?.experts || [];
+  const organizations = data?.organizations || [];
 
   const invalidateNotes = async () => {
     await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.rideNotes });
@@ -173,7 +178,8 @@ export default function RideNotesPanel() {
       excerpt: values.excerpt?.trim() || '',
       cover_image_url: values.cover_image_url?.trim() || '',
       trail_id: values.trail_id || '',
-      expert_user_id: values.expert_user_id || '',
+      expert_user_id: usesExpertContext ? values.expert_user_id || '' : '',
+      organization_id: usesOrganizationContext ? values.organization_id || '' : '',
     };
 
     if (editingNote) {
@@ -266,7 +272,13 @@ export default function RideNotesPanel() {
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                     <p>{note.trail_name ? `Trail: ${note.trail_name}` : 'No trail linked'}</p>
-                    <p>{note.expert_name ? `Expert: ${note.expert_name}` : 'No expert linked'}</p>
+                    <p>
+                      {note.expert_name
+                        ? `Expert: ${note.expert_name}`
+                        : note.organization_name
+                          ? `Organization: ${note.organization_name}`
+                          : 'No owner linked'}
+                    </p>
                   </td>
                   <td className="px-3 py-3">
                     <StatusBadge status={note.status} />
@@ -413,15 +425,40 @@ export default function RideNotesPanel() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Related expert</label>
-              <select {...register('expert_user_id')} className={inputClass}>
-                <option value="">No expert</option>
-                {experts.map((expert) => (
-                  <option key={expert.id} value={expert.id}>
-                    {expert.name || expert.email} {expert.city ? `- ${expert.city}` : ''}
-                  </option>
-                ))}
-              </select>
+              {usesOrganizationContext ? (
+                <>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                    Related organization
+                  </label>
+                  <select {...register('organization_id')} className={inputClass}>
+                    <option value="">No organization</option>
+                    {organizations.map((organization) => (
+                      <option key={organization.id} value={organization.id}>
+                        {organization.name} {organization.city ? `- ${organization.city}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                    Related expert
+                  </label>
+                  <select {...register('expert_user_id')} className={inputClass} disabled={!usesExpertContext}>
+                    <option value="">No expert</option>
+                    {experts.map((expert) => (
+                      <option key={expert.id} value={expert.id}>
+                        {expert.name || expert.email} {expert.city ? `- ${expert.city}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {!usesExpertContext && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                      This category does not need an expert or organization.
+                    </p>
+                  )}
+                </>
+              )}
             </div>
           </div>
 

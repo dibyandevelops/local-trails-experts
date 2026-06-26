@@ -23,8 +23,6 @@ const categories: Array<{ value: AdminRideNoteCategory; label: string }> = [
   { value: 'trail_guide', label: 'Trail guide' },
   { value: 'expert_note', label: 'Expert note' },
   { value: 'ride_report', label: 'Ride report' },
-  { value: 'safety', label: 'Safety' },
-  { value: 'trail_work', label: 'Trail work' },
   { value: 'ride_note', label: 'Ride note' },
 ];
 

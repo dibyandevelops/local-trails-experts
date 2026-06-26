@@ -13,6 +13,8 @@ const categories = new Set([
 ]);
 
 const statuses = new Set(['draft', 'pending_review', 'published', 'rejected']);
+const expertCategories = new Set(['trail_guide', 'expert_note', 'ride_report']);
+const organizationCategories = new Set(['safety', 'trail_work']);
 
 function requireAdmin(request: NextRequest) {
   const auth = getAuthFromRequest(request);
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const [notesResult, trailsResult, expertsResult] = await Promise.all([
+    const [notesResult, trailsResult, expertsResult, organizationsResult] = await Promise.all([
       pool.query(
         `
         SELECT
@@ -88,15 +90,18 @@ export async function GET(request: NextRequest) {
           rn.status,
           rn.trail_id,
           rn.expert_user_id,
+          rn.organization_id,
           rn.published_at,
           rn.created_at,
           rn.updated_at,
           t.name AS trail_name,
           t.slug AS trail_slug,
-          expert.name AS expert_name
+          expert.name AS expert_name,
+          org.name AS organization_name
         FROM ride_notes rn
         LEFT JOIN trails t ON t.id = rn.trail_id
         LEFT JOIN users expert ON expert.id = rn.expert_user_id
+        LEFT JOIN organizations org ON org.id = rn.organization_id
         ORDER BY rn.created_at DESC
         LIMIT 100
         `
@@ -121,12 +126,22 @@ export async function GET(request: NextRequest) {
         LIMIT 200
         `
       ),
+      pool.query(
+        `
+        SELECT id, slug, name, tagline, logo_url, city, country, is_verified, is_active
+        FROM organizations
+        WHERE is_active = TRUE
+        ORDER BY name ASC
+        LIMIT 200
+        `
+      ),
     ]);
 
     return NextResponse.json({
       notes: notesResult.rows,
       trails: trailsResult.rows,
       experts: expertsResult.rows,
+      organizations: organizationsResult.rows,
     });
   } catch (error) {
     console.error('Error fetching admin ride notes:', error);
@@ -146,6 +161,10 @@ export async function POST(request: NextRequest) {
     const content = String(body?.content || '').trim();
     const status = statuses.has(body?.status) ? body.status : 'draft';
     const category = categories.has(body?.category) ? body.category : 'ride_note';
+    const expertId = expertCategories.has(category) ? normalizeNullable(body?.expert_user_id) : null;
+    const organizationId = organizationCategories.has(category)
+      ? normalizeNullable(body?.organization_id)
+      : null;
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required.' }, { status: 400 });
@@ -170,9 +189,10 @@ export async function POST(request: NextRequest) {
         author_user_id,
         trail_id,
         expert_user_id,
+        organization_id,
         published_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::uuid, $10::uuid, CASE WHEN $7 = 'published' THEN NOW() ELSE NULL END)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::uuid, $10::uuid, $11::uuid, CASE WHEN $7 = 'published' THEN NOW() ELSE NULL END)
       RETURNING *
       `,
       [
@@ -185,7 +205,8 @@ export async function POST(request: NextRequest) {
         status,
         auth.sub,
         normalizeNullable(body?.trail_id),
-        normalizeNullable(body?.expert_user_id),
+        expertId,
+        organizationId,
       ]
     );
 
@@ -209,6 +230,10 @@ export async function PATCH(request: NextRequest) {
     const content = String(body?.content || '').trim();
     const status = statuses.has(body?.status) ? body.status : 'draft';
     const category = categories.has(body?.category) ? body.category : 'ride_note';
+    const expertId = expertCategories.has(category) ? normalizeNullable(body?.expert_user_id) : null;
+    const organizationId = organizationCategories.has(category)
+      ? normalizeNullable(body?.organization_id)
+      : null;
 
     if (!id || !title || !content) {
       return NextResponse.json({ error: 'Id, title, and content are required.' }, { status: 400 });
@@ -233,6 +258,7 @@ export async function PATCH(request: NextRequest) {
         status = $8,
         trail_id = $9::uuid,
         expert_user_id = $10::uuid,
+        organization_id = $11::uuid,
         published_at = CASE
           WHEN $8 = 'published' AND published_at IS NULL THEN NOW()
           WHEN $8 <> 'published' THEN NULL
@@ -252,7 +278,8 @@ export async function PATCH(request: NextRequest) {
         category,
         status,
         normalizeNullable(body?.trail_id),
-        normalizeNullable(body?.expert_user_id),
+        expertId,
+        organizationId,
       ]
     );
 

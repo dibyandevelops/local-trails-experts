@@ -29,6 +29,9 @@ export type PublicRideNote = {
   expert_id: string | null;
   expert_name: string | null;
   expert_city: string | null;
+  organization_id: string | null;
+  organization_name: string | null;
+  organization_slug: string | null;
 };
 
 function normalizeDate(value: Date | string | null) {
@@ -56,6 +59,9 @@ function mapRideNote(row: any): PublicRideNote {
     expert_id: row.expert_id,
     expert_name: row.expert_name,
     expert_city: row.expert_city,
+    organization_id: row.organization_id,
+    organization_name: row.organization_name,
+    organization_slug: row.organization_slug,
   };
 }
 
@@ -77,7 +83,10 @@ const rideNoteSelect = `
   t.location AS trail_location,
   expert.id AS expert_id,
   expert.name AS expert_name,
-  expert.city AS expert_city
+  expert.city AS expert_city,
+  org.id AS organization_id,
+  org.name AS organization_name,
+  org.slug AS organization_slug
 `;
 
 export async function getPublicRideNotes(limit = 24): Promise<PublicRideNote[]> {
@@ -95,6 +104,9 @@ export async function getPublicRideNotes(limit = 24): Promise<PublicRideNote[]> 
         ON expert.id = rn.expert_user_id
         AND expert.role = 'expert'
         AND COALESCE(expert.is_hidden, FALSE) = FALSE
+      LEFT JOIN organizations org
+        ON org.id = rn.organization_id
+        AND org.is_active = TRUE
       WHERE rn.status = 'published'
       ORDER BY COALESCE(rn.published_at, rn.created_at) DESC
       LIMIT $1
@@ -127,6 +139,9 @@ export async function getPublicRideNotesForTrail(
         ON expert.id = rn.expert_user_id
         AND expert.role = 'expert'
         AND COALESCE(expert.is_hidden, FALSE) = FALSE
+      LEFT JOIN organizations org
+        ON org.id = rn.organization_id
+        AND org.is_active = TRUE
       WHERE rn.status = 'published'
         AND rn.trail_id = $1
       ORDER BY COALESCE(rn.published_at, rn.created_at) DESC
@@ -157,6 +172,9 @@ export async function getPublicRideNoteBySlug(slug: string): Promise<PublicRideN
         ON expert.id = rn.expert_user_id
         AND expert.role = 'expert'
         AND COALESCE(expert.is_hidden, FALSE) = FALSE
+      LEFT JOIN organizations org
+        ON org.id = rn.organization_id
+        AND org.is_active = TRUE
       WHERE rn.slug = $1
         AND rn.status = 'published'
       LIMIT 1

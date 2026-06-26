@@ -133,12 +133,14 @@ export type AdminRideNote = {
   status: 'draft' | 'pending_review' | 'published' | 'rejected';
   trail_id: string | null;
   expert_user_id: string | null;
+  organization_id: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
   trail_name: string | null;
   trail_slug: string | null;
   expert_name: string | null;
+  organization_name: string | null;
 };
 
 export type AdminRideNoteTrailOption = {
@@ -165,6 +167,7 @@ export type AdminRideNoteInput = {
   status: AdminRideNote['status'];
   trail_id?: string;
   expert_user_id?: string;
+  organization_id?: string;
 };
 
 export type AdminUser = {
@@ -370,11 +373,13 @@ export async function fetchAdminRideNotes() {
       notes: AdminRideNote[];
       trails: AdminRideNoteTrailOption[];
       experts: AdminRideNoteExpertOption[];
+      organizations: OrganizationOption[];
     }>('/api/admin/ride-notes');
     return {
       notes: data.notes || [],
       trails: data.trails || [],
       experts: data.experts || [],
+      organizations: data.organizations || [],
     };
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to fetch ride notes'));

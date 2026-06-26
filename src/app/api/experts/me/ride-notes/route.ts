@@ -7,8 +7,6 @@ const categories = new Set([
   'trail_guide',
   'expert_note',
   'ride_report',
-  'safety',
-  'trail_work',
   'ride_note',
 ]);
 
@@ -106,12 +104,14 @@ export async function GET(request: NextRequest) {
           rn.status,
           rn.trail_id,
           rn.expert_user_id,
+          rn.organization_id,
           rn.published_at,
           rn.created_at,
           rn.updated_at,
           t.name AS trail_name,
           t.slug AS trail_slug,
-          expert.name AS expert_name
+          expert.name AS expert_name,
+          NULL::text AS organization_name
         FROM ride_notes rn
         LEFT JOIN trails t ON t.id = rn.trail_id
         LEFT JOIN users expert ON expert.id = rn.expert_user_id
@@ -192,9 +192,10 @@ export async function POST(request: NextRequest) {
         author_user_id,
         trail_id,
         expert_user_id,
+        organization_id,
         published_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::uuid, $8, NULL)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::uuid, $8, NULL, NULL)
       RETURNING *
       `,
       [
@@ -262,6 +263,7 @@ export async function PATCH(request: NextRequest) {
         status = $8,
         trail_id = $9::uuid,
         expert_user_id = $10,
+        organization_id = NULL,
         published_at = NULL,
         updated_at = NOW()
       WHERE id = $1
