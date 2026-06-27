@@ -4,6 +4,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 import type { ExpertRideProgram, ExpertiseLevel } from '@/types';
 
 const VALID_LEVELS = new Set(['beginner', 'intermediate', 'advanced', 'expert']);
+const VALID_PROGRAM_TYPES = new Set(['guided_ride', 'training', 'skills_clinic', 'tour']);
 const VALID_WEEKDAYS = new Set([
   'Monday',
   'Tuesday',
@@ -14,9 +15,23 @@ const VALID_WEEKDAYS = new Set([
   'Sunday',
 ]);
 
+function getProgramTypeLabel(programType: string) {
+  switch (programType) {
+    case 'training':
+      return 'MTB training';
+    case 'skills_clinic':
+      return 'skills clinic';
+    case 'tour':
+      return 'local tour';
+    default:
+      return 'ride';
+  }
+}
+
 function normalizeProgramRow(row: any): ExpertRideProgram {
   return {
     ...row,
+    program_type: row.program_type || 'guided_ride',
     price_npr: row.price_npr === null ? null : Number(row.price_npr),
     max_group_size: Number(row.max_group_size || 1),
     availability_weekdays: Array.isArray(row.availability_weekdays)
@@ -76,6 +91,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const trailId = String(body?.trail_id || '').trim();
+    const programTypeRaw = String(body?.program_type || 'guided_ride').trim();
+    const programType = VALID_PROGRAM_TYPES.has(programTypeRaw) ? programTypeRaw : 'guided_ride';
     const description = String(body?.description || '').trim();
     const durationNote = String(body?.duration_note || '').trim();
     const meetingPointNote = String(body?.meeting_point_note || '').trim();
@@ -120,7 +137,10 @@ export async function POST(request: NextRequest) {
 
     const userResult = await pool.query('SELECT name FROM users WHERE id = $1 LIMIT 1', [auth.sub]);
     const expertName = userResult.rows[0]?.name || 'Expert';
-    const title = `Ride with ${expertName} to ${trail.name}`;
+    const title =
+      programType === 'guided_ride'
+        ? `Ride with ${expertName} to ${trail.name}`
+        : `${durationNote ? `${durationNote} ` : ''}${getProgramTypeLabel(programType)} with ${expertName} to ${trail.name}`;
     const priceNpr =
       priceRaw === null || priceRaw === undefined || String(priceRaw).trim() === ''
         ? null
@@ -135,6 +155,7 @@ export async function POST(request: NextRequest) {
         expert_user_id,
         trail_id,
         title,
+        program_type,
         description,
         price_npr,
         max_group_size,
@@ -145,10 +166,11 @@ export async function POST(request: NextRequest) {
         skill_level,
         is_active
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13)
       ON CONFLICT (expert_user_id, trail_id, title)
       DO UPDATE SET
         description = EXCLUDED.description,
+        program_type = EXCLUDED.program_type,
         price_npr = EXCLUDED.price_npr,
         max_group_size = EXCLUDED.max_group_size,
         duration_note = EXCLUDED.duration_note,
@@ -163,6 +185,7 @@ export async function POST(request: NextRequest) {
         auth.sub,
         trailId,
         title,
+        programType,
         description || null,
         priceNpr,
         groupSize,

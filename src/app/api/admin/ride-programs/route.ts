@@ -20,8 +20,10 @@ export async function GET(request: NextRequest) {
         SELECT
           p.id,
           p.expert_user_id,
+          p.organization_id,
           p.trail_id,
           p.title,
+          p.program_type,
           p.description,
           p.price_npr,
           p.max_group_size,
@@ -35,6 +37,7 @@ export async function GET(request: NextRequest) {
           p.updated_at,
           u.name AS expert_name,
           u.email AS expert_email,
+          o.name AS organization_name,
           t.name AS trail_name,
           t.slug AS trail_slug,
           t.location AS trail_location,
@@ -42,9 +45,10 @@ export async function GET(request: NextRequest) {
           COUNT(*) FILTER (WHERE r.status = 'pending')::int AS pending_request_count
         FROM expert_ride_programs p
         JOIN users u ON u.id = p.expert_user_id
+        LEFT JOIN organizations o ON o.id = p.organization_id
         JOIN trails t ON t.id = p.trail_id
         LEFT JOIN expert_ride_program_requests r ON r.program_id = p.id
-        GROUP BY p.id, u.name, u.email, t.name, t.slug, t.location
+        GROUP BY p.id, u.name, u.email, o.name, t.name, t.slug, t.location
         ORDER BY p.created_at DESC
         LIMIT 100
         `

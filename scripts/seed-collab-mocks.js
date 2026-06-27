@@ -31,6 +31,16 @@ const TBN_USERS = [
     sports: ['mtb'],
     memberRole: 'org_editor',
   },
+  {
+    name: 'Nirav Shrestha',
+    email: 'nirav.shrestha@locoxperts.app',
+    password_hash: 'mock-hash-not-for-auth',
+    role: 'expert',
+    city: 'Kathmandu',
+    bio: 'MTB skills coach focused on enduro progression, race preparation, and safe technical riding.',
+    sports: ['mtb', 'enduro_mtb', 'downhill_mtb'],
+    memberRole: 'org_editor',
+  },
 ];
 
 // TBN_TRAILS removed - we'll use existing trails associated with TBN organization
@@ -159,6 +169,7 @@ const RIDE_WITH_EXPERT_PROGRAMS = [
   {
     expertIndex: 0,
     trailIndex: 0,
+    program_type: 'guided_ride',
     description:
       'A focused enduro ride with line choice, braking points, and safe sessioning through the main technical sections.',
     price_npr: 3500,
@@ -172,6 +183,7 @@ const RIDE_WITH_EXPERT_PROGRAMS = [
   {
     expertIndex: 0,
     trailIndex: 1,
+    program_type: 'guided_ride',
     description:
       'Trail builder-led ride focused on sustainable line use, flow sections, and current trail condition notes.',
     price_npr: 3000,
@@ -185,6 +197,7 @@ const RIDE_WITH_EXPERT_PROGRAMS = [
   {
     expertIndex: 1,
     trailIndex: 0,
+    program_type: 'guided_ride',
     description:
       'A friendly technical skills ride for riders who want local route context and safer progression on enduro terrain.',
     price_npr: 2500,
@@ -198,6 +211,7 @@ const RIDE_WITH_EXPERT_PROGRAMS = [
   {
     expertIndex: 1,
     trailIndex: 1,
+    program_type: 'guided_ride',
     description:
       'Guided route session with local trail notes, bypass options, and support planning for first-time riders.',
     price_npr: 3200,
@@ -211,6 +225,7 @@ const RIDE_WITH_EXPERT_PROGRAMS = [
   {
     expertIndex: 0,
     trailIndex: 2,
+    program_type: 'guided_ride',
     description:
       'Advanced terrain session for confident riders looking to understand line choice and trail maintenance context.',
     price_npr: 4500,
@@ -220,6 +235,48 @@ const RIDE_WITH_EXPERT_PROGRAMS = [
     availability_weekdays: ['Saturday'],
     available_time_note: '6:30 AM start',
     skill_level: 'advanced',
+  },
+  {
+    expertIndex: 2,
+    trailIndex: 0,
+    program_type: 'training',
+    description:
+      'A structured 15-day MTB training block covering body position, braking, climbing, cornering, technical descents, ride fitness, and trail decision-making.',
+    price_npr: 28000,
+    max_group_size: 6,
+    duration_note: '15 days',
+    meeting_point_note: 'First session meetup and weekly route plan shared after request approval.',
+    availability_weekdays: ['Monday', 'Wednesday', 'Friday', 'Saturday'],
+    available_time_note: '6:30-8:00 AM on weekdays, longer Saturday session',
+    skill_level: 'intermediate',
+  },
+  {
+    expertIndex: 2,
+    trailIndex: 1,
+    program_type: 'skills_clinic',
+    description:
+      'Focused one-day clinic for riders who want cleaner cornering, safer braking, line choice, and confidence on technical trail features.',
+    price_npr: 4500,
+    max_group_size: 5,
+    duration_note: '1 day',
+    meeting_point_note: 'Meet near the trail access point after confirmation.',
+    availability_weekdays: ['Saturday', 'Sunday'],
+    available_time_note: 'Morning session preferred',
+    skill_level: 'beginner',
+  },
+  {
+    expertIndex: 2,
+    trailIndex: 2,
+    program_type: 'tour',
+    description:
+      'A local trail tour for riders who want a slower, scenic day with route context, food stop suggestions, and support planning.',
+    price_npr: 6500,
+    max_group_size: 4,
+    duration_note: 'Full day',
+    meeting_point_note: 'Meet-up point selected based on rider location and trail access.',
+    availability_weekdays: ['Friday', 'Saturday'],
+    available_time_note: 'Flexible daytime start',
+    skill_level: 'beginner',
   },
 ];
 
@@ -635,8 +692,40 @@ async function ensureExpertTrailAssociations(client, expertUserIds, trails) {
   return inserted;
 }
 
-async function ensureRideProgram(client, expertUserId, expertName, trail, program) {
-  const title = `Ride with ${expertName} to ${trail.name}`;
+function getProgramTypeLabel(programType) {
+  switch (programType) {
+    case 'training':
+      return 'MTB training';
+    case 'skills_clinic':
+      return 'skills clinic';
+    case 'tour':
+      return 'local tour';
+    default:
+      return 'ride';
+  }
+}
+
+function buildRideProgramTitle(expertName, trailName, program) {
+  const programType = program.program_type || 'guided_ride';
+  if (programType === 'guided_ride') {
+    return `Ride with ${expertName} to ${trailName}`;
+  }
+
+  const durationPrefix = program.duration_note ? `${program.duration_note} ` : '';
+  return `${durationPrefix}${getProgramTypeLabel(programType)} with ${expertName} to ${trailName}`;
+}
+
+async function ensureRideProgram(
+  client,
+  expertUserId,
+  expertName,
+  trail,
+  program,
+  organizationId,
+  createdByUserId
+) {
+  const programType = program.program_type || 'guided_ride';
+  const title = buildRideProgramTitle(expertName, trail.name, program);
   const existing = await client.query(
     `
     SELECT id
@@ -654,20 +743,24 @@ async function ensureRideProgram(client, expertUserId, expertName, trail, progra
       `
       UPDATE expert_ride_programs
       SET
-        description = $2,
-        price_npr = $3,
-        max_group_size = $4,
-        duration_note = $5,
-        meeting_point_note = $6,
-        availability_weekdays = $7::jsonb,
-        available_time_note = $8,
-        skill_level = $9,
+        program_type = $2,
+        description = $3,
+        price_npr = $4,
+        max_group_size = $5,
+        duration_note = $6,
+        meeting_point_note = $7,
+        availability_weekdays = $8::jsonb,
+        available_time_note = $9,
+        skill_level = $10,
+        organization_id = $11,
+        created_by_user_id = $12,
         is_active = TRUE,
         updated_at = NOW()
       WHERE id = $1
       `,
       [
         existing.rows[0].id,
+        programType,
         program.description,
         program.price_npr,
         program.max_group_size,
@@ -676,6 +769,8 @@ async function ensureRideProgram(client, expertUserId, expertName, trail, progra
         JSON.stringify(program.availability_weekdays),
         program.available_time_note,
         program.skill_level,
+        organizationId,
+        createdByUserId,
       ]
     );
     return false;
@@ -686,7 +781,10 @@ async function ensureRideProgram(client, expertUserId, expertName, trail, progra
     INSERT INTO expert_ride_programs (
       expert_user_id,
       trail_id,
+      organization_id,
+      created_by_user_id,
       title,
+      program_type,
       description,
       price_npr,
       max_group_size,
@@ -697,12 +795,15 @@ async function ensureRideProgram(client, expertUserId, expertName, trail, progra
       skill_level,
       is_active
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, TRUE)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $14, TRUE)
     `,
     [
       expertUserId,
       trail.id,
+      organizationId,
+      createdByUserId,
       title,
+      programType,
       program.description,
       program.price_npr,
       program.max_group_size,
@@ -722,12 +823,17 @@ async function seedTrailBuildersNepal() {
     try {
       await client.query('BEGIN');
 
-      const adminUserId = await ensureUser(client, TBN_USERS[0]);
-      const editorUserId = await ensureUser(client, TBN_USERS[1]);
+      const tbnUserIds = [];
+      for (const user of TBN_USERS) {
+        tbnUserIds.push(await ensureUser(client, user));
+      }
+
+      const adminUserId = tbnUserIds[0];
       const organizationId = await ensureOrganization(client, adminUserId);
 
-      await ensureMember(client, organizationId, adminUserId, 'org_admin');
-      await ensureMember(client, organizationId, editorUserId, 'org_editor');
+      for (const [index, userId] of tbnUserIds.entries()) {
+        await ensureMember(client, organizationId, userId, TBN_USERS[index].memberRole);
+      }
 
       // Query existing trails associated with TBN organization
       const trailsResult = await client.query(
@@ -786,7 +892,7 @@ async function seedTrailBuildersNepal() {
         cycleHubResults.push(await ensureCycleHub(client, store));
       }
 
-      const expertIds = [adminUserId, editorUserId];
+      const expertIds = tbnUserIds;
       const expertTrailAssociationsInserted = await ensureExpertTrailAssociations(
         client,
         expertIds,
@@ -812,7 +918,15 @@ async function seedTrailBuildersNepal() {
         }
 
         rideProgramResults.push(
-          await ensureRideProgram(client, expertUserId, expert.name, trail, program)
+          await ensureRideProgram(
+            client,
+            expertUserId,
+            expert.name,
+            trail,
+            program,
+            organizationId,
+            adminUserId
+          )
         );
       }
 
@@ -827,7 +941,7 @@ async function seedTrailBuildersNepal() {
       console.log(`- Trail updates inserted: ${updateResults.filter(Boolean).length}`);
       console.log(`- Cycle hubs inserted: ${cycleHubResults.filter(Boolean).length}`);
       console.log(`- Expert trail associations inserted: ${expertTrailAssociationsInserted}`);
-      console.log(`- Ride with Experts programs inserted: ${rideProgramResults.filter(Boolean).length}`);
+      console.log(`- Expert programs inserted: ${rideProgramResults.filter(Boolean).length}`);
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

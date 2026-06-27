@@ -50,6 +50,25 @@ function getTrailName(program: ExpertRideProgram) {
   return program.trail_name || 'selected trail';
 }
 
+function getProgramTypeLabel(programType?: string | null) {
+  switch (programType) {
+    case 'training':
+      return 'MTB training';
+    case 'skills_clinic':
+      return 'Skills clinic';
+    case 'tour':
+      return 'Local tour';
+    default:
+      return 'Guided ride';
+  }
+}
+
+function getProgramTitle(program: ExpertRideProgram) {
+  const expertName = getExpertName(program);
+  const trailName = getTrailName(program);
+  return program.title || `Ride with ${expertName} to ${trailName}`;
+}
+
 function getRequestedWeekday(date: string) {
   if (!date) return null;
   const parsed = new Date(`${date.slice(0, 10)}T12:00:00`);
@@ -464,6 +483,7 @@ function FeaturedProgramCard({
 }) {
   const expertName = getExpertName(program);
   const trailName = getTrailName(program);
+  const title = getProgramTitle(program);
 
   return (
     <article className={`grid overflow-hidden rounded-[2rem] ${cardClass} lg:grid-cols-[0.7fr_1.3fr]`}>
@@ -494,12 +514,20 @@ function FeaturedProgramCard({
       <div className="p-6 md:p-8">
         <div className="flex flex-wrap items-center gap-2">
           <p className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-800 dark:bg-slate-800 dark:text-emerald-200">
-            Featured request
+            {getProgramTypeLabel(program.program_type)}
           </p>
           {existingRequest && <RequestStatusBadge request={existingRequest} />}
+          {program.organization_name && program.organization_slug && (
+            <Link
+              href={`/organizations/${program.organization_slug}`}
+              className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-50 dark:border-slate-700 dark:text-emerald-200 dark:hover:bg-slate-800"
+            >
+              By {program.organization_name}
+            </Link>
+          )}
         </div>
         <h2 className="mt-4 text-3xl font-black leading-tight text-gray-950 dark:text-white md:text-5xl">
-          Ride with {expertName} to {trailName}
+          {title}
         </h2>
         <p className="mt-4 line-clamp-4 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-300">
           {program.description ||
@@ -508,7 +536,7 @@ function FeaturedProgramCard({
         <ProgramMeta program={program} />
         <div className="mt-6 flex flex-wrap gap-2">
           <button type="button" onClick={onRequest} className={primaryButtonClass}>
-            {existingRequest ? 'Update request' : 'Ride with a local'}
+            {existingRequest ? 'Update request' : 'Request program'}
           </button>
           {existingRequest && (
             <Link href="/participants/me" className={secondaryButtonClass}>
@@ -540,6 +568,7 @@ function ProgramCard({
 }) {
   const expertName = getExpertName(program);
   const trailName = getTrailName(program);
+  const title = getProgramTitle(program);
 
   return (
     <article className={`flex h-full flex-col rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg dark:hover:border-emerald-700 ${cardClass}`}>
@@ -547,14 +576,17 @@ function ProgramCard({
         <ProgramAvatar program={program} expertName={expertName} />
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-            Ride with
+            {getProgramTypeLabel(program.program_type)}
           </p>
           <h3 className="text-lg font-black text-gray-950 dark:text-white">{expertName}</h3>
+          {program.organization_name && (
+            <p className="text-xs text-gray-500 dark:text-slate-400">With {program.organization_name}</p>
+          )}
         </div>
       </div>
 
       <h4 className="mt-4 text-xl font-black leading-tight text-gray-950 dark:text-white">
-        Ride with {expertName} to {trailName}
+        {title}
       </h4>
       {existingRequest && <RequestStatusBadge request={existingRequest} className="mt-3" />}
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
@@ -563,7 +595,7 @@ function ProgramCard({
       <ProgramMeta program={program} compact />
       <div className="mt-auto flex flex-wrap gap-2 pt-5">
         <button type="button" onClick={onRequest} className={`${primaryButtonClass} flex-1`}>
-          {existingRequest ? 'Update request' : 'Request ride'}
+          {existingRequest ? 'Update request' : 'Request program'}
         </button>
         {existingRequest && (
           <Link href="/participants/me" className={secondaryButtonClass}>

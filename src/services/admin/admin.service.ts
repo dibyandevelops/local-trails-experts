@@ -66,8 +66,10 @@ export type TrailInterestRequest = {
 export type AdminRideProgram = {
   id: string;
   expert_user_id: string;
+  organization_id: string | null;
   trail_id: string;
   title: string;
+  program_type: 'guided_ride' | 'training' | 'skills_clinic' | 'tour';
   description: string | null;
   price_npr: number | null;
   max_group_size: number;
@@ -81,6 +83,7 @@ export type AdminRideProgram = {
   updated_at: string;
   expert_name: string | null;
   expert_email: string;
+  organization_name: string | null;
   trail_name: string;
   trail_slug: string | null;
   trail_location: string | null;

@@ -40,6 +40,19 @@ function RequestStatusBadge({ status }: { status: AdminRideProgramRequest['statu
   );
 }
 
+function getProgramTypeLabel(programType?: string | null) {
+  switch (programType) {
+    case 'training':
+      return 'MTB training';
+    case 'skills_clinic':
+      return 'Skills clinic';
+    case 'tour':
+      return 'Local tour';
+    default:
+      return 'Guided ride';
+  }
+}
+
 export default function RideProgramsPanel() {
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({
@@ -109,7 +122,12 @@ export default function RideProgramsPanel() {
                     {programs.map((program) => (
                       <tr key={program.id} className="border-t border-gray-200 dark:border-slate-700">
                         <td className="px-3 py-3">
-                          <p className="font-semibold text-gray-900 dark:text-slate-100">{program.title}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-gray-900 dark:text-slate-100">{program.title}</p>
+                            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                              {getProgramTypeLabel(program.program_type)}
+                            </span>
+                          </div>
                           <p className="text-xs text-gray-500 dark:text-slate-400">
                             {program.price_npr ? `NPR ${program.price_npr}` : 'No price'} · Up to {program.max_group_size} riders
                           </p>
@@ -117,6 +135,11 @@ export default function RideProgramsPanel() {
                         <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                           <p>{program.expert_name || 'Expert'}</p>
                           <p>{program.expert_email}</p>
+                          {program.organization_name && (
+                            <p className="mt-1 font-semibold text-emerald-700 dark:text-emerald-300">
+                              {program.organization_name}
+                            </p>
+                          )}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                           {program.trail_slug ? (

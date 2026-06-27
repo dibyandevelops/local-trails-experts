@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Event, EventParticipant, ExpertRideProgram, User, SportType } from '@/types';
+import type {
+  Event,
+  EventParticipant,
+  ExpertRideProgram,
+  ExpertRideProgramType,
+  User,
+  SportType,
+} from '@/types';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
@@ -64,6 +71,17 @@ const PROGRAM_WEEKDAYS = [
   'Saturday',
   'Sunday',
 ];
+
+const PROGRAM_TYPE_OPTIONS: Array<{ value: ExpertRideProgramType; label: string; hint: string }> = [
+  { value: 'guided_ride', label: 'Guided ride', hint: 'Flexible ride request around one trail.' },
+  { value: 'training', label: 'MTB training', hint: 'Multi-day coaching or structured practice.' },
+  { value: 'skills_clinic', label: 'Skills clinic', hint: 'Focused session for cornering, braking, drops, or flow.' },
+  { value: 'tour', label: 'Local tour', hint: 'Scenic or city-to-trail experience with an expert.' },
+];
+
+function getProgramTypeLabel(programType?: string | null) {
+  return PROGRAM_TYPE_OPTIONS.find((option) => option.value === programType)?.label || 'Guided ride';
+}
 
 type ExpertTrail = {
   id: string;
@@ -161,6 +179,7 @@ export default function ExpertProfilePage() {
     verificationLinks: '',
   });
   const [rideProgramForm, setRideProgramForm] = useState({
+    programType: 'guided_ride' as ExpertRideProgramType,
     trailId: '',
     description: '',
     priceNpr: '',
@@ -424,6 +443,7 @@ export default function ExpertProfilePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          program_type: rideProgramForm.programType,
           trail_id: rideProgramForm.trailId,
           description: rideProgramForm.description.trim() || null,
           price_npr: rideProgramForm.priceNpr ? Number(rideProgramForm.priceNpr) : null,
@@ -443,6 +463,7 @@ export default function ExpertProfilePage() {
       setRidePrograms(data.programs || []);
       setRideProgramForm((prev) => ({
         ...prev,
+        programType: 'guided_ride',
         trailId: '',
         description: '',
         priceNpr: '',
@@ -863,7 +884,7 @@ export default function ExpertProfilePage() {
                       Keep creation separate from request review. Open the form when you are ready to publish a new ride offer.
                     </p>
                     <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
-                      Public title is generated as Ride with {editForm.name || 'you'} to the selected trail.
+                      Public title is generated from the program type, expert name, duration, and selected trail.
                     </p>
                   </div>
                   <button
@@ -1018,6 +1039,9 @@ export default function ExpertProfilePage() {
                               <h4 className="text-sm font-bold text-gray-950 dark:text-slate-100">
                                 {program.title}
                               </h4>
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                                {getProgramTypeLabel(program.program_type)}
+                              </span>
                               <span
                                 className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
                                   program.is_active
@@ -1735,6 +1759,28 @@ export default function ExpertProfilePage() {
             ) : (
               <>
             <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
+                Program type
+                <select
+                  value={rideProgramForm.programType}
+                  onChange={(event) =>
+                    setRideProgramForm((prev) => ({
+                      ...prev,
+                      programType: event.target.value as ExpertRideProgramType,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  {PROGRAM_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1 block text-xs font-normal text-gray-500 dark:text-slate-400">
+                  {PROGRAM_TYPE_OPTIONS.find((option) => option.value === rideProgramForm.programType)?.hint}
+                </span>
+              </label>
               <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 md:col-span-2">
                 Associated trail
                 <select

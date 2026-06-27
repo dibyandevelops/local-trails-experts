@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import OrganizationProgramsPanel from '@/components/feature-components/organizations/organization-programs-panel';
 
 type ManagedOrganization = {
   id: string;
@@ -305,6 +306,8 @@ export default function TrailBuilderDashboardClient() {
         )}
         {message && <p className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{message}</p>}
       </section>
+
+      <OrganizationProgramsPanel organizationId={effectiveOrgId} trails={orgTrails} />
 
       <section className="grid gap-6 xl:grid-cols-3">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">

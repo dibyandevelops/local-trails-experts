@@ -7,6 +7,7 @@ export type Difficulty =
   // legacy value kept for backward compatibility with older rows/data payloads
   | 'medium';
 export type ExpertiseLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+export type ExpertRideProgramType = 'guided_ride' | 'training' | 'skills_clinic' | 'tour';
 
 export type UserRole = 'participant' | 'expert' | 'admin';
 
@@ -218,8 +219,11 @@ export interface JoinEventInput {
 export interface ExpertRideProgram {
   id: string;
   expert_user_id: string;
+  organization_id?: string | null;
+  created_by_user_id?: string | null;
   trail_id: string;
   title: string;
+  program_type: ExpertRideProgramType;
   description: string | null;
   price_npr: number | null;
   max_group_size: number;
@@ -236,6 +240,9 @@ export interface ExpertRideProgram {
   expert_city?: string | null;
   expert_bio?: string | null;
   expert_profile_photo_url?: string | null;
+  organization_name?: string | null;
+  organization_slug?: string | null;
+  organization_logo_url?: string | null;
   expert_availability_weekdays?: string[] | null;
   average_rating?: number | null;
   review_count?: number | null;

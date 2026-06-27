@@ -4,6 +4,7 @@ import type {
   ExpertRideProgram,
   ExpertRideProgramRequest,
   ExpertiseLevel,
+  ExpertRideProgramType,
   SportType,
   User,
 } from '@/types';
@@ -129,6 +130,7 @@ export async function fetchMyExpertRidePrograms(signal?: AbortSignal) {
 
 export type SaveExpertRideProgramPayload = {
   trail_id: string;
+  program_type?: ExpertRideProgramType;
   description?: string;
   price_npr?: number | null;
   max_group_size?: number;

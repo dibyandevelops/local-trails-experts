@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
         AND COALESCE(u.is_hidden, FALSE) = FALSE
         AND t.status = 'approved'
         AND COALESCE(t.is_hidden, FALSE) = FALSE
+        AND (p.organization_id IS NULL OR o.is_active = TRUE)
         AND EXISTS (
           SELECT 1
           FROM expert_trails et
@@ -48,6 +49,9 @@ export async function GET(request: NextRequest) {
         u.city AS expert_city,
         u.bio AS expert_bio,
         u.profile_photo_url AS expert_profile_photo_url,
+        o.name AS organization_name,
+        o.slug AS organization_slug,
+        o.logo_url AS organization_logo_url,
         u.availability_weekdays AS expert_availability_weekdays,
         COALESCE(er.average_rating, 0) AS average_rating,
         COALESCE(er.review_count, 0) AS review_count,
@@ -60,6 +64,7 @@ export async function GET(request: NextRequest) {
       FROM expert_ride_programs p
       JOIN users u ON u.id = p.expert_user_id
       JOIN trails t ON t.id = p.trail_id
+      LEFT JOIN organizations o ON o.id = p.organization_id
       LEFT JOIN (
         SELECT expert_user_id, AVG(rating)::float AS average_rating, COUNT(*)::int AS review_count
         FROM expert_reviews
@@ -73,6 +78,7 @@ export async function GET(request: NextRequest) {
 
     const programs: ExpertRideProgram[] = result.rows.map((row: any) => ({
       ...row,
+      program_type: row.program_type || 'guided_ride',
       price_npr: row.price_npr === null ? null : Number(row.price_npr),
       max_group_size: Number(row.max_group_size || 1),
       availability_weekdays: Array.isArray(row.availability_weekdays)
