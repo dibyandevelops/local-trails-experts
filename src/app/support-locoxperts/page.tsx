@@ -35,7 +35,7 @@ export default function DonatePage() {
             <div className="aspect-square overflow-hidden rounded-2xl bg-white">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/donate/esewa-platform-support.jpeg"
+                src=""
                 alt="eSewa QR code for supporting LocoXperts platform upkeep"
                 className="h-full w-full object-cover object-[50%_23%]"
               />
