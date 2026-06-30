@@ -36,6 +36,7 @@ export default function DonatePage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src=""
+                // src="/donate/esewa-platform-support.jpeg"
                 alt="eSewa QR code for supporting LocoXperts platform upkeep"
                 className="h-full w-full object-cover object-[50%_23%]"
               />
