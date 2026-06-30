@@ -439,6 +439,14 @@ export default function ExpertDetailPage() {
                         Pending Verification
                       </span>
                     )}
+                    {expert.owned_organization && (
+                      <Link
+                        href={`/organizations/${expert.owned_organization.slug}`}
+                        className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-900 hover:bg-cyan-100 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-100"
+                      >
+                        Organization owner · {expert.owned_organization.name}
+                      </Link>
+                    )}
                     {strava?.connected && stravaProfileId && currentUser?.id === expertId && (
                       <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-100">
                         Strava Verified

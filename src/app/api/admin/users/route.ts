@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         role,
         city,
         sports,
+        is_verified_expert,
         is_hidden,
         phone,
         verification_years_experience,

@@ -48,7 +48,7 @@ export type OrganizationCampaign = {
 
 export type OrganizationMember = {
   id: string;
-  role: 'org_admin' | 'org_editor';
+  role: 'org_owner' | 'org_admin' | 'org_editor';
   status: 'active' | 'invited' | 'disabled';
   created_at: string;
   user_id: string;
@@ -76,6 +76,20 @@ export type OrganizationTrailUpdate = {
   actor_name: string | null;
 };
 
+export type OrganizationService = {
+  id: string;
+  category: string;
+  title: string;
+  description: string | null;
+  price_npr: string | null;
+  price_note: string | null;
+  location: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  website_url: string | null;
+  image_url: string | null;
+};
+
 export type OrganizationDetailPayload = {
   organization: OrganizationDetail;
   trails: OrganizationTrailRelation[];
@@ -83,6 +97,7 @@ export type OrganizationDetailPayload = {
   campaigns: OrganizationCampaign[];
   members: OrganizationMember[];
   updates: OrganizationTrailUpdate[];
+  services: OrganizationService[];
 };
 
 async function fetchOrganizationDetail(slug: string): Promise<OrganizationDetailPayload> {

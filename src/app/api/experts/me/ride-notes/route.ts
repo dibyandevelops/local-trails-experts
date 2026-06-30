@@ -2,17 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { isAllowedImageUrl } from '@/lib/image-url';
+import { canOperateOrganization } from '@/lib/organization-access';
 
 const categories = new Set([
   'trail_guide',
   'expert_note',
   'ride_report',
   'ride_note',
+  'safety',
+  'trail_work',
 ]);
+const organizationCategories = new Set(['safety', 'trail_work']);
+const expertCategories = new Set(['trail_guide', 'expert_note', 'ride_report', 'ride_note']);
 
 const editableStatuses = new Set(['draft', 'pending_review']);
 
-function requireExpert(request: NextRequest) {
+function requireRideNoteAuthor(request: NextRequest) {
   const auth = getAuthFromRequest(request);
   return auth?.role === 'expert' ? auth : null;
 }
@@ -65,32 +70,30 @@ function validateCoverImage(value: unknown) {
   return { value: coverImageUrl, error: null };
 }
 
-async function assertAssociatedTrail(expertUserId: string, trailId: string | null) {
+async function assertAvailableTrail(trailId: string | null) {
   if (!trailId) return true;
   const result = await pool.query(
     `
     SELECT 1
-    FROM expert_trails et
-    JOIN trails t ON t.id = et.trail_id
-    WHERE et.expert_user_id = $1
-      AND et.trail_id = $2::uuid
+    FROM trails t
+    WHERE t.id = $1::uuid
       AND t.status = 'approved'
       AND COALESCE(t.is_hidden, FALSE) = FALSE
     LIMIT 1
     `,
-    [expertUserId, trailId]
+    [trailId]
   );
   return result.rows.length > 0;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireExpert(request);
+    const auth = requireRideNoteAuthor(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const [notesResult, trailsResult] = await Promise.all([
+    const [notesResult, trailsResult, organizationsResult] = await Promise.all([
       pool.query(
         `
         SELECT
@@ -111,12 +114,12 @@ export async function GET(request: NextRequest) {
           t.name AS trail_name,
           t.slug AS trail_slug,
           expert.name AS expert_name,
-          NULL::text AS organization_name
+          org.name AS organization_name
         FROM ride_notes rn
         LEFT JOIN trails t ON t.id = rn.trail_id
         LEFT JOIN users expert ON expert.id = rn.expert_user_id
+        LEFT JOIN organizations org ON org.id = rn.organization_id
         WHERE rn.author_user_id = $1
-          AND rn.expert_user_id = $1
         ORDER BY rn.created_at DESC
         LIMIT 100
         `,
@@ -124,14 +127,25 @@ export async function GET(request: NextRequest) {
       ),
       pool.query(
         `
-        SELECT t.id, t.name, t.slug, t.location
-        FROM expert_trails et
-        JOIN trails t ON t.id = et.trail_id
-        WHERE et.expert_user_id = $1
-          AND t.status = 'approved'
+        SELECT t.id, t.name, t.slug, t.location, NULL::uuid AS organization_id
+        FROM trails t
+        WHERE t.status = 'approved'
           AND COALESCE(t.is_hidden, FALSE) = FALSE
-        ORDER BY et.sort_order ASC, t.name ASC
-        LIMIT 100
+        ORDER BY t.name ASC
+        LIMIT 500
+        `,
+        []
+      ),
+      pool.query(
+        `
+        SELECT o.id, o.name, o.slug, om.role
+        FROM organization_members om
+        JOIN organizations o ON o.id = om.organization_id
+        WHERE om.user_id = $1
+          AND om.status = 'active'
+          AND om.role IN ('org_owner', 'org_admin', 'org_editor')
+          AND o.is_active = TRUE
+        ORDER BY o.name ASC
         `,
         [auth.sub]
       ),
@@ -141,6 +155,7 @@ export async function GET(request: NextRequest) {
       notes: notesResult.rows,
       trails: trailsResult.rows,
       experts: [],
+      organizations: organizationsResult.rows,
     });
   } catch (error) {
     console.error('Error fetching expert ride notes:', error);
@@ -150,7 +165,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireExpert(request);
+    const auth = requireRideNoteAuthor(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -161,14 +176,21 @@ export async function POST(request: NextRequest) {
     const status = editableStatuses.has(body?.status) ? body.status : 'draft';
     const category = categories.has(body?.category) ? body.category : 'expert_note';
     const trailId = normalizeNullable(body?.trail_id);
+    const organizationId = normalizeNullable(body?.organization_id);
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required.' }, { status: 400 });
     }
 
-    if (!(await assertAssociatedTrail(auth.sub, trailId))) {
+    if (organizationId && (!organizationCategories.has(category) || !(await canOperateOrganization(auth.sub, organizationId)))) {
+      return NextResponse.json({ error: 'Organization notes require active organization access and a safety or trail-work category.' }, { status: 403 });
+    }
+    if (!organizationId && !expertCategories.has(category)) {
+      return NextResponse.json({ error: 'Safety and trail-work notes must be attributed to an organization.' }, { status: 400 });
+    }
+    if (!(await assertAvailableTrail(trailId))) {
       return NextResponse.json(
-        { error: 'Experts can only link ride notes to their associated trails.' },
+        { error: 'Ride notes can only link to approved, visible trails.' },
         { status: 400 }
       );
     }
@@ -195,7 +217,7 @@ export async function POST(request: NextRequest) {
         organization_id,
         published_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::uuid, $8, NULL, NULL)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::uuid, $10::uuid, $11::uuid, NULL)
       RETURNING *
       `,
       [
@@ -208,6 +230,8 @@ export async function POST(request: NextRequest) {
         status,
         auth.sub,
         trailId,
+        organizationId ? null : auth.sub,
+        organizationId,
       ]
     );
 
@@ -220,7 +244,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = requireExpert(request);
+    const auth = requireRideNoteAuthor(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -232,14 +256,21 @@ export async function PATCH(request: NextRequest) {
     const status = editableStatuses.has(body?.status) ? body.status : 'draft';
     const category = categories.has(body?.category) ? body.category : 'expert_note';
     const trailId = normalizeNullable(body?.trail_id);
+    const organizationId = normalizeNullable(body?.organization_id);
 
     if (!id || !title || !content) {
       return NextResponse.json({ error: 'Id, title, and content are required.' }, { status: 400 });
     }
 
-    if (!(await assertAssociatedTrail(auth.sub, trailId))) {
+    if (organizationId && (!organizationCategories.has(category) || !(await canOperateOrganization(auth.sub, organizationId)))) {
+      return NextResponse.json({ error: 'Organization notes require active organization access and a safety or trail-work category.' }, { status: 403 });
+    }
+    if (!organizationId && !expertCategories.has(category)) {
+      return NextResponse.json({ error: 'Safety and trail-work notes must be attributed to an organization.' }, { status: 400 });
+    }
+    if (!(await assertAvailableTrail(trailId))) {
       return NextResponse.json(
-        { error: 'Experts can only link ride notes to their associated trails.' },
+        { error: 'Ride notes can only link to approved, visible trails.' },
         { status: 400 }
       );
     }
@@ -262,13 +293,12 @@ export async function PATCH(request: NextRequest) {
         category = $7,
         status = $8,
         trail_id = $9::uuid,
-        expert_user_id = $10,
-        organization_id = NULL,
+        expert_user_id = $10::uuid,
+        organization_id = $11::uuid,
         published_at = NULL,
         updated_at = NOW()
       WHERE id = $1
-        AND author_user_id = $10
-        AND expert_user_id = $10
+        AND author_user_id = $12
         AND status <> 'published'
       RETURNING *
       `,
@@ -282,6 +312,8 @@ export async function PATCH(request: NextRequest) {
         category,
         status,
         trailId,
+        organizationId ? null : auth.sub,
+        organizationId,
         auth.sub,
       ]
     );
@@ -299,7 +331,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = requireExpert(request);
+    const auth = requireRideNoteAuthor(request);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -314,7 +346,6 @@ export async function DELETE(request: NextRequest) {
       DELETE FROM ride_notes
       WHERE id = $1
         AND author_user_id = $2
-        AND expert_user_id = $2
         AND status <> 'published'
       RETURNING id, title
       `,

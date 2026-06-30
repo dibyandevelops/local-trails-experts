@@ -6,6 +6,8 @@ import { isAllowedImageUrl } from '@/lib/image-url';
 const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_CAPTION_LENGTH = 160;
+const MAX_BATCH_SIZE = 3;
+const MAX_GALLERY_ITEMS = 10;
 
 function buildLookup(idOrSlug: string) {
   if (UUID_V4_REGEX.test(idOrSlug)) {
@@ -31,7 +33,7 @@ async function canManageOrganizationGallery(userId: string, organizationId: stri
     WHERE organization_id = $1
       AND user_id = $2
       AND status = 'active'
-      AND role IN ('org_admin', 'org_editor')
+      AND role IN ('org_owner', 'org_admin', 'org_editor')
     LIMIT 1
     `,
     [organizationId, userId]
@@ -100,32 +102,75 @@ export async function POST(
     const body = (await request.json()) as {
       image_url?: string;
       caption?: string | null;
+      items?: Array<{ image_url?: string; caption?: string | null }>;
     };
-    const imageUrl = (body.image_url || '').trim();
-    if (!imageUrl) {
-      return NextResponse.json({ error: 'image_url is required' }, { status: 400 });
-    }
-    if (!isAllowedImageUrl(imageUrl)) {
+    const requestedItems = Array.isArray(body.items)
+      ? body.items
+      : [{ image_url: body.image_url, caption: body.caption }];
+    if (requestedItems.length < 1 || requestedItems.length > MAX_BATCH_SIZE) {
       return NextResponse.json(
-        { error: 'image_url must be a valid HTTPS image URL or supported image upload' },
+        { error: `Upload between 1 and ${MAX_BATCH_SIZE} gallery images at a time.` },
         { status: 400 }
       );
     }
-    const caption = body.caption?.trim() || null;
-    if (caption && caption.length > MAX_CAPTION_LENGTH) {
-      return NextResponse.json({ error: 'caption is too long' }, { status: 400 });
+    const items = requestedItems.map((item) => ({
+      imageUrl: String(item.image_url || '').trim(),
+      caption: String(item.caption || '').trim() || null,
+    }));
+    for (const item of items) {
+      if (!item.imageUrl || !isAllowedImageUrl(item.imageUrl)) {
+        return NextResponse.json(
+          { error: 'Each image must be a valid HTTPS image URL or supported image upload.' },
+          { status: 400 }
+        );
+      }
+      if (item.caption && item.caption.length > MAX_CAPTION_LENGTH) {
+        return NextResponse.json({ error: 'A gallery caption is too long.' }, { status: 400 });
+      }
     }
 
-    const result = await pool.query(
-      `
-      INSERT INTO organization_gallery_items (organization_id, image_url, caption, sort_order, created_by_user_id)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, organization_id, image_url, caption, created_at
-      `,
-      [organization.id, imageUrl, caption, 0, auth.sub]
-    );
-
-    return NextResponse.json({ item: result.rows[0] }, { status: 201 });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT id FROM organizations WHERE id = $1 FOR UPDATE', [organization.id]);
+      const countResult = await client.query(
+        'SELECT COUNT(*)::int AS count FROM organization_gallery_items WHERE organization_id = $1',
+        [organization.id]
+      );
+      const currentCount = Number(countResult.rows[0]?.count || 0);
+      if (currentCount + items.length > MAX_GALLERY_ITEMS) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: `Organizations can keep at most ${MAX_GALLERY_ITEMS} gallery images.` },
+          { status: 400 }
+        );
+      }
+      const inserted = [];
+      for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+        const result = await client.query(
+          `
+          INSERT INTO organization_gallery_items (
+            organization_id, image_url, caption, sort_order, created_by_user_id
+          )
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING id, organization_id, image_url, caption, created_at
+          `,
+          [organization.id, item.imageUrl, item.caption, currentCount + index, auth.sub]
+        );
+        inserted.push(result.rows[0]);
+      }
+      await client.query('COMMIT');
+      return NextResponse.json(
+        { items: inserted, item: inserted[0], total: currentCount + inserted.length },
+        { status: 201 }
+      );
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('Error adding organization gallery item:', error);
     return NextResponse.json(

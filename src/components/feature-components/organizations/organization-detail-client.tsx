@@ -7,6 +7,7 @@ import OrganizationMembersSection from './organization-members-section';
 import OrganizationProfileHeader from './organization-profile-header';
 import OrganizationTrailsSection from './organization-trails-section';
 import OrganizationUpdatesSection from './organization-updates-section';
+import OrganizationServicesSection from './organization-services-section';
 import { useOrganizationDetail } from './hooks/use-organization-detail';
 
 export default function OrganizationDetailClient({ slug }: { slug: string }) {
@@ -69,6 +70,7 @@ export default function OrganizationDetailClient({ slug }: { slug: string }) {
         <div className="space-y-6">
           <OrganizationTrailsSection trails={data.trails} />
           <OrganizationUpdatesSection updates={data.updates} />
+          <OrganizationServicesSection services={data.services || []} />
           <OrganizationGallerySection
             items={data.galleryItems}
             organizationName={data.organization.name}

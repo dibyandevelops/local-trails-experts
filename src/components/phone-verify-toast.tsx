@@ -38,9 +38,11 @@ export default function PhoneVerifyToast() {
         <div className="mt-3 flex gap-2">
           <button
             type="button"
-            onClick={() =>
-              router.push(user.role === 'expert' ? '/experts/me' : '/participants/me')
-            }
+            onClick={() => router.push(
+              user.role === 'expert'
+                ? '/experts/me'
+                : '/participants/me'
+            )}
             className="px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800"
           >
             Verify now

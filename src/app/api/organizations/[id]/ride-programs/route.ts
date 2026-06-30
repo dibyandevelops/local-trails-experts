@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { canOperateOrganization } from '@/lib/organization-access';
 
 const VALID_LEVELS = new Set(['beginner', 'intermediate', 'advanced', 'expert']);
 const VALID_PROGRAM_TYPES = new Set(['guided_ride', 'training', 'skills_clinic', 'tour']);
@@ -13,24 +14,6 @@ const VALID_WEEKDAYS = new Set([
   'Saturday',
   'Sunday',
 ]);
-
-async function canManageOrganization(userId: string, organizationId: string) {
-  const result = await pool.query(
-    `
-    SELECT 1
-    FROM organization_members om
-    JOIN organizations o ON o.id = om.organization_id
-    WHERE om.user_id = $1
-      AND om.organization_id = $2
-      AND om.status = 'active'
-      AND om.role IN ('org_admin', 'org_editor')
-      AND o.is_active = TRUE
-    LIMIT 1
-    `,
-    [userId, organizationId]
-  );
-  return result.rows.length > 0;
-}
 
 async function getOrganizationPrograms(organizationId: string) {
   const result = await pool.query(
@@ -68,7 +51,7 @@ export async function GET(
   try {
     const auth = getAuthFromRequest(request);
     const { id: organizationId } = await params;
-    if (!auth || !(await canManageOrganization(auth.sub, organizationId))) {
+    if (!auth || !(await canOperateOrganization(auth.sub, organizationId))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -114,7 +97,7 @@ export async function POST(
   try {
     const auth = getAuthFromRequest(request);
     const { id: organizationId } = await params;
-    if (!auth || !(await canManageOrganization(auth.sub, organizationId))) {
+    if (!auth || !(await canOperateOrganization(auth.sub, organizationId))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -241,7 +224,7 @@ export async function PATCH(
   try {
     const auth = getAuthFromRequest(request);
     const { id: organizationId } = await params;
-    if (!auth || !(await canManageOrganization(auth.sub, organizationId))) {
+    if (!auth || !(await canOperateOrganization(auth.sub, organizationId))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

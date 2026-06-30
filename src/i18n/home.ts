@@ -27,6 +27,8 @@ export type HomeCopy = {
   supportPrefix: string;
   supportLink: string;
   supportSuffix: string;
+  expertOrganizationPrompt: string;
+  expertOrganizationLink: string;
   exploreLabel: string;
   featureActions: Array<{ label: string; href: string }>;
 };
@@ -57,16 +59,20 @@ export const homeCopy: Record<Locale, HomeCopy> = {
     supportPrefix: 'If LocoXperts helps you find better rides, consider',
     supportLink: 'supporting the developer',
     supportSuffix: 'so the platform can stay alive, improve, and remain useful for local riders.',
+    expertOrganizationPrompt: 'Verified experts can create an organization workspace for programs, campaigns, services, and trail work.',
+    expertOrganizationLink: 'Register and verify as an expert',
     exploreLabel: 'Explore LocoXperts',
     featureActions: [
       { label: 'Find trails', href: '/trails' },
       { label: 'Ride with experts', href: '/ride-with-experts' },
       { label: 'Ride notes', href: '/ride-notes' },
       { label: 'Bike shops and support', href: '/store-locator' },
+      { label: 'Local services', href: '/services' },
       { label: 'Local organizations', href: '/organizations' },
       { label: 'Trail campaigns', href: '/campaigns' },
       { label: 'Share a trail', href: '/upload' },
       { label: 'Join as an expert', href: '/experts/join' },
+      { label: 'Create an organization', href: '/experts/join' },
     ],
   },
   ne: {
@@ -94,16 +100,20 @@ export const homeCopy: Record<Locale, HomeCopy> = {
     supportPrefix: 'LocoXperts ले तपाईंलाई राम्रो राइड भेट्न सहयोग गर्छ भने',
     supportLink: 'डेभलपरलाई सपोर्ट गर्नुहोस्',
     supportSuffix: 'ताकि प्लेटफर्म चलिरहोस्, सुधारिँदै जाओस्, र स्थानीय राइडरका लागि उपयोगी रहोस्।',
+    expertOrganizationPrompt: 'प्रमाणित एक्सपर्टहरूले कार्यक्रम, अभियान, सेवा र ट्रेल कार्यका लागि संस्था वर्कस्पेस बनाउन सक्छन्।',
+    expertOrganizationLink: 'एक्सपर्टका रूपमा दर्ता र प्रमाणीकरण गर्नुहोस्',
     exploreLabel: 'LocoXperts मा हेर्नुहोस्',
     featureActions: [
       { label: 'ट्रेल खोज्नुहोस्', href: '/trails' },
       { label: 'एक्सपर्टसँग राइड', href: '/ride-with-experts' },
       { label: 'राइड नोट्स', href: '/ride-notes' },
       { label: 'बाइक पसल र सपोर्ट', href: '/store-locator' },
+      { label: 'स्थानीय सेवा', href: '/services' },
       { label: 'स्थानीय संस्था', href: '/organizations' },
       { label: 'ट्रेल अभियान', href: '/campaigns' },
       { label: 'ट्रेल अपलोड', href: '/upload' },
       { label: 'एक्सपर्ट बन्नुहोस्', href: '/experts/join' },
+      { label: 'संस्था बनाउनुहोस्', href: '/experts/join' },
     ],
   },
 };

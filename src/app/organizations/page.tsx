@@ -9,13 +9,18 @@ export default async function OrganizationsPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <header className="mb-6">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
         <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
           Trail Organizations
         </h1>
         <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
           Explore organizations building, verifying, and maintaining trails in Nepal.
         </p>
+        </div>
+        <Link href="/experts/join" className="inline-flex rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+          Create after expert verification
+        </Link>
       </header>
       <section className="grid gap-4 md:grid-cols-2">
         {organizations.map((org) => (

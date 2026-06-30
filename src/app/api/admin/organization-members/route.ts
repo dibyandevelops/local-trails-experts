@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 
-type OrgMemberRole = 'org_admin' | 'org_editor';
+type OrgMemberRole = 'org_owner' | 'org_admin' | 'org_editor';
 type OrgMemberStatus = 'active' | 'invited' | 'disabled';
 
 function isValidRole(value: unknown): value is OrgMemberRole {
@@ -89,6 +89,21 @@ export async function POST(request: NextRequest) {
           error:
             'organization_id, user_id, role(org_admin|org_editor), and valid status are required',
         },
+        { status: 400 }
+      );
+    }
+
+    const expert = await pool.query(
+      `SELECT 1 FROM users
+       WHERE id = $1
+         AND role = 'expert'
+         AND is_verified_expert = TRUE
+       LIMIT 1`,
+      [userId]
+    );
+    if (!expert.rows.length) {
+      return NextResponse.json(
+        { error: 'Organization members must be verified experts.' },
         { status: 400 }
       );
     }

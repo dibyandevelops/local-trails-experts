@@ -2,6 +2,7 @@ import OrganizationAvatar from './organization-avatar';
 import type { OrganizationMember } from './hooks/use-organization-detail';
 
 const roleLabels: Record<OrganizationMember['role'], string> = {
+  org_owner: 'Organization owner',
   org_admin: 'Team lead',
   org_editor: 'Trail coordinator',
 };

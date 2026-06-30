@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
+import { getAuthFromRequest, setAuthCookie, signAuthToken } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmailSafe } from '@/lib/email';
 import type { UserRole } from '@/types';
@@ -29,16 +30,34 @@ export async function POST(request: NextRequest) {
       verification_strava_url,
       verification_links,
     } = body;
+    const auth = getAuthFromRequest(request);
+    const authenticatedUser = auth
+      ? (
+          await pool.query(
+            'SELECT id, name, email, phone, role, is_verified_expert FROM users WHERE id = $1 LIMIT 1',
+            [auth.sub]
+          )
+        ).rows[0]
+      : null;
+    if (auth && !authenticatedUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const applicationName =
+      typeof name === 'string' && name.trim()
+        ? name.trim()
+        : authenticatedUser?.name || '';
+    const applicationEmail = authenticatedUser?.email || (typeof email === 'string' ? email.trim() : '');
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
+    const applicationPhone = normalizedPhone || authenticatedUser?.phone || '';
 
-    if (!name || !email || !credentials || !normalizedPhone) {
+    if (!applicationName || !applicationEmail || !credentials || !applicationPhone) {
       return NextResponse.json(
         { error: 'Missing required fields: name, email, credentials, phone' },
         { status: 400 }
       );
     }
 
-    if (!password || password.length < 8 || !/\d/.test(password)) {
+    if (!authenticatedUser && (!password || password.length < 8 || !/\d/.test(password))) {
       return NextResponse.json(
         { error: 'Password must be at least 8 characters and include a number.' },
         { status: 400 }
@@ -65,10 +84,10 @@ export async function POST(request: NextRequest) {
       ORDER BY created_at DESC
       LIMIT 1
       `,
-      [email]
+      [applicationEmail]
     );
 
-    if (existingApp.rows[0]?.status === 'pending') {
+    if (existingApp.rows[0]?.status === 'pending' && !authenticatedUser) {
       return NextResponse.json(
         { error: 'Your expert application is already pending review.' },
         { status: 409 }
@@ -77,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     const existingUser = await pool.query(
       'SELECT id, password_hash, role, is_verified_expert FROM users WHERE email = $1 LIMIT 1',
-      [email]
+      [applicationEmail]
     );
 
     if (existingUser.rows.length > 0) {
@@ -88,10 +107,16 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
+      if (userRow.role !== 'participant' && userRow.role !== 'expert') {
+        return NextResponse.json(
+          { error: 'Use a separate participant account to apply as an expert.' },
+          { status: 409 }
+        );
+      }
 
       const existingPhoneUser = await pool.query(
         'SELECT id FROM users WHERE phone = $1 AND email <> $2 LIMIT 1',
-        [normalizedPhone, email]
+        [applicationPhone, applicationEmail]
       );
       if (existingPhoneUser.rows.length > 0) {
         return NextResponse.json(
@@ -128,7 +153,7 @@ export async function POST(request: NextRequest) {
           credentials,
           city || null,
           sportsJson,
-          normalizedPhone,
+          applicationPhone,
           profile_photo_url || null,
           verification_years_experience || null,
           verification_certifications || null,
@@ -161,7 +186,7 @@ export async function POST(request: NextRequest) {
           WHERE id = $13
           `,
           [
-            name,
+            applicationName,
             city || null,
             sportsJson,
             credentials,
@@ -187,8 +212,8 @@ export async function POST(request: NextRequest) {
           VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pending')
           `,
           [
-            name,
-            email,
+            applicationName,
+            applicationEmail,
             city || null,
             sportsJson,
             credentials,
@@ -209,27 +234,36 @@ export async function POST(request: NextRequest) {
         appUrl: getAppUrl(),
         headline: 'Application submitted',
         subhead: 'We will review your credentials shortly.',
-        greetingName: name,
+        greetingName: applicationName,
         bodyHtml: 'Your expert application has been received and is pending admin review.',
         bodyText: 'Your expert application has been received and is pending admin review.',
       });
       await sendEmailSafe({
-        to: email,
+        to: applicationEmail,
         ...pendingEmail,
-        dedupeKey: `expert-application:pending:${email}`,
+        dedupeKey: `expert-application:pending:${applicationEmail}`,
       });
 
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           message: 'Your expert application has been submitted and is pending review.',
         },
         { status: 200 }
       );
+      setAuthCookie(
+        response,
+        signAuthToken({
+          sub: userRow.id,
+          role: 'expert',
+          email: applicationEmail,
+        })
+      );
+      return response;
     }
 
     const existingPhoneUser = await pool.query(
       'SELECT id FROM users WHERE phone = $1 LIMIT 1',
-      [normalizedPhone]
+      [applicationPhone]
     );
     if (existingPhoneUser.rows.length > 0) {
       return NextResponse.json(
@@ -258,14 +292,14 @@ export async function POST(request: NextRequest) {
     `;
 
     const result = await pool.query(query, [
-      name,
-      email,
+      applicationName,
+      applicationEmail,
       passwordHash,
       'expert' as UserRole,
       credentials,
       city || null,
       sportsJson,
-      normalizedPhone,
+      applicationPhone,
       profile_photo_url || null,
       verification_years_experience || null,
       verification_certifications || null,
@@ -288,8 +322,8 @@ export async function POST(request: NextRequest) {
       VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pending')
       `,
       [
-        name,
-        email,
+        applicationName,
+        applicationEmail,
         city || null,
         sportsJson,
         credentials,
@@ -309,14 +343,14 @@ export async function POST(request: NextRequest) {
       appUrl: getAppUrl(),
       headline: 'Application submitted',
       subhead: 'We will review your credentials shortly.',
-      greetingName: name,
+      greetingName: applicationName,
       bodyHtml: 'Your expert application has been received and is pending admin review.',
       bodyText: 'Your expert application has been received and is pending admin review.',
     });
     await sendEmailSafe({
-      to: email,
+      to: applicationEmail,
       ...welcomeExpertEmail,
-      dedupeKey: `expert-application:pending:${email}`,
+      dedupeKey: `expert-application:pending:${applicationEmail}`,
     });
 
     return NextResponse.json(

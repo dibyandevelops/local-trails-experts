@@ -51,6 +51,7 @@ export async function POST(
       SELECT
         p.id,
         p.expert_user_id,
+        p.organization_id,
         p.trail_id,
         p.title,
         p.max_group_size,
@@ -148,6 +149,20 @@ export async function POST(
         body: `${user.name || 'A participant'} updated ${program.title}.`,
         url: '/experts/me',
       });
+      if (program.organization_id) {
+        const operators = await pool.query(
+          `SELECT user_id FROM organization_members WHERE organization_id = $1 AND status = 'active'`,
+          [program.organization_id]
+        );
+        await sendPushToUserIds(
+          operators.rows.map((row) => row.user_id).filter((id) => id !== program.expert_user_id),
+          {
+            title: 'Program request updated',
+            body: `${user.name || 'A participant'} updated ${program.title}.`,
+            url: '/trail-builders/me',
+          }
+        );
+      }
 
       return NextResponse.json({ success: true, updated: true }, { status: 200 });
     }
@@ -191,6 +206,20 @@ export async function POST(
       body: `${user.name || 'A participant'} requested ${program.title}.`,
       url: '/experts/me',
     });
+    if (program.organization_id) {
+      const operators = await pool.query(
+        `SELECT user_id FROM organization_members WHERE organization_id = $1 AND status = 'active'`,
+        [program.organization_id]
+      );
+      await sendPushToUserIds(
+        operators.rows.map((row) => row.user_id).filter((id) => id !== program.expert_user_id),
+        {
+          title: 'New organization program request',
+          body: `${user.name || 'A participant'} requested ${program.title}.`,
+          url: '/trail-builders/me',
+        }
+      );
+    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

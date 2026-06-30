@@ -32,6 +32,7 @@ export async function getPublicOrganizations(): Promise<OrganizationRow[]> {
     LEFT JOIN organization_members om ON om.organization_id = o.id AND om.status = 'active'
     LEFT JOIN trail_organizations to2 ON to2.organization_id = o.id
     WHERE o.is_active = TRUE
+      AND o.is_verified = TRUE
     GROUP BY o.id
     ORDER BY o.is_verified DESC, o.created_at DESC
     `

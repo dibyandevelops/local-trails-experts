@@ -48,7 +48,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     refetchInterval: 60000,
     retry: false,
   });
-  const { data: builderAccess } = useQuery<{ organizations?: unknown[] }>({
+  const { data: builderAccess } = useQuery<{
+    organizations?: Array<{ membership_role?: string }>;
+  }>({
     queryKey: ['navbar-builder-access', user?.id],
     queryFn: async () => {
       const response = await fetch('/api/organizations/me', { cache: 'no-store' });
@@ -189,16 +191,29 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   };
 
   const accountActionLabel = user?.role === 'admin' ? 'Admin Panel' : 'View profile';
+  const ownsOrganization = Boolean(
+    builderAccess?.organizations?.some(
+      (organization) => organization.membership_role === 'org_owner'
+    )
+  );
 
   const canSeeItem = (item: NavItem) => {
     if (item.showFor) {
       if (!user) return item.showFor.includes('anonymous');
       if (!item.showFor.includes(user.role)) return false;
+      if (
+        item.href === '/organizations/create' &&
+        (!user.is_verified_expert || ownsOrganization)
+      ) return false;
       if (item.requiresOrgMember && !(builderAccess?.organizations?.length)) return false;
       return true;
     }
     if (!item.requiresAuth) return true;
     if (!user) return false;
+    if (
+      item.href === '/organizations/create' &&
+      (!user.is_verified_expert || ownsOrganization)
+    ) return false;
     if (item.requiresOrgMember && !(builderAccess?.organizations?.length)) return false;
     if (!item.requiresRole) return true;
     return item.requiresRole.includes(user.role);

@@ -5,7 +5,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth) {
+    if (!auth || auth.role !== 'expert') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -30,12 +30,13 @@ export async function GET(request: NextRequest) {
         o.city,
         o.country,
         o.is_verified,
-        o.is_active
+        o.is_active,
+        o.owner_user_id
       FROM organization_members om
       JOIN organizations o ON o.id = om.organization_id
       WHERE om.user_id = $1
         AND om.status = 'active'
-        AND om.role IN ('org_admin', 'org_editor')
+        AND om.role IN ('org_owner', 'org_admin', 'org_editor')
         AND o.is_active = TRUE
       ORDER BY o.name ASC
       `,
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
         ON om.organization_id = to2.organization_id
        AND om.user_id = $1
        AND om.status = 'active'
-       AND om.role IN ('org_admin', 'org_editor')
+       AND om.role IN ('org_owner', 'org_admin', 'org_editor')
       JOIN organizations o ON o.id = to2.organization_id AND o.is_active = TRUE
       JOIN trails t ON t.id = to2.trail_id
       WHERE t.status = 'approved'

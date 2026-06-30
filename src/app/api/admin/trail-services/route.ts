@@ -53,7 +53,7 @@ async function canManageOrganization(userId: string, organizationId: string | nu
     WHERE om.organization_id = $1
       AND om.user_id = $2
       AND om.status = 'active'
-      AND om.role IN ('org_admin', 'org_editor')
+      AND om.role IN ('org_owner', 'org_admin', 'org_editor')
       AND o.is_active = TRUE
     LIMIT 1
     `,
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
         WHERE om.organization_id = ts.organization_id
           AND om.user_id = $${idx}
           AND om.status = 'active'
-          AND om.role IN ('org_admin', 'org_editor')
+          AND om.role IN ('org_owner', 'org_admin', 'org_editor')
       )`);
       values.push(auth.sub);
       idx += 1;

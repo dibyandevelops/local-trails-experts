@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 
-type OrgMemberRole = 'org_admin' | 'org_editor';
+type OrgMemberRole = 'org_owner' | 'org_admin' | 'org_editor';
 type OrgMemberStatus = 'active' | 'invited' | 'disabled';
 
 function isValidRole(value: unknown): value is OrgMemberRole {
@@ -24,6 +24,16 @@ export async function PATCH(
     }
 
     const { id } = await params;
+    const existing = await pool.query(
+      'SELECT role FROM organization_members WHERE id = $1 LIMIT 1',
+      [id]
+    );
+    if (existing.rows[0]?.role === 'org_owner') {
+      return NextResponse.json(
+        { error: 'Organization ownership requires a dedicated ownership transfer.' },
+        { status: 400 }
+      );
+    }
     const body = (await request.json()) as {
       role?: OrgMemberRole;
       status?: OrgMemberStatus;
@@ -95,6 +105,16 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const existing = await pool.query(
+      'SELECT role FROM organization_members WHERE id = $1 LIMIT 1',
+      [id]
+    );
+    if (existing.rows[0]?.role === 'org_owner') {
+      return NextResponse.json(
+        { error: 'Organization owner cannot be removed.' },
+        { status: 400 }
+      );
+    }
     const result = await pool.query(
       `
       DELETE FROM organization_members

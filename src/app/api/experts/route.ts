@@ -62,11 +62,19 @@ export async function GET(request: NextRequest) {
         u.verification_links,
         u.created_at,
         u.updated_at,
+        owned_org.id AS owned_organization_id,
+        owned_org.slug AS owned_organization_slug,
+        owned_org.name AS owned_organization_name,
+        owned_org.logo_url AS owned_organization_logo_url,
         COALESCE(er.average_rating, 0) AS average_rating,
         COALESCE(er.review_count, 0) AS review_count,
         COALESCE(expert_events.events, '[]'::json) AS events,
         COALESCE(expert_trails.associated_trails, '[]'::json) AS associated_trails
       FROM users u
+      LEFT JOIN organizations owned_org
+        ON owned_org.owner_user_id = u.id
+       AND owned_org.is_active = TRUE
+       AND owned_org.is_verified = TRUE
       LEFT JOIN (
         SELECT
           expert_user_id,
@@ -149,6 +157,14 @@ export async function GET(request: NextRequest) {
         review_count: reviewCount,
         created_at: row.created_at,
         updated_at: row.updated_at,
+        owned_organization: row.owned_organization_id
+          ? {
+              id: row.owned_organization_id,
+              slug: row.owned_organization_slug,
+              name: row.owned_organization_name,
+              logo_url: row.owned_organization_logo_url,
+            }
+          : null,
       };
 
       return {

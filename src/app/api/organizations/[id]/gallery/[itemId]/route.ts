@@ -31,7 +31,7 @@ async function canManage(userId: string, organizationId: string) {
     WHERE organization_id = $1
       AND user_id = $2
       AND status = 'active'
-      AND role IN ('org_admin', 'org_editor')
+      AND role IN ('org_owner', 'org_admin', 'org_editor')
     LIMIT 1
     `,
     [organizationId, userId]

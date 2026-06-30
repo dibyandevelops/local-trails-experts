@@ -405,6 +405,11 @@ function ExpertCard({
         </div>
 
         <div className="mt-1 flex flex-wrap gap-1.5">
+          {expert.owned_organization && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-cyan-300/80 bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold text-cyan-900 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100">
+              Owner · {expert.owned_organization.name}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/80 bg-emerald-100/80 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-100">
             {upcomingEvents.length} upcoming
           </span>

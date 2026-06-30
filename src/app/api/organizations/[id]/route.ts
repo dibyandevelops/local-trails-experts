@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { canAdministerOrganization, canOperateOrganization } from '@/lib/organization-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,16 @@ export async function GET(
 
     const organization = result.rows[0];
 
+    if (!organization.is_verified) {
+      const auth = getAuthFromRequest(request);
+      const canPreview = auth?.role === 'admin' || (
+        auth ? await canOperateOrganization(auth.sub, organization.id) : false
+      );
+      if (!canPreview) {
+        return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+      }
+    }
+
     if (!includeDetail) {
       return NextResponse.json({ organization }, { status: 200 });
     }
@@ -53,7 +64,7 @@ export async function GET(
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
-    const [trailsResult, galleryResult, campaignsResult, membersResult, updatesResult] =
+    const [trailsResult, galleryResult, campaignsResult, membersResult, updatesResult, servicesResult] =
       await Promise.all([
         pool.query(
           `
@@ -117,7 +128,7 @@ export async function GET(
           WHERE om.organization_id = $1
             AND om.status = 'active'
           ORDER BY
-            CASE om.role WHEN 'org_admin' THEN 1 ELSE 2 END,
+            CASE om.role WHEN 'org_owner' THEN 1 WHEN 'org_admin' THEN 2 ELSE 3 END,
             om.created_at DESC
           `,
           [organization.id]
@@ -145,6 +156,17 @@ export async function GET(
           `,
           [organization.id]
         ),
+        pool.query(
+          `
+          SELECT id, category, title, description, price_npr::text, price_note,
+                 location, contact_email, contact_phone, website_url, image_url
+          FROM organization_services
+          WHERE organization_id = $1 AND is_active = TRUE
+          ORDER BY created_at DESC
+          LIMIT 8
+          `,
+          [organization.id]
+        ),
       ]);
 
     return NextResponse.json(
@@ -155,6 +177,7 @@ export async function GET(
         campaigns: campaignsResult.rows,
         members: membersResult.rows,
         updates: updatesResult.rows,
+        services: servicesResult.rows,
       },
       { status: 200 }
     );
@@ -170,11 +193,15 @@ export async function PATCH(
 ) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
+    const { id } = await params;
+    const isPlatformAdmin = auth?.role === 'admin';
+    const isOrganizationAdmin = auth
+      ? await canAdministerOrganization(auth.sub, id)
+      : false;
+    if (!auth || (!isPlatformAdmin && !isOrganizationAdmin)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await params;
     const { clause, value } = buildLookup(id);
     const body = (await request.json()) as Record<string, unknown>;
 
@@ -196,11 +223,14 @@ export async function PATCH(
       'is_active',
     ] as const;
 
+    const platformOnlyFields = new Set(['slug', 'is_verified', 'is_active']);
+
     const updates: string[] = [];
     const values: unknown[] = [value];
     let idx = 2;
 
     for (const field of allowedFields) {
+      if (!isPlatformAdmin && platformOnlyFields.has(field)) continue;
       if (Object.prototype.hasOwnProperty.call(body, field)) {
         const raw = body[field];
         if (field === 'slug' && typeof raw === 'string') {

@@ -29,7 +29,7 @@ async function isActiveOrgMember(userId: string, organizationId: string) {
     WHERE organization_id = $1
       AND user_id = $2
       AND status = 'active'
-      AND role IN ('org_admin', 'org_editor')
+      AND role IN ('org_owner', 'org_admin', 'org_editor')
     LIMIT 1
     `,
     [organizationId, userId]
@@ -134,7 +134,7 @@ export async function POST(
           { status: 403 }
         );
       }
-      if (auth.role === 'expert') {
+      if (auth.role !== 'admin') {
         const canUseOrg = await isActiveOrgMember(auth.sub, body.organization_id);
         if (!canUseOrg) {
           return NextResponse.json(
@@ -153,7 +153,7 @@ export async function POST(
           ON om.organization_id = to2.organization_id
          AND om.user_id = $2
          AND om.status = 'active'
-         AND om.role IN ('org_admin', 'org_editor')
+         AND om.role IN ('org_owner', 'org_admin', 'org_editor')
         WHERE to2.trail_id = $1
         LIMIT 1
         `,

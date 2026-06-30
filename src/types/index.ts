@@ -304,6 +304,12 @@ export interface User {
   verification_strava_url?: string | null;
   verification_links?: string | null;
   associated_trails?: Trail[] | null;
+  owned_organization?: {
+    id: string;
+    slug: string;
+    name: string;
+    logo_url?: string | null;
+  } | null;
   created_at: string;
   updated_at: string;
   last_login_at?: string | null;

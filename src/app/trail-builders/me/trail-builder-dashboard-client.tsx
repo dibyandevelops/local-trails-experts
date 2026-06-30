@@ -5,16 +5,32 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import OrganizationProgramsPanel from '@/components/feature-components/organizations/organization-programs-panel';
+import OrganizationProfileManagementPanel from '@/components/feature-components/organizations/organization-profile-management-panel';
+import OrganizationCampaignsManagementPanel from '@/components/feature-components/organizations/organization-campaigns-management-panel';
+import OrganizationMembersManagementPanel from '@/components/feature-components/organizations/organization-members-management-panel';
+import OrganizationProgramRequestsPanel from '@/components/feature-components/organizations/organization-program-requests-panel';
+import OrganizationServicesManagementPanel from '@/components/feature-components/organizations/organization-services-management-panel';
+import OrganizationGalleryManagementPanel from '@/components/feature-components/organizations/organization-gallery-management-panel';
+import ExpertRideNotesPanel from '@/components/experts/expert-ride-notes-panel';
 
 type ManagedOrganization = {
   id: string;
   slug: string;
   name: string;
   tagline: string | null;
+  description: string | null;
+  logo_url: string | null;
+  website_url: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  whatsapp_url: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
   city: string | null;
   country: string | null;
   is_verified: boolean;
-  membership_role: 'org_admin' | 'org_editor';
+  owner_user_id: string | null;
+  membership_role: 'org_owner' | 'org_admin' | 'org_editor';
 };
 
 type ManagedTrail = {
@@ -42,13 +58,6 @@ type TrailService = {
   price_note: string | null;
   schedule_note: string | null;
   is_active: boolean;
-};
-
-type GalleryItem = {
-  id: string;
-  image_url: string;
-  caption: string | null;
-  sort_order: number;
 };
 
 type TrailUpdate = {
@@ -93,8 +102,6 @@ export default function TrailBuilderDashboardClient() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedOrgId, setSelectedOrgId] = useState('');
-  const [galleryUrl, setGalleryUrl] = useState('');
-  const [galleryCaption, setGalleryCaption] = useState('');
   const [serviceTrailId, setServiceTrailId] = useState('');
   const [serviceTitle, setServiceTitle] = useState('');
   const [serviceType, setServiceType] = useState<TrailService['service_type']>('shuttle');
@@ -143,31 +150,10 @@ export default function TrailBuilderDashboardClient() {
     enabled: Boolean(effectiveOrgId),
   });
 
-  const galleryQuery = useQuery({
-    queryKey: ['builder-gallery', effectiveOrgId],
-    queryFn: () => fetchJson<{ items: GalleryItem[] }>(`/api/organizations/${effectiveOrgId}/gallery`),
-    enabled: Boolean(effectiveOrgId),
-  });
-
   const updatesQuery = useQuery({
     queryKey: ['builder-updates', effectiveOrgId],
     queryFn: () => fetchJson<{ updates: TrailUpdate[] }>(`/api/admin/trail-updates?organization_id=${effectiveOrgId}`),
     enabled: Boolean(effectiveOrgId),
-  });
-
-  const addGallery = useMutation({
-    mutationFn: () => fetchJson(`/api/organizations/${effectiveOrgId}/gallery`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_url: galleryUrl, caption: galleryCaption }),
-    }),
-    onSuccess: async () => {
-      setGalleryUrl('');
-      setGalleryCaption('');
-      setMessage('Gallery image added.');
-      await queryClient.invalidateQueries({ queryKey: ['builder-gallery', effectiveOrgId] });
-    },
-    onError: (error) => setMessage(error instanceof Error ? error.message : 'Failed to add image.'),
   });
 
   const addService = useMutation({
@@ -285,7 +271,7 @@ export default function TrailBuilderDashboardClient() {
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-green-700">Trail Builder Operations</p>
             <h1 className="mt-2 text-3xl font-bold text-gray-950">Manage your trail builder</h1>
             <p className="mt-2 max-w-2xl text-sm text-gray-600">
-              Members can manage gallery images, trail services, and trail updates for linked visible trails only.
+              Manage your public organization, programs, participant requests, and linked trail operations.
             </p>
           </div>
           <select
@@ -300,55 +286,44 @@ export default function TrailBuilderDashboardClient() {
         </div>
         {selectedOrg && (
           <div className="mt-4 rounded-xl bg-green-50 p-4 text-sm text-green-950">
-            <strong>{selectedOrg.name}</strong> · {selectedOrg.membership_role === 'org_admin' ? 'Builder admin' : 'Builder editor'}
+            <strong>{selectedOrg.name}</strong> · {selectedOrg.membership_role === 'org_owner' ? 'Organization owner' : selectedOrg.membership_role === 'org_admin' ? 'Organization admin' : 'Operations editor'}
             {selectedOrg.tagline ? <span> · {selectedOrg.tagline}</span> : null}
           </div>
         )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href="#organization-ride-notes" className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100">
+            Write organization ride note
+          </Link>
+          {selectedOrg?.membership_role === 'org_owner' && (
+            <span className="rounded-lg bg-emerald-950 px-3 py-2 text-xs font-semibold text-white">
+              Owner account
+            </span>
+          )}
+        </div>
         {message && <p className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{message}</p>}
       </section>
 
       <OrganizationProgramsPanel organizationId={effectiveOrgId} trails={orgTrails} />
 
-      <section className="grid gap-6 xl:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Gallery</h2>
-          <div className="mt-4 space-y-3">
-            <input value={galleryUrl} onChange={(event) => setGalleryUrl(event.target.value)} placeholder="Image URL" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <input value={galleryCaption} onChange={(event) => setGalleryCaption(event.target.value)} placeholder="Caption" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <button
-              onClick={() => addGallery.mutate()}
-              disabled={!galleryUrl || addGallery.isPending}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {addGallery.isPending && <LoadingSpinner />}
-              {addGallery.isPending ? 'Adding...' : 'Add image'}
-            </button>
-          </div>
-          <div className="mt-5 max-h-72 space-y-2 overflow-y-auto pr-1">
-            {(galleryQuery.data?.items || []).map((item) => (
-              <div key={item.id} className="overflow-hidden rounded-lg border border-gray-100 text-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.image_url}
-                  alt={item.caption || 'Trail builder gallery image'}
-                  className="h-32 w-full bg-gray-100 object-cover"
-                />
-                <div className="p-3">
-                  <p className="truncate font-medium text-gray-900">{item.caption || 'Gallery image'}</p>
-                  <a
-                    href={item.image_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-1 block truncate text-xs text-green-700 hover:text-green-800"
-                  >
-                    Open image
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
+        <section className="grid gap-6 xl:grid-cols-2">
+          <OrganizationProfileManagementPanel organization={selectedOrg} />
+          <OrganizationMembersManagementPanel organizationId={effectiveOrgId} />
+        </section>
+      )}
 
+      {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
+        <OrganizationCampaignsManagementPanel organizationId={effectiveOrgId} trails={orgTrails} />
+      )}
+
+      <OrganizationServicesManagementPanel organizationId={effectiveOrgId} />
+      <OrganizationGalleryManagementPanel organizationId={effectiveOrgId} />
+      <div id="organization-ride-notes" className="scroll-mt-24">
+        <ExpertRideNotesPanel key={effectiveOrgId} managedOrganizationId={effectiveOrgId} />
+      </div>
+      <OrganizationProgramRequestsPanel organizationId={effectiveOrgId} />
+
+      <section className="grid gap-6 xl:grid-cols-2">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">Trail Services</h2>
           <div className="mt-4 space-y-3">

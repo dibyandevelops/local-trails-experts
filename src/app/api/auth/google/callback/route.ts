@@ -360,7 +360,9 @@ export async function GET(request: NextRequest) {
   const userId = existing.rows[0].id as string;
   const roleValue = existing.rows[0].role as string;
   const resolvedRole: UserRole =
-    roleValue === 'admin' || roleValue === 'expert' || roleValue === 'participant'
+    roleValue === 'admin' ||
+    roleValue === 'expert' ||
+    roleValue === 'participant'
       ? roleValue
       : 'participant';
 

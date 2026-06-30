@@ -8,7 +8,8 @@ import type {
 
 export type ExpertRideNotesResponse = {
   notes: AdminRideNote[];
-  trails: AdminRideNoteTrailOption[];
+  trails: Array<AdminRideNoteTrailOption & { organization_id?: string | null }>;
+  organizations: Array<{ id: string; name: string; slug: string; role: 'org_owner' | 'org_admin' | 'org_editor' }>;
 };
 
 export type ExpertRideNoteInput = {
@@ -21,6 +22,7 @@ export type ExpertRideNoteInput = {
   status: 'draft' | 'pending_review';
   trail_id?: string;
   expert_user_id?: string;
+  organization_id?: string;
 };
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -37,6 +39,7 @@ export async function fetchExpertRideNotes() {
     return {
       notes: data.notes || [],
       trails: data.trails || [],
+      organizations: data.organizations || [],
     };
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Failed to fetch ride notes'));

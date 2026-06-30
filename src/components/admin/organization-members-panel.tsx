@@ -17,7 +17,7 @@ export default function OrganizationMembersPanel() {
   const queryClient = useQueryClient();
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [newRole, setNewRole] = useState<'org_admin' | 'org_editor'>('org_editor');
+  const [newRole, setNewRole] = useState<'org_owner' | 'org_admin' | 'org_editor'>('org_editor');
   const [message, setMessage] = useState<string | null>(null);
   const [memberFormOpen, setMemberFormOpen] = useState(false);
 
@@ -29,12 +29,10 @@ export default function OrganizationMembersPanel() {
     queryKey: ['admin-users-expert'],
     queryFn: () => fetchAdminUsers('expert'),
   });
-  const { data: participants = [] } = useQuery<AdminUser[]>({
-    queryKey: ['admin-users-participant'],
-    queryFn: () => fetchAdminUsers('participant'),
-  });
-
-  const memberCandidates = useMemo(() => [...experts, ...participants], [experts, participants]);
+  const memberCandidates = useMemo(
+    () => experts.filter((expert) => expert.is_verified_expert),
+    [experts]
+  );
 
   const { data: members = [], isLoading } = useQuery<OrganizationMember[]>({
     queryKey: ['admin-organization-members', selectedOrganizationId],
@@ -72,7 +70,7 @@ export default function OrganizationMembersPanel() {
       status,
     }: {
       memberId: string;
-      role?: 'org_admin' | 'org_editor';
+      role?: 'org_owner' | 'org_admin' | 'org_editor';
       status?: 'active' | 'invited' | 'disabled';
     }) => updateAdminOrganizationMember(memberId, { role, status }),
     onSuccess: async () => {
@@ -120,7 +118,7 @@ export default function OrganizationMembersPanel() {
       </select>
       <select
         value={newRole}
-        onChange={(event) => setNewRole(event.target.value as 'org_admin' | 'org_editor')}
+        onChange={(event) => setNewRole(event.target.value as 'org_owner' | 'org_admin' | 'org_editor')}
         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
         disabled={!selectedOrganizationId}
       >
@@ -153,7 +151,7 @@ export default function OrganizationMembersPanel() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Trail Builder Members</h2>
           <p className="text-sm text-gray-600">
-            Assign experts/participants to trail builders with admin or editor roles.
+            Assign verified experts with admin or editor access.
           </p>
         </div>
         <button
@@ -211,14 +209,16 @@ export default function OrganizationMembersPanel() {
                   <td className="py-2 pr-4">
                     <select
                       value={member.role}
+                      disabled={member.role === 'org_owner'}
                       onChange={(event) =>
                         updateMutation.mutate({
                           memberId: member.id,
-                          role: event.target.value as 'org_admin' | 'org_editor',
+                          role: event.target.value as 'org_owner' | 'org_admin' | 'org_editor',
                         })
                       }
                       className="rounded border border-gray-300 px-2 py-1 text-xs"
                     >
+                      <option value="org_owner">Organization owner</option>
                       <option value="org_admin">Builder admin</option>
                       <option value="org_editor">Builder editor</option>
                     </select>
@@ -226,6 +226,7 @@ export default function OrganizationMembersPanel() {
                   <td className="py-2 pr-4">
                     <select
                       value={member.status}
+                      disabled={member.role === 'org_owner'}
                       onChange={(event) =>
                         updateMutation.mutate({
                           memberId: member.id,
@@ -243,6 +244,7 @@ export default function OrganizationMembersPanel() {
                     <button
                       type="button"
                       onClick={() => deleteMutation.mutate(member.id)}
+                      disabled={member.role === 'org_owner'}
                       className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
                     >
                       Remove

@@ -162,6 +162,13 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
           </Link>
           {' '}{copy.supportSuffix}
         </p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-400">
+          {copy.expertOrganizationPrompt}{' '}
+          <Link href="/experts/join" className="font-bold text-emerald-800 underline underline-offset-4 dark:text-lime-200">
+            {copy.expertOrganizationLink}
+          </Link>
+          .
+        </p>
       </div>
 
       <nav

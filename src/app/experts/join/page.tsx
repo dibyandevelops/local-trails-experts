@@ -1,12 +1,18 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import Link from 'next/link';
+import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
 import { loginUser } from '@/services/auth/auth.service';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { QUERY_KEYS } from '@/services/constants/query-keys';
 
 export default function ExpertJoinPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -18,6 +24,21 @@ export default function ExpertJoinPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const isExistingAccountApplication = Boolean(currentUser && currentUser.role === 'participant');
+
+  useEffect(() => {
+    if (!currentUser) return;
+    setName(currentUser.name || '');
+    setEmail(currentUser.email || '');
+    setPhone(currentUser.phone || '');
+    setCity(currentUser.city || '');
+    if (Array.isArray(currentUser.sports) && currentUser.sports.length > 0) {
+      setSelectedSports(currentUser.sports);
+    }
+    if (currentUser.bio) {
+      setCredentials(currentUser.bio);
+    }
+  }, [currentUser]);
 
   const toggleSport = (value: string) => {
     setSelectedSports((prev) =>
@@ -44,10 +65,10 @@ export default function ExpertJoinPage() {
         },
         body: JSON.stringify({
           name,
-          email,
+          email: currentUser?.email || email,
           phone,
           city,
-          password,
+          password: isExistingAccountApplication ? undefined : password,
           sports: selectedSports,
           credentials,
         }),
@@ -60,17 +81,19 @@ export default function ExpertJoinPage() {
         return;
       }
 
-      // After successful signup, automatically log in the user
+      if (isExistingAccountApplication) {
+        await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.auth.me });
+        window.dispatchEvent(new Event('auth-changed'));
+        router.push('/experts/me');
+        return;
+      }
+
       try {
         await loginUser({
           email,
           password,
         });
-
-        // Dispatch auth changed event to update UI
         window.dispatchEvent(new Event('auth-changed'));
-
-        // Redirect to trails page
         router.push('/trails');
       } catch (loginErr) {
         console.error('Auto-login failed after signup:', loginErr);
@@ -119,6 +142,43 @@ export default function ExpertJoinPage() {
   const labelClass = 'block text-sm font-semibold text-gray-800 dark:text-slate-100';
   const helperClass = 'mt-1 text-xs text-gray-500 dark:text-slate-400';
 
+  if (loadingUser) {
+    return <div className="mx-auto max-w-6xl text-sm text-gray-600 dark:text-slate-300">Checking account...</div>;
+  }
+
+  if (currentUser?.role === 'expert' && !currentUser.is_verified_expert) {
+    return (
+      <ExpertStatusCard
+        title="Expert application is pending"
+        body="This account is already pending admin verification. You can update your verification details from your expert dashboard."
+        actionHref="/experts/me"
+        actionLabel="View expert dashboard"
+      />
+    );
+  }
+
+  if (currentUser?.role === 'expert' && currentUser.is_verified_expert) {
+    return (
+      <ExpertStatusCard
+        title="You are already a verified expert"
+        body="You can manage your expert profile now. If you want to create an organization, use the organization creation flow."
+        actionHref="/organizations/create"
+        actionLabel="Create organization"
+      />
+    );
+  }
+
+  if (currentUser?.role === 'admin') {
+    return (
+      <ExpertStatusCard
+        title="Use a participant account for expert verification"
+        body="Admin accounts should not be converted into public expert profiles. Sign in with a participant account or create a separate account for expert verification."
+        actionHref="/"
+        actionLabel="Go home"
+      />
+    );
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-6 dark:border-emerald-800/50 dark:from-slate-950 dark:via-slate-950 dark:to-emerald-950/40 sm:px-7">
@@ -145,10 +205,12 @@ export default function ExpertJoinPage() {
         >
           <div>
             <h2 className="text-xl font-bold text-gray-950 dark:text-slate-50">
-              Expert signup
+              {isExistingAccountApplication ? 'Verify this account as an expert' : 'Expert signup'}
             </h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-              Fill in the essentials now. Verification details can be completed after signup.
+              {isExistingAccountApplication
+                ? 'No new login is created. This account will become a pending expert account after submission.'
+                : 'Fill in the essentials now. Verification details can be completed after signup.'}
             </p>
           </div>
 
@@ -175,9 +237,13 @@ export default function ExpertJoinPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isExistingAccountApplication}
                 className={`${inputClass} mt-1`}
                 placeholder="you@example.com"
               />
+              {isExistingAccountApplication && (
+                <p className={helperClass}>Using the email from your signed-in account.</p>
+              )}
             </div>
           </div>
 
@@ -202,14 +268,19 @@ export default function ExpertJoinPage() {
               </label>
               <input
                 type="password"
-                required
+                required={!isExistingAccountApplication}
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isExistingAccountApplication}
                 className={`${inputClass} mt-1`}
-                placeholder="Min 8 characters with a number"
+                placeholder={isExistingAccountApplication ? 'Not needed for signed-in accounts' : 'Min 8 characters with a number'}
               />
-              <p className={helperClass}>At least 8 characters and one number.</p>
+              <p className={helperClass}>
+                {isExistingAccountApplication
+                  ? 'You are already signed in, so we will use your existing account.'
+                  : 'At least 8 characters and one number.'}
+              </p>
             </div>
           </div>
 
@@ -309,7 +380,9 @@ export default function ExpertJoinPage() {
               {submitting ? 'Submitting...' : 'Submit application'}
             </button>
             <p className="max-w-md text-xs text-gray-500 dark:text-slate-400">
-              After signup, continue verification from your expert profile.
+              {isExistingAccountApplication
+                ? 'After submission, an admin must approve the expert profile before organization creation is available.'
+                : 'After signup, continue verification from your expert profile.'}
             </p>
           </div>
         </form>
@@ -341,5 +414,29 @@ export default function ExpertJoinPage() {
         </aside>
       </section>
     </div>
+  );
+}
+
+function ExpertStatusCard({
+  title,
+  body,
+  actionHref,
+  actionLabel,
+}: {
+  title: string;
+  body: string;
+  actionHref: string;
+  actionLabel: string;
+}) {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-12">
+      <div className="rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm dark:border-emerald-900 dark:bg-slate-900">
+        <h1 className="text-2xl font-bold text-gray-950 dark:text-white">{title}</h1>
+        <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">{body}</p>
+        <Link href={actionHref} className="mt-4 inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">
+          {actionLabel}
+        </Link>
+      </div>
+    </main>
   );
 }

@@ -1,4 +1,5 @@
 const { runSeedScript, withPool } = require('./db-utils');
+const bcrypt = require('bcryptjs');
 
 const TRAIL_BUILDERS_NEPAL = {
   slug: 'trail-builders-nepal',
@@ -40,6 +41,16 @@ const TBN_USERS = [
     bio: 'MTB skills coach focused on enduro progression, race preparation, and safe technical riding.',
     sports: ['mtb', 'enduro_mtb', 'downhill_mtb'],
     memberRole: 'org_editor',
+  },
+  {
+    name: 'TBN Organization Manager',
+    email: 'organization.admin@locoxperts.app',
+    password: process.env.MOCK_ORGANIZATION_PASSWORD || 'LocoXpertsOrg2026!',
+    role: 'expert',
+    city: 'Kathmandu',
+    bio: 'Organization account used to manage Trail Builders Nepal operations.',
+    sports: ['mtb'],
+    memberRole: 'org_owner',
   },
 ];
 
@@ -117,6 +128,36 @@ const TBN_SERVICES = [
     contact_email: 'support@trailbuildersnepal.app',
     price_note: 'By arrangement',
     schedule_note: 'Weekends and event days',
+  },
+];
+
+const TBN_ORGANIZATION_SERVICES = [
+  {
+    category: 'ride_photography',
+    title: 'MTB Ride Photography',
+    description: 'Trail-side action photography and a curated digital album for private rides, teams, and events.',
+    price_npr: 6500,
+    price_note: 'Starting price for a half-day session',
+    location: 'Kathmandu Valley, Nepal',
+    contact_email: 'media@trailbuildersnepal.app',
+  },
+  {
+    category: 'shuttle_transport',
+    title: 'Group MTB Shuttle',
+    description: 'Pre-booked rider and bike transport for trail days around Kathmandu and Lalitpur.',
+    price_npr: 1200,
+    price_note: 'Starting price per rider; route dependent',
+    location: 'Kathmandu and Lalitpur, Nepal',
+    contact_email: 'shuttle@trailbuildersnepal.app',
+  },
+  {
+    category: 'creative_design',
+    title: 'Ride Posters and Cool Graphics',
+    description: 'Social posters, route graphics, event identity, and shareable artwork for MTB rides and campaigns.',
+    price_npr: 3500,
+    price_note: 'Starting price per design package',
+    location: 'Remote across Nepal',
+    contact_email: 'creative@trailbuildersnepal.app',
   },
 ];
 
@@ -296,29 +337,36 @@ const CYCLE_HUBS = [
 ];
 
 async function ensureUser(client, user) {
+  const passwordHash = user.password
+    ? await bcrypt.hash(user.password, 10)
+    : user.password_hash;
+  const isVerifiedExpert = user.role === 'expert';
   const result = await client.query(
     `
     INSERT INTO users (name, email, password_hash, role, city, bio, sports, is_verified_expert)
-    VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, TRUE)
+    VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)
     ON CONFLICT (email)
     DO UPDATE SET
       name = EXCLUDED.name,
+      password_hash = CASE WHEN $9 THEN EXCLUDED.password_hash ELSE users.password_hash END,
       role = EXCLUDED.role,
       city = EXCLUDED.city,
       bio = EXCLUDED.bio,
       sports = EXCLUDED.sports,
-      is_verified_expert = TRUE,
+      is_verified_expert = EXCLUDED.is_verified_expert,
       updated_at = NOW()
     RETURNING id
     `,
     [
       user.name,
       user.email,
-      user.password_hash,
+      passwordHash,
       user.role,
       user.city,
       user.bio,
       JSON.stringify(user.sports),
+      isVerifiedExpert,
+      Boolean(user.password),
     ]
   );
 
@@ -337,9 +385,10 @@ async function ensureOrganization(client, adminUserId) {
       country,
       is_verified,
       is_active,
-      created_by_user_id
+      created_by_user_id,
+      owner_user_id
     )
-    VALUES ($1, $2, $3, $4, $5, $6, TRUE, TRUE, $7)
+    VALUES ($1, $2, $3, $4, $5, $6, TRUE, TRUE, $7, $7)
     ON CONFLICT (slug)
     DO UPDATE SET
       name = EXCLUDED.name,
@@ -349,6 +398,7 @@ async function ensureOrganization(client, adminUserId) {
       country = EXCLUDED.country,
       is_verified = TRUE,
       is_active = TRUE,
+      owner_user_id = EXCLUDED.owner_user_id,
       updated_at = NOW()
     RETURNING id
     `,
@@ -612,6 +662,41 @@ async function ensureService(client, organizationId, trailId, userId, service) {
   return true;
 }
 
+async function ensureOrganizationService(client, organizationId, userId, service) {
+  const result = await client.query(
+    `
+    INSERT INTO organization_services (
+      organization_id, created_by_user_id, category, title, description,
+      price_npr, price_note, location, contact_email, is_active
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE)
+    ON CONFLICT (organization_id, title)
+    DO UPDATE SET
+      category = EXCLUDED.category,
+      description = EXCLUDED.description,
+      price_npr = EXCLUDED.price_npr,
+      price_note = EXCLUDED.price_note,
+      location = EXCLUDED.location,
+      contact_email = EXCLUDED.contact_email,
+      is_active = TRUE,
+      updated_at = NOW()
+    RETURNING (xmax = 0) AS inserted
+    `,
+    [
+      organizationId,
+      userId,
+      service.category,
+      service.title,
+      service.description,
+      service.price_npr,
+      service.price_note,
+      service.location,
+      service.contact_email,
+    ]
+  );
+  return Boolean(result.rows[0]?.inserted);
+}
+
 async function ensureTrailUpdate(client, trailId, organizationId, userId, update) {
   const existing = await client.query(
     `
@@ -829,7 +914,10 @@ async function seedTrailBuildersNepal() {
       }
 
       const adminUserId = tbnUserIds[0];
-      const organizationId = await ensureOrganization(client, adminUserId);
+      const ownerUserId = tbnUserIds.find(
+        (_userId, index) => TBN_USERS[index].memberRole === 'org_owner'
+      );
+      const organizationId = await ensureOrganization(client, ownerUserId || adminUserId);
 
       for (const [index, userId] of tbnUserIds.entries()) {
         await ensureMember(client, organizationId, userId, TBN_USERS[index].memberRole);
@@ -877,6 +965,13 @@ async function seedTrailBuildersNepal() {
         serviceResults.push(await ensureService(client, organizationId, trailId, adminUserId, service));
       }
 
+      const organizationServiceResults = [];
+      for (const service of TBN_ORGANIZATION_SERVICES) {
+        organizationServiceResults.push(
+          await ensureOrganizationService(client, organizationId, adminUserId, service)
+        );
+      }
+
       const updateResults = [];
       for (const update of TBN_TRAIL_UPDATES) {
         if (update.trailIndex >= associatedTrails.length) {
@@ -892,7 +987,9 @@ async function seedTrailBuildersNepal() {
         cycleHubResults.push(await ensureCycleHub(client, store));
       }
 
-      const expertIds = tbnUserIds;
+      const expertIds = tbnUserIds.filter(
+        (_userId, index) => TBN_USERS[index].role === 'expert'
+      );
       const expertTrailAssociationsInserted = await ensureExpertTrailAssociations(
         client,
         expertIds,
@@ -938,6 +1035,7 @@ async function seedTrailBuildersNepal() {
       console.log(`- Trails used: ${associatedTrails.length}`);
       console.log(`- Campaigns inserted: ${campaignResults.filter(Boolean).length}`);
       console.log(`- Services inserted: ${serviceResults.filter(Boolean).length}`);
+      console.log(`- Organization services inserted: ${organizationServiceResults.filter(Boolean).length}`);
       console.log(`- Trail updates inserted: ${updateResults.filter(Boolean).length}`);
       console.log(`- Cycle hubs inserted: ${cycleHubResults.filter(Boolean).length}`);
       console.log(`- Expert trail associations inserted: ${expertTrailAssociationsInserted}`);

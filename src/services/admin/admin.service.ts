@@ -9,6 +9,7 @@ export type ExpertApplication = {
   email: string;
   city: string | null;
   sports: string[] | null;
+  is_verified_expert: boolean;
   credentials: string;
   verification_years_experience?: string | null;
   verification_certifications?: string | null;
@@ -180,6 +181,7 @@ export type AdminUser = {
   role: 'expert' | 'participant' | 'admin';
   city: string | null;
   sports: string[] | null;
+  is_verified_expert: boolean;
   is_hidden?: boolean | null;
   phone: string | null;
   verification_years_experience?: string | null;
@@ -235,7 +237,7 @@ export type OrganizationMember = {
   id: string;
   organization_id: string;
   user_id: string;
-  role: 'org_admin' | 'org_editor';
+  role: 'org_owner' | 'org_admin' | 'org_editor';
   status: 'active' | 'invited' | 'disabled';
   created_at: string;
   updated_at: string;
@@ -594,7 +596,7 @@ export async function fetchAdminOrganizationMembers(organizationId: string) {
 export async function upsertAdminOrganizationMember(input: {
   organization_id: string;
   user_id: string;
-  role: 'org_admin' | 'org_editor';
+  role: 'org_owner' | 'org_admin' | 'org_editor';
   status?: 'active' | 'invited' | 'disabled';
 }) {
   try {
@@ -611,7 +613,7 @@ export async function upsertAdminOrganizationMember(input: {
 export async function updateAdminOrganizationMember(
   memberId: string,
   input: {
-    role?: 'org_admin' | 'org_editor';
+    role?: 'org_owner' | 'org_admin' | 'org_editor';
     status?: 'active' | 'invited' | 'disabled';
   }
 ) {

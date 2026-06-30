@@ -24,21 +24,27 @@ const categories: Array<{ value: AdminRideNoteCategory; label: string }> = [
   { value: 'expert_note', label: 'Expert note' },
   { value: 'ride_report', label: 'Ride report' },
   { value: 'ride_note', label: 'Ride note' },
+  { value: 'safety', label: 'Safety note' },
+  { value: 'trail_work', label: 'Trail work' },
 ];
 
 const inputClass =
   'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
 
-function getDefaultValues(note?: AdminRideNote | null): ExpertRideNoteInput {
+function getDefaultValues(
+  note?: AdminRideNote | null,
+  managedOrganizationId = ''
+): ExpertRideNoteInput {
   return {
     title: note?.title || '',
     excerpt: note?.excerpt || '',
     content: note?.content || '',
     cover_image_url: note?.cover_image_url || '',
-    category: note?.category || 'expert_note',
+    category: note?.category || (managedOrganizationId ? 'safety' : 'expert_note'),
     status: note?.status === 'pending_review' ? 'pending_review' : 'draft',
     trail_id: note?.trail_id || '',
     expert_user_id: '',
+    organization_id: note?.organization_id || managedOrganizationId,
   };
 }
 
@@ -89,7 +95,11 @@ function formatDate(value: string | null) {
   });
 }
 
-export default function ExpertRideNotesPanel() {
+export default function ExpertRideNotesPanel({
+  managedOrganizationId = '',
+}: {
+  managedOrganizationId?: string;
+} = {}) {
   const queryClient = useQueryClient();
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<AdminRideNote | null>(null);
@@ -102,15 +112,20 @@ export default function ExpertRideNotesPanel() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<ExpertRideNoteInput>({ defaultValues: getDefaultValues() });
+  } = useForm<ExpertRideNoteInput>({ defaultValues: getDefaultValues(null, managedOrganizationId) });
   const coverImageUrl = watch('cover_image_url');
+  const selectedOrganizationId = watch('organization_id') || managedOrganizationId;
 
   const { data, isLoading, error } = useQuery({
     queryKey: QUERY_KEYS.experts.myRideNotes,
     queryFn: fetchExpertRideNotes,
   });
-  const notes = data?.notes || [];
+  const notes = managedOrganizationId
+    ? (data?.notes || []).filter((note) => note.organization_id === managedOrganizationId)
+    : data?.notes || [];
   const trails = data?.trails || [];
+  const organizations = data?.organizations || [];
+  const availableTrails = trails;
   const publishedCount = useMemo(
     () => notes.filter((note) => note.status === 'published').length,
     [notes],
@@ -134,7 +149,7 @@ export default function ExpertRideNotesPanel() {
     onSuccess: async () => {
       setMessage('Ride note created.');
       setEditorOpen(false);
-      reset(getDefaultValues());
+      reset(getDefaultValues(null, managedOrganizationId));
       await invalidateNotes();
     },
   });
@@ -145,7 +160,7 @@ export default function ExpertRideNotesPanel() {
       setMessage('Ride note updated.');
       setEditorOpen(false);
       setEditingNote(null);
-      reset(getDefaultValues());
+      reset(getDefaultValues(null, managedOrganizationId));
       await invalidateNotes();
     },
   });
@@ -164,14 +179,14 @@ export default function ExpertRideNotesPanel() {
 
   const openCreate = () => {
     setEditingNote(null);
-    reset(getDefaultValues());
+    reset(getDefaultValues(null, managedOrganizationId));
     setMessage('');
     setEditorOpen(true);
   };
 
   const openEdit = (note: AdminRideNote) => {
     setEditingNote(note);
-    reset(getDefaultValues(note));
+    reset(getDefaultValues(note, managedOrganizationId));
     setMessage('');
     setEditorOpen(true);
   };
@@ -183,6 +198,7 @@ export default function ExpertRideNotesPanel() {
       cover_image_url: values.cover_image_url?.trim() || '',
       trail_id: values.trail_id || '',
       expert_user_id: '',
+      organization_id: values.organization_id || '',
     };
     if (editingNote) updateMutation.mutate({ ...payload, id: editingNote.id });
     else createMutation.mutate(payload);
@@ -223,7 +239,7 @@ export default function ExpertRideNotesPanel() {
           </h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
             Write trail guides, ride reports, safety notes, and local context
-            from trails associated with you. Submitted notes go live after admin
+            from any approved trail. Submitted notes go live after admin
             approval.
           </p>
           <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
@@ -267,8 +283,8 @@ export default function ExpertRideNotesPanel() {
         </p>
       ) : notes.length === 0 ? (
         <p className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
-          No ride notes yet. Create your first note after associating at least
-          one trail.
+          No ride notes yet. Create your first note about any approved trail,
+          or publish it without linking a trail.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
@@ -295,7 +311,7 @@ export default function ExpertRideNotesPanel() {
                         {note.title}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-slate-400">
-                        /{note.slug}
+                        /{note.slug}{note.organization_name ? ` · ${note.organization_name}` : ''}
                       </p>
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
@@ -345,7 +361,7 @@ export default function ExpertRideNotesPanel() {
         open={editorOpen}
         onOpenChange={setEditorOpen}
         title={editingNote ? 'Edit ride note' : 'Create ride note'}
-        description="Link the note to one of your associated trails when it helps riders understand the route."
+        description="Link the note to any approved trail when it helps riders understand the route."
         maxWidthClassName="max-w-3xl"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
@@ -365,12 +381,42 @@ export default function ExpertRideNotesPanel() {
             )}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
+            {!managedOrganizationId && <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                Publish as
+              </label>
+              <select
+                {...register('organization_id', {
+                  onChange: (event) => {
+                    setValue('trail_id', '');
+                    setValue('category', event.target.value ? 'safety' : 'expert_note');
+                  },
+                })}
+                className={inputClass}
+              >
+                <option value="">My expert profile</option>
+                {organizations.map((organization) => (
+                  <option key={organization.id} value={organization.id}>
+                    {organization.name}
+                  </option>
+                ))}
+              </select>
+            </div>}
+            {managedOrganizationId && (
+              <input type="hidden" {...register('organization_id')} />
+            )}
             <div>
               <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
                 Category
               </label>
               <select {...register('category')} className={inputClass}>
-                {categories.map((category) => (
+                {categories
+                  .filter((category) =>
+                    selectedOrganizationId
+                      ? ['safety', 'trail_work'].includes(category.value)
+                      : !['safety', 'trail_work'].includes(category.value)
+                  )
+                  .map((category) => (
                   <option key={category.value} value={category.value}>
                     {category.label}
                   </option>
@@ -393,15 +439,15 @@ export default function ExpertRideNotesPanel() {
             </label>
             <select {...register('trail_id')} className={inputClass}>
               <option value="">No trail</option>
-              {trails.map((trail) => (
+              {availableTrails.map((trail) => (
                 <option key={trail.id} value={trail.id}>
                   {trail.name} {trail.location ? `- ${trail.location}` : ''}
                 </option>
               ))}
             </select>
-            {trails.length === 0 && (
+            {availableTrails.length === 0 && (
               <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                Associate trails first to link notes to a route.
+                No approved trails are currently available to link.
               </p>
             )}
           </div>

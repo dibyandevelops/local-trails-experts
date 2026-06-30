@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { isAllowedImageUrl } from '@/lib/image-url';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthFromRequest(request);
+    const isPlatformAdmin = auth?.role === 'admin';
     const searchParams = request.nextUrl.searchParams;
     const query = (searchParams.get('q') || '').trim();
     const city = (searchParams.get('city') || '').trim();
@@ -15,6 +18,11 @@ export async function GET(request: NextRequest) {
     const where: string[] = [];
     const values: unknown[] = [];
     let idx = 1;
+
+    if (!isPlatformAdmin) {
+      where.push('o.is_active = TRUE');
+      where.push('o.is_verified = TRUE');
+    }
 
     if (query) {
       where.push(`(o.name ILIKE $${idx} OR o.slug ILIKE $${idx} OR COALESCE(o.tagline, '') ILIKE $${idx})`);
@@ -86,7 +94,6 @@ export async function POST(request: NextRequest) {
     if (!auth || auth.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const body = (await request.json()) as {
       slug?: string;
       name?: string;
@@ -107,44 +114,68 @@ export async function POST(request: NextRequest) {
 
     const slug = (body.slug || '').trim().toLowerCase();
     const name = (body.name || '').trim();
+    const logoUrl = body.logo_url?.trim() || null;
 
     if (!slug || !name) {
       return NextResponse.json({ error: 'slug and name are required' }, { status: 400 });
     }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 80) {
+      return NextResponse.json(
+        { error: 'slug must use lowercase letters, numbers, and hyphens only' },
+        { status: 400 }
+      );
+    }
+    if (logoUrl && !isAllowedImageUrl(logoUrl, 650_000)) {
+      return NextResponse.json(
+        { error: 'Logo must be a valid HTTPS image URL or supported image upload.' },
+        { status: 400 }
+      );
+    }
 
-    const result = await pool.query(
-      `
-      INSERT INTO organizations (
-        slug, name, tagline, description, logo_url, website_url, instagram_url, facebook_url,
-        whatsapp_url, contact_email, contact_phone, city, country, is_verified, is_active, created_by_user_id
-      )
-      VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8,
-        $9, $10, $11, $12, $13, $14, $15, $16
-      )
-      RETURNING *
-      `,
-      [
-        slug,
-        name,
-        body.tagline?.trim() || null,
-        body.description?.trim() || null,
-        body.logo_url?.trim() || null,
-        body.website_url?.trim() || null,
-        body.instagram_url?.trim() || null,
-        body.facebook_url?.trim() || null,
-        body.whatsapp_url?.trim() || null,
-        body.contact_email?.trim() || null,
-        body.contact_phone?.trim() || null,
-        body.city?.trim() || null,
-        body.country?.trim() || 'Nepal',
-        Boolean(body.is_verified),
-        body.is_active ?? true,
-        auth.sub,
-      ]
-    );
-
-    return NextResponse.json({ organization: result.rows[0] }, { status: 201 });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `
+        INSERT INTO organizations (
+          slug, name, tagline, description, logo_url, website_url, instagram_url, facebook_url,
+          whatsapp_url, contact_email, contact_phone, city, country, is_verified, is_active,
+          created_by_user_id, owner_user_id
+        )
+        VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8,
+          $9, $10, $11, $12, $13, $14, $15, $16, $17
+        )
+        RETURNING *
+        `,
+        [
+          slug,
+          name,
+          body.tagline?.trim() || null,
+          body.description?.trim() || null,
+          logoUrl,
+          body.website_url?.trim() || null,
+          body.instagram_url?.trim() || null,
+          body.facebook_url?.trim() || null,
+          body.whatsapp_url?.trim() || null,
+          body.contact_email?.trim() || null,
+          body.contact_phone?.trim() || null,
+          body.city?.trim() || null,
+          body.country?.trim() || 'Nepal',
+          Boolean(body.is_verified),
+          body.is_active ?? true,
+          auth.sub,
+          null,
+        ]
+      );
+      await client.query('COMMIT');
+      return NextResponse.json({ organization: result.rows[0] }, { status: 201 });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   } catch (error: any) {
     if (error?.code === '23505') {
       return NextResponse.json(
