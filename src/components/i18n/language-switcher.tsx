@@ -23,7 +23,7 @@ export default function LanguageSwitcher({
     <nav
       aria-label="Language"
       className={`inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white/85 p-1 text-xs font-bold shadow-sm backdrop-blur dark:border-emerald-900/60 dark:bg-slate-950/80 ${
-        floating ? 'fixed bottom-5 right-5 z-40' : ''
+        floating ? 'fixed bottom-16 right-4 z-40 sm:bottom-[4.25rem] sm:right-5' : ''
       } ${className}`}
     >
       {LOCALES.map((item) => {
