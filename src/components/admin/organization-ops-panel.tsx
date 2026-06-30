@@ -245,7 +245,7 @@ export default function OrganizationOpsPanel() {
       const response = await fetch(`/api/admin/trail-organizations?${params.toString()}`);
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to fetch trail builder assignments');
+        throw new Error(data?.error || 'Failed to fetch organization assignments');
       }
       return data?.assignments || [];
     },
@@ -283,7 +283,7 @@ export default function OrganizationOpsPanel() {
   const addGalleryMutation = useMutation({
     mutationFn: async () => {
       if (!selectedOrgId) {
-        throw new Error('Please select a trail builder.');
+        throw new Error('Please select an organization.');
       }
       const responses = [];
       for (const draft of galleryDrafts) {
@@ -383,7 +383,7 @@ export default function OrganizationOpsPanel() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to assign trail builder');
+        throw new Error(data?.error || 'Failed to assign organization');
       }
       return data;
     },
@@ -397,7 +397,7 @@ export default function OrganizationOpsPanel() {
       setMessage('Trail builder assigned.');
     },
     onError: (error) => {
-      setMessage(error instanceof Error ? error.message : 'Failed to assign trail builder.');
+      setMessage(error instanceof Error ? error.message : 'Failed to assign organization.');
     },
   });
 
@@ -416,7 +416,7 @@ export default function OrganizationOpsPanel() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to update trail builder assignment');
+        throw new Error(data?.error || 'Failed to update organization assignment');
       }
       return data;
     },
@@ -426,7 +426,7 @@ export default function OrganizationOpsPanel() {
     },
     onError: (error) => {
       setMessage(
-        error instanceof Error ? error.message : 'Failed to update trail builder assignment.'
+        error instanceof Error ? error.message : 'Failed to update organization assignment.'
       );
     },
   });
@@ -438,7 +438,7 @@ export default function OrganizationOpsPanel() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to delete trail builder assignment');
+        throw new Error(data?.error || 'Failed to delete organization assignment');
       }
       return data;
     },
@@ -449,7 +449,7 @@ export default function OrganizationOpsPanel() {
     },
     onError: (error) => {
       setMessage(
-        error instanceof Error ? error.message : 'Failed to delete trail builder assignment.'
+        error instanceof Error ? error.message : 'Failed to delete organization assignment.'
       );
     },
   });
@@ -796,7 +796,7 @@ export default function OrganizationOpsPanel() {
           onChange={(event) => setAssignmentOrgId(event.target.value)}
           className={fieldClass}
         >
-          <option value="">Select trail builder</option>
+          <option value="">Select organization</option>
           {orgOptions.map((org) => (
             <option key={org.value} value={org.value}>
               {org.label}
@@ -840,7 +840,7 @@ export default function OrganizationOpsPanel() {
           className={primarySlateButtonClass}
         >
           {createAssignmentMutation.isPending && <LoadingSpinner />}
-          {createAssignmentMutation.isPending ? 'Assigning...' : 'Assign trail builder'}
+          {createAssignmentMutation.isPending ? 'Assigning...' : 'Assign organization'}
         </button>
       </div>
     </div>
@@ -853,7 +853,7 @@ export default function OrganizationOpsPanel() {
         onChange={(event) => setSelectedOrgId(event.target.value)}
         className={fullFieldClass}
       >
-        <option value="">Select trail builder</option>
+        <option value="">Select organization</option>
         {orgOptions.map((org) => (
           <option key={org.value} value={org.value}>
             {org.label}
@@ -995,7 +995,7 @@ export default function OrganizationOpsPanel() {
           onChange={(event) => setServiceOrganizationId(event.target.value)}
           className={fieldClass}
         >
-          <option value="">No trail builder</option>
+          <option value="">No organization</option>
           {orgOptions.map((org) => (
             <option key={org.value} value={org.value}>
               {org.label}
@@ -1102,7 +1102,7 @@ export default function OrganizationOpsPanel() {
         onChange={(event) => setSelectedUpdateOrgId(event.target.value)}
         className={fullFieldClass}
       >
-        <option value="">No trail builder (optional)</option>
+        <option value="">No organization (optional)</option>
         {orgOptions.map((org) => (
           <option key={org.value} value={org.value}>
             {org.label}
@@ -1219,9 +1219,9 @@ export default function OrganizationOpsPanel() {
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">Trail Builder Operations</h2>
+      <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">Organization Operations</h2>
       <p className="mb-5 text-sm text-gray-600 dark:text-slate-300">
-        Manage trail builder gallery assets and publish trail update logs.
+        Manage organization gallery assets and publish trail update logs.
       </p>
       {message && (
         <p className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
@@ -1234,10 +1234,10 @@ export default function OrganizationOpsPanel() {
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                Trail Builder Assignments
+                Organization Assignments
               </h3>
               <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">
-                Link active trail builders to trails for builder, maintainer, and verifier roles.
+                Link active organizations to trails for builder, maintainer, and verifier roles.
               </p>
             </div>
             <button
@@ -1245,7 +1245,7 @@ export default function OrganizationOpsPanel() {
               onClick={() => setAssignmentOpen(true)}
               className={smallSlateButtonClass}
             >
-              Assign trail builder
+              Assign organization
             </button>
           </div>
           <div className="mb-3 grid gap-3 md:grid-cols-2">
@@ -1266,7 +1266,7 @@ export default function OrganizationOpsPanel() {
               onChange={(event) => setAssignmentOrgFilterId(event.target.value)}
               className={fieldClass}
             >
-              <option value="">All trail builders</option>
+              <option value="">All organizations</option>
               {orgOptions.map((org) => (
                 <option key={org.value} value={org.value}>
                   {org.label}
@@ -1276,7 +1276,7 @@ export default function OrganizationOpsPanel() {
           </div>
           {trailOrganizationAssignments.length === 0 ? (
             <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-              No trail builder assignments found.
+              No organization assignments found.
             </p>
           ) : (
             <div className="max-h-[320px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
@@ -1284,7 +1284,7 @@ export default function OrganizationOpsPanel() {
                 <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Trail</th>
-                    <th className="px-4 py-3">Trail Builder</th>
+                    <th className="px-4 py-3">Organization</th>
                     <th className="px-4 py-3">Relation</th>
                     <th className="px-4 py-3">Primary</th>
                     <th className="px-4 py-3">Created</th>
@@ -1299,7 +1299,7 @@ export default function OrganizationOpsPanel() {
                       </td>
                       <td className="px-4 py-3 align-top">
                         <p className="font-semibold text-gray-900 dark:text-slate-100">
-                          {assignment.organization_name || 'Unknown trail builder'}
+                          {assignment.organization_name || 'Unknown organization'}
                         </p>
                         {assignment.organization_slug && (
                           <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
@@ -1366,8 +1366,8 @@ export default function OrganizationOpsPanel() {
         <section className="rounded-xl border border-gray-200 p-4 dark:border-slate-800">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Trail Builder Gallery</h3>
-              <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">Gallery assets grouped by trail builder.</p>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Organization Gallery</h3>
+              <p className="mt-1 text-xs text-gray-600 dark:text-slate-300">Gallery assets grouped by organization.</p>
             </div>
             <button
               type="button"
@@ -1383,7 +1383,7 @@ export default function OrganizationOpsPanel() {
               onChange={(event) => setSelectedOrgId(event.target.value)}
               className={fullFieldClass}
             >
-              <option value="">All trail builders</option>
+              <option value="">All organizations</option>
               {orgOptions.map((org) => (
                 <option key={org.value} value={org.value}>
                   {org.label}
@@ -1401,7 +1401,7 @@ export default function OrganizationOpsPanel() {
                 <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Item</th>
-                    <th className="px-4 py-3">Trail Builder</th>
+                    <th className="px-4 py-3">Organization</th>
                     <th className="px-4 py-3">Created</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
@@ -1434,7 +1434,7 @@ export default function OrganizationOpsPanel() {
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
-                        {item.organization_name || 'Unknown trail builder'}
+                        {item.organization_name || 'Unknown organization'}
                       </td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {new Date(item.created_at).toLocaleDateString()}
@@ -1525,7 +1525,7 @@ export default function OrganizationOpsPanel() {
                   <tr>
                     <th className="px-4 py-3">Service</th>
                     <th className="px-4 py-3">Trail</th>
-                    <th className="px-4 py-3">Trail Builder</th>
+                    <th className="px-4 py-3">Organization</th>
                     <th className="px-4 py-3">Contact</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3 text-right">Actions</th>
@@ -1546,7 +1546,7 @@ export default function OrganizationOpsPanel() {
                         {service.trail_name || 'Unknown trail'}
                       </td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
-                        {service.organization_name || 'No trail builder'}
+                        {service.organization_name || 'No organization'}
                       </td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         <p>{service.contact_phone || 'No phone'}</p>
@@ -1628,7 +1628,7 @@ export default function OrganizationOpsPanel() {
                   <tr>
                     <th className="px-4 py-3">Update</th>
                     <th className="px-4 py-3">Trail</th>
-                    <th className="px-4 py-3">Trail Builder</th>
+                    <th className="px-4 py-3">Organization</th>
                     <th className="px-4 py-3">Actor</th>
                     <th className="px-4 py-3">Created</th>
                     <th className="px-4 py-3 text-right">Actions</th>
@@ -1656,7 +1656,7 @@ export default function OrganizationOpsPanel() {
                         {update.trail_name || 'Unknown trail'}
                       </td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
-                        {update.organization_name || 'No trail builder'}
+                        {update.organization_name || 'No organization'}
                       </td>
                       <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                         {update.actor_name || 'System'}
@@ -1696,8 +1696,8 @@ export default function OrganizationOpsPanel() {
       <AppDialog
         open={assignmentOpen}
         onOpenChange={setAssignmentOpen}
-        title="Assign trail builder"
-        description="Connect a trail builder organization to a trail."
+        title="Assign organization"
+        description="Connect an organization to a trail."
         maxWidthClassName="max-w-2xl"
       >
         {assignmentForm}
@@ -1711,7 +1711,7 @@ export default function OrganizationOpsPanel() {
           }
         }}
         title="Add gallery item"
-        description="Add a public trail builder gallery image."
+        description="Add a public organization gallery image."
         maxWidthClassName="max-w-xl"
       >
         {galleryForm}
@@ -1801,7 +1801,7 @@ export default function OrganizationOpsPanel() {
         description={
           editUpdateTarget
             ? 'Update the trail update details.'
-            : 'Publish a trail builder or admin trail update.'
+            : 'Publish an organization or admin trail update.'
         }
         maxWidthClassName="max-w-xl"
       >
@@ -1812,7 +1812,7 @@ export default function OrganizationOpsPanel() {
         onOpenChange={(open) => {
           if (!open) setDeleteAssignmentTarget(null);
         }}
-        title="Delete trail builder assignment"
+        title="Delete organization assignment"
         description="This action cannot be undone."
         maxWidthClassName="max-w-lg"
       >
@@ -1820,11 +1820,11 @@ export default function OrganizationOpsPanel() {
           <div className="mt-5 space-y-4">
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
               <p className="font-semibold">
-                Remove {deleteAssignmentTarget.organization_name || 'this trail builder'} from{' '}
+                Remove {deleteAssignmentTarget.organization_name || 'this organization'} from{' '}
                 {deleteAssignmentTarget.trail_name || 'this trail'}?
               </p>
               <p className="mt-2 text-xs leading-5">
-                This removes the builder relation used by trail detail pages and trail builder
+                This removes the builder relation used by trail detail pages and organization
                 operations access.
               </p>
             </div>

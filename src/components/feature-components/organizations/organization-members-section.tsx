@@ -18,7 +18,7 @@ export default function OrganizationMembersSection({
     <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-          Trail Builder Team
+          Organization Team
         </h2>
         <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
           {members.length}

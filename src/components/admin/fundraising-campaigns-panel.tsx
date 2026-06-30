@@ -246,7 +246,7 @@ export default function FundraisingCampaignsPanel() {
           onChange={(event) => setOrganizationId(event.target.value)}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">Select trail builder</option>
+          <option value="">Select organization</option>
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>
               {org.name}{org.is_active ? '' : ' (inactive)'}
@@ -358,7 +358,7 @@ export default function FundraisingCampaignsPanel() {
           onChange={(event) => setEditOrganizationId(event.target.value)}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">Select trail builder</option>
+          <option value="">Select organization</option>
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>
               {org.name}{org.is_active ? '' : ' (inactive)'}
@@ -512,7 +512,7 @@ export default function FundraisingCampaignsPanel() {
               <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Campaign</th>
-                  <th className="px-4 py-3">Trail Builder</th>
+                  <th className="px-4 py-3">Organization</th>
                   <th className="px-4 py-3">Trail</th>
                   <th className="px-4 py-3">Progress</th>
                   <th className="px-4 py-3">Dates</th>
@@ -534,7 +534,7 @@ export default function FundraisingCampaignsPanel() {
                       )}
                     </td>
                     <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
-                      {campaign.organization_name || 'Unknown trail builder'}
+                      {campaign.organization_name || 'Unknown organization'}
                     </td>
                     <td className="px-4 py-3 align-top text-xs text-gray-600 dark:text-slate-300">
                       {campaign.trail_name || 'No trail'}

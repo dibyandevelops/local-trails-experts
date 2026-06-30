@@ -560,7 +560,7 @@ export async function GET(request: NextRequest) {
           type: 'organization',
           title: 'Organization access active',
           description: `You can manage ${row.name} as ${String(row.role).replace('org_', '')}.`,
-          href: '/trail-builders/me',
+          href: '/organizations/me',
           createdAt: toIsoDate(row.created_at),
           tone: 'info',
         });

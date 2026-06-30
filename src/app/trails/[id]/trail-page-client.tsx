@@ -233,7 +233,7 @@ function TrailAlertsDropdown({ updates }: TrailAlertsDropdownProps) {
               Trail alerts
             </p>
             <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-slate-50">
-              {count} update{count === 1 ? '' : 's'} from trail builders
+              {count} update{count === 1 ? '' : 's'} from organizations
             </p>
           </div>
           <div className="max-h-[420px] space-y-2 overflow-y-auto p-3">

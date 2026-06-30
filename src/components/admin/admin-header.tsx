@@ -18,7 +18,7 @@ export default function AdminHeader() {
             Admin Portal
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-slate-300">
-            Review requests, manage trail builders, publish operations, and keep public content clean.
+            Review requests, manage organizations, publish operations, and keep public content clean.
           </p>
         </div>
         {isAdmin && (

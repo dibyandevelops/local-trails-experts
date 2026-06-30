@@ -162,7 +162,7 @@ export default function CreateOrganizationForm() {
       <AccessMessage
         title={`${createdOrganization.name} is ready`}
         body="You are the organization owner. You can now manage its profile, team, services, programs, and trail work."
-        href="/trail-builders/me"
+        href="/organizations/me"
         action="Open organization dashboard"
       />
     );

@@ -415,7 +415,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             ) : hasTrailBuilder ? (
               <span
                 className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-                title={`${trail.trail_builder_count || 1} trail builder${trail.trail_builder_count === 1 ? '' : 's'}`}
+                title={`${trail.trail_builder_count || 1} organization${trail.trail_builder_count === 1 ? '' : 's'}`}
               >
                 <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
                 Trail builder

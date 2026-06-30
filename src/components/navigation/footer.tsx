@@ -21,7 +21,7 @@ const FEATURE_LINKS = [
   { label: 'Ride notes', href: '/ride-notes' },
   { label: 'Events', href: '/events' },
   { label: 'Expert directory', href: '/experts' },
-  { label: 'Trail builders', href: '/organizations' },
+  { label: 'Organizations', href: '/organizations' },
   { label: 'Campaigns', href: '/campaigns' },
   { label: 'Cycle hubs', href: '/store-locator' },
   { label: 'Shop', badge: 'Coming soon' },

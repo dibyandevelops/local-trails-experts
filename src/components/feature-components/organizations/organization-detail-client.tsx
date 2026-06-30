@@ -40,7 +40,7 @@ export default function OrganizationDetailClient({ slug }: { slug: string }) {
             Trail builder not found
           </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-            This trail builder may be hidden or no longer available.
+            This organization may be hidden or no longer available.
           </p>
         </div>
       </div>

@@ -60,7 +60,7 @@ export default function OrganizationMembersPanel() {
       setSelectedUserId('');
       setMemberFormOpen(false);
     },
-    onError: () => setMessage('Failed to save trail builder member.'),
+    onError: () => setMessage('Failed to save organization member.'),
   });
 
   const updateMutation = useMutation({
@@ -77,7 +77,7 @@ export default function OrganizationMembersPanel() {
       await invalidateMembers();
       setMessage('Trail builder member updated.');
     },
-    onError: () => setMessage('Failed to update trail builder member.'),
+    onError: () => setMessage('Failed to update organization member.'),
   });
 
   const deleteMutation = useMutation({
@@ -86,7 +86,7 @@ export default function OrganizationMembersPanel() {
       await invalidateMembers();
       setMessage('Trail builder member removed.');
     },
-    onError: () => setMessage('Failed to remove trail builder member.'),
+    onError: () => setMessage('Failed to remove organization member.'),
   });
 
   const memberForm = (
@@ -96,7 +96,7 @@ export default function OrganizationMembersPanel() {
         onChange={(event) => setSelectedOrganizationId(event.target.value)}
         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
       >
-        <option value="">Select trail builder</option>
+        <option value="">Select organization</option>
         {organizations.map((org) => (
           <option key={org.id} value={org.id}>
             {org.name}
@@ -149,7 +149,7 @@ export default function OrganizationMembersPanel() {
     <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
       <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Trail Builder Members</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Members</h2>
           <p className="text-sm text-gray-600">
             Assign verified experts with admin or editor access.
           </p>
@@ -174,7 +174,7 @@ export default function OrganizationMembersPanel() {
           onChange={(event) => setSelectedOrganizationId(event.target.value)}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">Select trail builder</option>
+          <option value="">Select organization</option>
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>
               {org.name}
@@ -184,7 +184,7 @@ export default function OrganizationMembersPanel() {
       </div>
 
       {!selectedOrganizationId ? (
-        <p className="text-sm text-gray-600">Select a trail builder to manage its members.</p>
+        <p className="text-sm text-gray-600">Select an organization to manage its members.</p>
       ) : isLoading ? (
         <p className="text-sm text-gray-600">Loading members...</p>
       ) : members.length === 0 ? (
@@ -259,8 +259,8 @@ export default function OrganizationMembersPanel() {
       <AppDialog
         open={memberFormOpen}
         onOpenChange={setMemberFormOpen}
-        title="Add trail builder member"
-        description="Assign a user to a trail builder and choose their role."
+        title="Add organization member"
+        description="Assign a user to an organization and choose their role."
         maxWidthClassName="max-w-xl"
       >
         {memberForm}

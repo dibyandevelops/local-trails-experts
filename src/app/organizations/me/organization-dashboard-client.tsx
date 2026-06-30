@@ -98,7 +98,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export default function TrailBuilderDashboardClient() {
+export default function OrganizationDashboardClient() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedOrgId, setSelectedOrgId] = useState('');
@@ -114,7 +114,7 @@ export default function TrailBuilderDashboardClient() {
   const [message, setMessage] = useState<string | null>(null);
 
   const accessQuery = useQuery({
-    queryKey: ['my-trail-builder-access'],
+    queryKey: ['my-organization-access'],
     queryFn: () => fetchJson<{ organizations: ManagedOrganization[]; trails: ManagedTrail[] }>('/api/organizations/me'),
     retry: false,
   });
@@ -145,13 +145,13 @@ export default function TrailBuilderDashboardClient() {
   }, [organizations, selectedOrgId]);
 
   const servicesQuery = useQuery({
-    queryKey: ['builder-services', effectiveOrgId],
+    queryKey: ['organization-services', effectiveOrgId],
     queryFn: () => fetchJson<{ services: TrailService[] }>(`/api/admin/trail-services?organization_id=${effectiveOrgId}&include_inactive=true`),
     enabled: Boolean(effectiveOrgId),
   });
 
   const updatesQuery = useQuery({
-    queryKey: ['builder-updates', effectiveOrgId],
+    queryKey: ['organization-updates', effectiveOrgId],
     queryFn: () => fetchJson<{ updates: TrailUpdate[] }>(`/api/admin/trail-updates?organization_id=${effectiveOrgId}`),
     enabled: Boolean(effectiveOrgId),
   });
@@ -172,7 +172,7 @@ export default function TrailBuilderDashboardClient() {
       setServiceTitle('');
       setServiceContact('');
       setMessage('Trail service added.');
-      await queryClient.invalidateQueries({ queryKey: ['builder-services', effectiveOrgId] });
+      await queryClient.invalidateQueries({ queryKey: ['organization-services', effectiveOrgId] });
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Failed to add service.'),
   });
@@ -184,7 +184,7 @@ export default function TrailBuilderDashboardClient() {
       body: JSON.stringify({ id: service.id, is_active: !service.is_active }),
     }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['builder-services', effectiveOrgId] });
+      await queryClient.invalidateQueries({ queryKey: ['organization-services', effectiveOrgId] });
     },
   });
 
@@ -203,7 +203,7 @@ export default function TrailBuilderDashboardClient() {
       setUpdateTitle('');
       setUpdateDetails('');
       setMessage('Trail update posted.');
-      await queryClient.invalidateQueries({ queryKey: ['builder-updates', effectiveOrgId] });
+      await queryClient.invalidateQueries({ queryKey: ['organization-updates', effectiveOrgId] });
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Failed to post update.'),
   });
@@ -224,7 +224,7 @@ export default function TrailBuilderDashboardClient() {
       setUpdateTitle('');
       setUpdateDetails('');
       setMessage('Trail update updated.');
-      await queryClient.invalidateQueries({ queryKey: ['builder-updates', effectiveOrgId] });
+      await queryClient.invalidateQueries({ queryKey: ['organization-updates', effectiveOrgId] });
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Failed to update trail update.'),
   });
@@ -246,17 +246,17 @@ export default function TrailBuilderDashboardClient() {
   };
 
   if (accessQuery.isLoading) {
-    return <main className="container mx-auto px-4 py-10 text-sm text-gray-600">Loading trail builder access...</main>;
+    return <main className="container mx-auto px-4 py-10 text-sm text-gray-600">Loading organization access...</main>;
   }
 
   if (!organizations.length) {
     return (
       <main className="container mx-auto px-4 py-10">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold text-gray-900">Trail Builder Dashboard</h1>
-          <p className="mt-2 text-sm text-gray-600">You are not assigned to an active trail builder yet.</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Organization Dashboard</h1>
+          <p className="mt-2 text-sm text-gray-600">You are not assigned to an active organization yet.</p>
           <Link href="/organizations" className="mt-4 inline-flex rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800">
-            View trail builders
+            View organizations
           </Link>
         </div>
       </main>
@@ -268,8 +268,8 @@ export default function TrailBuilderDashboardClient() {
       <section className="rounded-2xl border border-green-900/10 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-green-700">Trail Builder Operations</p>
-            <h1 className="mt-2 text-3xl font-bold text-gray-950">Manage your trail builder</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-green-700">Organization Operations</p>
+            <h1 className="mt-2 text-3xl font-bold text-gray-950">Manage your organization</h1>
             <p className="mt-2 max-w-2xl text-sm text-gray-600">
               Manage your public organization, programs, participant requests, and linked trail operations.
             </p>

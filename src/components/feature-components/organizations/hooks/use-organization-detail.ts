@@ -104,7 +104,7 @@ async function fetchOrganizationDetail(slug: string): Promise<OrganizationDetail
   const response = await fetch(`/api/organizations/${encodeURIComponent(slug)}?detail=true`);
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data?.error || 'Failed to load trail builder');
+    throw new Error(data?.error || 'Failed to load organization');
   }
   return data;
 }

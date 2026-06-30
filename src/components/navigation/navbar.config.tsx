@@ -26,7 +26,7 @@ export const navGroups: NavGroup[] = [
       { label: 'Ride with Experts', href: '/ride-with-experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Ride Notes', href: '/ride-notes', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Trail Builders', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Organizations', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Campaigns', href: '/campaigns', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Cycle Hubs', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Services', href: '/services', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
@@ -45,8 +45,8 @@ export const navGroups: NavGroup[] = [
       { label: 'Upload Trails', href: '/upload', showFor: ['admin', 'expert'] },
       { label: 'Create Organization', href: '/organizations/create', showFor: ['expert'] },
       {
-        label: 'Trail Builder Dashboard',
-        href: '/trail-builders/me',
+        label: 'Organization Dashboard',
+        href: '/organizations/me',
         showFor: ['expert', 'admin'],
         requiresOrgMember: true,
       },
@@ -81,7 +81,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/events/trainings/create': Dumbbell,
   '/upload': MapPinned,
   '/experts/join': Sparkles,
-  '/trail-builders/me': Users,
+  '/organizations/me': Users,
 };
 
 export function getNavIcon(href: string) {

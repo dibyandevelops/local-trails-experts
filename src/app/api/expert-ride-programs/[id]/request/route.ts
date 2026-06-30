@@ -159,7 +159,7 @@ export async function POST(
           {
             title: 'Program request updated',
             body: `${user.name || 'A participant'} updated ${program.title}.`,
-            url: '/trail-builders/me',
+            url: '/organizations/me',
           }
         );
       }
@@ -216,7 +216,7 @@ export async function POST(
         {
           title: 'New organization program request',
           body: `${user.name || 'A participant'} requested ${program.title}.`,
-          url: '/trail-builders/me',
+          url: '/organizations/me',
         }
       );
     }

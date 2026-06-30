@@ -44,7 +44,7 @@ export default function OrganizationProfileManagementPanel({ organization }: { o
   const mutation = useMutation({
     mutationFn: (values: ProfileForm) => updateProfile(organization.id, values),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['my-trail-builder-access'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-organization-access'] });
       setOpen(false);
     },
   });

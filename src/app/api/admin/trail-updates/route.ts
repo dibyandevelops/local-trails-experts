@@ -187,7 +187,7 @@ export async function PATCH(request: NextRequest) {
       );
       if (!organization.rows.length) {
         return NextResponse.json(
-          { error: 'organization_id must be an active trail builder' },
+          { error: 'organization_id must be an active organization' },
           { status: 400 }
         );
       }

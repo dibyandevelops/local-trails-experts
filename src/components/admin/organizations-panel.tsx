@@ -92,7 +92,7 @@ export default function OrganizationsPanel() {
       setFormOpen(false);
     },
     onError: (error) =>
-      setMessage(error instanceof Error ? error.message : 'Failed to create trail builder.'),
+      setMessage(error instanceof Error ? error.message : 'Failed to create organization.'),
   });
 
   const updateMutation = useMutation({
@@ -103,7 +103,7 @@ export default function OrganizationsPanel() {
       setFormOpen(false);
     },
     onError: (error) =>
-      setMessage(error instanceof Error ? error.message : 'Failed to update trail builder.'),
+      setMessage(error instanceof Error ? error.message : 'Failed to update organization.'),
   });
 
   const visibilityMutation = useMutation({
@@ -136,7 +136,7 @@ export default function OrganizationsPanel() {
       }
     },
     onError: (error) =>
-      setMessage(error instanceof Error ? error.message : 'Failed to delete trail builder.'),
+      setMessage(error instanceof Error ? error.message : 'Failed to delete organization.'),
   });
 
   const hydrateOrganizationForm = (org: OrganizationOption) => {
@@ -158,7 +158,7 @@ export default function OrganizationsPanel() {
   const handleLogoUpload = async (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setMessage('Please upload a valid image file for the trail builder logo.');
+      setMessage('Please upload a valid image file for the organization logo.');
       return;
     }
     setLogoUploadPending(true);
@@ -167,7 +167,7 @@ export default function OrganizationsPanel() {
       const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 512, quality: 0.86 });
       setValue('logo_url', dataUrl, { shouldDirty: true });
     } catch {
-      setMessage('Failed to process trail builder logo.');
+      setMessage('Failed to process organization logo.');
     } finally {
       setLogoUploadPending(false);
     }
@@ -346,10 +346,10 @@ export default function OrganizationsPanel() {
           {formMode === 'create'
             ? createMutation.isPending
               ? 'Creating...'
-              : 'Create trail builder'
+              : 'Create organization'
             : updateMutation.isPending
               ? 'Updating...'
-              : 'Update trail builder'}
+              : 'Update organization'}
         </button>
       </div>
     </form>
@@ -359,9 +359,9 @@ export default function OrganizationsPanel() {
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">Trail Builders</h2>
+          <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">Organizations</h2>
           <p className="text-sm text-gray-600 dark:text-slate-300">
-            Create and maintain profiles for trail builder groups and partners.
+            Create and maintain profiles for organizations and partners.
           </p>
         </div>
         <button
@@ -369,7 +369,7 @@ export default function OrganizationsPanel() {
           onClick={openCreate}
           className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 dark:border dark:border-lime-300/45 dark:bg-lime-300/15 dark:text-lime-50 dark:hover:bg-lime-300/25"
         >
-          Create trail builder
+          Create organization
         </button>
       </div>
       {message && (
@@ -387,14 +387,14 @@ export default function OrganizationsPanel() {
         </div>
         {organizations.length === 0 ? (
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-            No trail builders created yet.
+            No organizations created yet.
           </div>
         ) : (
           <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800">
             <table className="min-w-[960px] w-full text-left text-sm">
               <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
-                  <th className="px-4 py-3">Trail Builder</th>
+                  <th className="px-4 py-3">Organization</th>
                   <th className="px-4 py-3">Location</th>
                   <th className="px-4 py-3">Counts</th>
                   <th className="px-4 py-3">Contact</th>
@@ -492,7 +492,7 @@ export default function OrganizationsPanel() {
       <AppDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        title={formMode === 'create' ? 'Create trail builder' : 'Edit trail builder'}
+        title={formMode === 'create' ? 'Create organization' : 'Edit organization'}
         description="Manage profile, contact, and visibility details."
         maxWidthClassName="max-w-3xl"
       >
@@ -504,7 +504,7 @@ export default function OrganizationsPanel() {
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
-        title="Delete trail builder"
+        title="Delete organization"
         description="This action cannot be undone."
         maxWidthClassName="max-w-lg"
       >
@@ -513,7 +513,7 @@ export default function OrganizationsPanel() {
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
               <p className="font-semibold">Delete {deleteTarget.name}?</p>
               <p className="mt-2 text-xs leading-5">
-                This may also remove linked trail builder members, trail assignments,
+                This may also remove linked organization members, trail assignments,
                 fundraising campaigns, and gallery items according to database cascade rules.
               </p>
             </div>
@@ -531,7 +531,7 @@ export default function OrganizationsPanel() {
                 disabled={deleteMutation.isPending}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete trail builder'}
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete organization'}
               </button>
             </div>
           </div>

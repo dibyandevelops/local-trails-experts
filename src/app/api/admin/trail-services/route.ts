@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
     const activeOrganization = await validateActiveOrganization(organizationId);
     if (!activeOrganization) {
       return NextResponse.json(
-        { error: 'organization_id must be an active trail builder' },
+        { error: 'organization_id must be an active organization' },
         { status: 400 }
       );
     }
@@ -308,7 +308,7 @@ export async function PATCH(request: NextRequest) {
     const activeOrganization = await validateActiveOrganization(effectiveOrgId);
     if (!activeOrganization) {
       return NextResponse.json(
-        { error: 'organization_id must be an active trail builder' },
+        { error: 'organization_id must be an active organization' },
         { status: 400 }
       );
     }

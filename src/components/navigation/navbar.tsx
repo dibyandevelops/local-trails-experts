@@ -51,7 +51,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   const { data: builderAccess } = useQuery<{
     organizations?: Array<{ membership_role?: string }>;
   }>({
-    queryKey: ['navbar-builder-access', user?.id],
+    queryKey: ['navbar-organization-access', user?.id],
     queryFn: async () => {
       const response = await fetch('/api/organizations/me', { cache: 'no-store' });
       if (!response.ok) return { organizations: [] };

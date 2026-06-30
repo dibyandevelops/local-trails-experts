@@ -132,7 +132,7 @@ export default async function CampaignDetailPage({
             <p className="font-semibold">How to support</p>
             <p className="mt-1">
               {canSponsorCampaign(campaign.status)
-                ? 'Commit an amount, scan the payment QR, and upload proof so the trail builder can verify your support.'
+                ? 'Commit an amount, scan the payment QR, and upload proof so the organization can verify your support.'
                 : 'This campaign is not currently accepting direct sponsorships.'}
             </p>
             {canSponsorCampaign(campaign.status) && campaign.payment_note && (
@@ -168,7 +168,7 @@ export default async function CampaignDetailPage({
               href={`/organizations/${campaign.organization_slug}`}
               className="mt-3 inline-flex rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              View trail builder
+              View organization
             </Link>
           </div>
         </div>
