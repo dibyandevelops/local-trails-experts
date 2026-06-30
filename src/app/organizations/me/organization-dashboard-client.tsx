@@ -4,14 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import OrganizationProgramsPanel from '@/components/feature-components/organizations/organization-programs-panel';
 import OrganizationProfileManagementPanel from '@/components/feature-components/organizations/organization-profile-management-panel';
 import OrganizationCampaignsManagementPanel from '@/components/feature-components/organizations/organization-campaigns-management-panel';
 import OrganizationMembersManagementPanel from '@/components/feature-components/organizations/organization-members-management-panel';
-import OrganizationProgramRequestsPanel from '@/components/feature-components/organizations/organization-program-requests-panel';
 import OrganizationServicesManagementPanel from '@/components/feature-components/organizations/organization-services-management-panel';
 import OrganizationGalleryManagementPanel from '@/components/feature-components/organizations/organization-gallery-management-panel';
-import ExpertRideNotesPanel from '@/components/experts/expert-ride-notes-panel';
+import OrganizationTrailsManagementPanel from '@/components/feature-components/organizations/organization-trails-management-panel';
 
 type ManagedOrganization = {
   id: string;
@@ -34,6 +32,7 @@ type ManagedOrganization = {
 };
 
 type ManagedTrail = {
+  relation_id: string;
   id: string;
   slug: string | null;
   name: string;
@@ -41,23 +40,7 @@ type ManagedTrail = {
   difficulty: string | null;
   sport_type: string | null;
   organization_id: string;
-  relation_type: string;
-};
-
-type TrailService = {
-  id: string;
-  trail_id: string;
-  trail_name: string | null;
-  organization_id: string | null;
-  service_type: 'shuttle' | 'lift' | 'support_vehicle';
-  title: string;
-  description: string | null;
-  contact_phone: string | null;
-  contact_whatsapp: string | null;
-  contact_email: string | null;
-  price_note: string | null;
-  schedule_note: string | null;
-  is_active: boolean;
+  relation_type: 'built_by' | 'verified_by' | 'maintained_by';
 };
 
 type TrailUpdate = {
@@ -102,10 +85,6 @@ export default function OrganizationDashboardClient() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedOrgId, setSelectedOrgId] = useState('');
-  const [serviceTrailId, setServiceTrailId] = useState('');
-  const [serviceTitle, setServiceTitle] = useState('');
-  const [serviceType, setServiceType] = useState<TrailService['service_type']>('shuttle');
-  const [serviceContact, setServiceContact] = useState('');
   const [updateTrailId, setUpdateTrailId] = useState('');
   const [updateType, setUpdateType] = useState(updateTypeOptions[0]);
   const [updateTitle, setUpdateTitle] = useState('');
@@ -144,48 +123,10 @@ export default function OrganizationDashboardClient() {
     if (!selectedOrgId && organizations[0]?.id) setSelectedOrgId(organizations[0].id);
   }, [organizations, selectedOrgId]);
 
-  const servicesQuery = useQuery({
-    queryKey: ['organization-services', effectiveOrgId],
-    queryFn: () => fetchJson<{ services: TrailService[] }>(`/api/admin/trail-services?organization_id=${effectiveOrgId}&include_inactive=true`),
-    enabled: Boolean(effectiveOrgId),
-  });
-
   const updatesQuery = useQuery({
     queryKey: ['organization-updates', effectiveOrgId],
     queryFn: () => fetchJson<{ updates: TrailUpdate[] }>(`/api/admin/trail-updates?organization_id=${effectiveOrgId}`),
     enabled: Boolean(effectiveOrgId),
-  });
-
-  const addService = useMutation({
-    mutationFn: () => fetchJson('/api/admin/trail-services', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        trail_id: serviceTrailId,
-        organization_id: effectiveOrgId,
-        service_type: serviceType,
-        title: serviceTitle,
-        contact_phone: serviceContact,
-      }),
-    }),
-    onSuccess: async () => {
-      setServiceTitle('');
-      setServiceContact('');
-      setMessage('Trail service added.');
-      await queryClient.invalidateQueries({ queryKey: ['organization-services', effectiveOrgId] });
-    },
-    onError: (error) => setMessage(error instanceof Error ? error.message : 'Failed to add service.'),
-  });
-
-  const toggleService = useMutation({
-    mutationFn: (service: TrailService) => fetchJson('/api/admin/trail-services', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: service.id, is_active: !service.is_active }),
-    }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['organization-services', effectiveOrgId] });
-    },
   });
 
   const addUpdate = useMutation({
@@ -228,7 +169,6 @@ export default function OrganizationDashboardClient() {
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Failed to update trail update.'),
   });
-  const togglingServiceId = toggleService.variables?.id;
   const isSavingUpdate = addUpdate.isPending || editUpdate.isPending;
   const startEditingUpdate = (update: TrailUpdate) => {
     setEditingUpdateId(update.id);
@@ -246,16 +186,16 @@ export default function OrganizationDashboardClient() {
   };
 
   if (accessQuery.isLoading) {
-    return <main className="container mx-auto px-4 py-10 text-sm text-gray-600">Loading organization access...</main>;
+    return <main className="container mx-auto px-4 py-10 text-sm text-gray-600 dark:text-slate-300">Loading organization access...</main>;
   }
 
   if (!organizations.length) {
     return (
       <main className="container mx-auto px-4 py-10">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold text-gray-900">Organization Dashboard</h1>
-          <p className="mt-2 text-sm text-gray-600">You are not assigned to an active organization yet.</p>
-          <Link href="/organizations" className="mt-4 inline-flex rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Organization Dashboard</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">You are not assigned to an active organization yet.</p>
+          <Link href="/organizations" className="mt-4 inline-flex rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400">
             View organizations
           </Link>
         </div>
@@ -264,20 +204,20 @@ export default function OrganizationDashboardClient() {
   }
 
   return (
-    <main className="container mx-auto space-y-6 px-4 py-8">
-      <section className="rounded-2xl border border-green-900/10 bg-white p-6 shadow-sm">
+    <main className="container mx-auto space-y-6 px-4 py-8 text-gray-900 dark:text-slate-100">
+      <section className="rounded-2xl border border-green-900/10 bg-white p-6 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-green-700">Organization Operations</p>
-            <h1 className="mt-2 text-3xl font-bold text-gray-950">Manage your organization</h1>
-            <p className="mt-2 max-w-2xl text-sm text-gray-600">
-              Manage your public organization, programs, participant requests, and linked trail operations.
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-green-700 dark:text-emerald-300">Organization Operations</p>
+            <h1 className="mt-2 text-3xl font-bold text-gray-950 dark:text-white">Manage your organization</h1>
+            <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-slate-300">
+              Manage your public organization, team, services, campaigns, and trail work.
             </p>
           </div>
           <select
             value={effectiveOrgId}
             onChange={(event) => setSelectedOrgId(event.target.value)}
-            className="rounded-xl border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
             {organizations.map((org) => (
               <option key={org.id} value={org.id}>{org.name}</option>
@@ -285,157 +225,125 @@ export default function OrganizationDashboardClient() {
           </select>
         </div>
         {selectedOrg && (
-          <div className="mt-4 rounded-xl bg-green-50 p-4 text-sm text-green-950">
+          <div className="mt-4 rounded-xl bg-green-50 p-4 text-sm text-green-950 dark:border dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-100">
             <strong>{selectedOrg.name}</strong> · {selectedOrg.membership_role === 'org_owner' ? 'Organization owner' : selectedOrg.membership_role === 'org_admin' ? 'Organization admin' : 'Operations editor'}
             {selectedOrg.tagline ? <span> · {selectedOrg.tagline}</span> : null}
           </div>
         )}
         <div className="mt-4 flex flex-wrap gap-2">
-          <Link href="#organization-ride-notes" className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100">
-            Write organization ride note
-          </Link>
+          {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-organization-member-dialog', { detail: { organizationId: effectiveOrgId } }))}
+              className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200 dark:hover:bg-emerald-900/60"
+            >
+              Add member
+            </button>
+          )}
           {selectedOrg?.membership_role === 'org_owner' && (
             <span className="rounded-lg bg-emerald-950 px-3 py-2 text-xs font-semibold text-white">
               Owner account
             </span>
           )}
         </div>
-        {message && <p className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{message}</p>}
+        {message && <p className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">{message}</p>}
       </section>
 
-      <OrganizationProgramsPanel organizationId={effectiveOrgId} trails={orgTrails} />
-
       {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
-        <section className="grid gap-6 xl:grid-cols-2">
+        <section>
           <OrganizationProfileManagementPanel organization={selectedOrg} />
-          <OrganizationMembersManagementPanel organizationId={effectiveOrgId} />
         </section>
       )}
+
+      {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
+        <OrganizationMembersManagementPanel organizationId={effectiveOrgId} />
+      )}
+
+      <OrganizationServicesManagementPanel organizationId={effectiveOrgId} organization={selectedOrg} />
 
       {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
         <OrganizationCampaignsManagementPanel organizationId={effectiveOrgId} trails={orgTrails} />
       )}
 
-      <OrganizationServicesManagementPanel organizationId={effectiveOrgId} />
-      <OrganizationGalleryManagementPanel organizationId={effectiveOrgId} />
-      <div id="organization-ride-notes" className="scroll-mt-24">
-        <ExpertRideNotesPanel key={effectiveOrgId} managedOrganizationId={effectiveOrgId} />
-      </div>
-      <OrganizationProgramRequestsPanel organizationId={effectiveOrgId} />
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Trail Services</h2>
-          <div className="mt-4 space-y-3">
-            <select value={serviceTrailId} onChange={(event) => setServiceTrailId(event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-              <option value="">Select linked trail</option>
-              {orgTrails.map((trail) => <option key={trail.id} value={trail.id}>{trail.name}</option>)}
-            </select>
-            <select value={serviceType} onChange={(event) => setServiceType(event.target.value as TrailService['service_type'])} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-              <option value="shuttle">Shuttle</option>
-              <option value="lift">Lift</option>
-              <option value="support_vehicle">Support vehicle</option>
-            </select>
-            <input value={serviceTitle} onChange={(event) => setServiceTitle(event.target.value)} placeholder="Service title" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <input value={serviceContact} onChange={(event) => setServiceContact(event.target.value)} placeholder="Contact phone" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <button
-              onClick={() => addService.mutate()}
-              disabled={!serviceTrailId || !serviceTitle || addService.isPending}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {addService.isPending && <LoadingSpinner />}
-              {addService.isPending ? 'Adding...' : 'Add service'}
-            </button>
-          </div>
-          <div className="mt-5 max-h-72 space-y-2 overflow-y-auto pr-1">
-            {(servicesQuery.data?.services || []).map((service) => (
-              <div key={service.id} className="rounded-lg border border-gray-100 p-3 text-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium text-gray-900">{service.title}</p>
-                  <button
-                    onClick={() => toggleService.mutate(service)}
-                    disabled={toggleService.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-2 py-1 text-xs text-gray-700 disabled:opacity-60"
-                  >
-                    {togglingServiceId === service.id && <LoadingSpinner />}
-                    {togglingServiceId === service.id
-                      ? 'Saving...'
-                      : service.is_active
-                        ? 'Mark out'
-                        : 'Mark available'}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500">
-                  {service.trail_name || 'Trail'} · {service.service_type} · {service.is_active ? 'Available' : 'Out of service'}
-                </p>
-              </div>
-            ))}
-          </div>
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Trail operations</h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
+            Track the trails this organization works on and publish updates for those linked trails.
+          </p>
         </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Trail Updates</h2>
-          <div className="mt-4 space-y-3">
-            <select
-              value={updateTrailId}
-              onChange={(event) => setUpdateTrailId(event.target.value)}
-              disabled={Boolean(editingUpdateId)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
-            >
-              <option value="">Select linked trail</option>
-              {orgTrails.map((trail) => <option key={trail.id} value={trail.id}>{trail.name}</option>)}
-            </select>
-            <select value={updateType} onChange={(event) => setUpdateType(event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-              {updateTypeOptions.map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}
-            </select>
-            <input value={updateTitle} onChange={(event) => setUpdateTitle(event.target.value)} placeholder="Update title" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <textarea value={updateDetails} onChange={(event) => setUpdateDetails(event.target.value)} placeholder="Details" rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            {editingUpdateId && (
-              <button
-                type="button"
-                onClick={cancelEditingUpdate}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+        <div className="mt-5 grid gap-6 xl:grid-cols-2">
+          {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
+            <OrganizationTrailsManagementPanel organizationId={effectiveOrgId} initialTrails={orgTrails} />
+          )}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-950/40">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Trail updates</h3>
+            <div className="mt-4 space-y-3">
+              <select
+                value={updateTrailId}
+                onChange={(event) => setUpdateTrailId(event.target.value)}
+                disabled={Boolean(editingUpdateId)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:disabled:bg-slate-800"
               >
-                Cancel edit
-              </button>
-            )}
-            <button
-              onClick={() => (editingUpdateId ? editUpdate.mutate() : addUpdate.mutate())}
-              disabled={!updateTrailId || !updateTitle || isSavingUpdate}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {isSavingUpdate && <LoadingSpinner />}
-              {editingUpdateId
-                ? editUpdate.isPending
-                  ? 'Saving...'
-                  : 'Save update'
-                : addUpdate.isPending
-                  ? 'Posting...'
-                  : 'Post update'}
-            </button>
-          </div>
-          <div className="mt-5 max-h-72 space-y-2 overflow-y-auto pr-1">
-            {(updatesQuery.data?.updates || []).map((update) => (
-              <div key={update.id} className="rounded-lg border border-gray-100 p-3 text-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-gray-900">{update.title}</p>
-                    <p className="text-xs text-gray-500">{update.trail_name || 'Trail'} · {update.update_type.replaceAll('_', ' ')}</p>
-                  </div>
+                <option value="">Select linked trail</option>
+                {orgTrails.map((trail) => <option key={trail.id} value={trail.id}>{trail.name}</option>)}
+              </select>
+              <select value={updateType} onChange={(event) => setUpdateType(event.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                {updateTypeOptions.map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}
+              </select>
+              <input value={updateTitle} onChange={(event) => setUpdateTitle(event.target.value)} placeholder="Update title" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500" />
+              <textarea value={updateDetails} onChange={(event) => setUpdateDetails(event.target.value)} placeholder="Details" rows={3} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500" />
+              <div className="flex flex-wrap justify-end gap-2">
+                {editingUpdateId && (
                   <button
                     type="button"
-                    onClick={() => startEditingUpdate(update)}
-                    disabled={isSavingUpdate}
-                    className="rounded border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                    onClick={cancelEditingUpdate}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    Edit
+                    Cancel edit
                   </button>
-                </div>
+                )}
+                <button
+                  onClick={() => (editingUpdateId ? editUpdate.mutate() : addUpdate.mutate())}
+                  disabled={!updateTrailId || !updateTitle || isSavingUpdate}
+                  className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 dark:bg-emerald-500 dark:text-emerald-950"
+                >
+                  {isSavingUpdate && <LoadingSpinner />}
+                  {editingUpdateId
+                    ? editUpdate.isPending
+                      ? 'Saving...'
+                      : 'Save update'
+                    : addUpdate.isPending
+                      ? 'Posting...'
+                      : 'Post update'}
+                </button>
               </div>
-            ))}
+            </div>
+            <div className="mt-5 max-h-72 space-y-2 overflow-y-auto pr-1">
+              {(updatesQuery.data?.updates || []).map((update) => (
+                <div key={update.id} className="rounded-lg border border-gray-100 p-3 text-sm dark:border-slate-800 dark:bg-slate-950/50">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{update.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">{update.trail_name || 'Trail'} · {update.update_type.replaceAll('_', ' ')}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => startEditingUpdate(update)}
+                      disabled={isSavingUpdate}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
+
+      <OrganizationGalleryManagementPanel organizationId={effectiveOrgId} />
     </main>
   );
 }

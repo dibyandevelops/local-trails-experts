@@ -12,6 +12,7 @@ type MobileNavbarProps = {
   loadingUser: boolean;
   notificationsData?: NotificationsData;
   accountActionLabel: string;
+  hasOrganizationAccess: boolean;
   canSeeItem: (item: NavItem) => boolean;
   isNavItemActive: (href: string) => boolean;
   getNavLabel: (item: NavItem) => string;
@@ -46,6 +47,7 @@ export default function MobileNavbar({
   loadingUser,
   notificationsData,
   accountActionLabel,
+  hasOrganizationAccess,
   canSeeItem,
   isNavItemActive,
   getNavLabel,
@@ -124,6 +126,15 @@ export default function MobileNavbar({
             >
               {accountActionLabel}
             </button>
+            {hasOrganizationAccess && (
+              <Link
+                href="/organizations/me"
+                className={`${mobileItemClass} text-left text-emerald-50 hover:bg-white/10`}
+                onClick={closeMobileMenu}
+              >
+                Organization Dashboard
+              </Link>
+            )}
             <button
               type="button"
               onClick={handleLogout}

@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { canAdministerOrganization, canOperateOrganization } from '@/lib/organization-access';
+import { isAllowedImageUrl } from '@/lib/image-url';
 
 export const dynamic = 'force-dynamic';
 
 const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MAX_LOGO_URL_LENGTH = 650_000;
 
 function buildLookup(idOrSlug: string) {
   if (UUID_V4_REGEX.test(idOrSlug)) {
@@ -265,6 +267,15 @@ export async function PATCH(
             'city',
           ].includes(field)
         ) {
+          if (field === 'logo_url') {
+            const logoUrl = raw.trim();
+            if (logoUrl && !isAllowedImageUrl(logoUrl, MAX_LOGO_URL_LENGTH)) {
+              return NextResponse.json(
+                { error: 'Logo must be a valid HTTPS image URL or supported image upload.' },
+                { status: 400 }
+              );
+            }
+          }
           updates.push(`${field} = $${idx}`);
           values.push(raw.trim() || null);
         } else {

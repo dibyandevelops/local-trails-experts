@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Organization expert access required.' }, { status: 403 });
     }
     const body = await request.json();
-    const category = String(body?.category || '').trim();
+    const category = String(body?.category || 'other').trim();
     const title = String(body?.title || '').trim();
     const priceRaw = body?.price_npr;
     const priceNpr = priceRaw === '' || priceRaw === null || priceRaw === undefined ? null : Number(priceRaw);
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const websiteRaw = String(body?.website_url || '').trim();
     const websiteUrl = normalizeHttpUrl(websiteRaw);
     if (!CATEGORIES.has(category) || !title) {
-      return NextResponse.json({ error: 'Service category and title are required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Service title is required.' }, { status: 400 });
     }
     if (title.length > 160) {
       return NextResponse.json({ error: 'Service title must be 160 characters or fewer.' }, { status: 400 });

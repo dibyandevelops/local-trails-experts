@@ -196,6 +196,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       (organization) => organization.membership_role === 'org_owner'
     )
   );
+  const hasOrganizationAccess = Boolean(builderAccess?.organizations?.length);
 
   const canSeeItem = (item: NavItem) => {
     if (item.showFor) {
@@ -262,6 +263,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             hoverCloseTimeout={hoverCloseTimeout}
             accountInitial={accountInitial}
             accountActionLabel={accountActionLabel}
+            hasOrganizationAccess={hasOrganizationAccess}
             canSeeItem={canSeeItem}
             isNavItemActive={isNavItemActive}
             getNavLabel={getNavLabel}
@@ -281,6 +283,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           loadingUser={loadingUser}
           notificationsData={notificationsData}
           accountActionLabel={accountActionLabel}
+          hasOrganizationAccess={hasOrganizationAccess}
           canSeeItem={canSeeItem}
           isNavItemActive={isNavItemActive}
           getNavLabel={getNavLabel}

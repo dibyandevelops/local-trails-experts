@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { canAdministerOrganization } from '@/lib/organization-access';
+import { isAllowedImageUrl } from '@/lib/image-url';
 
 const VALID_STATUSES = new Set([
   'draft',
@@ -11,6 +12,7 @@ const VALID_STATUSES = new Set([
   'paused',
   'archived',
 ]);
+const MAX_QR_IMAGE_LENGTH = 650_000;
 
 async function getCampaigns(organizationId: string) {
   const result = await pool.query(
@@ -68,6 +70,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!title || !Number.isFinite(targetAmount) || targetAmount <= 0 || !VALID_STATUSES.has(status)) {
       return NextResponse.json({ error: 'Title, positive target amount, and valid status are required.' }, { status: 400 });
     }
+    const qrImageUrl = String(body?.qr_image_url || '').trim();
+    if (qrImageUrl && !isAllowedImageUrl(qrImageUrl, MAX_QR_IMAGE_LENGTH)) {
+      return NextResponse.json({ error: 'Payment QR image must be a valid image URL or compressed upload.' }, { status: 400 });
+    }
     if (trailId && !(await isLinkedTrail(id, trailId))) {
       return NextResponse.json({ error: 'Campaign trail must be linked to the organization.' }, { status: 400 });
     }
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         title,
         String(body?.description || '').trim() || null,
         targetAmount,
-        String(body?.qr_image_url || '').trim() || null,
+        qrImageUrl || null,
         String(body?.payment_note || '').trim() || null,
         status,
         body?.starts_at || null,

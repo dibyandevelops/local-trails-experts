@@ -5,11 +5,19 @@ import type { Trail } from '@/types';
 import { getDifficultyLabel } from '@/services/constants/difficulty';
 import { getSportLabel } from '@/services/constants/sports';
 
-type TrailAutocompleteProps = {
+export type TrailAutocompleteOption = Pick<Trail, 'id' | 'name'> &
+  {
+    slug?: string | null;
+    location?: string | null;
+    difficulty?: string | null;
+    sport_type?: string | null;
+  };
+
+type TrailAutocompleteProps<TOption extends TrailAutocompleteOption> = {
   label: string;
   query: string;
-  value?: Trail | null;
-  options: Trail[];
+  value?: TOption | null;
+  options: TOption[];
   isLoading?: boolean;
   required?: boolean;
   disabled?: boolean;
@@ -17,10 +25,10 @@ type TrailAutocompleteProps = {
   emptyMessage?: string;
   helperText?: string;
   onQueryChange: (query: string) => void;
-  onChange: (trail: Trail | null) => void;
+  onChange: (trail: TOption | null) => void;
 };
 
-function formatTrailMeta(trail: Trail) {
+function formatTrailMeta(trail: TrailAutocompleteOption) {
   const parts = [
     trail.location,
     trail.difficulty ? getDifficultyLabel(trail.difficulty) : '',
@@ -30,7 +38,7 @@ function formatTrailMeta(trail: Trail) {
   return parts.join(' • ');
 }
 
-export default function TrailAutocomplete({
+export default function TrailAutocomplete<TOption extends TrailAutocompleteOption>({
   label,
   query,
   value,
@@ -43,7 +51,7 @@ export default function TrailAutocomplete({
   helperText,
   onQueryChange,
   onChange,
-}: TrailAutocompleteProps) {
+}: TrailAutocompleteProps<TOption>) {
   const showOptions = !disabled && query.trim().length > 0 && !value;
 
   return (

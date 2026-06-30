@@ -25,6 +25,7 @@ type DesktopNavbarProps = {
   hoverCloseTimeout: MutableRefObject<ReturnType<typeof setTimeout> | null>;
   accountInitial: string;
   accountActionLabel: string;
+  hasOrganizationAccess: boolean;
   canSeeItem: (item: NavItem) => boolean;
   isNavItemActive: (href: string) => boolean;
   getNavLabel: (item: NavItem) => string;
@@ -61,6 +62,7 @@ export default function DesktopNavbar({
   hoverCloseTimeout,
   accountInitial,
   accountActionLabel,
+  hasOrganizationAccess,
   canSeeItem,
   isNavItemActive,
   getNavLabel,
@@ -220,6 +222,16 @@ export default function DesktopNavbar({
                   {accountActionLabel}
                 </button>
               </DropdownMenu.Item>
+              {hasOrganizationAccess && (
+                <DropdownMenu.Item asChild>
+                  <Link
+                    href="/organizations/me"
+                    className={`block text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10 ${dropdownItemClass}`}
+                  >
+                    Organization Dashboard
+                  </Link>
+                </DropdownMenu.Item>
+              )}
               <DropdownMenu.Item asChild>
                 <button
                   type="button"

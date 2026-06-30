@@ -44,12 +44,6 @@ export const navGroups: NavGroup[] = [
       { label: 'Organize Trainings', href: '/events/trainings/create', showFor: ['expert', 'admin'] },
       { label: 'Upload Trails', href: '/upload', showFor: ['admin', 'expert'] },
       { label: 'Create Organization', href: '/organizations/create', showFor: ['expert'] },
-      {
-        label: 'Organization Dashboard',
-        href: '/organizations/me',
-        showFor: ['expert', 'admin'],
-        requiresOrgMember: true,
-      },
     ],
   },
 ];

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { UserPlus, X } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -29,6 +29,15 @@ export default function OrganizationMembersManagementPanel({ organizationId }: {
   const update = useMutation({ mutationFn: (member: Member) => memberRequest(organizationId, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ member_id: member.id, role: member.role, status: member.status }) }), onSuccess: (data) => { updateCache(data); setMessage('Member updated.'); }, onError: (error) => setMessage(error.message) });
   const remove = useMutation({ mutationFn: (memberId: string) => memberRequest(organizationId, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ member_id: memberId }) }), onSuccess: (data) => { updateCache(data); setMessage('Member removed.'); }, onError: (error) => setMessage(error.message) });
   const members = query.data?.members || [];
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ organizationId?: string }>).detail;
+      if (!detail?.organizationId || detail.organizationId === organizationId) setOpen(true);
+    };
+    window.addEventListener('open-organization-member-dialog', handler);
+    return () => window.removeEventListener('open-organization-member-dialog', handler);
+  }, [organizationId]);
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none">
