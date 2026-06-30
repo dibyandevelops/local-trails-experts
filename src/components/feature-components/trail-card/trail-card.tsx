@@ -40,6 +40,9 @@ export type TrailCardProps = Trail & {
   associationLoading?: boolean;
   onAssociateTrail?: () => void;
   onRemoveAssociation?: () => void;
+  isSaved?: boolean;
+  saveLoading?: boolean;
+  onToggleSaved?: () => void;
 };
 
 const toFiniteNumber = (value: unknown) => {
@@ -310,6 +313,34 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
         </div>
 
         <div className="absolute right-7 top-7 z-20 flex items-center gap-2">
+          {trail.onToggleSaved && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                trail.onToggleSaved?.();
+              }}
+              disabled={trail.saveLoading}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:cursor-wait disabled:opacity-60 ${
+                trail.isSaved
+                  ? 'border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-700'
+                  : 'border-white/40 bg-white/85 text-slate-900 hover:bg-white dark:border-white/20 dark:bg-black/45 dark:text-white dark:hover:bg-black/40'
+              }`}
+              aria-label={trail.isSaved ? 'Remove from saved trails' : 'Save trail'}
+              title={trail.isSaved ? 'Remove from saved trails' : 'Save trail'}
+            >
+              <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+                <path
+                  d="M5.25 3.75A1.75 1.75 0 0 1 7 2h6a1.75 1.75 0 0 1 1.75 1.75v13.1a.65.65 0 0 1-1.02.54L10 14.9l-3.73 2.49a.65.65 0 0 1-1.02-.54V3.75Z"
+                  fill={trail.isSaved ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleShare}

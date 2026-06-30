@@ -533,6 +533,19 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     queryFn: ({ signal }) => fetchMyParticipantEvents(signal),
     enabled: currentUser?.role === 'participant',
   });
+  const canonicalTrailId = trail?.id || trailId;
+  const { data: savedTrailState } = useQuery<{ saved: boolean }>({
+    queryKey: ['saved-trail', canonicalTrailId, currentUser?.id],
+    queryFn: async ({ signal }) => {
+      const response = await fetch(`/api/trails/${canonicalTrailId}/save`, { signal });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to check saved trail');
+      }
+      return data as { saved: boolean };
+    },
+    enabled: Boolean(currentUser && canonicalTrailId),
+  });
   const { data: participantRequests = [], refetch: refetchParticipantRequests } = useQuery<
     ParticipantTrailRequest[]
   >({
@@ -635,7 +648,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     currentUser?.role === 'admin' ||
     (currentUser?.role === 'participant' &&
       joinedEvents.some((event) => event.trail_id === trailId));
-  const canonicalTrailId = trail?.id || trailId;
   const associatedExperts = useMemo(
     () =>
       (Array.isArray(trail?.associated_experts) ? trail.associated_experts : [])
@@ -703,6 +715,32 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     },
     onError: (error) => {
       setReviewMessage(error instanceof Error ? error.message : 'Failed to submit review.');
+    },
+  });
+
+  const savedTrailMutation = useMutation({
+    mutationFn: async (saved: boolean) => {
+      const response = await fetch(`/api/trails/${canonicalTrailId}/save`, {
+        method: saved ? 'DELETE' : 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update saved trail');
+      }
+      return data as { saved: boolean };
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        ['saved-trail', canonicalTrailId, currentUser?.id],
+        data
+      );
+      queryClient.invalidateQueries({ queryKey: ['saved-trails', currentUser?.id] });
+      setActionMessage(data.saved ? 'Trail saved to your profile.' : 'Trail removed from saved trails.');
+      setTimeout(() => setActionMessage(null), 2500);
+    },
+    onError: (error) => {
+      setActionMessage(error instanceof Error ? error.message : 'Unable to update saved trail.');
+      setTimeout(() => setActionMessage(null), 2500);
     },
   });
 
@@ -1150,6 +1188,29 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     }
   };
 
+  const handleToggleSavedTrail = () => {
+    if (loadingCurrentUser) {
+      setActionMessage('Checking your account. Please try again in a second.');
+      return;
+    }
+    if (!currentUser) {
+      const next =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : `/trails/${trail.slug || trail.id}`;
+      window.dispatchEvent(
+        new CustomEvent('open-register', {
+          detail: {
+            message: 'Create an account to save trails for later.',
+            next,
+          },
+        })
+      );
+      return;
+    }
+    savedTrailMutation.mutate(Boolean(savedTrailState?.saved));
+  };
+
   const handleOpenRequestRide = () => {
     if (loadingCurrentUser) {
       setRequestMessage('Checking your account. Please try again in a second.');
@@ -1280,6 +1341,15 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     </div>
   );
   const trailActionItems: ThemedDropdownItem[] = [
+    {
+      label: !currentUser
+        ? 'Save trail (Create account)'
+        : savedTrailState?.saved
+          ? 'Remove from saved trails'
+          : 'Save trail',
+      onSelect: handleToggleSavedTrail,
+      disabled: savedTrailMutation.isPending,
+    },
     {
       label: 'Share trail',
       onSelect: copyTrailLink,
@@ -1646,6 +1716,34 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             )}
             <CampaignSupportDropdown campaigns={activeCampaigns} />
             <TrailAlertsDropdown updates={trailUpdates} />
+            <button
+              type="button"
+              onClick={handleToggleSavedTrail}
+              disabled={savedTrailMutation.isPending}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-wait disabled:opacity-60 ${
+                savedTrailState?.saved
+                  ? 'border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800 dark:border-emerald-400 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400'
+                  : 'border-slate-300 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-100'
+              }`}
+              aria-label={savedTrailState?.saved ? 'Remove from saved trails' : 'Save trail'}
+              title={
+                savedTrailState?.saved
+                  ? 'Remove from saved trails'
+                  : currentUser
+                    ? 'Save trail'
+                    : 'Create an account to save trail'
+              }
+            >
+              <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
+                <path
+                  d="M5.25 3.75A1.75 1.75 0 0 1 7 2h6a1.75 1.75 0 0 1 1.75 1.75v13.1a.65.65 0 0 1-1.02.54L10 14.9l-3.73 2.49a.65.65 0 0 1-1.02-.54V3.75Z"
+                  fill={savedTrailState?.saved ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
             {canRequestTrail && (
               hasRequestedTrail ? (
                 <span className="inline-flex h-10 items-center rounded-full border border-green-200 bg-green-50 px-4 text-xs font-bold text-green-800 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200">

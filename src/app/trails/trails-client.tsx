@@ -72,6 +72,9 @@ type TrailsPageParam = { offset: number; limit: number };
 type ExpertTrailsResponse = {
   associated_trails?: Trail[];
 };
+type SavedTrailsResponse = {
+  trails?: Array<Pick<Trail, 'id'>>;
+};
 
 function TrailsPageContent() {
   const router = useRouter();
@@ -209,13 +212,29 @@ function TrailsPageContent() {
     return () => window.removeEventListener('pageshow', closeTransientUi);
   }, []);
 
-  const { data: user = null } = useCurrentUser();
+  const { data: user = null, isLoading: loadingCurrentUser } = useCurrentUser();
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
     enabled: !EXPERTS_BETA_ENABLED,
   });
   const queryClient = useQueryClient();
+  const { data: savedTrailsData } = useQuery<SavedTrailsResponse>({
+    queryKey: ['saved-trails', user?.id],
+    enabled: Boolean(user),
+    queryFn: async ({ signal }) => {
+      const response = await fetch('/api/me/saved-trails', { signal });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to load saved trails');
+      }
+      return data as SavedTrailsResponse;
+    },
+  });
+  const savedTrailIds = useMemo(
+    () => new Set((savedTrailsData?.trails || []).map((trail) => trail.id)),
+    [savedTrailsData?.trails]
+  );
   const { data: expertTrailsData, isLoading: loadingExpertTrails } =
     useQuery<ExpertTrailsResponse>({
     queryKey: EXPERT_ASSOCIATED_TRAILS_QUERY_KEY,
@@ -368,6 +387,45 @@ function TrailsPageContent() {
     },
   });
 
+  const savedTrailMutation = useMutation({
+    mutationFn: async (payload: { trailId: string; isSaved: boolean }) => {
+      const response = await fetch(`/api/trails/${payload.trailId}/save`, {
+        method: payload.isSaved ? 'DELETE' : 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update saved trail');
+      }
+      return data as { saved: boolean };
+    },
+    onSuccess: (data, payload) => {
+      queryClient.setQueryData<SavedTrailsResponse>(['saved-trails', user?.id], (current) => {
+        const trails = current?.trails || [];
+        return {
+          trails: data.saved
+            ? trails.some((trail) => trail.id === payload.trailId)
+              ? trails
+              : [{ id: payload.trailId }, ...trails]
+            : trails.filter((trail) => trail.id !== payload.trailId),
+        };
+      });
+      queryClient.setQueryData(['saved-trail', payload.trailId, user?.id], data);
+      setToastTitle(data.saved ? 'Trail saved' : 'Trail removed');
+      setToastDescription(
+        data.saved
+          ? 'You can find it in Saved Trails on your profile.'
+          : 'The trail was removed from your saved list.'
+      );
+      setToastOpen(true);
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Failed to update saved trail.';
+      setToastTitle('Save failed');
+      setToastDescription(message);
+      setToastOpen(true);
+    },
+  });
+
   const expertTrailAssociationMutation = useMutation({
     mutationFn: async (payload: { trailId: string; isAssociated: boolean }) => {
       const currentIds = Array.from(associatedTrailIds);
@@ -515,6 +573,9 @@ function TrailsPageContent() {
   const unhidingTrailId = unhideMutation.isPending ? unhideMutation.variables : null;
   const associatingTrailId = expertTrailAssociationMutation.isPending
     ? expertTrailAssociationMutation.variables?.trailId
+    : null;
+  const savingTrailId = savedTrailMutation.isPending
+    ? savedTrailMutation.variables?.trailId
     : null;
   const selectedCreateEventTrail =
     trails.find((trail) => trail.id === createEventTrailId) ?? null;
@@ -993,6 +1054,35 @@ function TrailsPageContent() {
               canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
               canRequestTrail={Boolean(isParticipant || !user)}
               isAdmin={isAdmin}
+              savedTrailIds={savedTrailIds}
+              savingTrailId={savingTrailId}
+              onToggleSavedTrail={(trail) => {
+                if (loadingCurrentUser) {
+                  setToastTitle('Checking account');
+                  setToastDescription('Please try again in a second.');
+                  setToastOpen(true);
+                  return;
+                }
+                if (!user) {
+                  const next =
+                    typeof window !== 'undefined'
+                      ? `${window.location.pathname}${window.location.search}`
+                      : '/trails';
+                  window.dispatchEvent(
+                    new CustomEvent('open-register', {
+                      detail: {
+                        message: 'Create an account to save trails for later.',
+                        next,
+                      },
+                    })
+                  );
+                  return;
+                }
+                savedTrailMutation.mutate({
+                  trailId: trail.id,
+                  isSaved: savedTrailIds.has(trail.id),
+                });
+              }}
               onEditTrail={(trail) => {
                 router.push(`/upload?trailId=${trail.id}`);
               }}

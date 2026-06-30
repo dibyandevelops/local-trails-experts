@@ -7,6 +7,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import type { User } from '@/types';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
+import { getDifficultyLabel } from '@/services/constants/difficulty';
 import { resizeImageToDataUrl } from '@/lib/image';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
@@ -78,6 +79,17 @@ type ParticipantBooking = {
   created_at: string;
 };
 
+type SavedTrail = {
+  id: string;
+  slug: string | null;
+  name: string;
+  location: string | null;
+  difficulty: string;
+  sport_type: string | null;
+  image_url: string | null;
+  saved_at: string;
+};
+
 type ExpertOption = {
   id: string;
   name: string | null;
@@ -125,11 +137,13 @@ export default function ParticipantProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<ParticipantEvent[]>([]);
   const [bookings, setBookings] = useState<ParticipantBooking[]>([]);
+  const [savedTrails, setSavedTrails] = useState<SavedTrail[]>([]);
   const [trailRequests, setTrailRequests] = useState<ParticipantTrailRequest[]>([]);
   const [rideProgramRequests, setRideProgramRequests] = useState<ParticipantRideProgramRequest[]>([]);
   const [experts, setExperts] = useState<ExpertOption[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  const [loadingSavedTrails, setLoadingSavedTrails] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingRequestId, setSavingRequestId] = useState<string | null>(null);
@@ -194,31 +208,36 @@ export default function ParticipantProfilePage() {
         if (!currentUser || currentUser.role !== 'participant') {
           setLoadingEvents(false);
           setLoadingBookings(false);
+          setLoadingSavedTrails(false);
           setLoadingRequests(false);
           return;
         }
-        const [eventsRes, requestsRes, rideRequestsRes, expertsRes, bookingsRes] = await Promise.all([
+        const [eventsRes, requestsRes, rideRequestsRes, expertsRes, bookingsRes, savedTrailsRes] = await Promise.all([
           fetch('/api/participants/me/events'),
           fetch('/api/participants/me/trail-requests'),
           fetch('/api/participants/me/ride-program-requests'),
           fetch('/api/experts?verified=true'),
           fetch('/api/bookings/me'),
+          fetch('/api/me/saved-trails'),
         ]);
         const eventsData = await eventsRes.json();
         const requestsData = await requestsRes.json();
         const rideRequestsData = await rideRequestsRes.json();
         const expertsData = await expertsRes.json();
         const bookingsData = await bookingsRes.json();
+        const savedTrailsData = await savedTrailsRes.json();
         setEvents(eventsData.events || []);
         setTrailRequests(requestsData.requests || []);
         setRideProgramRequests(rideRequestsData.requests || []);
         setExperts(expertsData.experts || []);
         setBookings(bookingsData.bookings || []);
+        setSavedTrails(savedTrailsData.trails || []);
       } catch (error) {
         console.error('Error loading participant profile', error);
       } finally {
         setLoadingEvents(false);
         setLoadingBookings(false);
+        setLoadingSavedTrails(false);
         setLoadingRequests(false);
       }
     };
@@ -226,7 +245,7 @@ export default function ParticipantProfilePage() {
     fetchData();
   }, [currentUser]);
 
-  if (loadingUser || loadingEvents || loadingBookings || loadingRequests) {
+  if (loadingUser || loadingEvents || loadingBookings || loadingSavedTrails || loadingRequests) {
     return <div className="text-gray-600">Loading profile...</div>;
   }
 
@@ -369,6 +388,19 @@ export default function ParticipantProfilePage() {
     }
   };
 
+  const removeSavedTrail = async (trailId: string) => {
+    try {
+      const response = await fetch(`/api/trails/${trailId}/save`, { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to remove saved trail');
+      }
+      setSavedTrails((current) => current.filter((trail) => trail.id !== trailId));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to remove saved trail.');
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <section className="relative overflow-hidden rounded-3xl border border-hero-border/70 bg-gradient-to-br from-hero-from via-hero-via to-hero-to px-5 py-6 shadow-sm">
@@ -508,7 +540,11 @@ export default function ParticipantProfilePage() {
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Saved trails</p>
+          <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{savedTrails.length}</p>
+        </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Expert ride requests</p>
           <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{rideProgramRequests.length}</p>
@@ -521,6 +557,83 @@ export default function ParticipantProfilePage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Paid bookings</p>
           <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{paidBookings.length}</p>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Saved Trails
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              Keep trails here while planning your next ride.
+            </p>
+          </div>
+          <Link
+            href="/trails"
+            className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+          >
+            Explore trails
+          </Link>
+        </div>
+        {savedTrails.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center dark:border-slate-700 dark:bg-slate-950/40">
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+              No saved trails yet
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Open any trail and use the bookmark button to save it here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {savedTrails.map((trail) => (
+              <article
+                key={trail.id}
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/40"
+              >
+                {trail.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={trail.image_url}
+                    alt=""
+                    className="h-32 w-full object-cover"
+                  />
+                )}
+                <div className="p-4">
+                  <Link
+                    href={`/trails/${trail.slug || trail.id}`}
+                    className="font-semibold text-slate-950 hover:text-emerald-700 dark:text-white dark:hover:text-emerald-300"
+                  >
+                    {trail.name}
+                  </Link>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {trail.location || 'Location not added'}
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {trail.sport_type && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200">
+                          {getSportLabel(trail.sport_type)}
+                        </span>
+                      )}
+                      <span className="rounded-full bg-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {getDifficultyLabel(trail.difficulty)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSavedTrail(trail.id)}
+                      className="text-xs font-semibold text-rose-700 hover:text-rose-800 dark:text-rose-300 dark:hover:text-rose-200"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">

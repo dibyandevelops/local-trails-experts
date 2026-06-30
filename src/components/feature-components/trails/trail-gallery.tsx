@@ -45,10 +45,13 @@ type TrailGalleryProps = {
   onToggleExpertTrail?: (trail: Trail, isAssociated: boolean) => void;
   canAssociateExpertTrail: boolean;
   associatedTrailIds: Set<string>;
+  savedTrailIds: Set<string>;
+  onToggleSavedTrail: (trail: Trail) => void;
   deletingTrailId?: string | null;
   hidingTrailId?: string | null;
   unhidingTrailId?: string | null;
   associatingTrailId?: string | null;
+  savingTrailId?: string | null;
   sort?: TrailSort;
   onSortChange?: (sort: TrailSort) => void;
 };
@@ -71,10 +74,13 @@ export function TrailGallery({
   onToggleExpertTrail,
   canAssociateExpertTrail,
   associatedTrailIds,
+  savedTrailIds,
+  onToggleSavedTrail,
   deletingTrailId,
   hidingTrailId,
   unhidingTrailId,
   associatingTrailId,
+  savingTrailId,
   sort = 'newest',
   onSortChange,
 }: TrailGalleryProps) {
@@ -209,6 +215,18 @@ export function TrailGallery({
               <div className="flex flex-wrap justify-end gap-1.5">
                 <button
                   type="button"
+                  onClick={() => onToggleSavedTrail(trail)}
+                  disabled={savingTrailId === trail.id}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-bold transition disabled:cursor-wait disabled:opacity-60 ${
+                    savedTrailIds.has(trail.id)
+                      ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40'
+                  }`}
+                >
+                  {savedTrailIds.has(trail.id) ? 'Saved' : 'Save'}
+                </button>
+                <button
+                  type="button"
                   onClick={() => onViewMap(trail)}
                   className="rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-bold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-800 dark:bg-slate-950 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
                 >
@@ -312,6 +330,11 @@ export function TrailGallery({
                   },
                 }
               : {}),
+            isSaved: savedTrailIds.has(trail.id),
+            saveLoading: savingTrailId === trail.id,
+            onToggleSaved() {
+              onToggleSavedTrail(trail);
+            },
             ...(isAdmin
               ? {
                   deleteLoading: deletingTrailId === trail.id,
