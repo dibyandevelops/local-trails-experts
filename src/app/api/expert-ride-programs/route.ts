@@ -20,12 +20,6 @@ export async function GET(request: NextRequest) {
         AND t.status = 'approved'
         AND COALESCE(t.is_hidden, FALSE) = FALSE
         AND (p.organization_id IS NULL OR o.is_active = TRUE)
-        AND EXISTS (
-          SELECT 1
-          FROM expert_trails et
-          WHERE et.expert_user_id = p.expert_user_id
-            AND et.trail_id = p.trail_id
-        )
     `;
 
     if (expertId) {

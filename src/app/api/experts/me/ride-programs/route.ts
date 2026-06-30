@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     const isActive = body?.is_active !== false;
 
     if (!trailId) {
-      return NextResponse.json({ error: 'Please select an associated trail.' }, { status: 400 });
+      return NextResponse.json({ error: 'Please select a trail.' }, { status: 400 });
     }
     if (!VALID_LEVELS.has(skillLevel)) {
       return NextResponse.json({ error: 'Invalid skill level.' }, { status: 400 });
@@ -117,20 +117,19 @@ export async function POST(request: NextRequest) {
     const trailResult = await pool.query(
       `
       SELECT t.id, t.name
-      FROM expert_trails et
-      JOIN trails t ON t.id = et.trail_id
-      WHERE et.expert_user_id = $1
-        AND et.trail_id = $2
+      FROM trails t
+      WHERE t.id = $1
         AND t.status = 'approved'
         AND COALESCE(t.is_hidden, FALSE) = FALSE
+        AND t.sport_type NOT IN ('local_tour')
       LIMIT 1
       `,
-      [auth.sub, trailId]
+      [trailId]
     );
     const trail = trailResult.rows[0];
     if (!trail) {
       return NextResponse.json(
-        { error: 'Selected trail must be associated with your expert profile first.' },
+        { error: 'Selected trail is not available for ride programs.' },
         { status: 400 }
       );
     }

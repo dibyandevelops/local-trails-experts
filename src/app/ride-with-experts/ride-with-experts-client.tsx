@@ -154,6 +154,10 @@ export default function RideWithExpertsClient() {
   const existingRequestForModal = requestProgram
     ? requestByProgramId.get(requestProgram.id)
     : undefined;
+  const requestRoleError =
+    currentUser && currentUser.role !== 'participant'
+      ? 'Ride requests must be sent from a participant account. You can view the ride details here, but submit with a participant login.'
+      : '';
 
   const requestMutation = useMutation({
     mutationFn: ({ programId, payload }: { programId: string; payload: RequestExpertRideProgramPayload }) =>
@@ -187,6 +191,7 @@ export default function RideWithExpertsClient() {
         typeof window !== 'undefined'
           ? `${window.location.pathname}${window.location.search}`
           : '/ride-with-experts';
+      setRequestMessage('Create or log in with a participant account to request this ride.');
       window.dispatchEvent(
         new CustomEvent('open-register', {
           detail: {
@@ -195,11 +200,6 @@ export default function RideWithExpertsClient() {
           },
         })
       );
-      return;
-    }
-
-    if (currentUser.role !== 'participant') {
-      setRequestMessage('Ride requests are available for participants only.');
       return;
     }
 
@@ -375,6 +375,11 @@ export default function RideWithExpertsClient() {
                     You already requested this ride. Changes here will update your existing request.
                   </div>
                 )}
+                {requestRoleError && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+                    {requestRoleError}
+                  </div>
+                )}
                 <div className={`rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-950 ${darkPanelClass}`}>
                   <p className="font-bold">Available dates</p>
                   <p className="mt-1 text-xs leading-5">
@@ -454,7 +459,7 @@ export default function RideWithExpertsClient() {
 
                 <button
                   type="submit"
-                  disabled={requestMutation.isPending || Boolean(dateError)}
+                  disabled={requestMutation.isPending || Boolean(dateError) || Boolean(requestRoleError)}
                   className={`${primaryButtonClass} w-full disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {requestMutation.isPending
