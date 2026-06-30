@@ -7,6 +7,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import type { OrganizationService } from '@/components/services/services-directory';
 import { resizeImageToDataUrl } from '@/lib/image';
+import { inferOrganizationServiceCategory } from '@/lib/organization-service-category';
+import { getServiceCategoryLabel } from '@/services/constants/organization-services';
 
 type OrganizationServiceDefaults = {
   name?: string | null;
@@ -89,8 +91,10 @@ export default function OrganizationServicesManagementPanel({
     formState: { errors },
   } = useForm<ServiceForm>({ defaultValues });
   const description = watch('description') || '';
+  const title = watch('title') || '';
   const imageUrl = watch('image_url') || '';
   const suggestedTitle = description.trim().length >= 12 ? inferServiceTitle(description) : '';
+  const inferredCategory = inferOrganizationServiceCategory(`${title}\n${description}`);
 
   const create = useMutation({
     mutationFn: (values: ServiceForm) =>
@@ -99,7 +103,6 @@ export default function OrganizationServicesManagementPanel({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...values,
-          category: 'other',
           price_npr: values.price_npr === '' ? null : Number(values.price_npr),
         }),
       }),
@@ -238,6 +241,11 @@ export default function OrganizationServicesManagementPanel({
                   <Sparkles className="h-4 w-4" />
                   Use suggested title: {suggestedTitle}
                 </button>
+              )}
+              {(title.trim() || description.trim()) && (
+                <p className="md:col-span-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/35 dark:text-sky-200">
+                  Automatic category: {getServiceCategoryLabel(inferredCategory)}
+                </p>
               )}
               <label className="text-sm font-semibold dark:text-slate-200">Starting price NPR<input type="number" min={0} {...register('price_npr')} className={inputClass} /></label>
               <label className="text-sm font-semibold dark:text-slate-200">Pricing note<input {...register('price_note')} className={inputClass} placeholder="Per rider, half-day" /></label>

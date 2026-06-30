@@ -90,6 +90,21 @@ type SavedTrail = {
   saved_at: string;
 };
 
+type ParticipantServiceBooking = {
+  id: string;
+  service_id: string;
+  service_title: string;
+  organization_name: string;
+  organization_slug: string;
+  preferred_date: string;
+  preferred_time: string | null;
+  group_size: number;
+  quoted_price_npr: string | null;
+  organization_response_note: string | null;
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  created_at: string;
+};
+
 type ExpertOption = {
   id: string;
   name: string | null;
@@ -138,12 +153,14 @@ export default function ParticipantProfilePage() {
   const [events, setEvents] = useState<ParticipantEvent[]>([]);
   const [bookings, setBookings] = useState<ParticipantBooking[]>([]);
   const [savedTrails, setSavedTrails] = useState<SavedTrail[]>([]);
+  const [serviceBookings, setServiceBookings] = useState<ParticipantServiceBooking[]>([]);
   const [trailRequests, setTrailRequests] = useState<ParticipantTrailRequest[]>([]);
   const [rideProgramRequests, setRideProgramRequests] = useState<ParticipantRideProgramRequest[]>([]);
   const [experts, setExperts] = useState<ExpertOption[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [loadingSavedTrails, setLoadingSavedTrails] = useState(true);
+  const [loadingServiceBookings, setLoadingServiceBookings] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingRequestId, setSavingRequestId] = useState<string | null>(null);
@@ -209,16 +226,18 @@ export default function ParticipantProfilePage() {
           setLoadingEvents(false);
           setLoadingBookings(false);
           setLoadingSavedTrails(false);
+          setLoadingServiceBookings(false);
           setLoadingRequests(false);
           return;
         }
-        const [eventsRes, requestsRes, rideRequestsRes, expertsRes, bookingsRes, savedTrailsRes] = await Promise.all([
+        const [eventsRes, requestsRes, rideRequestsRes, expertsRes, bookingsRes, savedTrailsRes, serviceBookingsRes] = await Promise.all([
           fetch('/api/participants/me/events'),
           fetch('/api/participants/me/trail-requests'),
           fetch('/api/participants/me/ride-program-requests'),
           fetch('/api/experts?verified=true'),
           fetch('/api/bookings/me'),
           fetch('/api/me/saved-trails'),
+          fetch('/api/participants/me/service-bookings'),
         ]);
         const eventsData = await eventsRes.json();
         const requestsData = await requestsRes.json();
@@ -226,18 +245,21 @@ export default function ParticipantProfilePage() {
         const expertsData = await expertsRes.json();
         const bookingsData = await bookingsRes.json();
         const savedTrailsData = await savedTrailsRes.json();
+        const serviceBookingsData = await serviceBookingsRes.json();
         setEvents(eventsData.events || []);
         setTrailRequests(requestsData.requests || []);
         setRideProgramRequests(rideRequestsData.requests || []);
         setExperts(expertsData.experts || []);
         setBookings(bookingsData.bookings || []);
         setSavedTrails(savedTrailsData.trails || []);
+        setServiceBookings(serviceBookingsData.bookings || []);
       } catch (error) {
         console.error('Error loading participant profile', error);
       } finally {
         setLoadingEvents(false);
         setLoadingBookings(false);
         setLoadingSavedTrails(false);
+        setLoadingServiceBookings(false);
         setLoadingRequests(false);
       }
     };
@@ -245,7 +267,7 @@ export default function ParticipantProfilePage() {
     fetchData();
   }, [currentUser]);
 
-  if (loadingUser || loadingEvents || loadingBookings || loadingSavedTrails || loadingRequests) {
+  if (loadingUser || loadingEvents || loadingBookings || loadingSavedTrails || loadingServiceBookings || loadingRequests) {
     return <div className="text-gray-600">Loading profile...</div>;
   }
 
@@ -398,6 +420,25 @@ export default function ParticipantProfilePage() {
       setSavedTrails((current) => current.filter((trail) => trail.id !== trailId));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to remove saved trail.');
+    }
+  };
+
+  const cancelServiceBooking = async (bookingId: string) => {
+    try {
+      const response = await fetch('/api/participants/me/service-bookings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Failed to cancel booking request.');
+      setServiceBookings((current) =>
+        current.map((booking) =>
+          booking.id === bookingId ? { ...booking, status: 'cancelled' } : booking
+        )
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to cancel booking request.');
     }
   };
 
@@ -557,6 +598,67 @@ export default function ParticipantProfilePage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Paid bookings</p>
           <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{paidBookings.length}</p>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Service Booking Requests
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              Track service requests and organization confirmations.
+            </p>
+          </div>
+          <Link href="/services" className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+            Browse services
+          </Link>
+        </div>
+        {serviceBookings.length === 0 ? (
+          <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-600 dark:bg-slate-950/40 dark:text-slate-300">
+            You have not requested any organization services yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {serviceBookings.map((booking) => (
+              <article key={booking.id} className="rounded-2xl border border-gray-200 p-4 dark:border-slate-700 dark:bg-slate-950/40">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-gray-950 dark:text-white">{booking.service_title}</h3>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold capitalize text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {booking.status}
+                      </span>
+                    </div>
+                    <Link href={`/organizations/${booking.organization_slug}`} className="mt-1 inline-flex text-xs font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
+                      {booking.organization_name}
+                    </Link>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
+                      {booking.preferred_date}{booking.preferred_time ? ` at ${booking.preferred_time}` : ''} · Group of {booking.group_size}
+                    </p>
+                    {booking.organization_response_note && (
+                      <p className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                        <strong>Organization response:</strong> {booking.organization_response_note}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    {booking.quoted_price_npr && (
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                        NPR {Number(booking.quoted_price_npr).toLocaleString()}
+                      </p>
+                    )}
+                    {['pending', 'accepted'].includes(booking.status) && (
+                      <button type="button" onClick={() => cancelServiceBooking(booking.id)} className="mt-2 text-xs font-semibold text-rose-700 hover:text-rose-800 dark:text-rose-300">
+                        Cancel request
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">

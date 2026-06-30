@@ -3,18 +3,7 @@ import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { canOperateOrganization } from '@/lib/organization-access';
 import { isAllowedImageUrl } from '@/lib/image-url';
-
-const CATEGORIES = new Set([
-  'ride_photography',
-  'shuttle_transport',
-  'creative_design',
-  'guiding',
-  'training',
-  'bike_rental',
-  'repair_support',
-  'event_support',
-  'other',
-]);
+import { inferOrganizationServiceCategory } from '@/lib/organization-service-category';
 
 function normalizeHttpUrl(value: unknown) {
   const text = String(value || '').trim();
@@ -65,14 +54,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Organization expert access required.' }, { status: 403 });
     }
     const body = await request.json();
-    const category = String(body?.category || 'other').trim();
     const title = String(body?.title || '').trim();
+    const description = String(body?.description || '').trim();
+    const category = inferOrganizationServiceCategory(`${title}\n${description}`);
     const priceRaw = body?.price_npr;
     const priceNpr = priceRaw === '' || priceRaw === null || priceRaw === undefined ? null : Number(priceRaw);
     const imageUrl = String(body?.image_url || '').trim() || null;
     const websiteRaw = String(body?.website_url || '').trim();
     const websiteUrl = normalizeHttpUrl(websiteRaw);
-    if (!CATEGORIES.has(category) || !title) {
+    if (!title) {
       return NextResponse.json({ error: 'Service title is required.' }, { status: 400 });
     }
     if (title.length > 160) {
@@ -101,7 +91,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         auth.sub,
         category,
         title,
-        String(body?.description || '').trim() || null,
+        description || null,
         priceNpr,
         String(body?.price_note || '').trim() || null,
         String(body?.location || '').trim() || null,

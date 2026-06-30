@@ -10,6 +10,7 @@ import OrganizationMembersManagementPanel from '@/components/feature-components/
 import OrganizationServicesManagementPanel from '@/components/feature-components/organizations/organization-services-management-panel';
 import OrganizationGalleryManagementPanel from '@/components/feature-components/organizations/organization-gallery-management-panel';
 import OrganizationTrailsManagementPanel from '@/components/feature-components/organizations/organization-trails-management-panel';
+import OrganizationServiceBookingsPanel from '@/components/feature-components/organizations/organization-service-bookings-panel';
 
 type ManagedOrganization = {
   id: string;
@@ -260,6 +261,8 @@ export default function OrganizationDashboardClient() {
       )}
 
       <OrganizationServicesManagementPanel organizationId={effectiveOrgId} organization={selectedOrg} />
+
+      <OrganizationServiceBookingsPanel organizationId={effectiveOrgId} />
 
       {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
         <OrganizationCampaignsManagementPanel organizationId={effectiveOrgId} trails={orgTrails} />

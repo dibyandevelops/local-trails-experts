@@ -70,7 +70,10 @@ export default function OrganizationDetailClient({ slug }: { slug: string }) {
         <div className="space-y-6">
           <OrganizationTrailsSection trails={data.trails} />
           <OrganizationUpdatesSection updates={data.updates} />
-          <OrganizationServicesSection services={data.services || []} />
+          <OrganizationServicesSection
+            services={data.services || []}
+            organizationName={data.organization.name}
+          />
           <OrganizationGallerySection
             items={data.galleryItems}
             organizationName={data.organization.name}
