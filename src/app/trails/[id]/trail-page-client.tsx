@@ -17,6 +17,7 @@ import {
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getSportLabel, TRAIL_SPORTS } from '@/services/constants/sports';
 import { extractKomootEmbedUrl, getKomootNavigateUrl } from '@/lib/komoot';
+import { getNavigatorDeepLink } from '@/lib/navigation-links';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { fetchVerifiedExperts } from '@/services/events/events.service';
@@ -603,6 +604,10 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const komootNavigateUrl = useMemo(
     () => getKomootNavigateUrl(trail?.komoot_embed_url),
     [trail?.komoot_embed_url]
+  );
+  const navigatorUrl = useMemo(
+    () => getNavigatorDeepLink(trail?.slug || trail?.id || trailId),
+    [trail?.id, trail?.slug, trailId]
   );
   const hasKomootEmbed = useMemo(
     () => Boolean(extractKomootEmbedUrl((trail?.komoot_embed_url || '').trim())),
@@ -1716,6 +1721,23 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             )}
             <CampaignSupportDropdown campaigns={activeCampaigns} />
             <TrailAlertsDropdown updates={trailUpdates} />
+            <a
+              href={navigatorUrl}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-100"
+              aria-label="Open in LocoXperts Navigator"
+              title="Open in LocoXperts Navigator"
+            >
+              <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
+                <path
+                  d="M11.5 3.5h5v5M16.25 3.75l-7 7M8.25 5H5.5A2.5 2.5 0 0 0 3 7.5v7A2.5 2.5 0 0 0 5.5 17h7a2.5 2.5 0 0 0 2.5-2.5v-2.75"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </a>
             <button
               type="button"
               onClick={handleToggleSavedTrail}

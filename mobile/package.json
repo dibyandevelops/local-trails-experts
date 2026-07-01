@@ -1,0 +1,28 @@
+{
+  "name": "locoxperts-navigator",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@maplibre/maplibre-react-native": "^11.2.1",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "expo": "~56.0.5",
+    "expo-document-picker": "~56.0.4",
+    "expo-keep-awake": "^56.0.0",
+    "expo-linking": "^56.0.0",
+    "expo-location": "^56.0.0",
+    "expo-status-bar": "^56.0.0",
+    "react": "19.2.3",
+    "react-native": "0.85.0",
+    "react-native-safe-area-context": "~5.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  }
+}

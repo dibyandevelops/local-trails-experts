@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Trail } from '@/types';
 import { getKomootNavigateUrl } from '@/lib/komoot';
+import { getNavigatorDeepLink } from '@/lib/navigation-links';
 import { getSportLabel } from '@/services/constants/sports';
 import { getDifficultyLabel, normalizeDifficulty } from '@/services/constants/difficulty';
 import TrailImagePlaceholder from '@/components/ui/trail-image-placeholder';
@@ -97,6 +98,10 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
     () => getKomootNavigateUrl(trail.komoot_embed_url),
     [trail.komoot_embed_url]
   );
+  const navigatorUrl = React.useMemo(
+    () => getNavigatorDeepLink(trail.slug || trail.id),
+    [trail.id, trail.slug]
+  );
 
   const distanceKmRaw = toFiniteNumber(trail.distance_km);
   const distanceKm = distanceKmRaw != null && distanceKmRaw > 0 ? distanceKmRaw : null;
@@ -133,7 +138,8 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
     ...(images.length > 0 && trail.onOpenImageGallery
       ? [{ label: 'View photos', onSelect: () => trail.onOpenImageGallery?.() }]
       : []),
-    ...(komootNavigateUrl ? [{ label: 'Navigate', href: komootNavigateUrl }] : []),
+    { label: 'Open in LocoXperts Navigator', href: navigatorUrl },
+    ...(komootNavigateUrl ? [{ label: 'Open in Komoot', href: komootNavigateUrl }] : []),
     ...(trail.onRequestTrail && !trail.isRequested
       ? [{ label: 'Plan this ride', onSelect: () => trail.onRequestTrail?.() }]
       : []),

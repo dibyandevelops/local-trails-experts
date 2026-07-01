@@ -63,6 +63,12 @@ A Next.js application for finding mountain biking trails and joining events base
 
 7. **Open [http://localhost:3000](http://localhost:3000)** in your browser.
 
+## Android navigator
+
+The Android-first Expo/MapLibre MVP is in [`mobile/`](mobile/README.md). It opens trail deep links,
+caches trail routes and map tiles for offline use, and supports navigation without a login. The app
+does not upload a rider's navigation history.
+
 ## Database Schema
 
 The application uses the following main tables:
