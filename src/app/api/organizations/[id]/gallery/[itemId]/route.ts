@@ -63,14 +63,17 @@ export async function DELETE(
       `
       DELETE FROM organization_gallery_items
       WHERE id = $1 AND organization_id = $2
-      RETURNING id
+      RETURNING id, organization_id, image_url, caption, created_at
       `,
       [itemId, organizationId]
     );
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Gallery item not found' }, { status: 404 });
     }
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json(
+      { success: true, deletedItem: result.rows[0] },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error deleting organization gallery item:', error);
     return NextResponse.json(

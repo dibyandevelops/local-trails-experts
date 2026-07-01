@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchAdminOrganizations, type OrganizationOption } from '@/services/admin/admin.service';
 import AppDialog from '@/components/ui/app-dialog';
 import {
@@ -154,6 +154,7 @@ function LoadingSpinner() {
 }
 
 export default function OrganizationOpsPanel() {
+  const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
@@ -357,10 +358,13 @@ export default function OrganizationOpsPanel() {
       if (!response.ok) {
         throw new Error(data?.error || 'Failed to delete gallery item');
       }
-      return data;
+      return data as { success: true; deletedItem: GalleryItem };
     },
-    onSuccess: async () => {
-      await refetchGallery();
+    onSuccess: (data) => {
+      queryClient.setQueryData<GalleryItem[]>(
+        ['admin-org-gallery', selectedOrgId],
+        (current = []) => current.filter((item) => item.id !== data.deletedItem.id)
+      );
       setDeleteGalleryTarget(null);
       setMessage('Gallery item deleted.');
     },
