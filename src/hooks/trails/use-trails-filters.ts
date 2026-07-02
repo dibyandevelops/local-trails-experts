@@ -3,8 +3,8 @@ import type { ReadonlyURLSearchParams } from 'next/navigation';
 import type { Difficulty } from '@/types';
 import { TRAIL_SPORTS } from '@/services/constants/sports';
 import { normalizeDifficulty } from '@/services/constants/difficulty';
-import type { TrailsViewMode } from '../trail-view-toggle';
-import { isTrailSort, type RideProfile, type TrailSort } from '../trails-page-options';
+import type { TrailsViewMode } from '@/components/feature-components/trails/trail-view-toggle';
+import { isTrailSort, type RideProfile, type TrailSort } from '@/components/feature-components/trails/trails-page-options';
 
 type UseTrailsFiltersParams = {
   searchParams: ReadonlyURLSearchParams;
@@ -270,3 +270,4 @@ export function useTrailsFilters({
     viewMode,
   };
 }
+

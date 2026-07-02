@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { isShuttleEligibleSport } from '@/lib/shuttle';
 import ListSelectDropdown from '@/components/ui/list-select-dropdown';
+import type { TrailRequestPayload } from '@/services/trails/trails.service';
 
 export type TrailRequestTrailOption = {
   id: string;
@@ -17,15 +18,8 @@ export type TrailRequestExpertOption = {
   email?: string | null;
 };
 
-export type TrailRequestSubmitPayload = {
+export type TrailRequestSubmitPayload = TrailRequestPayload & {
   trailId: string;
-  description: string;
-  preferred_date: string;
-  preferred_time?: string;
-  offered_price_npr?: number | null;
-  nearest_point?: string;
-  expert_user_id?: string;
-  needs_paid_shuttle?: boolean;
 };
 
 type TrailRequestModalProps = {

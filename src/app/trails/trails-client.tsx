@@ -1,86 +1,46 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trail, Difficulty, RouteData, User, SportType } from '@/types';
+import { useCallback } from 'react';
+import { SportType, Trail } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  fetchTrailsPaginated,
-  requestTrail,
-  deleteTrail,
-  hideTrail,
-  unhideTrail,
-  fetchTrailMapById,
-} from '@/services/trails/trails.service';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { QUERY_KEYS } from '@/services/constants/query-keys';
-import { TRAIL_SPORTS } from '@/services/constants/sports';
-import { getSafetyLabelText } from '@/lib/trail-safety';
-import { fetchVerifiedExperts } from '@/services/events/events.service';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Toast from '@radix-ui/react-toast';
-import EventForm from '@/components/feature-components/event-form/event-form';
-import { getMapLibreCompatibleMapStyle, type MapStyleMode } from '@/lib/map-styles';
+
+import { TRAIL_SPORTS } from '@/services/constants/sports';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
-import { getKomootNavigateUrl } from '@/lib/komoot';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import TrailRequestModal from '@/components/feature-components/trail-request/trail-request-modal';
-import UnderlineSearchForm from '@/components/ui/underline-search-form';
 import {
   getDifficultyLabel,
-  TRAIL_DIFFICULTY_OPTIONS,
 } from '@/services/constants/difficulty';
-import { isShuttleEligibleSport } from '@/lib/shuttle';
-import {
-  TrailFilterChip,
-  TrailGallery,
-  TrailsLoadMoreSkeleton,
-  TrailsPageSkeleton,
-  TrailViewToggle,
-  type TrailsViewMode,
-} from '@/components/feature-components/trails';
-import {
-  clearTrailsScrollPosition,
-  readTrailsScrollPosition,
-} from '@/components/feature-components/trails/trails-list-state';
-import { useTrailsFilters } from '@/components/feature-components/trails/hooks/use-trails-filters';
+import { useTrailsFilters } from '@/hooks/trails/use-trails-filters';
 import {
   TrailsPageStateProvider,
   useTrailsPageState,
 } from '@/components/feature-components/trails/trails-page-state-context';
 import {
-  RIDE_PROFILE_QUICK_FILTERS,
   TRAIL_SORT_OPTIONS,
-  type RideProfile,
-  type TrailSort,
 } from '@/components/feature-components/trails/trails-page-options';
+import { useTrailsPageData } from '@/hooks/trails/use-trails-page-data';
+import {
+  usePageShowReset,
+  useSyncOpenFilters,
+  useTrailsScrollLoading,
+} from '@/hooks/trails/use-trails-page-lifecycle';
+import { useTrailsMapStyle } from '@/hooks/trails/use-trails-map-style';
+import {
+  TrailsPageHeader,
+  type ActiveTrailFilterChip,
+} from '@/components/feature-components/trails/trails-page-header';
+import { TrailsFilterDialog } from '@/components/feature-components/trails/trails-filter-dialog';
+import { TrailsResults } from '@/components/feature-components/trails/trails-results';
+import TrailsMapPreview from '@/components/feature-components/trails/trails-map-preview';
+import EventForm from '@/components/feature-components/event-form/event-form';
 
-const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
-const TRAILS_LIST_STALE_TIME_MS = 5 * 60 * 1000;
-
-const TrailsMapPreview = dynamic(() => import('./trails-map-preview'), {
-  ssr: false,
-  loading: () => (
-    <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
-      Loading map...
-    </div>
-  ),
-});
-
-type TrailsPageParam = { offset: number; limit: number };
-type ExpertTrailsResponse = {
-  associated_trails?: Trail[];
-};
-type SavedTrailsResponse = {
-  trails?: Array<Pick<Trail, 'id'>>;
-};
 
 function TrailsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const didRestoreScroll = useRef(false);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const {
     filtersOpen,
@@ -117,8 +77,6 @@ function TrailsPageContent() {
     setRequestFeedback,
     requestModalMessage,
     setRequestModalMessage,
-    requestedByTrailId,
-    setRequestedByTrailId,
   } = useTrailsPageState();
 
   const openCreateEventFromUrl = useCallback((trailId: string, sport: string) => {
@@ -178,7 +136,6 @@ function TrailsPageContent() {
   });
 
   const initialPageSize = viewMode === 'quick' ? 10 : 3;
-  const nextPageSize = viewMode === 'quick' ? 10 : 3;
 
   const getTrailImages = (trail: Trail) =>
     Array.from(
@@ -189,383 +146,88 @@ function TrailsPageContent() {
       )
     );
 
-  useEffect(() => {
-    const closeTransientUi = () => {
-      setRequestOpen(false);
-      setMapOpen(false);
-      setGalleryOpen(false);
-      // Only reopen create-event if the URL explicitly asks for it.
-      try {
-        const url = new URL(window.location.href);
-        const createTrail = url.searchParams.get('createEventTrail');
-        if (!createTrail) {
-          setCreateEventOpen(false);
-          setCreateEventTrailId('');
-          setCreateEventSport('');
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    window.addEventListener('pageshow', closeTransientUi);
-    return () => window.removeEventListener('pageshow', closeTransientUi);
-  }, []);
-
-  const { data: user = null, isLoading: loadingCurrentUser } = useCurrentUser();
-  const { data: experts = [] } = useQuery<User[]>({
-    queryKey: QUERY_KEYS.experts.verified,
-    queryFn: ({ signal }) => fetchVerifiedExperts(signal),
-    enabled: !EXPERTS_BETA_ENABLED,
-  });
-  const queryClient = useQueryClient();
-  const { data: savedTrailsData } = useQuery<SavedTrailsResponse>({
-    queryKey: ['saved-trails', user?.id],
-    enabled: Boolean(user),
-    queryFn: async ({ signal }) => {
-      const response = await fetch('/api/me/saved-trails', { signal });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to load saved trails');
-      }
-      return data as SavedTrailsResponse;
-    },
-  });
-  const savedTrailIds = useMemo(
-    () => new Set((savedTrailsData?.trails || []).map((trail) => trail.id)),
-    [savedTrailsData?.trails]
-  );
-  const { data: expertTrailsData, isLoading: loadingExpertTrails } =
-    useQuery<ExpertTrailsResponse>({
-    queryKey: EXPERT_ASSOCIATED_TRAILS_QUERY_KEY,
-    enabled: user?.role === 'expert',
-    queryFn: async ({ signal }) => {
-      const response = await fetch('/api/experts/me/trails', { signal });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to load associated trails');
-      }
-      return data as ExpertTrailsResponse;
-    },
-  });
-  const associatedTrailIds = useMemo(
-    () => new Set((expertTrailsData?.associated_trails || []).map((trail) => trail.id)),
-    [expertTrailsData?.associated_trails]
-  );
-  const {
-    data: mapTrailDetail,
-    isLoading: loadingMapTrail,
-    error: mapTrailError,
-    refetch: refetchMapTrail,
-  } = useQuery({
-    queryKey: QUERY_KEYS.trails.mapById(mapTrailId),
-    queryFn: ({ signal }) => fetchTrailMapById(mapTrailId as string, signal),
-    enabled: Boolean(mapTrailId) && mapOpen,
-    retry: 1,
-  });
-  const mapTrail = mapTrailDetail || mapTrailSummary;
-
-  const loadParticipantRequests = async () => {
-    if (!user || user.role !== 'participant') return;
-    try {
-      const response = await fetch('/api/participants/me/trail-requests');
-      const data = await response.json();
-      if (!response.ok) return;
-      const map: Record<string, string> = {};
-      (data.requests || []).forEach((req: { id: string; trail_id: string }) => {
-        if (req.trail_id && req.id) map[req.trail_id] = req.id;
-      });
-      setRequestedByTrailId(map);
-    } catch {
-      // ignore
+  const resetTransientUi = useCallback(() => {
+    setRequestOpen(false);
+    setMapOpen(false);
+    setGalleryOpen(false);
+    const createTrail = new URL(window.location.href).searchParams.get('createEventTrail');
+    if (!createTrail) {
+      setCreateEventOpen(false);
+      setCreateEventTrailId('');
+      setCreateEventSport('');
     }
-  };
+  }, [
+    setCreateEventOpen,
+    setCreateEventSport,
+    setCreateEventTrailId,
+    setGalleryOpen,
+    setMapOpen,
+    setRequestOpen,
+  ]);
+  usePageShowReset(resetTransientUi);
+
+  const showToast = useCallback(
+    (title: string, description: string) => {
+      setToastTitle(title);
+      setToastDescription(description);
+      setToastOpen(true);
+    },
+    [setToastDescription, setToastOpen, setToastTitle]
+  );
+
+  const handleRequestMessage = useCallback(
+    (message: string) => {
+      setRequestFeedback(message);
+      setRequestModalMessage(message);
+    },
+    [setRequestFeedback, setRequestModalMessage]
+  );
+
+  const handleRequestSuccess = useCallback(() => {
+    setRequestOpen(false);
+    setRequestTrailItem(null);
+  }, [setRequestOpen, setRequestTrailItem]);
 
   const {
-    data,
+    user,
+    loadingCurrentUser,
+    experts,
+    trails,
+    pagination,
+    requestedByTrailId,
+    savedTrailIds,
+    associatedTrailIds,
+    guideTrailsData: expertTrailsData,
+    loadingGuideTrails: loadingExpertTrails,
+    mapTrail,
+    mapTrailDetail,
+    loadingMapTrail,
+    mapTrailError,
+    refetchMapTrail,
     isLoading,
     isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
     error,
-  } = useInfiniteQuery({
-    queryKey: QUERY_KEYS.trails.infiniteList({
-      ...filterQuery,
-      pageSize: initialPageSize,
-    }),
-    queryFn: ({ signal, pageParam }) =>
-      fetchTrailsPaginated(
-        {
-          ...filterQuery,
-          offset: pageParam.offset,
-          pageSize: pageParam.limit,
-        },
-        signal
-      ),
-    initialPageParam: { offset: 0, limit: initialPageSize } as TrailsPageParam,
-    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-      const nextOffset = lastPageParam.offset + lastPage.trails.length;
-      if (nextOffset >= lastPage.pagination.total) return undefined;
-      return { offset: nextOffset, limit: nextPageSize } as TrailsPageParam;
-    },
-    staleTime: TRAILS_LIST_STALE_TIME_MS,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    placeholderData: (previousData) => previousData,
+    requestMutation,
+    cancelRequestMutation,
+    savedTrailMutation,
+    guideTrailMutation: expertTrailAssociationMutation,
+    deleteMutation,
+    hideMutation,
+    unhideMutation,
+  } = useTrailsPageData({
+    filterQuery,
+    pageSize: initialPageSize,
+    mapTrailId,
+    mapOpen,
+    mapTrailSummary,
+    onToast: showToast,
+    onRequestMessage: handleRequestMessage,
+    onRequestSuccess: handleRequestSuccess,
   });
 
-  const requestMutation = useMutation({
-    mutationFn: (payload: {
-      trailId: string;
-      description: string;
-      expert_user_id?: string;
-      preferred_date: string;
-      preferred_time?: string;
-      offered_price_npr?: number | null;
-      nearest_point?: string;
-      needs_paid_shuttle?: boolean;
-    }) =>
-      requestTrail(payload.trailId, {
-        description: payload.description,
-        expert_user_id: payload.expert_user_id,
-        preferred_date: payload.preferred_date,
-        preferred_time: payload.preferred_time,
-        offered_price_npr: payload.offered_price_npr,
-        nearest_point: payload.nearest_point,
-        needs_paid_shuttle: payload.needs_paid_shuttle,
-      }),
-    onSuccess: () => {
-      setRequestFeedback('Request submitted successfully.');
-      setRequestModalMessage('Request submitted successfully.');
-      setToastTitle('Request sent');
-      setToastDescription('Your trail request was submitted successfully.');
-      setToastOpen(true);
-      loadParticipantRequests();
-      setRequestOpen(false);
-      setRequestTrailItem(null);
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to submit request.';
-      setRequestFeedback(message);
-      setRequestModalMessage(message);
-      setToastTitle('Request failed');
-      setToastDescription(message);
-      setToastOpen(true);
-    },
-  });
-
-  const cancelRequestMutation = useMutation({
-    mutationFn: async (requestId: string) => {
-      const response = await fetch(`/api/participants/me/trail-requests/${requestId}`, {
-        method: 'DELETE',
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to cancel request');
-      }
-      return data;
-    },
-    onSuccess: (_data, requestId) => {
-      setRequestedByTrailId((prev) => {
-        const next = { ...prev };
-        const trailId = Object.keys(next).find((id) => next[id] === requestId);
-        if (trailId) delete next[trailId];
-        return next;
-      });
-      setToastTitle('Request cancelled');
-      setToastDescription('Your trail request was cancelled.');
-      setToastOpen(true);
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to cancel request.';
-      setToastTitle('Cancel failed');
-      setToastDescription(message);
-      setToastOpen(true);
-    },
-  });
-
-  const savedTrailMutation = useMutation({
-    mutationFn: async (payload: { trailId: string; isSaved: boolean }) => {
-      const response = await fetch(`/api/trails/${payload.trailId}/save`, {
-        method: payload.isSaved ? 'DELETE' : 'POST',
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to update saved trail');
-      }
-      return data as { saved: boolean };
-    },
-    onSuccess: (data, payload) => {
-      queryClient.setQueryData<SavedTrailsResponse>(['saved-trails', user?.id], (current) => {
-        const trails = current?.trails || [];
-        return {
-          trails: data.saved
-            ? trails.some((trail) => trail.id === payload.trailId)
-              ? trails
-              : [{ id: payload.trailId }, ...trails]
-            : trails.filter((trail) => trail.id !== payload.trailId),
-        };
-      });
-      queryClient.setQueryData(['saved-trail', payload.trailId, user?.id], data);
-      setToastTitle(data.saved ? 'Trail saved' : 'Trail removed');
-      setToastDescription(
-        data.saved
-          ? 'You can find it in Saved Trails on your profile.'
-          : 'The trail was removed from your saved list.'
-      );
-      setToastOpen(true);
-    },
-    onError: (error) => {
-      const message = error instanceof Error ? error.message : 'Failed to update saved trail.';
-      setToastTitle('Save failed');
-      setToastDescription(message);
-      setToastOpen(true);
-    },
-  });
-
-  const expertTrailAssociationMutation = useMutation({
-    mutationFn: async (payload: { trailId: string; isAssociated: boolean }) => {
-      const currentIds = Array.from(associatedTrailIds);
-      const nextIds = payload.isAssociated
-        ? currentIds.filter((trailId) => trailId !== payload.trailId)
-        : [...currentIds, payload.trailId];
-
-      if (!payload.isAssociated && currentIds.length >= 12) {
-        throw new Error('You can associate up to 12 trails.');
-      }
-
-      const response = await fetch('/api/experts/me/trails', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trail_ids: nextIds }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to update associated trails');
-      }
-      return data as ExpertTrailsResponse;
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData<ExpertTrailsResponse>(
-        EXPERT_ASSOCIATED_TRAILS_QUERY_KEY,
-        (current) => ({
-          ...(current || {}),
-          associated_trails: data.associated_trails || [],
-        })
-      );
-      setToastTitle('Guide trails updated');
-      setToastDescription('Your guide profile trail list has been updated.');
-      setToastOpen(true);
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to update associated trails.';
-      setToastTitle('Update failed');
-      setToastDescription(message);
-      setToastOpen(true);
-    },
-  });
-
-  const invalidateTrailsQueries = (trailId?: string) => {
-    const infiniteKey = QUERY_KEYS.trails.infiniteList({
-      ...filterQuery,
-      pageSize: initialPageSize,
-    });
-    const paginatedKey = QUERY_KEYS.trails.paginatedList({
-      ...filterQuery,
-      page: 1,
-      pageSize: initialPageSize,
-    });
-    const listKey = QUERY_KEYS.trails.list({
-      ...filterQuery,
-    });
-
-    if (trailId) {
-      queryClient.setQueryData(infiniteKey, (current: any) => {
-        if (!current?.pages) return current;
-        return {
-          ...current,
-          pages: current.pages.map((page: any) => ({
-            ...page,
-            trails: (page.trails || []).filter((trail: any) => trail.id !== trailId),
-          })),
-        };
-      });
-    }
-
-    queryClient.invalidateQueries({ queryKey: infiniteKey });
-    queryClient.invalidateQueries({ queryKey: paginatedKey });
-    queryClient.invalidateQueries({ queryKey: listKey });
-    if (trailId) {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
-    }
-  };
-
-  const deleteMutation = useMutation({
-    mutationFn: (trailId: string) => deleteTrail(trailId),
-    onSuccess: (_data, trailId) => {
-      setToastTitle('Trail deleted');
-      setToastDescription('The trail has been permanently deleted.');
-      setToastOpen(true);
-      // Refresh the trails list
-      invalidateTrailsQueries(trailId);
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to delete trail.';
-      setToastTitle('Delete failed');
-      setToastDescription(message);
-      setToastOpen(true);
-    },
-  });
-
-  const hideMutation = useMutation({
-    mutationFn: (trailId: string) => hideTrail(trailId),
-    onSuccess: (_data, trailId) => {
-      setToastTitle('Trail hidden');
-      setToastDescription('The trail has been hidden from public view.');
-      setToastOpen(true);
-      // Refresh the trails list
-      invalidateTrailsQueries(trailId);
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to hide trail.';
-      setToastTitle('Hide failed');
-      setToastDescription(message);
-      setToastOpen(true);
-    },
-  });
-
-  const unhideMutation = useMutation({
-    mutationFn: (trailId: string) => unhideTrail(trailId),
-    onSuccess: (_data, trailId) => {
-      setToastTitle('Trail visible');
-      setToastDescription('The trail is now visible to all users.');
-      setToastOpen(true);
-      // Refresh the trails list
-      invalidateTrailsQueries(trailId);
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to unhide trail.';
-      setToastTitle('Unhide failed');
-      setToastDescription(message);
-      setToastOpen(true);
-    },
-  });
-
-  const trails = useMemo(
-    () =>
-      (data?.pages.flatMap((pageData) => pageData.trails) || []).map((trail) => ({
-        ...trail,
-        isRequested: Boolean(requestedByTrailId[trail.id]),
-      })),
-    [data?.pages, requestedByTrailId]
-  );
   const isAdmin = user?.role === 'admin';
   const isParticipant = user?.role === 'participant';
   const deletingTrailId = deleteMutation.isPending ? deleteMutation.variables : null;
@@ -579,95 +241,21 @@ function TrailsPageContent() {
     : null;
   const selectedCreateEventTrail =
     trails.find((trail) => trail.id === createEventTrailId) ?? null;
-  const pagination =
-    data && data.pages.length > 0
-      ? data.pages[data.pages.length - 1].pagination
-      : undefined;
   const isInitialLoading = isLoading && trails.length === 0;
   const isRefreshingResults = isFetching && !isFetchingNextPage && trails.length > 0;
   const hasTrailsData = trails.length > 0;
   const hasInitialError = Boolean(error) && !hasTrailsData;
   const hasTransientError = Boolean(error) && hasTrailsData;
-  const [mapStyleMode, setMapStyleMode] = useState<MapStyleMode>(() => {
-    if (typeof window === 'undefined') return 'map';
-    const saved = window.localStorage.getItem('mtb_map_style_mode');
-    return saved === 'map' || saved === 'satellite' ? saved : 'map';
+  const { mapStyle, mapStyleMode, setMapStyleMode } = useTrailsMapStyle();
+  useSyncOpenFilters(filtersOpen, syncDraftFilters);
+  const loadMoreRef = useTrailsScrollLoading({
+    isInitialLoading,
+    trailsLength: trails.length,
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    isLoading,
+    fetchNextPage,
   });
-  const mapStyle = getMapLibreCompatibleMapStyle(mapStyleMode);
-  useEffect(() => {
-    try {
-      window.localStorage.setItem('mtb_map_style_mode', mapStyleMode);
-    } catch {
-      // ignore
-    }
-  }, [mapStyleMode]);
-
-  useEffect(() => {
-    if (didRestoreScroll.current) return;
-    if (isInitialLoading) return;
-    const y = readTrailsScrollPosition();
-    if (y === null) {
-      didRestoreScroll.current = true;
-      return;
-    }
-    let cancelled = false;
-    let attempts = 0;
-    const restore = () => {
-      if (cancelled) return;
-      attempts += 1;
-      const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
-      if (maxScrollY >= y || attempts >= 12 || !hasNextPage) {
-        window.scrollTo({ top: Math.min(y, Math.max(0, maxScrollY)), behavior: 'auto' });
-        clearTrailsScrollPosition();
-        didRestoreScroll.current = true;
-        return;
-      }
-      window.setTimeout(() => {
-        void fetchNextPage();
-        requestAnimationFrame(restore);
-      }, 80);
-    };
-    requestAnimationFrame(restore);
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchNextPage, hasNextPage, isInitialLoading, trails.length]);
-
-  useEffect(() => {
-    if (!filtersOpen) return;
-    syncDraftFilters();
-  }, [filtersOpen, syncDraftFilters]);
-
-  useEffect(() => {
-    if (!user || user.role !== 'participant') {
-      setRequestedByTrailId({});
-      return;
-    }
-    loadParticipantRequests();
-  }, [user?.id, user?.role]);
-
-  useEffect(() => {
-    const node = loadMoreRef.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const firstEntry = entries[0];
-        if (!firstEntry?.isIntersecting) return;
-        if (!didRestoreScroll.current) return;
-        if (!hasNextPage || isFetchingNextPage || isLoading) return;
-        fetchNextPage();
-      },
-      {
-        root: null,
-        rootMargin: '300px 0px',
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, trails.length]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -710,501 +298,217 @@ function TrailsPageContent() {
     setRequestOpen(true);
   };
 
+  const activeFilters: ActiveTrailFilterChip[] = [];
+  if (search) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${search}`,
+      tone: 'green',
+      onRemove: () => {
+        setSearch('');
+        setSearchInput('');
+      },
+    });
+  }
+  if (difficulty) {
+    activeFilters.push({
+      key: 'difficulty',
+      label: `Difficulty: ${getDifficultyLabel(difficulty)}`,
+      tone: 'blue',
+      onRemove: () => setDifficulty(''),
+    });
+  }
+  if (location) {
+    activeFilters.push({
+      key: 'location',
+      label: `Location: ${location}`,
+      tone: 'purple',
+      onRemove: () => {
+        setLocation('');
+        setLocationInput('');
+      },
+    });
+  }
+  if (sport) {
+    activeFilters.push({
+      key: 'sport',
+      label: `Sport: ${TRAIL_SPORTS.find((option) => option.value === sport)?.label || sport}`,
+      tone: 'amber',
+      onRemove: () => setSport(''),
+    });
+  }
+  if (rideProfile) {
+    const rideLabel = rideProfile === 'short' ? 'Short' : rideProfile === 'medium' ? 'Medium' : 'Long';
+    activeFilters.push({
+      key: 'ride-profile',
+      label: `Ride: ${rideLabel}`,
+      tone: 'cyan',
+      onRemove: () => setRideProfile(''),
+    });
+  }
+  if (sort !== 'newest') {
+    activeFilters.push({
+      key: 'sort',
+      label: `Sort: ${TRAIL_SORT_OPTIONS.find((option) => option.value === sort)?.label || sort}`,
+      tone: 'slate',
+      onRemove: () => setSort('newest'),
+    });
+  }
+  if (distanceMin) {
+    activeFilters.push({
+      key: 'distance-min',
+      label: `Min distance: ${distanceMin} km`,
+      tone: 'green',
+      onRemove: () => {
+        setDistanceMin('');
+        setDistanceMinInput('');
+      },
+    });
+  }
+  if (distanceMax) {
+    activeFilters.push({
+      key: 'distance-max',
+      label: `Max distance: ${distanceMax} km`,
+      tone: 'green',
+      onRemove: () => {
+        setDistanceMax('');
+        setDistanceMaxInput('');
+      },
+    });
+  }
+
+  const toggleSavedTrail = (trail: Trail) => {
+    if (loadingCurrentUser) {
+      showToast('Checking account', 'Please try again in a second.');
+      return;
+    }
+    if (!user) {
+      const next =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : '/trails';
+      window.dispatchEvent(
+        new CustomEvent('open-register', {
+          detail: { message: 'Create an account to save trails for later.', next },
+        })
+      );
+      return;
+    }
+    savedTrailMutation.mutate({
+      trailId: trail.id,
+      isSaved: savedTrailIds.has(trail.id),
+    });
+  };
+
+  const cancelTrailRequest = (trail: Trail) => {
+    if (user?.role !== 'participant') return;
+    const requestId = requestedByTrailId[trail.id];
+    if (!requestId || !window.confirm('Cancel your trail request?')) return;
+    cancelRequestMutation.mutate(requestId);
+  };
+
+  const openTrailMap = (trail: Trail) => {
+    setMapTrailSummary(trail);
+    setMapTrailId(trail.id);
+    setMapOpen(true);
+  };
+
+  const openTrailGallery = (trail: Trail) => {
+    const images = getTrailImages(trail);
+    if (!images.length) return;
+    setGalleryTrailName(trail.name || 'Trail');
+    setGalleryImages(images);
+    setGalleryOpen(true);
+  };
+
+  const openCreateEvent = (trail: Trail) => {
+    setCreateEventTrailId(trail.id);
+    setCreateEventSport(trail.sport_type || 'mtb');
+    setCreateEventOpen(true);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/35 dark:to-lime-950/20 sm:p-6">
-        <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-emerald-300/25 blur-3xl dark:bg-emerald-400/10" />
-        <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-lime-300/20 blur-3xl dark:bg-lime-400/10" />
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                Nepal Trail Guide
-              </p>
-            </div>
-            <h1 className="mt-2 text-3xl font-black text-gray-950 dark:text-slate-50 sm:text-4xl">
-              Find your next trail
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-              Search mapped routes, compare distance and difficulty, then open a trail for maps, alerts, local guide support, and route context.
-            </p>
-            <button
-              type="button"
-              onClick={() => openTrailRequest()}
-              className="mt-3 text-left text-sm text-gray-600 underline decoration-emerald-500/60 underline-offset-4 transition hover:text-emerald-800 dark:text-slate-300 dark:hover:text-emerald-200"
-            >
-              Exploring an unfamiliar trail? Plan it with a local guide.
-            </button>
-          </div>
-          <div className="relative flex flex-wrap items-center gap-2">
-            <TrailViewToggle value={viewMode} onChange={setViewMode} />
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-700/60 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:bg-emerald-900/45"
-            >
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-            {(user?.role === 'admin' || user?.role === 'expert') && (
-              <button
-                type="button"
-                onClick={() => router.push('/upload')}
-                className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
-              >
-                Upload Trails
-              </button>
-            )}
-          </div>
-        </div>
-        <UnderlineSearchForm
-          id="trails-search"
-          label="Search trails"
-          placeholder="Search Pharping, Chitlang, enduro, Kathmandu..."
-          value={searchInput}
-          onChange={setSearchInput}
-          onSubmit={handleSearch}
-          className="relative mt-5"
-        />
-        {hasActiveFilters && (
-          <div className="relative mt-4 flex flex-wrap items-center gap-2">
-            {search && (
-              <TrailFilterChip
-                tone="green"
-                onRemove={() => {
-                  setSearch('');
-                  setSearchInput('');
-                }}
-              >
-                Search: {search}
-              </TrailFilterChip>
-            )}
-            {difficulty && (
-              <TrailFilterChip tone="blue" onRemove={() => setDifficulty('')}>
-                Difficulty: {getDifficultyLabel(difficulty)}
-              </TrailFilterChip>
-            )}
-            {location && (
-              <TrailFilterChip
-                tone="purple"
-                onRemove={() => {
-                  setLocation('');
-                  setLocationInput('');
-                }}
-              >
-                Location: {location}
-              </TrailFilterChip>
-            )}
-            {sport && (
-              <TrailFilterChip tone="amber" onRemove={() => setSport('')}>
-                Sport:{' '}
-                {TRAIL_SPORTS.find((s) => s.value === sport)?.label || sport}
-              </TrailFilterChip>
-            )}
-            {rideProfile && (
-              <TrailFilterChip tone="cyan" onRemove={() => setRideProfile('')}>
-                Ride:{' '}
-                {rideProfile === 'short'
-                  ? 'Short'
-                  : rideProfile === 'medium'
-                    ? 'Medium'
-                    : 'Long'}{' '}
-              </TrailFilterChip>
-            )}
-            {sort !== 'newest' && (
-              <TrailFilterChip tone="slate" onRemove={() => setSort('newest')}>
-                Sort:{' '}
-                {TRAIL_SORT_OPTIONS.find((option) => option.value === sort)
-                  ?.label || sort}{' '}
-              </TrailFilterChip>
-            )}
-            {distanceMin && (
-              <TrailFilterChip
-                tone="green"
-                onRemove={() => {
-                  setDistanceMin('');
-                  setDistanceMinInput('');
-                }}
-              >
-                Min distance: {distanceMin} km
-              </TrailFilterChip>
-            )}
-            {distanceMax && (
-              <TrailFilterChip
-                tone="green"
-                onRemove={() => {
-                  setDistanceMax('');
-                  setDistanceMaxInput('');
-                }}
-              >
-                Max distance: {distanceMax} km
-              </TrailFilterChip>
-            )}
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="rounded-full border border-gray-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-white dark:border-emerald-800/60 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-emerald-950/30"
-            >
-              Clear all
-            </button>
-          </div>
-        )}
-      </div>
+      <TrailsPageHeader
+        viewMode={viewMode}
+        activeFilterCount={activeFilterCount}
+        searchInput={searchInput}
+        activeFilters={activeFilters}
+        canUploadTrails={user?.role === 'admin' || user?.role === 'expert'}
+        onViewModeChange={setViewMode}
+        onOpenFilters={() => setFiltersOpen(true)}
+        onUploadTrails={() => router.push('/upload')}
+        onPlanWithGuide={() => openTrailRequest()}
+        onSearchInputChange={setSearchInput}
+        onSearch={handleSearch}
+        onClearFilters={resetFilters}
+      />
 
-      <Dialog.Root open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[94vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-emerald-900/60 dark:bg-slate-950 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <Dialog.Title className="text-lg font-semibold text-gray-950 dark:text-slate-50">
-                  Filter trails
-                </Dialog.Title>
-                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                  Narrow results by difficulty, location, sport, distance, and ride profile.
-                </p>
-              </div>
-              <Dialog.Close className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">
-                ✕
-              </Dialog.Close>
-            </div>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                applyDraftFilters();
-                setFiltersOpen(false);
-              }}
-              className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2"
-              aria-label="Trail filters"
-            >
-              <div>
-                <label
-                  htmlFor="trails-difficulty"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Difficulty
-                </label>
-                <select
-                  id="trails-difficulty"
-                  value={draftDifficulty}
-                  onChange={(e) =>
-                    setDraftDifficulty(e.target.value as Difficulty | '')
-                  }
-                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                >
-                  <option value="">All</option>
-                  {TRAIL_DIFFICULTY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="trails-location"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Location
-                </label>
-                <input
-                  id="trails-location"
-                  type="text"
-                  value={locationInput}
-                  onChange={(e) => setLocationInput(e.target.value)}
-                  placeholder="City or region..."
-                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="trails-distance-min"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Min distance (km)
-                </label>
-                <input
-                  id="trails-distance-min"
-                  type="number"
-                  min="0"
-                  value={distanceMinInput}
-                  onChange={(e) => setDistanceMinInput(e.target.value)}
-                  placeholder="e.g. 10"
-                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="trails-distance-max"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Max distance (km)
-                </label>
-                <input
-                  id="trails-distance-max"
-                  type="number"
-                  min="0"
-                  value={distanceMaxInput}
-                  onChange={(e) => setDistanceMaxInput(e.target.value)}
-                  placeholder="e.g. 40"
-                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="trails-sport-modal"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Category
-                </label>
-                <select
-                  id="trails-sport-modal"
-                  value={draftSport}
-                  onChange={(event) => setDraftSport(event.target.value)}
-                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                >
-                  <option value="">All categories</option>
-                  {TRAIL_SPORTS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="trails-sort-modal"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Sort
-                </label>
-                <select
-                  id="trails-sort-modal"
-                  value={draftSort}
-                  onChange={(event) =>
-                    setDraftSort(event.target.value as TrailSort)
-                  }
-                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                >
-                  {TRAIL_SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="trails-ride-profile-modal"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Ride profile
-                </label>
-                <select
-                  id="trails-ride-profile-modal"
-                  value={draftRideProfile}
-                  onChange={(event) =>
-                    setDraftRideProfile(event.target.value as RideProfile)
-                  }
-                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                >
-                  {RIDE_PROFILE_QUICK_FILTERS.map((option) => (
-                    <option
-                      key={option.value || 'all-rides'}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <button
-                  type="submit"
-                  className="w-full rounded-2xl bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300 sm:w-auto"
-                >
-                  Apply filters
-                </button>
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="w-full rounded-2xl border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
-                >
-                  Reset all
-                </button>
-              </div>
-            </form>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <TrailsFilterDialog
+        open={filtersOpen}
+        difficulty={draftDifficulty}
+        location={locationInput}
+        distanceMin={distanceMinInput}
+        distanceMax={distanceMaxInput}
+        sport={draftSport}
+        sort={draftSort}
+        rideProfile={draftRideProfile}
+        onOpenChange={setFiltersOpen}
+        onDifficultyChange={setDraftDifficulty}
+        onLocationChange={setLocationInput}
+        onDistanceMinChange={setDistanceMinInput}
+        onDistanceMaxChange={setDistanceMaxInput}
+        onSportChange={setDraftSport}
+        onSortChange={setDraftSort}
+        onRideProfileChange={setDraftRideProfile}
+        onApply={applyDraftFilters}
+        onReset={resetFilters}
+      />
 
-      {hasTransientError && (
-        <div
-          className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200"
-          role="status"
-          aria-live="polite"
-        >
-          Couldn’t refresh trails right now. Showing last available results.
-        </div>
-      )}
-
-      {isInitialLoading ? (
-        <>
-          <p className="sr-only" role="status" aria-live="polite">
-            Loading trails…
-          </p>
-          <TrailsPageSkeleton viewMode={viewMode} />
-        </>
-      ) : hasInitialError ? (
-        <div className="rounded-3xl border border-red-200 bg-red-50 px-5 py-10 text-center dark:border-red-900/60 dark:bg-red-950/25">
-          <p className="text-sm font-semibold text-red-700 dark:text-red-200">{(error as Error).message}</p>
-        </div>
-      ) : trails.length === 0 ? (
-        <div className="rounded-3xl border border-gray-200 bg-white px-5 py-12 text-center shadow-sm dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-slate-950 dark:via-emerald-950/20 dark:to-slate-900">
-          <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-            No trails found. Try adjusting your search criteria.
-          </p>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="mt-4 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:bg-emerald-900/45"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      ) : (
-        <>
-          <div
-            className={`relative transition-opacity duration-150 ${
-              isRefreshingResults ? 'opacity-70' : 'opacity-100'
-            }`}
-            aria-busy={isRefreshingResults}
-          >
-            {isRefreshingResults && (
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1 overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950">
-                <div className="h-full w-1/3 animate-[trail-refresh_900ms_ease-in-out_infinite] rounded-full bg-emerald-600 dark:bg-emerald-300" />
-              </div>
-            )}
-            <TrailGallery
-              trails={trails}
-              viewMode={viewMode}
-              canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
-              canRequestTrail={Boolean(isParticipant || !user)}
-              isAdmin={isAdmin}
-              savedTrailIds={savedTrailIds}
-              savingTrailId={savingTrailId}
-              onToggleSavedTrail={(trail) => {
-                if (loadingCurrentUser) {
-                  setToastTitle('Checking account');
-                  setToastDescription('Please try again in a second.');
-                  setToastOpen(true);
-                  return;
-                }
-                if (!user) {
-                  const next =
-                    typeof window !== 'undefined'
-                      ? `${window.location.pathname}${window.location.search}`
-                      : '/trails';
-                  window.dispatchEvent(
-                    new CustomEvent('open-register', {
-                      detail: {
-                        message: 'Create an account to save trails for later.',
-                        next,
-                      },
-                    })
-                  );
-                  return;
-                }
-                savedTrailMutation.mutate({
-                  trailId: trail.id,
-                  isSaved: savedTrailIds.has(trail.id),
-                });
-              }}
-              onEditTrail={(trail) => {
-                router.push(`/upload?trailId=${trail.id}`);
-              }}
-              onDeleteTrail={(trailId) => deleteMutation.mutate(trailId)}
-              onHideTrail={(trailId) => hideMutation.mutate(trailId)}
-              onUnhideTrail={(trailId) => unhideMutation.mutate(trailId)}
-              deletingTrailId={deletingTrailId}
-              hidingTrailId={hidingTrailId}
-              unhidingTrailId={unhidingTrailId}
-              onViewMap={(trail) => {
-                setMapTrailSummary(trail);
-                setMapTrailId(trail.id);
-                setMapOpen(true);
-              }}
-              onOpenImageGallery={(trail) => {
-                const images = getTrailImages(trail);
-                if (!images.length) return;
-                setGalleryTrailName(trail.name || 'Trail');
-                setGalleryImages(images);
-                setGalleryOpen(true);
-              }}
-              onRequestTrail={(trail) => {
-                openTrailRequest(trail);
-              }}
-              onCancelRequest={(trail) => {
-                if (!user || user.role !== 'participant') {
-                  return;
-                }
-                const requestId = requestedByTrailId[trail.id];
-                if (!requestId) return;
-                const confirmed = window.confirm('Cancel your trail request?');
-                if (!confirmed) return;
-                cancelRequestMutation.mutate(requestId);
-              }}
-              onCreateEvent={(trail) => {
-                setCreateEventTrailId(trail.id);
-                setCreateEventSport(trail.sport_type || 'mtb');
-                setCreateEventOpen(true);
-              }}
-              canAssociateExpertTrail={
-                user?.role === 'expert' && !loadingExpertTrails && Boolean(expertTrailsData)
-              }
-              associatedTrailIds={associatedTrailIds}
-              associatingTrailId={associatingTrailId}
-              sort={sort}
-              onSortChange={setSort}
-              onToggleExpertTrail={(trail, isAssociated) => {
-                if (user?.role !== 'expert') return;
-                expertTrailAssociationMutation.mutate({
-                  trailId: trail.id,
-                  isAssociated,
-                });
-              }}
-            />
-          </div>
-
-          {isFetchingNextPage && (
-            <>
-              <p className="sr-only" role="status" aria-live="polite">
-                Loading more trails…
-              </p>
-              <TrailsLoadMoreSkeleton viewMode={viewMode} />
-            </>
-          )}
-          {pagination && (
-            <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white/80 p-3 dark:border-emerald-900/50 dark:bg-slate-950/60 sm:flex-row">
-              <p className="text-sm text-gray-600 dark:text-slate-300">
-                Showing {trails.length} of {pagination.total} trails
-              </p>
-            </div>
-          )}
-          <div ref={loadMoreRef} className="h-2 w-full" aria-hidden="true" />
-          {requestFeedback && (
-            <div className="mt-3 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
-              {requestFeedback}
-            </div>
-          )}
-        </>
-      )}
+      <TrailsResults
+        trails={trails}
+        viewMode={viewMode}
+        sort={sort}
+        pagination={pagination}
+        error={error instanceof Error ? error : null}
+        isInitialLoading={isInitialLoading}
+        isRefreshing={isRefreshingResults}
+        isFetchingNextPage={isFetchingNextPage}
+        hasInitialError={hasInitialError}
+        hasTransientError={hasTransientError}
+        hasActiveFilters={hasActiveFilters}
+        canCreateEvent={user?.role === 'admin' || user?.role === 'expert'}
+        canRequestTrail={Boolean(isParticipant || !user)}
+        isAdmin={isAdmin}
+        canAssociateGuideTrail={
+          user?.role === 'expert' && !loadingExpertTrails && Boolean(expertTrailsData)
+        }
+        savedTrailIds={savedTrailIds}
+        associatedTrailIds={associatedTrailIds}
+        savingTrailId={savingTrailId}
+        deletingTrailId={deletingTrailId}
+        hidingTrailId={hidingTrailId}
+        unhidingTrailId={unhidingTrailId}
+        associatingTrailId={associatingTrailId}
+        requestFeedback={requestFeedback}
+        loadMoreRef={loadMoreRef}
+        onResetFilters={resetFilters}
+        onSortChange={setSort}
+        onToggleSavedTrail={toggleSavedTrail}
+        onEditTrail={(trail) => router.push(`/upload?trailId=${trail.id}`)}
+        onDeleteTrail={(trailId) => deleteMutation.mutate(trailId)}
+        onHideTrail={(trailId) => hideMutation.mutate(trailId)}
+        onUnhideTrail={(trailId) => unhideMutation.mutate(trailId)}
+        onViewMap={openTrailMap}
+        onOpenImageGallery={openTrailGallery}
+        onRequestTrail={openTrailRequest}
+        onCancelRequest={cancelTrailRequest}
+        onCreateEvent={openCreateEvent}
+        onToggleGuideTrail={(trail, isAssociated) => {
+          if (user?.role !== 'expert') return;
+          expertTrailAssociationMutation.mutate({ trailId: trail.id, isAssociated });
+        }}
+      />
 
       <Dialog.Root
         open={mapOpen}

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-type TrailFilterChipTone = 'green' | 'blue' | 'purple' | 'amber' | 'cyan' | 'slate';
+export type TrailFilterChipTone = 'green' | 'blue' | 'purple' | 'amber' | 'cyan' | 'slate';
 
 type TrailFilterChipProps = {
   children: ReactNode;
