@@ -89,7 +89,6 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
             <p className="mt-5 max-w-xl text-base leading-7 text-emerald-950/75 dark:text-slate-300 md:text-lg">
               {copy.heroDescription}
             </p>
-
             <HomeTrailSearch featuredTrails={featuredTrails} copy={copy.search} />
 
             {spotlight && (

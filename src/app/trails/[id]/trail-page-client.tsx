@@ -1780,7 +1780,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   <svg viewBox="0 0 20 20" className="h-4 w-4 fill-current" aria-hidden="true">
                     <path d="M10 2.5a5.5 5.5 0 0 0-5.5 5.5c0 4.18 5 8.96 5.21 9.16a.42.42 0 0 0 .58 0c.21-.2 5.21-4.98 5.21-9.16A5.5 5.5 0 0 0 10 2.5Zm0 7.7A2.2 2.2 0 1 1 10 5.8a2.2 2.2 0 0 1 0 4.4Z" />
                   </svg>
-                  Plan this ride with an expert
+                  Plan with an expert
                 </button>
               )
             )}

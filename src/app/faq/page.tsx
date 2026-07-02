@@ -61,9 +61,24 @@ const faqGroups: Array<{ title: string; items: FaqItem[] }> = [
           'Experts submit profile and application details. Admin reviews the information and may request more context before approval.',
       },
       {
+        question: 'Do I need an organization to become an expert?',
+        answer:
+          'No. You can start with an individual expert profile. Creating an organization is optional after your expert account is verified.',
+      },
+      {
+        question: 'When can I create an organization?',
+        answer:
+          'After admin verification, an expert may create and own one organization, then invite other verified experts to help manage it.',
+      },
+      {
         question: 'What can organizations manage?',
         answer:
-          'Approved organizations can be associated with trails and may manage relevant trail updates, gallery items, services, campaigns, and organization information depending on their permissions.',
+          'Organizations provide a shared workspace for members, linked trails, ride programs, local services, campaigns, updates, and trail work.',
+      },
+      {
+        question: 'Can I charge for events or services?',
+        answer:
+          'Verified experts can set a fee for hosted events, and organizations can publish priced programs and services. Results depend on rider interest and bookings.',
       },
       {
         question: 'Can shops and partners be listed?',

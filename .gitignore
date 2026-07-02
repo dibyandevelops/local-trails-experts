@@ -45,3 +45,4 @@ todos.md
 TODO.md
 mobile/node_modules
 mobile/android
+.env.production

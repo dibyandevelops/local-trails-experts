@@ -10,6 +10,9 @@ export default function FooterInfoColumn({ year, brand }: Props) {
       <p className="max-w-sm text-xs leading-5 text-gray-600 dark:text-slate-300">
         Nepal Trail Hub: free trail maps, local experts, and community-led rides.
       </p>
+      <p className="text-xs font-medium text-emerald-800/75 dark:text-emerald-200/75">
+        Early access: LocoXperts is improving with every ride.
+      </p>
       <ul className="space-y-0.5 text-xs leading-5 text-gray-600 dark:text-slate-300">
         <li>• Keep Nepal trails mapped and easier to navigate.</li>
         <li>• Fund trail maintenance, signage, and local trail crews.</li>

@@ -195,6 +195,9 @@ export default function ExpertJoinPage() {
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
             Create an expert profile for guiding, coaching, route advice, and hosted rides around Nepal.
           </p>
+          <p className="mt-2 max-w-2xl text-xs font-medium text-emerald-800/75 dark:text-emerald-200/75">
+            Once verified, you can host free or paid events, or create an organization for trail campaigns, services, and ride programs.
+          </p>
         </div>
       </section>
 
@@ -413,6 +416,7 @@ export default function ExpertJoinPage() {
           </div>
         </aside>
       </section>
+
     </div>
   );
 }

@@ -59,7 +59,7 @@ export const homeCopy: Record<Locale, HomeCopy> = {
     supportPrefix: 'If LocoXperts helps you find better rides, consider',
     supportLink: 'supporting the developer',
     supportSuffix: 'so the platform can stay alive, improve, and remain useful for local riders.',
-    expertOrganizationPrompt: 'Verified experts can create an organization workspace for programs, campaigns, services, and trail work.',
+    expertOrganizationPrompt: 'Verified experts can create an organization to run trail campaigns, offer local services, coordinate ride programs, and manage trail work.',
     expertOrganizationLink: 'Register and verify as an expert',
     exploreLabel: 'Explore LocoXperts',
     featureActions: [
@@ -100,7 +100,7 @@ export const homeCopy: Record<Locale, HomeCopy> = {
     supportPrefix: 'LocoXperts ले तपाईंलाई राम्रो राइड भेट्न सहयोग गर्छ भने',
     supportLink: 'डेभलपरलाई सपोर्ट गर्नुहोस्',
     supportSuffix: 'ताकि प्लेटफर्म चलिरहोस्, सुधारिँदै जाओस्, र स्थानीय राइडरका लागि उपयोगी रहोस्।',
-    expertOrganizationPrompt: 'प्रमाणित एक्सपर्टहरूले कार्यक्रम, अभियान, सेवा र ट्रेल कार्यका लागि संस्था वर्कस्पेस बनाउन सक्छन्।',
+    expertOrganizationPrompt: 'प्रमाणित एक्सपर्टहरूले ट्रेल अभियान चलाउन, स्थानीय सेवा दिन, राइड कार्यक्रम समन्वय गर्न र ट्रेल कार्य व्यवस्थापन गर्न संस्था बनाउन सक्छन्।',
     expertOrganizationLink: 'एक्सपर्टका रूपमा दर्ता र प्रमाणीकरण गर्नुहोस्',
     exploreLabel: 'LocoXperts मा हेर्नुहोस्',
     featureActions: [

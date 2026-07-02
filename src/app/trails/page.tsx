@@ -10,7 +10,7 @@ export async function generateMetadata(props: {
   const resolved = props.searchParams ? await props.searchParams : {};
   const hasFilters = hasAnySearchParams(resolved);
   return listingMetadata({
-    title: 'Best MTB Trails in Nepal',
+    title: 'Find Your Next Trail Ride in Nepal',
     description:
       'Discover mountain bike trails in Nepal with GPX maps, route details, safety notes, and local recommendations.',
     canonicalPath: '/trails',
