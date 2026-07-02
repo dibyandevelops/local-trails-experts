@@ -106,6 +106,7 @@ export interface Trail {
   onDelete?: () => void;
   onHide?: () => void;
   onUnhide?: () => void;
+  isRequested?: boolean
 }
 
 export interface ReviewSummary {
