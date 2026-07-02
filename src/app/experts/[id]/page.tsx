@@ -67,7 +67,7 @@ function DetailSection({
 export default function ExpertDetailPage() {
   const params = useParams<{ id: string }>();
   const expertId = params?.id;
-  const { data: currentUser } = useCurrentUser();
+  const { data: currentUser, isLoading: loadingCurrentUser } = useCurrentUser();
   const queryClient = useQueryClient();
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
@@ -335,10 +335,20 @@ export default function ExpertDetailPage() {
   };
 
   const openRequestModal = () => {
+    if (loadingCurrentUser) return;
     if (!currentUser) {
-      setRequestSubmitDisabledReason('Please login as a participant to submit a trail request.');
-      setRequestModalMessage('');
-      setRequestModalOpen(true);
+      const next =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : `/experts/${expert.id}`;
+      window.dispatchEvent(
+        new CustomEvent('open-register', {
+          detail: {
+            message: 'Create a participant account to plan a ride with this local guide.',
+            next,
+          },
+        })
+      );
       return;
     }
     if (currentUser.role !== 'participant') {

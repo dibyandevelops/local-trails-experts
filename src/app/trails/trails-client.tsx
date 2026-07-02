@@ -674,6 +674,42 @@ function TrailsPageContent() {
     applySearch();
   };
 
+  const openTrailRequest = (trail: Trail | null = null) => {
+    if (loadingCurrentUser) {
+      setToastTitle('Checking account');
+      setToastDescription('Please try again in a second.');
+      setToastOpen(true);
+      return;
+    }
+    if (!user) {
+      const next =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : '/trails';
+      window.dispatchEvent(
+        new CustomEvent('open-register', {
+          detail: {
+            message: 'Create a participant account to plan a ride with a local guide.',
+            next,
+          },
+        })
+      );
+      return;
+    }
+    if (user.role !== 'participant') {
+      setToastTitle('Participant account required');
+      setToastDescription('Trail activity requests are available from participant accounts.');
+      setToastOpen(true);
+      return;
+    }
+    if (trail?.isRequested) return;
+
+    setRequestTrailItem(trail);
+    setRequestFeedback('');
+    setRequestModalMessage('');
+    setRequestOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 shadow-sm dark:border-emerald-800/60 dark:from-slate-950 dark:via-emerald-950/35 dark:to-lime-950/20 sm:p-6">
@@ -694,12 +730,7 @@ function TrailsPageContent() {
             </p>
             <button
               type="button"
-              onClick={() => {
-                setRequestTrailItem(null);
-                setRequestFeedback('');
-                setRequestModalMessage('');
-                setRequestOpen(true);
-              }}
+              onClick={() => openTrailRequest()}
               className="mt-3 text-left text-sm text-gray-600 underline decoration-emerald-500/60 underline-offset-4 transition hover:text-emerald-800 dark:text-slate-300 dark:hover:text-emerald-200"
             >
               Exploring an unfamiliar trail? Plan it with a local guide.
@@ -1117,32 +1148,7 @@ function TrailsPageContent() {
                 setGalleryOpen(true);
               }}
               onRequestTrail={(trail) => {
-                if (!user) {
-                  const next =
-                    typeof window !== 'undefined'
-                      ? `${window.location.pathname}${window.location.search}`
-                      : '/trails';
-                  window.dispatchEvent(
-                    new CustomEvent('open-register', {
-                      detail: {
-                        message:
-                          'Create a participant account to request a trail activity.',
-                        next,
-                      },
-                    }),
-                  );
-                  return;
-                }
-                if (user.role !== 'participant') {
-                  return;
-                }
-                if (trail.isRequested) {
-                  return;
-                }
-                setRequestTrailItem(trail);
-                setRequestOpen(true);
-                setRequestFeedback('');
-                setRequestModalMessage('');
+                openTrailRequest(trail);
               }}
               onCancelRequest={(trail) => {
                 if (!user || user.role !== 'participant') {

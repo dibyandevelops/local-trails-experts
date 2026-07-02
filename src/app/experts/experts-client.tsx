@@ -28,7 +28,7 @@ const sportOptions = SPORT_OPTIONS;
 
 export default function ExpertsBrowsePage() {
   const router = useRouter();
-  const { data: user } = useCurrentUser();
+  const { data: user, isLoading: loadingUser } = useCurrentUser();
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedSport, setSelectedSport] = useState<SportType | ''>('');
   const [requestOpen, setRequestOpen] = useState(false);
@@ -224,13 +224,20 @@ export default function ExpertsBrowsePage() {
               onViewExpert={() => router.push(`/experts/${expert.id}`)}
               onViewEvents={() => router.push(`/events?expert=${expert.id}`)}
               onRequestTrail={() => {
+                if (loadingUser) return;
                 if (!user) {
-                  setRequestSubmitDisabledReason(
-                    'Please login as a participant to submit a trail request.'
+                  const next =
+                    typeof window !== 'undefined'
+                      ? `${window.location.pathname}${window.location.search}`
+                      : '/experts';
+                  window.dispatchEvent(
+                    new CustomEvent('open-register', {
+                      detail: {
+                        message: 'Create a participant account to plan a ride with a local guide.',
+                        next,
+                      },
+                    })
                   );
-                  setRequestModalMessage('');
-                  setRequestExpertId(expert.id);
-                  setRequestOpen(true);
                   return;
                 }
                 if (user.role !== 'participant') {
