@@ -155,7 +155,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
     ...(trail.onAssociateTrail && !trail.isAssociatedToExpert
       ? [
           {
-            label: trail.associationLoading ? 'Pinning...' : 'Pin to my expert profile',
+            label: trail.associationLoading ? 'Pinning...' : 'Pin to my guide profile',
             disabled: trail.associationLoading,
             onSelect: () => trail.onAssociateTrail?.(),
           },
@@ -164,7 +164,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
     ...(trail.onRemoveAssociation && trail.isAssociatedToExpert
       ? [
           {
-            label: trail.associationLoading ? 'Removing...' : 'Remove from my expert profile',
+            label: trail.associationLoading ? 'Removing...' : 'Remove from my guide profile',
             disabled: trail.associationLoading,
             onSelect: () => trail.onRemoveAssociation?.(),
           },
@@ -460,7 +460,7 @@ export const TrailCard: React.FunctionComponent<TrailCardProps> = (trail) => {
             ) : null}
             {(trail.associated_expert_count || 0) > 0 && (
               <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-medium text-cyan-700 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
-                Expert
+                Guide
               </span>
             )}
             {(trail.campaign_count || 0) > 0 && (

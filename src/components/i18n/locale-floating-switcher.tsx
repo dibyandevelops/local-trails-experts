@@ -13,6 +13,7 @@ const LOCALIZED_PATHS = new Set([
   '/safety',
   '/support-locoxperts',
   '/donate',
+  '/experts/join',
 ]);
 
 export default function LocaleFloatingSwitcher() {

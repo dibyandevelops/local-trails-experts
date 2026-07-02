@@ -456,8 +456,8 @@ function TrailsPageContent() {
           associated_trails: data.associated_trails || [],
         })
       );
-      setToastTitle('Expert trails updated');
-      setToastDescription('Your expert profile trail list has been updated.');
+      setToastTitle('Guide trails updated');
+      setToastDescription('Your guide profile trail list has been updated.');
       setToastOpen(true);
     },
     onError: (error) => {
@@ -690,8 +690,20 @@ function TrailsPageContent() {
               Find your next trail
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-              Search mapped routes, compare distance and difficulty, then open the trail details for maps, alerts, support, and local context.
+              Search mapped routes, compare distance and difficulty, then open a trail for maps, alerts, local guide support, and route context.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setRequestTrailItem(null);
+                setRequestFeedback('');
+                setRequestModalMessage('');
+                setRequestOpen(true);
+              }}
+              className="mt-3 text-left text-sm text-gray-600 underline decoration-emerald-500/60 underline-offset-4 transition hover:text-emerald-800 dark:text-slate-300 dark:hover:text-emerald-200"
+            >
+              Exploring an unfamiliar trail? Plan it with a local guide.
+            </button>
           </div>
           <div className="relative flex flex-wrap items-center gap-2">
             <TrailViewToggle value={viewMode} onChange={setViewMode} />

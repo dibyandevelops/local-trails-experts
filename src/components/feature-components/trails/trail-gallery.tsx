@@ -202,7 +202,7 @@ export function TrailGallery({
                 )}
                 {(trail.associated_expert_count || 0) > 0 && (
                   <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-700 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
-                    Expert
+                    Guide
                   </span>
                 )}
                 {(trail.campaign_count || 0) > 0 && (

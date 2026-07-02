@@ -8,8 +8,15 @@ import { TRAIL_SPORTS } from '@/services/constants/sports';
 import { loginUser } from '@/services/auth/auth.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
+import { DEFAULT_LOCALE, localizePath, type Locale } from '@/i18n/config';
+import { guideJoinCopy } from '@/i18n/guide-join';
 
 export default function ExpertJoinPage() {
+  return <GuideJoinPage locale={DEFAULT_LOCALE} />;
+}
+
+export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
+  const copy = guideJoinCopy[locale];
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: currentUser = null, isLoading: loadingUser } = useCurrentUser();
@@ -51,7 +58,7 @@ export default function ExpertJoinPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!acceptTerms) {
-      setErrorMessage('Please accept the terms and privacy policy.');
+      setErrorMessage(copy.acceptTermsError);
       return;
     }
     setSubmitting(true);
@@ -77,7 +84,7 @@ export default function ExpertJoinPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(data.error || 'Failed to submit application');
+        setErrorMessage(data.error || copy.genericError);
         return;
       }
 
@@ -102,7 +109,7 @@ export default function ExpertJoinPage() {
       }
     } catch (err) {
       console.error(err);
-      setErrorMessage('Something went wrong. Please try again.');
+      setErrorMessage(copy.genericError);
     } finally {
       setSubmitting(false);
     }
@@ -119,19 +126,16 @@ export default function ExpertJoinPage() {
           name,
           city,
           sports: selectedSports,
-          language:
-            typeof navigator !== 'undefined'
-              ? navigator.language || 'en'
-              : 'en',
+          language: locale,
         }),
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to generate bio');
+        throw new Error(data?.error || copy.bioError);
       }
       setCredentials((data?.bio || '').trim());
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Unable to generate bio.');
+      setErrorMessage(error instanceof Error ? error.message : copy.bioError);
     } finally {
       setGeneratingBio(false);
     }
@@ -143,16 +147,16 @@ export default function ExpertJoinPage() {
   const helperClass = 'mt-1 text-xs text-gray-500 dark:text-slate-400';
 
   if (loadingUser) {
-    return <div className="mx-auto max-w-6xl text-sm text-gray-600 dark:text-slate-300">Checking account...</div>;
+    return <div className="mx-auto max-w-5xl text-sm text-gray-600 dark:text-slate-300">{copy.checkingAccount}</div>;
   }
 
   if (currentUser?.role === 'expert' && !currentUser.is_verified_expert) {
     return (
       <ExpertStatusCard
-        title="Expert application is pending"
-        body="This account is already pending admin verification. You can update your verification details from your expert dashboard."
+        title={copy.pending.title}
+        body={copy.pending.body}
         actionHref="/experts/me"
-        actionLabel="View expert dashboard"
+        actionLabel={copy.pending.action}
       />
     );
   }
@@ -160,10 +164,10 @@ export default function ExpertJoinPage() {
   if (currentUser?.role === 'expert' && currentUser.is_verified_expert) {
     return (
       <ExpertStatusCard
-        title="You are already a verified expert"
-        body="You can manage your expert profile now. If you want to create an organization, use the organization creation flow."
+        title={copy.verified.title}
+        body={copy.verified.body}
         actionHref="/organizations/create"
-        actionLabel="Create organization"
+        actionLabel={copy.verified.action}
       />
     );
   }
@@ -171,56 +175,53 @@ export default function ExpertJoinPage() {
   if (currentUser?.role === 'admin') {
     return (
       <ExpertStatusCard
-        title="Use a participant account for expert verification"
-        body="Admin accounts should not be converted into public expert profiles. Sign in with a participant account or create a separate account for expert verification."
-        actionHref="/"
-        actionLabel="Go home"
+        title={copy.admin.title}
+        body={copy.admin.body}
+        actionHref={localizePath('/home', locale)}
+        actionLabel={copy.admin.action}
       />
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-5 py-6 dark:border-emerald-800/50 dark:from-slate-950 dark:via-slate-950 dark:to-emerald-950/40 sm:px-7">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-emerald-300/25 blur-3xl" />
-        <div className="relative max-w-3xl">
-          <div className="mb-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
-              Local Experts
-            </span>
-          </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <header className="border-b border-gray-200 pb-5 dark:border-slate-800">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+            {copy.hero.eyebrow}
+          </p>
           <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
-            Apply as a local trail expert
+            {copy.hero.title}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-            Create an expert profile for guiding, coaching, route advice, and hosted rides around Nepal.
+            {copy.hero.description}
           </p>
           <p className="mt-2 max-w-2xl text-xs font-medium text-emerald-800/75 dark:text-emerald-200/75">
-            Once verified, you can host free or paid events, or create an organization for trail campaigns, services, and ride programs.
+            {copy.hero.opportunity}
           </p>
         </div>
-      </section>
+      </header>
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <form
           onSubmit={handleSubmit}
           className="space-y-5 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 sm:p-6"
         >
           <div>
             <h2 className="text-xl font-bold text-gray-950 dark:text-slate-50">
-              {isExistingAccountApplication ? 'Verify this account as an expert' : 'Expert signup'}
+              {isExistingAccountApplication ? copy.form.existingTitle : copy.form.newTitle}
             </h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
               {isExistingAccountApplication
-                ? 'No new login is created. This account will become a pending expert account after submission.'
-                : 'Fill in the essentials now. Verification details can be completed after signup.'}
+                ? copy.form.existingDescription
+                : copy.form.newDescription}
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className={labelClass}>
-                Full Name <span className="text-red-500">*</span>
+                {copy.form.fullName} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -228,12 +229,12 @@ export default function ExpertJoinPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={`${inputClass} mt-1`}
-                placeholder="e.g., Suman Gurung"
+                placeholder={copy.form.fullNamePlaceholder}
               />
             </div>
             <div>
               <label className={labelClass}>
-                Email <span className="text-red-500">*</span>
+                {copy.form.email} <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -242,10 +243,10 @@ export default function ExpertJoinPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isExistingAccountApplication}
                 className={`${inputClass} mt-1`}
-                placeholder="you@example.com"
+                placeholder={copy.form.emailPlaceholder}
               />
               {isExistingAccountApplication && (
-                <p className={helperClass}>Using the email from your signed-in account.</p>
+                <p className={helperClass}>{copy.form.currentEmail}</p>
               )}
             </div>
           </div>
@@ -253,7 +254,7 @@ export default function ExpertJoinPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className={labelClass}>
-                Phone number <span className="text-red-500">*</span>
+                {copy.form.phone} <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
@@ -261,13 +262,13 @@ export default function ExpertJoinPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className={`${inputClass} mt-1`}
-                placeholder="+9779812345678"
+                placeholder={copy.form.phonePlaceholder}
               />
-              <p className={helperClass}>Use international format, e.g. +977...</p>
+              <p className={helperClass}>{copy.form.phoneHelper}</p>
             </div>
             <div>
               <label className={labelClass}>
-                Password <span className="text-red-500">*</span>
+                {copy.form.password} <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
@@ -277,30 +278,30 @@ export default function ExpertJoinPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isExistingAccountApplication}
                 className={`${inputClass} mt-1`}
-                placeholder={isExistingAccountApplication ? 'Not needed for signed-in accounts' : 'Min 8 characters with a number'}
+                placeholder={isExistingAccountApplication ? copy.form.passwordExistingPlaceholder : copy.form.passwordPlaceholder}
               />
               <p className={helperClass}>
                 {isExistingAccountApplication
-                  ? 'You are already signed in, so we will use your existing account.'
-                  : 'At least 8 characters and one number.'}
+                  ? copy.form.passwordExistingHelper
+                  : copy.form.passwordHelper}
               </p>
             </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className={labelClass}>Home base city</label>
+              <label className={labelClass}>{copy.form.homeCity}</label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 className={`${inputClass} mt-1`}
-                placeholder="e.g., Kathmandu"
+                placeholder={copy.form.homeCityPlaceholder}
               />
             </div>
 
             <div>
-              <label className={labelClass}>Sports you guide or coach</label>
+              <label className={labelClass}>{copy.form.activities}</label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {TRAIL_SPORTS.map((sport) => {
                   const selected = selectedSports.includes(sport.value);
@@ -315,7 +316,7 @@ export default function ExpertJoinPage() {
                           : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-emerald-500'
                       }`}
                     >
-                      {sport.label}
+                      {copy.sportLabels[sport.value] || sport.label}
                     </button>
                   );
                 })}
@@ -326,7 +327,7 @@ export default function ExpertJoinPage() {
           <div>
             <div className="mb-1 flex items-center justify-between gap-2">
               <label className={labelClass}>
-                Bio <span className="text-red-500">*</span>
+                {copy.form.experience} <span className="text-red-500">*</span>
               </label>
               <button
                 type="button"
@@ -334,7 +335,7 @@ export default function ExpertJoinPage() {
                 disabled={generatingBio}
                 className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-950"
               >
-                {generatingBio ? 'Generating...' : 'Generate with AI'}
+                {generatingBio ? copy.form.generating : copy.form.generate}
               </button>
             </div>
             <textarea
@@ -343,7 +344,7 @@ export default function ExpertJoinPage() {
               onChange={(e) => setCredentials(e.target.value)}
               rows={5}
               className={inputClass}
-              placeholder="Tell riders about your local trail knowledge, guiding experience, and riding style."
+              placeholder={copy.form.experiencePlaceholder}
             />
           </div>
 
@@ -362,13 +363,13 @@ export default function ExpertJoinPage() {
               className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
             <label htmlFor="expert-accept-terms" className="text-xs leading-5">
-              I agree to the{' '}
-              <a href="/terms" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
-                Terms &amp; Conditions
+              {copy.form.agreementPrefix}{' '}
+              <a href={localizePath('/terms', locale)} className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
+                {copy.form.terms}
               </a>{' '}
-              and{' '}
-              <a href="/privacy" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
-                Privacy Policy
+              {copy.form.and}{' '}
+              <a href={localizePath('/privacy', locale)} className="font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
+                {copy.form.privacy}
               </a>
               .
             </label>
@@ -380,39 +381,28 @@ export default function ExpertJoinPage() {
               disabled={submitting}
               className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-              {submitting ? 'Submitting...' : 'Submit application'}
+              {submitting ? copy.form.submitting : copy.form.submit}
             </button>
             <p className="max-w-md text-xs text-gray-500 dark:text-slate-400">
               {isExistingAccountApplication
-                ? 'After submission, an admin must approve the expert profile before organization creation is available.'
-                : 'After signup, continue verification from your expert profile.'}
+                ? copy.form.existingSubmitNote
+                : copy.form.newSubmitNote}
             </p>
           </div>
         </form>
 
-        <aside className="space-y-4">
-          <div className="rounded-3xl border border-emerald-900/20 bg-emerald-950 p-5 text-white shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
-              Who this is for
-            </p>
-            <h2 className="mt-2 text-xl font-bold">Guides, coaches, and local riders</h2>
-            <ul className="mt-4 space-y-3 text-sm text-emerald-50">
-              <li>Know local trails, conditions, and route choices.</li>
-              <li>Can support riders with guided rides or training.</li>
-              <li>Want a verified profile for events and requests.</li>
+        <aside className="text-sm text-gray-700 dark:text-slate-200">
+          <div className="border-l-2 border-emerald-600 pl-4 dark:border-emerald-400">
+            <h2 className="font-bold text-gray-950 dark:text-slate-50">{copy.beforeTitle}</h2>
+            <ul className="mt-3 space-y-2 leading-6">
+              {copy.beforeItems.map((item) => <li key={item}>{item}</li>)}
             </ul>
           </div>
-
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-200">
-            <h3 className="font-semibold text-gray-950 dark:text-slate-50">What happens next</h3>
-            <ol className="mt-3 space-y-2">
-              <li>1. Your expert account is created.</li>
-              <li>2. Add verification details from your profile.</li>
-              <li>3. Once approved, riders can discover and contact you.</li>
+          <div className="mt-6 border-t border-gray-200 pt-5 dark:border-slate-800">
+            <h2 className="font-bold text-gray-950 dark:text-slate-50">{copy.afterTitle}</h2>
+            <ol className="mt-3 space-y-2 leading-6">
+              {copy.afterItems.map((item, index) => <li key={item}>{index + 1}. {item}</li>)}
             </ol>
-            <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100">
-              Certificates are optional. Real riding experience and local route knowledge are enough to get started.
-            </p>
           </div>
         </aside>
       </section>

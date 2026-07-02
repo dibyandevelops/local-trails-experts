@@ -5,19 +5,19 @@ import { getHomeFeaturedTrails, getHomeSpotlight } from '@/lib/data/public-home'
 import { getPublicRideNotes, type PublicRideNote } from '@/lib/data/public-ride-notes';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 import { jsonLdStringify } from '@/lib/jsonld';
-import { DEFAULT_LOCALE, type Locale } from '@/i18n/config';
+import { DEFAULT_LOCALE, localizePath, type Locale } from '@/i18n/config';
 import { homeCopy } from '@/i18n/home';
 
 export const metadata: Metadata = {
-  title: 'Kathmandu MTB Trails, Local Experts & Ride Support',
+  title: 'Kathmandu MTB Trails, Local Guides & Ride Support',
   description:
-    'Find Kathmandu and Nepal MTB trails, route guides, local experts, ride support, organizations, campaigns, and bike services in one place.',
+    'Find Kathmandu and Nepal MTB trails, local guides, ride support, organizations, campaigns, and bike services in one place.',
   keywords: [
     'Kathmandu MTB trails',
     'best MTB trails in Nepal',
     'mountain bike trails Nepal',
     'Nepal MTB trail map',
-    'ride with experts Nepal',
+    'ride with local guides Nepal',
     'bike routes Nepal',
     'trail discovery Nepal',
     'local cycling guides Nepal',
@@ -27,18 +27,18 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: '/home' },
   openGraph: {
-    title: 'Kathmandu MTB Trails, Local Experts & Ride Support',
+    title: 'Kathmandu MTB Trails, Local Guides & Ride Support',
     description:
-      'Find Kathmandu and Nepal MTB trails, route guides, local experts, ride support, organizations, campaigns, and bike services in one place.',
+      'Find Kathmandu and Nepal MTB trails, local guides, ride support, organizations, campaigns, and bike services in one place.',
     url: '/home',
     type: 'website',
     images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE_PATH), width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Kathmandu MTB Trails, Local Experts & Ride Support',
+    title: 'Kathmandu MTB Trails, Local Guides & Ride Support',
     description:
-      'Find Kathmandu and Nepal MTB trails, route guides, local experts, ride support, organizations, campaigns, and bike services in one place.',
+      'Find Kathmandu and Nepal MTB trails, local guides, ride support, organizations, campaigns, and bike services in one place.',
     images: [absoluteUrl(DEFAULT_OG_IMAGE_PATH)],
   },
 };
@@ -163,7 +163,7 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-400">
           {copy.expertOrganizationPrompt}{' '}
-          <Link href="/experts/join" className="font-bold text-emerald-800 underline underline-offset-4 dark:text-lime-200">
+          <Link href={localizePath('/experts/join', locale)} className="font-bold text-emerald-800 underline underline-offset-4 dark:text-lime-200">
             {copy.expertOrganizationLink}
           </Link>
           .

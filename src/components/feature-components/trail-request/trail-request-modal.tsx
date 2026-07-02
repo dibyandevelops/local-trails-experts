@@ -143,7 +143,7 @@ export default function TrailRequestModal({
       return;
     }
     if (!expertsBetaEnabled && !selectedExpertId) {
-      onMessageChange?.('Please select an expert.');
+      onMessageChange?.('Please select a local guide.');
       return;
     }
     if (!preferredDate) {
@@ -176,7 +176,7 @@ export default function TrailRequestModal({
           ? `Trail: ${selectedTrailName}`
           : expertsBetaEnabled
             ? 'Pick your preferred date. Requests are routed to the team for planning.'
-            : 'Pick expert and date for your request.'}
+            : 'Pick a local guide and date for your request.'}
       </p>
 
       <div className="mt-4 space-y-3">
@@ -202,14 +202,14 @@ export default function TrailRequestModal({
 
       {!expertsBetaEnabled && (
         <ListSelectDropdown
-          label="Select Expert"
+          label="Select local guide"
           value={selectedExpertId}
-          placeholder="Choose expert"
+          placeholder="Choose a guide"
           options={experts.map((expert) => ({
             value: expert.id,
-            label: expert.name || expert.email || 'Expert',
+            label: expert.name || expert.email || 'Local guide',
           }))}
-          emptyLabel="No experts available."
+          emptyLabel="No local guides available."
           onChange={setSelectedExpertId}
         />
       )}
@@ -298,7 +298,7 @@ export default function TrailRequestModal({
         />
         <span>
           I acknowledge outdoor activities involve risk and I agree to follow the
-          expert’s safety instructions.
+          guide’s safety instructions.
         </span>
       </label>
     </div>

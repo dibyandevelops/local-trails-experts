@@ -797,7 +797,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         needs_paid_shuttle: shuttleEligible ? needsPaidShuttle : false,
       }),
     onSuccess: () => {
-      setRequestMessage('Request sent to experts/admin successfully.');
+      setRequestMessage('Request sent successfully.');
       setRequestDescription('');
       setSelectedExpertId('');
       setPreferredDate('');
@@ -862,15 +862,15 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       setToastTitle(isAssociatedToExpert ? 'Trail removed from profile' : 'Trail pinned');
       setToastDescription(
         isAssociatedToExpert
-          ? 'This trail was removed from your expert profile.'
-          : 'This trail now appears on your expert profile.'
+          ? 'This trail was removed from your guide profile.'
+          : 'This trail now appears on your guide profile.'
       );
       setToastOpen(true);
     },
     onError: (error) => {
       setToastTitle('Update failed');
       setToastDescription(
-        error instanceof Error ? error.message : 'Failed to update expert profile trails.'
+        error instanceof Error ? error.message : 'Failed to update guide profile trails.'
       );
       setToastOpen(true);
     },
@@ -1390,7 +1390,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     ...(canRequestTrail && !hasRequestedTrail
       ? [
           {
-            label: 'Request local expert',
+            label: 'Request a local guide',
             onSelect: handleOpenRequestRide,
             separatorBefore: true,
           } as ThemedDropdownItem,
@@ -1443,8 +1443,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 ? 'Removing...'
                 : 'Pinning...'
               : isAssociatedToExpert
-                ? 'Remove from my expert profile'
-                : 'Pin to my expert profile',
+                ? 'Remove from my guide profile'
+                : 'Pin to my guide profile',
             onSelect: () =>
               expertTrailAssociationMutation.mutate({
                 isAssociated: isAssociatedToExpert,
@@ -1531,7 +1531,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     <>
               {associatedExperts.length > 0 && (
                 <TrailContextSection
-                  eyebrow="Associated experts"
+                  eyebrow="Local guides"
                   title="Local familiarity"
                   count={associatedExperts.length}
                   tone="cyan"
@@ -1540,7 +1540,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   <div className="space-y-2">
                     {visibleAssociatedExperts.map((expert) => {
                       const initials =
-                        (expert.name || expert.email || 'Expert')
+                        (expert.name || expert.email || 'Guide')
                           .split(' ')
                           .filter(Boolean)
                           .slice(0, 2)
@@ -1558,7 +1558,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={expert.profile_photo_url}
-                                alt={expert.name || 'Expert'}
+                                alt={expert.name || 'Guide'}
                                 className="h-full w-full object-cover"
                               />
                             ) : (
@@ -1569,7 +1569,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                           </div>
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                              {expert.name || expert.email || 'Local expert'}
+                              {expert.name || expert.email || 'Local guide'}
                             </p>
                             <p className="text-xs text-cyan-700 dark:text-cyan-300">
                               {expert.city || 'Kathmandu, Nepal'}
@@ -1685,13 +1685,13 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                     type="button"
                     className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/40"
                     aria-label="Ride support"
-                    title="View experts and services for this trail."
+                    title="View local guides and services for this trail."
                   >
                     <svg viewBox="0 0 20 20" className="h-5 w-5 fill-current" aria-hidden="true">
                       <path d="M10 2.25A6.75 6.75 0 0 0 3.25 9v3.25A2.75 2.75 0 0 0 6 15h.5A1.5 1.5 0 0 0 8 13.5v-3A1.5 1.5 0 0 0 6.5 9H5.25a4.75 4.75 0 0 1 9.5 0H13.5a1.5 1.5 0 0 0-1.5 1.5v3a1.5 1.5 0 0 0 1.5 1.5h.8A3.5 3.5 0 0 1 11 17h-1a1 1 0 1 0 0 2h1a5.5 5.5 0 0 0 5.5-5.5V9A6.75 6.75 0 0 0 10 2.25Z" />
                     </svg>
                     <span className="pointer-events-none absolute right-0 top-12 z-20 hidden w-56 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs font-medium leading-5 text-slate-700 shadow-lg group-hover:block group-focus-visible:block dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
-                      View experts and services for this trail.
+                      View local guides and services for this trail.
                     </span>
                     <span className="absolute -right-1 -top-1 min-w-5 rounded-full border border-white bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white dark:border-slate-900">
                       {rideSupportCount}
@@ -1709,7 +1709,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                         Ride support
                       </p>
                       <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-slate-50">
-                        Experts and services
+                        Guides and services
                       </p>
                     </div>
                     <div className="max-h-[520px] space-y-3 overflow-y-auto p-3">
@@ -1780,7 +1780,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   <svg viewBox="0 0 20 20" className="h-4 w-4 fill-current" aria-hidden="true">
                     <path d="M10 2.5a5.5 5.5 0 0 0-5.5 5.5c0 4.18 5 8.96 5.21 9.16a.42.42 0 0 0 .58 0c.21-.2 5.21-4.98 5.21-9.16A5.5 5.5 0 0 0 10 2.5Zm0 7.7A2.2 2.2 0 1 1 10 5.8a2.2 2.2 0 0 1 0 4.4Z" />
                   </svg>
-                  Plan with an expert
+                  Plan with a guide
                 </button>
               )
             )}
@@ -2149,7 +2149,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 Local notes for this trail
               </h2>
               <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                Trail guides, expert notes, and updates connected to this route.
+                Trail guides, local notes, and updates connected to this route.
               </p>
             </div>
             <a
@@ -2274,7 +2274,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             <p className="mt-1 text-sm text-gray-600">
               {EXPERTS_BETA_ENABLED
                 ? 'This sends your request to the team for planning. Add details to help coordination.'
-                : 'This sends your request to experts/admin. Add details to help them.'}
+                : 'This sends your request to a local guide and the platform team. Add details to help planning.'}
             </p>
             {requestMessage && (
               <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
@@ -2284,14 +2284,14 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             {!EXPERTS_BETA_ENABLED && (
               <div className="mt-4">
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Select Expert
+                  Select local guide
                 </label>
                 <select
                   value={selectedExpertId}
                   onChange={(e) => setSelectedExpertId(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 >
-                  <option value="">Choose expert</option>
+                  <option value="">Choose a guide</option>
                   {requestExpertOptions.map((expert) => (
                     <option key={expert.id} value={expert.id}>
                       {expert.name || expert.email}
@@ -2301,7 +2301,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 </select>
                 {associatedExperts.length > 0 && (
                   <p className="mt-1 text-xs text-cyan-700">
-                    Experts familiar with this trail are shown first.
+                    Guides familiar with this trail are shown first.
                   </p>
                 )}
               </div>
@@ -2384,7 +2384,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
               />
               <span>
                 I acknowledge outdoor activities involve risk and I agree to follow the
-                expert’s safety instructions.
+                guide’s safety instructions.
               </span>
             </label>
             <div className="mt-4 flex justify-end gap-2">
@@ -2399,7 +2399,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 type="button"
                 onClick={async () => {
                   if (!EXPERTS_BETA_ENABLED && !selectedExpertId) {
-                    setRequestMessage('Please select an expert.');
+                    setRequestMessage('Please select a local guide.');
                     return;
                   }
                   if (!preferredDate) {
@@ -2801,14 +2801,14 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       <AppDialog
         open={allAssociatedExpertsOpen}
         onOpenChange={setAllAssociatedExpertsOpen}
-        title="Experts who know this trail"
-        description="Experts who selected this trail on their profile."
+        title="Guides who know this trail"
+        description="Local guides who selected this trail on their profile."
         maxWidthClassName="max-w-3xl"
       >
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {associatedExperts.map((expert) => {
             const initials =
-              (expert.name || expert.email || 'Expert')
+              (expert.name || expert.email || 'Guide')
                 .split(' ')
                 .filter(Boolean)
                 .slice(0, 2)
@@ -2827,7 +2827,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={expert.profile_photo_url}
-                        alt={expert.name || 'Expert'}
+                        alt={expert.name || 'Guide'}
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -2838,7 +2838,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   </div>
                   <div className="min-w-0">
                     <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-white">
-                      {expert.name || expert.email || 'Local expert'}
+                      {expert.name || expert.email || 'Local guide'}
                     </p>
                     <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
                       {expert.city || 'Kathmandu, Nepal'}
