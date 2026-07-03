@@ -121,10 +121,14 @@ export default function PhoneVerificationDialog({
 
             {confirmationResult && (
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="phone-verification-otp" className="block text-sm font-medium text-gray-700">
                   OTP Code
                 </label>
                 <input
+                  id="phone-verification-otp"
+                  name="otp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
                   type="text"
                   value={otp}
                   onChange={(event) => setOtp(event.target.value)}
@@ -144,7 +148,7 @@ export default function PhoneVerificationDialog({
           </div>
 
           {error && (
-            <p className="mt-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            <p role="alert" className="mt-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
               {error}
             </p>
           )}

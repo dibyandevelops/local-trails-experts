@@ -87,7 +87,7 @@ export default function HomeTrailSearch({ featuredTrails, copy = defaultCopy }: 
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={copy.placeholder}
-            className="min-h-[54px] w-full border-0 bg-transparent px-0 text-xl font-black text-emerald-950 outline-none placeholder:text-emerald-900/45 focus:ring-0 dark:text-slate-50 dark:placeholder:text-slate-500 md:text-2xl"
+            className="min-h-[54px] w-full border-0 bg-transparent px-0 text-xl font-black text-emerald-950 outline-none placeholder:text-emerald-800 focus:ring-0 dark:text-slate-50 dark:placeholder:text-slate-400 md:text-2xl"
             autoComplete="off"
           />
           <button

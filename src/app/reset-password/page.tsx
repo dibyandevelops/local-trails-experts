@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<main className="min-h-[calc(100vh-140px)] bg-slate-50 px-4 py-12 dark:bg-slate-950" />}>
+    <Suspense fallback={<div className="min-h-[calc(100vh-140px)] bg-slate-50 px-4 py-12 dark:bg-slate-950" />}>
       <ResetPasswordClient />
     </Suspense>
   );

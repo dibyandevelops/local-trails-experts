@@ -138,6 +138,12 @@ export default async function RootLayout({
         />
       </head>
       <body className={spaceGrotesk.variable}>
+        <a
+          href="#main-content"
+          className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-lg bg-white px-4 py-2 font-semibold text-emerald-950 shadow-lg transition-transform focus:translate-y-0 dark:bg-slate-950 dark:text-white"
+        >
+          Skip to main content
+        </a>
         <SpeedInsights />
         <Analytics />
         <PWARegister />
@@ -146,7 +152,9 @@ export default async function RootLayout({
           <Navbar initialUser={initialUser} />
           <ParticipantBookingsFab />
           <LocaleFloatingSwitcher />
-          <main className="container mx-auto flex-grow px-4 py-8">{children}</main>
+          <main id="main-content" tabIndex={-1} className="container mx-auto flex-grow px-4 py-8">
+            {children}
+          </main>
           <Footer initialUser={initialUser} />
         </MainContent>
       </body>

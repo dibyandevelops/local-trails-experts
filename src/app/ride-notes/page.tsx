@@ -40,7 +40,7 @@ export default async function RideNotesPage() {
   const [featuredNote, ...restNotes] = notes;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="relative overflow-hidden rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-lime-50/60 px-6 py-8 shadow-sm dark:border-emerald-900/60 dark:from-slate-950 dark:via-slate-950 dark:to-emerald-950/40 md:px-8">
         <div className="pointer-events-none absolute -right-16 top-0 h-48 w-48 rounded-full bg-emerald-300/20 blur-3xl dark:bg-lime-300/10" />
         <div className="relative">
@@ -140,6 +140,6 @@ export default async function RideNotesPage() {
           </section>
         </>
       )}
-    </main>
+    </div>
   );
 }

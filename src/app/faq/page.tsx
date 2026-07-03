@@ -126,7 +126,7 @@ function FaqSection({ title, items }: { title: string; items: FaqItem[] }) {
           <details key={item.question} className="group bg-white dark:bg-slate-950/50">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 text-sm font-bold text-gray-950 marker:content-none dark:text-white">
               <span>{item.question}</span>
-              <span className="text-lg leading-none text-emerald-700 transition group-open:rotate-45 dark:text-emerald-300">
+              <span aria-hidden="true" className="text-lg leading-none text-emerald-700 transition group-open:rotate-45 dark:text-emerald-300">
                 +
               </span>
             </summary>

@@ -7,10 +7,15 @@ type TrailViewToggleProps = {
 
 export function TrailViewToggle({ value, onChange }: TrailViewToggleProps) {
   return (
-    <div className="inline-flex items-center rounded-full border border-emerald-200 bg-white/80 p-1 shadow-sm dark:border-emerald-800/60 dark:bg-slate-950/70">
+    <div
+      className="inline-flex items-center rounded-full border border-emerald-200 bg-white/80 p-1 shadow-sm dark:border-emerald-800/60 dark:bg-slate-950/70"
+      role="group"
+      aria-label="Trail results view"
+    >
       <button
         type="button"
         onClick={() => onChange('grid')}
+        aria-pressed={value === 'grid'}
         className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
           value === 'grid'
             ? 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-emerald-950'
@@ -22,6 +27,7 @@ export function TrailViewToggle({ value, onChange }: TrailViewToggleProps) {
       <button
         type="button"
         onClick={() => onChange('quick')}
+        aria-pressed={value === 'quick'}
         className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
           value === 'quick'
             ? 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-emerald-950'

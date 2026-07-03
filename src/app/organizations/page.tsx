@@ -8,7 +8,7 @@ export default async function OrganizationsPage() {
   const organizations = await getPublicOrganizations();
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
         <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
@@ -72,6 +72,6 @@ export default async function OrganizationsPage() {
           </article>
         ))}
       </section>
-    </main>
+    </div>
   );
 }

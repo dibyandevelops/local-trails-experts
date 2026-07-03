@@ -72,7 +72,7 @@ export default async function RideNoteDetailPage({ params }: RideNotePageProps) 
   const date = formatDate(note.published_at || note.created_at);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-8">
       <article className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         {note.cover_image_url && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -158,6 +158,6 @@ export default async function RideNoteDetailPage({ params }: RideNotePageProps) 
           )}
         </div>
       </article>
-    </main>
+    </div>
   );
 }

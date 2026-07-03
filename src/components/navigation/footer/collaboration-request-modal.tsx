@@ -112,10 +112,12 @@ export default function CollaborationRequestModal({
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              <label htmlFor="collaboration-name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
                 Name
               </label>
               <input
+                id="collaboration-name"
+                name="name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
@@ -123,10 +125,12 @@ export default function CollaborationRequestModal({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              <label htmlFor="collaboration-email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
                 Email
               </label>
               <input
+                id="collaboration-email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -137,10 +141,12 @@ export default function CollaborationRequestModal({
           </div>
 
           <div className="mt-3">
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+            <label htmlFor="collaboration-type" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
               Collaboration type
             </label>
             <select
+              id="collaboration-type"
+              name="type"
               value={type}
               onChange={(event) => setType(event.target.value as typeof type)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
@@ -154,10 +160,12 @@ export default function CollaborationRequestModal({
           </div>
 
           <div className="mt-3">
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+            <label htmlFor="collaboration-message" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
               Message
             </label>
             <textarea
+              id="collaboration-message"
+              name="message"
               rows={4}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
@@ -167,7 +175,7 @@ export default function CollaborationRequestModal({
           </div>
 
           {status && (
-            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+            <div role="status" aria-live="polite" className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
               {status}
             </div>
           )}

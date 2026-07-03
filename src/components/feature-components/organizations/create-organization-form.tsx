@@ -128,7 +128,7 @@ export default function CreateOrganizationForm() {
   };
 
   if (isLoading) {
-    return <main className="mx-auto max-w-4xl px-4 py-12 text-sm text-gray-600">Checking expert access...</main>;
+    return <div className="mx-auto max-w-4xl px-4 py-12 text-sm text-gray-600">Checking expert access...</div>;
   }
 
   if (!user) {
@@ -169,7 +169,7 @@ export default function CreateOrganizationForm() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8">
       <header className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 dark:border-emerald-900 dark:from-emerald-950/40 dark:to-slate-950">
         <Building2 className="h-8 w-8 text-emerald-700 dark:text-emerald-300" />
         <h1 className="mt-4 text-3xl font-black text-gray-950 dark:text-white">Create an organization</h1>
@@ -218,7 +218,7 @@ export default function CreateOrganizationForm() {
         {mutation.error && <p className="md:col-span-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-200">{mutation.error.message}</p>}
         <div className="md:col-span-2 flex justify-end"><button type="submit" disabled={mutation.isPending} className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-emerald-500 dark:text-emerald-950">{mutation.isPending ? 'Creating...' : 'Create organization'}</button></div>
       </form>
-    </main>
+    </div>
   );
 }
 
@@ -276,7 +276,7 @@ function ExpertApplicationGate({ user }: { user: User }) {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8">
       <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-900 dark:bg-amber-950/30">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800 dark:text-amber-200">
           Organization access
@@ -357,7 +357,7 @@ function ExpertApplicationGate({ user }: { user: User }) {
           </button>
         </div>
       </form>
-    </main>
+    </div>
   );
 }
 
@@ -378,12 +378,12 @@ function ProcessSteps() {
 
 function AccessMessage({ title, body, href, action }: { title: string; body: string; href: string; action: string }) {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="rounded-3xl border border-emerald-200 bg-white p-6 dark:border-emerald-900 dark:bg-slate-900">
         <h1 className="text-2xl font-bold text-gray-950 dark:text-white">{title}</h1>
         <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{body}</p>
         <Link href={href} className="mt-4 inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">{action}</Link>
       </div>
-    </main>
+    </div>
   );
 }

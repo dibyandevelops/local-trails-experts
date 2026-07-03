@@ -108,6 +108,11 @@ body {
     border-color: var(--border);
   }
 
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid hsl(var(--color-ring)) !important;
+    outline-offset: 3px !important;
+  }
+
   .dark .bg-white {
     background-color: var(--surface) !important;
   }

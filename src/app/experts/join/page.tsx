@@ -196,7 +196,7 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
             {copy.hero.description}
           </p>
-          <p className="mt-2 max-w-2xl text-xs font-medium text-emerald-800/75 dark:text-emerald-200/75">
+          <p className="mt-2 max-w-2xl text-xs font-medium text-emerald-800 dark:text-emerald-200">
             {copy.hero.opportunity}
           </p>
         </div>
@@ -220,10 +220,12 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className={labelClass}>
-                {copy.form.fullName} <span className="text-red-500">*</span>
+              <label htmlFor="guide-full-name" className={labelClass}>
+                {copy.form.fullName} <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <input
+                id="guide-full-name"
+                name="name"
                 type="text"
                 required
                 value={name}
@@ -233,10 +235,12 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
               />
             </div>
             <div>
-              <label className={labelClass}>
-                {copy.form.email} <span className="text-red-500">*</span>
+              <label htmlFor="guide-email" className={labelClass}>
+                {copy.form.email} <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <input
+                id="guide-email"
+                name="email"
                 type="email"
                 required
                 value={email}
@@ -253,24 +257,29 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className={labelClass}>
-                {copy.form.phone} <span className="text-red-500">*</span>
+              <label htmlFor="guide-phone" className={labelClass}>
+                {copy.form.phone} <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <input
+                id="guide-phone"
+                name="phone"
                 type="tel"
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className={`${inputClass} mt-1`}
+                aria-describedby="guide-phone-help"
                 placeholder={copy.form.phonePlaceholder}
               />
-              <p className={helperClass}>{copy.form.phoneHelper}</p>
+              <p id="guide-phone-help" className={helperClass}>{copy.form.phoneHelper}</p>
             </div>
             <div>
-              <label className={labelClass}>
-                {copy.form.password} <span className="text-red-500">*</span>
+              <label htmlFor="guide-password" className={labelClass}>
+                {copy.form.password} <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <input
+                id="guide-password"
+                name="password"
                 type="password"
                 required={!isExistingAccountApplication}
                 minLength={8}
@@ -278,9 +287,10 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isExistingAccountApplication}
                 className={`${inputClass} mt-1`}
+                aria-describedby="guide-password-help"
                 placeholder={isExistingAccountApplication ? copy.form.passwordExistingPlaceholder : copy.form.passwordPlaceholder}
               />
-              <p className={helperClass}>
+              <p id="guide-password-help" className={helperClass}>
                 {isExistingAccountApplication
                   ? copy.form.passwordExistingHelper
                   : copy.form.passwordHelper}
@@ -290,8 +300,10 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className={labelClass}>{copy.form.homeCity}</label>
+              <label htmlFor="guide-home-city" className={labelClass}>{copy.form.homeCity}</label>
               <input
+                id="guide-home-city"
+                name="city"
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
@@ -301,8 +313,8 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
             </div>
 
             <div>
-              <label className={labelClass}>{copy.form.activities}</label>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div id="guide-activities-label" className={labelClass}>{copy.form.activities}</div>
+              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-labelledby="guide-activities-label">
                 {TRAIL_SPORTS.map((sport) => {
                   const selected = selectedSports.includes(sport.value);
                   return (
@@ -310,6 +322,7 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
                       key={sport.value}
                       type="button"
                       onClick={() => toggleSport(sport.value)}
+                      aria-pressed={selected}
                       className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
                         selected
                           ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-slate-950'
@@ -326,8 +339,8 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
 
           <div>
             <div className="mb-1 flex items-center justify-between gap-2">
-              <label className={labelClass}>
-                {copy.form.experience} <span className="text-red-500">*</span>
+              <label htmlFor="guide-experience" className={labelClass}>
+                {copy.form.experience} <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <button
                 type="button"
@@ -339,6 +352,8 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
               </button>
             </div>
             <textarea
+              id="guide-experience"
+              name="experience"
               required
               value={credentials}
               onChange={(e) => setCredentials(e.target.value)}
@@ -349,7 +364,7 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
           </div>
 
           {errorMessage && (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+            <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
               {errorMessage}
             </p>
           )}
@@ -423,7 +438,7 @@ function ExpertStatusCard({
   actionLabel: string;
 }) {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm dark:border-emerald-900 dark:bg-slate-900">
         <h1 className="text-2xl font-bold text-gray-950 dark:text-white">{title}</h1>
         <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">{body}</p>
@@ -431,6 +446,6 @@ function ExpertStatusCard({
           {actionLabel}
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

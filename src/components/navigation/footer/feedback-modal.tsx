@@ -90,10 +90,12 @@ export default function FeedbackModal({ open, onOpenChange, initialUser = null }
           <form className="mt-5 space-y-4" onSubmit={onSubmit}>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                <label htmlFor="feedback-name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
                   Name
                 </label>
                 <input
+                  id="feedback-name"
+                  name="name"
                   type="text"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
@@ -103,10 +105,12 @@ export default function FeedbackModal({ open, onOpenChange, initialUser = null }
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                <label htmlFor="feedback-email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
                   Email
                 </label>
                 <input
+                  id="feedback-email"
+                  name="email"
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -118,10 +122,12 @@ export default function FeedbackModal({ open, onOpenChange, initialUser = null }
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+              <label htmlFor="feedback-message" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
                 Feedback
               </label>
               <textarea
+                id="feedback-message"
+                name="message"
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 required
@@ -144,12 +150,12 @@ export default function FeedbackModal({ open, onOpenChange, initialUser = null }
             </label>
 
             {error && (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+              <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
                 {error}
               </p>
             )}
             {sent && (
-              <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900/50 dark:bg-green-950/40 dark:text-green-200">
+              <p role="status" className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900/50 dark:bg-green-950/40 dark:text-green-200">
                 Feedback sent. Thank you.
               </p>
             )}
@@ -177,4 +183,3 @@ export default function FeedbackModal({ open, onOpenChange, initialUser = null }
     </Dialog.Root>
   );
 }
-

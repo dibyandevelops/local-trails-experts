@@ -187,12 +187,12 @@ export default function OrganizationDashboardClient() {
   };
 
   if (accessQuery.isLoading) {
-    return <main className="container mx-auto px-4 py-10 text-sm text-gray-600 dark:text-slate-300">Loading organization access...</main>;
+    return <div className="container mx-auto px-4 py-10 text-sm text-gray-600 dark:text-slate-300">Loading organization access...</div>;
   }
 
   if (!organizations.length) {
     return (
-      <main className="container mx-auto px-4 py-10">
+      <div className="container mx-auto px-4 py-10">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Organization Dashboard</h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">You are not assigned to an active organization yet.</p>
@@ -200,12 +200,12 @@ export default function OrganizationDashboardClient() {
             View organizations
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="container mx-auto space-y-6 px-4 py-8 text-gray-900 dark:text-slate-100">
+    <div className="container mx-auto space-y-6 px-4 py-8 text-gray-900 dark:text-slate-100">
       <section className="rounded-2xl border border-green-900/10 bg-white p-6 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
@@ -347,6 +347,6 @@ export default function OrganizationDashboardClient() {
       </section>
 
       <OrganizationGalleryManagementPanel organizationId={effectiveOrgId} />
-    </main>
+    </div>
   );
 }

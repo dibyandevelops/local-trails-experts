@@ -65,7 +65,7 @@ export default async function CampaignDetailPage({
   const updatedAt = formatDate(campaign.updated_at);
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-4 flex items-center justify-between gap-3">
         <Link
           href="/campaigns"
@@ -173,6 +173,6 @@ export default async function CampaignDetailPage({
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

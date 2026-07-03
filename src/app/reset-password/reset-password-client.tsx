@@ -34,7 +34,7 @@ export default function ResetPasswordClient() {
   });
 
   return (
-    <main className="min-h-[calc(100vh-140px)] bg-slate-50 px-4 py-12 dark:bg-slate-950">
+    <div className="min-h-[calc(100vh-140px)] bg-slate-50 px-4 py-12 dark:bg-slate-950">
       <div className="mx-auto max-w-md overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="border-b border-gray-200 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/40">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
@@ -129,6 +129,6 @@ export default function ResetPasswordClient() {
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
