@@ -1,42 +1,53 @@
-# Local guides
+# LocoXperts
 
-A Next.js application for finding mountain biking trails and joining events based on your expertise level.
+LocoXperts helps riders discover Nepal trails, review route context, plan rides with local guides,
+join events, and connect with trail organizations and services.
 
-## Features
+This repository contains two applications:
 
-- 🔍 **Search Trails**: Search and filter trails by name, difficulty, and location
-- 📅 **Events**: View events categorized by expertise level (beginner, intermediate, advanced, expert)
-- ➕ **Create Events**: Create new events with expertise-based filtering
-- 👥 **Join Events**: Join events that match your skill level
-- 🗄️ **Local PostgreSQL**: Uses local PostgreSQL database (no Supabase)
+- The root project is the Next.js web platform and API.
+- `mobile/` is the Android-first Expo trail navigator with its own `package.json`.
 
-## Prerequisites
+Install and run each application from its own directory. The mobile app consumes the web
+platform's public API; it is not a second web build.
 
-- Node.js 18+ and npm/yarn
-- PostgreSQL installed and running locally
+## Core Features
 
-## Setup
+- Search and filter mapped trails by location, activity, difficulty, distance, and ride profile.
+- View GPX routes, trail alerts, safety context, services, campaigns, and local guide associations.
+- Request trail activities and plan unfamiliar rides with verified local guides.
+- Create and join free or paid events.
+- Save trails and maintain participant, guide, and organization dashboards.
+- Let verified guides upload trails and create organizations for programs, campaigns, services,
+  teams, and trail work.
+- Navigate trails from the standalone Android app, including cached routes and offline map regions.
 
-1. **Install dependencies:**
+## Requirements
+
+### Web platform
+
+- Node.js 20 or newer
+- pnpm
+- PostgreSQL
+
+### Android navigator
+
+- Node.js 22.13 or newer
+- npm
+- Android Studio and the Android SDK for local native builds
+
+## Web Setup
+
+1. Install dependencies from the repository root:
+
    ```bash
    pnpm install
    ```
 
-2. **Set up PostgreSQL database:**
-   ```bash
-   # Create the database
-   createdb mtb_trail_finder
-   # or using psql
-   psql -U postgres -c "CREATE DATABASE mtb_trail_finder;"
-   ```
+2. Create `.env.local` and configure at least the application secret and database connection:
 
-3. **Configure environment variables:**
-   ```bash
-   cp .env.local.example .env.local
-   ```
-
-   Edit `.env.local` with your PostgreSQL credentials:
-   ```
+   ```dotenv
+   JWT_SECRET=replace-with-a-long-random-secret
    DB_HOST=localhost
    DB_PORT=5432
    DB_NAME=mtb_trail_finder
@@ -44,70 +55,142 @@ A Next.js application for finding mountain biking trails and joining events base
    DB_PASSWORD=postgres
    ```
 
-4. **Run database migrations:**
+   `DIRECT_DATABASE_URL` can be used instead of separate database fields. Firebase, email,
+   Redis, Google, Strava, eSewa, Mapbox, and AI variables are optional and only required for their
+   corresponding integrations. Never commit real credentials.
+
+3. Create the local database when using local PostgreSQL:
+
+   ```bash
+   createdb mtb_trail_finder
+   ```
+
+4. Apply migrations:
+
    ```bash
    pnpm db:migrate
    ```
 
-5. **Seed collaboration mock data (optional):**
+5. Optionally seed collaboration data:
+
    ```bash
    pnpm db:seed
    ```
 
-   This seeds the collaboration mock data used for expert and organization collaboration flows.
+6. Start the web application:
 
-6. **Start the development server:**
    ```bash
    pnpm dev
    ```
 
-7. **Open [http://localhost:3000](http://localhost:3000)** in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Android navigator
+## Android Navigator
 
-The Android-first Expo/MapLibre MVP is in [`mobile/`](mobile/README.md). It opens trail deep links,
-caches trail routes and map tiles for offline use, and supports navigation without a login. The app
-does not upload a rider's navigation history.
+The native project is documented in [mobile/README.md](mobile/README.md).
 
-## Database Schema
+Run it independently from the mobile directory:
 
-The application uses the following main tables:
+```bash
+cd mobile
+npm install
+npm run android
+```
 
-- **trails**: Stores trail information (name, difficulty, location, etc.)
-- **events**: Stores event information with required expertise level
-- **event_participants**: Tracks participants for each event
+MapLibre uses native code, so Expo Go is not supported. Development builds use Metro. A release
+APK embeds the JavaScript bundle and does not require Metro, although map tiles and API-backed
+features still require network access unless cached.
+
+## Architecture
+
+The complete dependency map and layer rules are in
+[docs/architecture.md](docs/architecture.md).
+
+The application follows these boundaries:
+
+```text
+Route composition  src/app/**
+Presentation       src/components/**
+Application state  src/hooks/** and src/stores/**
+HTTP services      src/services/**
+Domain utilities   src/lib/** and src/types/**
+Server data access src/lib/data/** and server-only src/lib modules
+API boundary       src/app/api/**
+```
+
+Dependencies flow downward. In particular:
+
+- UI and application hooks never contain SQL or import the database client.
+- API routes never import components, client hooks, or stores.
+- Services own endpoint paths, payloads, response types, and transport errors.
+- React Query and browser workflow orchestration belong in hooks.
+- Route files compose features instead of implementing complete features inline.
+
+The trails listing is the reference module for this structure:
+
+```text
+src/app/trails/trails-client.tsx
+src/components/feature-components/trails/
+src/hooks/trails/
+src/services/trails/
+```
+
+## Architecture Checks
+
+Run the hard boundary check:
+
+```bash
+pnpm architecture:check
+```
+
+Report older UI files that still make direct HTTP calls and should be migrated into services:
+
+```bash
+pnpm architecture:report
+```
+
+The report is migration inventory, not a build failure. New client HTTP operations should be added
+to `src/services/**`, not directly to route or presentation files.
 
 ## Project Structure
 
-```
-├── src/
-│   ├── app/
-│   │   ├── api/          # API routes
-│   │   ├── events/       # Events pages
-│   │   ├── trails/       # Trails search page
-│   │   └── layout.tsx    # Root layout
-│   ├── lib/
-│   │   └── db.ts         # Database connection
-│   └── types/
-│       └── index.ts      # TypeScript types
+```text
+.
 ├── database/
-│   └── migrations/       # Database migrations
-└── scripts/
-    ├── migrate.js        # Migration script
-    └── seed.js          # Canonical seed orchestrator
+│   └── migrations/          PostgreSQL migrations
+├── docs/
+│   └── architecture.md      Dependency map and layer rules
+├── mobile/                  Expo/React Native Android navigator
+├── scripts/                 Migrations, seeds, smoke tests, architecture checks
+└── src/
+    ├── app/                 Next.js routes, layouts, and API endpoints
+    ├── components/          Shared and feature presentation
+    ├── hooks/               Client application orchestration
+    ├── i18n/                English and Nepali copy
+    ├── lib/                 Domain, server, and integration utilities
+    ├── services/            Typed client HTTP contracts
+    ├── stores/              Shared client state
+    └── types/               Shared TypeScript types
 ```
 
-## API Routes
+## Common Commands
 
-- `GET /api/trails` - Search trails (query params: search, difficulty, location)
-- `GET /api/events` - List events (query params: expertise, upcoming)
-- `POST /api/events` - Create a new event
-- `POST /api/events/[id]/join` - Join an event
+```bash
+pnpm dev                  # Start Next.js development
+pnpm build                # Create a production web build
+pnpm start                # Run the production web build
+pnpm test                 # Run Vitest
+pnpm lint                 # Run ESLint
+pnpm db:migrate           # Apply pending database migrations
+pnpm db:seed              # Seed canonical development data
+pnpm db:smoke             # Run database smoke checks
+pnpm architecture:check  # Enforce hard layer boundaries
+pnpm architecture:report # Show remaining direct-HTTP migration candidates
+```
 
-## Technologies
+## Main Domains
 
-- **Next.js 14** - React framework
-- **TypeScript** - Type safety
-- **PostgreSQL** - Database
-- **Tailwind CSS** - Styling
-- **date-fns** - Date formatting
+The database and API support trails, route data, events, bookings, payments, participant requests,
+guide verification, organizations, members, services, campaigns, ride programs, trail updates,
+notifications, and navigation sessions. Database changes must be added as ordered migrations under
+`database/migrations/`.

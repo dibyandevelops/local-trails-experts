@@ -1,10 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { SportType, Trail } from '@/types';
+import { Trail } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Toast from '@radix-ui/react-toast';
 
 import { TRAIL_SPORTS } from '@/services/constants/sports';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
@@ -34,8 +32,11 @@ import {
 } from '@/components/feature-components/trails/trails-page-header';
 import { TrailsFilterDialog } from '@/components/feature-components/trails/trails-filter-dialog';
 import { TrailsResults } from '@/components/feature-components/trails/trails-results';
-import TrailsMapPreview from '@/components/feature-components/trails/trails-map-preview';
-import EventForm from '@/components/feature-components/event-form/event-form';
+import {
+  CreateTrailEventDialog,
+  TrailMapDialog,
+  TrailsToast,
+} from '@/components/feature-components/trails/trails-page-dialogs';
 
 
 function TrailsPageContent() {
@@ -510,8 +511,14 @@ function TrailsPageContent() {
         }}
       />
 
-      <Dialog.Root
+      <TrailMapDialog
         open={mapOpen}
+        trail={mapTrail}
+        detail={mapTrailDetail}
+        loading={loadingMapTrail}
+        error={mapTrailError instanceof Error ? mapTrailError : null}
+        mapStyle={mapStyle}
+        mapStyleMode={mapStyleMode}
         onOpenChange={(open) => {
           setMapOpen(open);
           if (!open) {
@@ -519,55 +526,11 @@ function TrailsPageContent() {
             setMapTrailId(null);
           }
         }}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 h-[82vh] w-[96vw] max-w-5xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-slate-950 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-              <Dialog.Title className="truncate pr-2 text-sm font-semibold text-white">
-                {mapTrail?.name || 'Trail Map'}
-              </Dialog.Title>
-              <Dialog.Close className="rounded border border-white/20 px-3 py-1 text-xs text-white hover:bg-white/10">
-                Close
-              </Dialog.Close>
-            </div>
-            {loadingMapTrail ? (
-              <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
-                Loading trail route...
-              </div>
-            ) : mapTrailError ? (
-              <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
-                <div className="space-y-3">
-                  <p>
-                    {(mapTrailError as Error).message ||
-                      'Failed to load trail map.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void refetchMapTrail();
-                    }}
-                    className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
-                  >
-                    Retry map
-                  </button>
-                </div>
-              </div>
-            ) : mapTrailDetail?.route_data?.coordinates?.length ? (
-              <TrailsMapPreview
-                trail={mapTrailDetail}
-                mapStyle={mapStyle}
-                mapStyleMode={mapStyleMode}
-                onMapStyleModeChange={setMapStyleMode}
-              />
-            ) : (
-              <div className="grid h-[calc(82vh-52px)] place-items-center px-4 text-center text-sm text-gray-300">
-                No GPX route data available for this trail.
-              </div>
-            )}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+        onRetry={() => {
+          void refetchMapTrail();
+        }}
+        onMapStyleModeChange={setMapStyleMode}
+      />
 
       <TrailImageCarouselModal
         open={galleryOpen}
@@ -576,8 +539,12 @@ function TrailsPageContent() {
         images={galleryImages}
       />
 
-      <Dialog.Root
+      <CreateTrailEventDialog
         open={createEventOpen}
+        trailId={createEventTrailId}
+        sport={createEventSport}
+        trail={selectedCreateEventTrail}
+        user={user}
         onOpenChange={(open) => {
           setCreateEventOpen(open);
           if (!open) {
@@ -585,49 +552,13 @@ function TrailsPageContent() {
             setCreateEventSport('');
           }
         }}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 h-[88vh] w-[96vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <Dialog.Title className="truncate pr-2 text-sm font-semibold text-gray-900">
-                Create Event For Selected Trail
-              </Dialog.Title>
-              <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
-                Close
-              </Dialog.Close>
-            </div>
-            {createEventTrailId ? (
-              <div className="h-[calc(88vh-52px)] overflow-y-auto p-4">
-                <EventForm
-                  mode="create"
-                  lockTrailAndSport
-                  embedded
-                  initialUser={user}
-                  prefillTrailId={createEventTrailId}
-                  prefillTrail={selectedCreateEventTrail}
-                  prefillSport={(createEventSport || 'mtb') as SportType}
-                  onCompleted={() => {
-                    setToastTitle('Event created');
-                    setToastDescription('Your event was created successfully.');
-                    setToastOpen(true);
-                    setCreateEventOpen(false);
-                    setCreateEventTrailId('');
-                    setCreateEventSport('');
-                  }}
-                  onCancel={() => {
-                    setCreateEventOpen(false);
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="grid h-[calc(88vh-52px)] place-items-center text-sm text-gray-600">
-                Select a trail to create event.
-              </div>
-            )}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+        onCompleted={() => {
+          showToast('Event created', 'Your event was created successfully.');
+          setCreateEventOpen(false);
+          setCreateEventTrailId('');
+          setCreateEventSport('');
+        }}
+      />
 
       <TrailRequestModal
         open={requestOpen}
@@ -661,21 +592,12 @@ function TrailsPageContent() {
         onSubmit={(payload) => requestMutation.mutate(payload)}
       />
 
-      <Toast.Provider swipeDirection="right">
-        <Toast.Root
-          open={toastOpen}
-          onOpenChange={setToastOpen}
-          className="fixed bottom-4 right-4 z-50 w-[90vw] max-w-sm rounded-2xl border border-gray-200 bg-white p-4 shadow-lg"
-        >
-          <Toast.Title className="text-sm font-semibold text-gray-900">
-            {toastTitle}
-          </Toast.Title>
-          <Toast.Description className="mt-1 text-xs text-gray-600">
-            {toastDescription}
-          </Toast.Description>
-        </Toast.Root>
-        <Toast.Viewport className="fixed bottom-4 right-4 z-50" />
-      </Toast.Provider>
+      <TrailsToast
+        open={toastOpen}
+        title={toastTitle}
+        description={toastDescription}
+        onOpenChange={setToastOpen}
+      />
     </div>
   );
 }
