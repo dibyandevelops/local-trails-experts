@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import MobileNavbar from '@/components/navigation/mobile-navbar';
 import {
-  NotificationsDropdown,
-  notificationsScrollAreaClass,
+  MobileNotificationsPanel,
+  NotificationIconButton,
 } from '@/components/navigation/notifications-dropdown';
 import type { NavbarUser, NavItem } from '@/components/navigation/navbar.types';
 
@@ -53,33 +53,54 @@ describe('MobileNavbar', () => {
     expect(screen.queryByRole('button', { name: 'View notifications' })).not.toBeInTheDocument();
   });
 
-  it('renders notifications as a standalone accessible icon with a scrollable list', () => {
-    render(
-      <NotificationsDropdown
-        data={{
-          unreadCount: 3,
-          notifications: [
-            {
-              id: 'notification-1',
-              type: 'trail_update',
-              title: 'Trail update',
-              description: 'A recent trail condition was posted.',
-              href: '/trails/example',
-              createdAt: new Date().toISOString(),
-              tone: 'info',
-            },
-          ],
-        }}
-      />
+  it('renders notifications in a matching scrollable mobile panel', () => {
+    const data = {
+      unreadCount: 3,
+      notifications: [
+        {
+          id: 'notification-1',
+          type: 'trail_update',
+          title: 'Trail update',
+          description: 'A recent trail condition was posted.',
+          href: '/trails/example',
+          createdAt: new Date().toISOString(),
+          tone: 'info' as const,
+        },
+      ],
+    };
+    const { rerender } = render(
+      <>
+        <NotificationIconButton
+          data={data}
+          expanded
+          controls="mobile-notifications"
+        />
+        <MobileNotificationsPanel open data={data} onNavigate={vi.fn()} />
+      </>
     );
 
     const trigger = screen.getByRole('button', { name: 'View notifications' });
-    expect(trigger).toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(trigger).toHaveAttribute('aria-controls', 'mobile-notifications');
     expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Trail update')).toBeInTheDocument();
 
-    expect(notificationsScrollAreaClass).toContain('overflow-y-auto');
-    expect(notificationsScrollAreaClass).toContain('overscroll-contain');
-    expect(notificationsScrollAreaClass).toContain('touch-pan-y');
-    expect(notificationsScrollAreaClass).toContain('100dvh');
+    const panel = document.getElementById('mobile-notifications');
+    expect(panel).toHaveClass('overflow-y-auto', 'overscroll-contain', 'touch-pan-y');
+    expect(panel).not.toHaveClass('overflow-hidden');
+
+    rerender(
+      <>
+        <NotificationIconButton
+          data={data}
+          expanded={false}
+          controls="mobile-notifications"
+        />
+        <MobileNotificationsPanel open={false} data={data} onNavigate={vi.fn()} />
+      </>
+    );
+
+    expect(panel).toHaveClass('overflow-hidden', 'max-h-0');
+    expect(screen.queryByText('Trail update')).not.toBeInTheDocument();
   });
 });

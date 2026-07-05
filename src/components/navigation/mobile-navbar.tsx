@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import ThemeToggle from '@/components/theme-toggle';
 import type { NavbarUser, NavGroup, NavItem } from './navbar.types';
-import { activeMenuItemClass, getNavIcon, mobileItemClass } from './navbar.config';
+import {
+  activeMenuItemClass,
+  getNavIcon,
+  mobileItemClass,
+  mobilePanelBaseClass,
+  mobilePanelClosedClass,
+  mobilePanelOpenClass,
+} from './navbar.config';
 
 type MobileNavbarProps = {
   mobileOpen: boolean;
@@ -57,10 +64,8 @@ export default function MobileNavbar({
   return (
     <div
       id="mobile-navigation"
-      className={`mt-2 rounded-3xl border border-white/10 bg-emerald-950/95 shadow-xl shadow-emerald-950/30 backdrop-blur transition-[max-height,opacity,padding,border-color] duration-300 ease-out lg:hidden ${
-        mobileOpen
-          ? 'max-h-[calc(100dvh-5.5rem)] touch-pan-y overflow-y-auto overscroll-contain p-3 opacity-100 [-webkit-overflow-scrolling:touch]'
-          : 'max-h-0 overflow-hidden border-transparent p-0 opacity-0'
+      className={`${mobilePanelBaseClass} ${
+        mobileOpen ? mobilePanelOpenClass : mobilePanelClosedClass
       }`}
     >
       <div className="flex flex-col gap-1.5">

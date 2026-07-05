@@ -11,7 +11,10 @@ import type { User } from '@/types';
 import DesktopNavbar from './desktop-navbar';
 import MobileNavbar from './mobile-navbar';
 import NavbarBrand from './navbar-brand';
-import { NotificationsDropdown } from './notifications-dropdown';
+import {
+  MobileNotificationsPanel,
+  NotificationIconButton,
+} from './notifications-dropdown';
 import { navGroups, navItems } from './navbar.config';
 import type { NavItem, NotificationsData } from './navbar.types';
 
@@ -63,6 +66,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     retry: false,
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileNotificationsOpen, setMobileNotificationsOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const [loginNext, setLoginNext] = useState<string | null>(null);
@@ -75,6 +79,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
   useEffect(() => {
     setMobileOpen(false);
+    setMobileNotificationsOpen(false);
     setOpenGroup(null);
     if (hoverCloseTimeout.current) {
       clearTimeout(hoverCloseTimeout.current);
@@ -246,18 +251,23 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           <NavbarBrand />
           <div className="flex items-center gap-2 lg:hidden">
             {!loadingUser && user && (
-              <NotificationsDropdown
+              <NotificationIconButton
                 data={notificationsData}
-                onNavigate={() => setMobileOpen(false)}
-                onOpenChange={(open) => {
-                  if (open) setMobileOpen(false);
+                expanded={mobileNotificationsOpen}
+                controls="mobile-notifications"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setMobileNotificationsOpen((value) => !value);
                 }}
               />
             )}
             <button
               type="button"
               className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-sm transition-colors hover:bg-white/15"
-              onClick={() => setMobileOpen((value) => !value)}
+              onClick={() => {
+                setMobileNotificationsOpen(false);
+                setMobileOpen((value) => !value);
+              }}
               aria-label="Toggle navigation"
               aria-expanded={mobileOpen}
               aria-controls="mobile-navigation"
@@ -305,6 +315,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           handleViewProfile={handleViewProfile}
           handleLogout={handleLogout}
         />
+        {!loadingUser && user ? (
+          <MobileNotificationsPanel
+            open={mobileNotificationsOpen}
+            data={notificationsData}
+            onNavigate={() => setMobileNotificationsOpen(false)}
+          />
+        ) : null}
       </div>
 
       <LoginModal
