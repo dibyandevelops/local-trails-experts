@@ -27,7 +27,7 @@ export default function HazardousTrailsPanel() {
   });
 
   return (
-    <section className="space-y-4 rounded-2xl border border-rose-200 bg-white p-6 shadow-sm dark:border-rose-900/60 dark:bg-slate-900">
+    <section className="space-y-4 rounded-xl border border-rose-200 bg-white p-4 shadow-sm dark:border-rose-900/60 dark:bg-slate-900 sm:rounded-2xl sm:p-6">
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
           Hazardous Trails

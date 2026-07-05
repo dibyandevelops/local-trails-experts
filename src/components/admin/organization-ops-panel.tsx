@@ -1222,7 +1222,7 @@ export default function OrganizationOpsPanel() {
   );
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-6">
       <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">Organization Operations</h2>
       <p className="mb-5 text-sm text-gray-600 dark:text-slate-300">
         Manage organization gallery assets and publish trail update logs.

@@ -17,7 +17,7 @@ export default function TrailRequestsPanel() {
   });
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-2">
         Participant Trail Requests
       </h2>

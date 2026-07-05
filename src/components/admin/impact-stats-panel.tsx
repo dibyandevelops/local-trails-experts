@@ -27,7 +27,7 @@ export default function ImpactStatsPanel() {
   });
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-6">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Impact Snapshot</h2>
       <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
         Aggregate platform metrics for trails, riders, events, organizations, and funding.

@@ -1,31 +1,41 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import AdminHeader from '@/components/admin/admin-header';
-import ExpertApplicationsPanel from '@/components/admin/expert-applications-panel';
-import TrailRequestsPanel from '@/components/admin/trail-requests-panel';
-import PendingTrailsPanel from '@/components/admin/pending-trails-panel';
-import UsersPanel from '@/components/admin/users-panel';
-import HazardousTrailsPanel from '@/components/admin/hazardous-trails-panel';
-import StoreRequestsPanel from '@/components/admin/store-requests-panel';
-import StoresAdminPanel from '@/components/admin/stores-admin-panel';
-import UpcomingEventsPanel from '@/components/admin/upcoming-events-panel';
-import OrganizationMembersPanel from '@/components/admin/organization-members-panel';
-import OrganizationOpsPanel from '@/components/admin/organization-ops-panel';
-import OrganizationsPanel from '@/components/admin/organizations-panel';
-import FundraisingCampaignsPanel from '@/components/admin/fundraising-campaigns-panel';
 import ImpactStatsPanel from '@/components/admin/impact-stats-panel';
-import RideProgramsPanel from '@/components/admin/ride-programs-panel';
-import RideNotesPanel from '@/components/admin/ride-notes-panel';
+
+function AdminPanelLoading() {
+  return <p className="text-sm text-gray-500 dark:text-slate-400">Loading admin tools...</p>;
+}
+
+const ExpertApplicationsPanel = dynamic(() => import('@/components/admin/expert-applications-panel'), { loading: AdminPanelLoading });
+const TrailRequestsPanel = dynamic(() => import('@/components/admin/trail-requests-panel'), { loading: AdminPanelLoading });
+const StoreRequestsPanel = dynamic(() => import('@/components/admin/store-requests-panel'), { loading: AdminPanelLoading });
+const RideProgramsPanel = dynamic(() => import('@/components/admin/ride-programs-panel'), { loading: AdminPanelLoading });
+const RideNotesPanel = dynamic(() => import('@/components/admin/ride-notes-panel'), { loading: AdminPanelLoading });
+const UpcomingEventsPanel = dynamic(() => import('@/components/admin/upcoming-events-panel'), { loading: AdminPanelLoading });
+const StoresAdminPanel = dynamic(() => import('@/components/admin/stores-admin-panel'), { loading: AdminPanelLoading });
+const OrganizationsPanel = dynamic(() => import('@/components/admin/organizations-panel'), { loading: AdminPanelLoading });
+const OrganizationMembersPanel = dynamic(() => import('@/components/admin/organization-members-panel'), { loading: AdminPanelLoading });
+const FundraisingCampaignsPanel = dynamic(() => import('@/components/admin/fundraising-campaigns-panel'), { loading: AdminPanelLoading });
+const OrganizationOpsPanel = dynamic(() => import('@/components/admin/organization-ops-panel'), { loading: AdminPanelLoading });
+const HazardousTrailsPanel = dynamic(() => import('@/components/admin/hazardous-trails-panel'), { loading: AdminPanelLoading });
+const PendingTrailsPanel = dynamic(() => import('@/components/admin/pending-trails-panel'), { loading: AdminPanelLoading });
+const UsersPanel = dynamic(() => import('@/components/admin/users-panel'), { loading: AdminPanelLoading });
 
 function AdminSection({
   id,
+  open,
+  onOpenChange,
   eyebrow,
   title,
   description,
   children,
 }: {
   id: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   eyebrow: string;
   title: string;
   description: string;
@@ -34,11 +44,12 @@ function AdminSection({
   return (
     <details
       id={id}
-      open
-      className="group scroll-mt-24 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950"
+      open={open}
+      onToggle={(event) => onOpenChange(event.currentTarget.open)}
+      className="group scroll-mt-24 rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-5"
     >
       <summary className="flex cursor-pointer list-none items-start justify-between gap-4 border-b border-gray-200 pb-4 dark:border-slate-800">
-        <span>
+        <span className="min-w-0 flex-1">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
             {eyebrow}
           </span>
@@ -50,37 +61,54 @@ function AdminSection({
           <span className="hidden group-open:inline">Hide</span>
         </span>
       </summary>
-      <div className="mt-5 space-y-6">{children}</div>
+      {open ? <div className="mt-4 space-y-4 sm:mt-5 sm:space-y-6">{children}</div> : null}
     </details>
   );
 }
 
-const adminNavItems = [
+type AdminSectionId = 'requests' | 'content' | 'operations' | 'accounts';
+
+const adminNavItems: Array<{
+  id: AdminSectionId;
+  href: `#${AdminSectionId}`;
+  label: string;
+  description: string;
+}> = [
   {
+    id: 'requests',
     href: '#requests',
     label: 'Requests',
     description: 'Applications, rider requests, and shop requests.',
   },
   {
+    id: 'content',
     href: '#content',
     label: 'Content',
     description: 'Ride notes, ride programs, and events.',
   },
   {
+    id: 'operations',
     href: '#operations',
     label: 'Operations',
     description: 'Stores, organizations, campaigns, and trail ops.',
   },
   {
+    id: 'accounts',
     href: '#accounts',
     label: 'People',
     description: 'Experts, participants, and account control.',
   },
 ];
 
-function AdminQuickNav() {
+function AdminQuickNav({
+  activeSection,
+  onNavigate,
+}: {
+  activeSection: AdminSectionId | null;
+  onNavigate: (section: AdminSectionId) => void;
+}) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-5">
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
           Admin map
@@ -92,6 +120,8 @@ function AdminQuickNav() {
           <a
             key={item.href}
             href={item.href}
+            aria-current={activeSection === item.id ? 'location' : undefined}
+            onClick={() => onNavigate(item.id)}
             className="rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-900/70 dark:hover:bg-emerald-950/30"
           >
             <span className="text-sm font-semibold text-gray-950 dark:text-white">{item.label}</span>
@@ -104,14 +134,38 @@ function AdminQuickNav() {
 }
 
 export default function AdminPage() {
+  const [activeSection, setActiveSection] = useState<AdminSectionId | null>('requests');
+
+  useEffect(() => {
+    const selectHashSection = () => {
+      const section = window.location.hash.slice(1) as AdminSectionId;
+      if (adminNavItems.some((item) => item.id === section)) {
+        setActiveSection(section);
+      }
+    };
+
+    selectHashSection();
+    window.addEventListener('hashchange', selectHashSection);
+    return () => window.removeEventListener('hashchange', selectHashSection);
+  }, []);
+
+  const handleSectionToggle = (section: AdminSectionId, open: boolean) => {
+    setActiveSection((current) => {
+      if (open) return section;
+      return current === section ? null : current;
+    });
+  };
+
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-5 pb-8 sm:space-y-8 sm:pb-10">
       <AdminHeader />
-      <AdminQuickNav />
+      <AdminQuickNav activeSection={activeSection} onNavigate={setActiveSection} />
       <ImpactStatsPanel />
 
       <AdminSection
         id="requests"
+        open={activeSection === 'requests'}
+        onOpenChange={(open) => handleSectionToggle('requests', open)}
         eyebrow="Review queue"
         title="Requests"
         description="Review incoming applications, trail help requests, and store submissions."
@@ -123,6 +177,8 @@ export default function AdminPage() {
 
       <AdminSection
         id="content"
+        open={activeSection === 'content'}
+        onOpenChange={(open) => handleSectionToggle('content', open)}
         eyebrow="Publishing area"
         title="Content"
         description="Review expert content, manage public ride programs, and keep event listings current."
@@ -134,6 +190,8 @@ export default function AdminPage() {
 
       <AdminSection
         id="operations"
+        open={activeSection === 'operations'}
+        onOpenChange={(open) => handleSectionToggle('operations', open)}
         eyebrow="Operations area"
         title="Operations"
         description="Manage stores, organizations, campaigns, trail ownership, trail services, and moderation."
@@ -149,6 +207,8 @@ export default function AdminPage() {
 
       <AdminSection
         id="accounts"
+        open={activeSection === 'accounts'}
+        onOpenChange={(open) => handleSectionToggle('accounts', open)}
         eyebrow="Admin control"
         title="Accounts"
         description="Manage experts, visibility, and participant records."

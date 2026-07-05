@@ -146,7 +146,7 @@ export default function OrganizationMembersPanel() {
   );
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Members</h2>

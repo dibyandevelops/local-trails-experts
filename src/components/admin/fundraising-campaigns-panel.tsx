@@ -469,7 +469,7 @@ export default function FundraisingCampaignsPanel() {
   );
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-6">
       <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">

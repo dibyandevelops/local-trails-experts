@@ -87,6 +87,7 @@ export default function RideNotesPanel() {
   const [editingNote, setEditingNote] = useState<AdminRideNote | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminRideNote | null>(null);
   const [message, setMessage] = useState('');
+  const [editorMessage, setEditorMessage] = useState('');
   const {
     register,
     handleSubmit,
@@ -162,6 +163,9 @@ export default function RideNotesPanel() {
     setEditingNote(null);
     reset(getDefaultValues());
     setMessage('');
+    setEditorMessage('');
+    createMutation.reset();
+    updateMutation.reset();
     setEditorOpen(true);
   };
 
@@ -169,7 +173,18 @@ export default function RideNotesPanel() {
     setEditingNote(note);
     reset(getDefaultValues(note));
     setMessage('');
+    setEditorMessage('');
+    createMutation.reset();
+    updateMutation.reset();
     setEditorOpen(true);
+  };
+
+  const closeEditor = () => {
+    setEditorOpen(false);
+    setEditingNote(null);
+    setEditorMessage('');
+    createMutation.reset();
+    updateMutation.reset();
   };
 
   const onSubmit = (values: AdminRideNoteInput) => {
@@ -192,25 +207,25 @@ export default function RideNotesPanel() {
   const handleCoverUpload = async (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setMessage('Please upload a valid image file for the cover.');
+      setEditorMessage('Please upload a valid image file for the cover.');
       return;
     }
 
     try {
       const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 1400, quality: 0.84 });
       if (dataUrl.length > 650_000) {
-        setMessage('Cover image is too large. Please choose a smaller image.');
+        setEditorMessage('Cover image is too large. Please choose a smaller image.');
         return;
       }
       setValue('cover_image_url', dataUrl, { shouldDirty: true });
-      setMessage('Cover image uploaded.');
+      setEditorMessage('Cover image uploaded.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Failed to upload cover image.');
+      setEditorMessage(error instanceof Error ? error.message : 'Failed to upload cover image.');
     }
   };
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/60 sm:rounded-2xl sm:p-5">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ride Notes</h2>
@@ -238,7 +253,7 @@ export default function RideNotesPanel() {
         </div>
       </div>
 
-      {message && <p className="mb-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}
+      {message && <p role="status" className="mb-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}
       {error && (
         <p className="mb-3 text-sm text-red-600 dark:text-red-300">
           {error instanceof Error ? error.message : 'Unable to load ride notes.'}
@@ -252,7 +267,53 @@ export default function RideNotesPanel() {
           No ride notes yet. Create the first note to make the public page useful.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+        <>
+        <div className="space-y-3 md:hidden">
+          {notes.map((note) => (
+            <article key={note.id} className="rounded-xl border border-gray-200 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="break-words text-sm font-semibold text-gray-900 dark:text-slate-100">{note.title}</h3>
+                  <p className="mt-1 break-all text-xs text-gray-500 dark:text-slate-400">/{note.slug}</p>
+                </div>
+                <StatusBadge status={note.status} />
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <dt className="font-semibold text-gray-500 dark:text-slate-400">Trail</dt>
+                  <dd className="mt-0.5 text-gray-700 dark:text-slate-200">{note.trail_name || 'Not linked'}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-500 dark:text-slate-400">Published</dt>
+                  <dd className="mt-0.5 text-gray-700 dark:text-slate-200">{formatDate(note.published_at)}</dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="font-semibold text-gray-500 dark:text-slate-400">Owner</dt>
+                  <dd className="mt-0.5 text-gray-700 dark:text-slate-200">
+                    {note.expert_name || note.organization_name || 'Not linked'}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => openEdit(note)}
+                  className="min-h-10 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(note)}
+                  className="min-h-10 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200 dark:hover:bg-red-950/50"
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="hidden overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 md:block">
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-slate-900 dark:text-slate-400">
               <tr>
@@ -309,19 +370,24 @@ export default function RideNotesPanel() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <AppDialog
         open={editorOpen}
-        onOpenChange={setEditorOpen}
+        onOpenChange={(open) => {
+          if (open) setEditorOpen(true);
+          else closeEditor();
+        }}
         title={editingNote ? 'Edit ride note' : 'Create ride note'}
         description="Connect the note to a trail and expert when it helps riders understand the route."
         maxWidthClassName="max-w-3xl"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Title</label>
+            <label htmlFor="ride-note-title" className="text-xs font-semibold text-gray-600 dark:text-slate-300">Title</label>
             <input
+              id="ride-note-title"
               {...register('title', { required: 'Title is required.' })}
               className={inputClass}
               placeholder="Riding Pharping after rain"
@@ -331,8 +397,8 @@ export default function RideNotesPanel() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Category</label>
-              <select {...register('category')} className={inputClass}>
+              <label htmlFor="ride-note-category" className="text-xs font-semibold text-gray-600 dark:text-slate-300">Category</label>
+              <select id="ride-note-category" {...register('category')} className={inputClass}>
                 {categories.map((category) => (
                   <option key={category.value} value={category.value}>
                     {category.label}
@@ -341,8 +407,8 @@ export default function RideNotesPanel() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Status</label>
-              <select {...register('status')} className={inputClass}>
+              <label htmlFor="ride-note-status" className="text-xs font-semibold text-gray-600 dark:text-slate-300">Status</label>
+              <select id="ride-note-status" {...register('status')} className={inputClass}>
                 <option value="draft">Draft</option>
                 <option value="pending_review">Pending review</option>
                 <option value="published">Published</option>
@@ -352,8 +418,9 @@ export default function RideNotesPanel() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Excerpt</label>
+            <label htmlFor="ride-note-excerpt" className="text-xs font-semibold text-gray-600 dark:text-slate-300">Excerpt</label>
             <textarea
+              id="ride-note-excerpt"
               {...register('excerpt')}
               rows={2}
               className={inputClass}
@@ -362,8 +429,9 @@ export default function RideNotesPanel() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Content</label>
+            <label htmlFor="ride-note-content" className="text-xs font-semibold text-gray-600 dark:text-slate-300">Content</label>
             <textarea
+              id="ride-note-content"
               {...register('content', { required: 'Content is required.' })}
               rows={9}
               className={inputClass}
@@ -373,9 +441,10 @@ export default function RideNotesPanel() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Cover image URL</label>
+            <label htmlFor="ride-note-cover-url" className="text-xs font-semibold text-gray-600 dark:text-slate-300">Cover image URL</label>
             <div className="mt-1 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
               <input
+                id="ride-note-cover-url"
                 {...register('cover_image_url')}
                 className={inputClass}
                 placeholder="https://... or upload an image"
@@ -386,6 +455,7 @@ export default function RideNotesPanel() {
                   type="file"
                   accept="image/*"
                   className="hidden"
+                  aria-label="Upload ride note cover image"
                   onChange={(event) => {
                     void handleCoverUpload(event.target.files?.[0] || null);
                     event.currentTarget.value = '';
@@ -410,12 +480,17 @@ export default function RideNotesPanel() {
                 </button>
               </div>
             ) : null}
+            {editorMessage && (
+              <p role="status" className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">
+                {editorMessage}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">Related trail</label>
-              <select {...register('trail_id')} className={inputClass}>
+              <label htmlFor="ride-note-trail" className="text-xs font-semibold text-gray-600 dark:text-slate-300">Related trail</label>
+              <select id="ride-note-trail" {...register('trail_id')} className={inputClass}>
                 <option value="">No trail</option>
                 {trails.map((trail) => (
                   <option key={trail.id} value={trail.id}>
@@ -427,10 +502,10 @@ export default function RideNotesPanel() {
             <div>
               {usesOrganizationContext ? (
                 <>
-                  <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                  <label htmlFor="ride-note-organization" className="text-xs font-semibold text-gray-600 dark:text-slate-300">
                     Related organization
                   </label>
-                  <select {...register('organization_id')} className={inputClass}>
+                  <select id="ride-note-organization" {...register('organization_id')} className={inputClass}>
                     <option value="">No organization</option>
                     {organizations.map((organization) => (
                       <option key={organization.id} value={organization.id}>
@@ -441,10 +516,10 @@ export default function RideNotesPanel() {
                 </>
               ) : (
                 <>
-                  <label className="text-xs font-semibold text-gray-600 dark:text-slate-300">
+                  <label htmlFor="ride-note-expert" className="text-xs font-semibold text-gray-600 dark:text-slate-300">
                     Related expert
                   </label>
-                  <select {...register('expert_user_id')} className={inputClass} disabled={!usesExpertContext}>
+                  <select id="ride-note-expert" {...register('expert_user_id')} className={inputClass} disabled={!usesExpertContext}>
                     <option value="">No expert</option>
                     {experts.map((expert) => (
                       <option key={expert.id} value={expert.id}>
@@ -463,23 +538,23 @@ export default function RideNotesPanel() {
           </div>
 
           {mutationError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
               {mutationError instanceof Error ? mutationError.message : 'Unable to save ride note.'}
             </p>
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="sticky bottom-0 z-10 -mx-4 flex flex-col-reverse gap-2 border-t border-gray-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900 sm:-mx-5 sm:flex-row sm:justify-end sm:px-5">
             <button
               type="button"
-              onClick={() => setEditorOpen(false)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              onClick={closeEditor}
+              className="min-h-11 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
+              className="min-h-11 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
             >
               {isSaving ? 'Saving...' : editingNote ? 'Update note' : 'Create note'}
             </button>
