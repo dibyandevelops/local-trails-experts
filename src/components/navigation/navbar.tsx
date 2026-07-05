@@ -11,6 +11,7 @@ import type { User } from '@/types';
 import DesktopNavbar from './desktop-navbar';
 import MobileNavbar from './mobile-navbar';
 import NavbarBrand from './navbar-brand';
+import { NotificationsDropdown } from './notifications-dropdown';
 import { navGroups, navItems } from './navbar.config';
 import type { NavItem, NotificationsData } from './navbar.types';
 
@@ -243,15 +244,27 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       <div className="container mx-auto px-4 py-2">
         <div className="flex min-h-[58px] items-center justify-between gap-3">
           <NavbarBrand />
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-sm transition-colors hover:bg-white/15 lg:hidden"
-            onClick={() => setMobileOpen((value) => !value)}
-            aria-label="Toggle navigation"
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          <div className="flex items-center gap-2 lg:hidden">
+            {!loadingUser && user && (
+              <NotificationsDropdown
+                data={notificationsData}
+                onNavigate={() => setMobileOpen(false)}
+                onOpenChange={(open) => {
+                  if (open) setMobileOpen(false);
+                }}
+              />
+            )}
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-sm transition-colors hover:bg-white/15"
+              onClick={() => setMobileOpen((value) => !value)}
+              aria-label="Toggle navigation"
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-navigation"
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
 
           <DesktopNavbar
             navItems={navItems}
@@ -281,7 +294,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           navGroups={navGroups}
           user={user}
           loadingUser={loadingUser}
-          notificationsData={notificationsData}
           accountActionLabel={accountActionLabel}
           hasOrganizationAccess={hasOrganizationAccess}
           canSeeItem={canSeeItem}

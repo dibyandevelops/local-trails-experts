@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import ThemeToggle from '@/components/theme-toggle';
-import type { NavbarUser, NavGroup, NavItem, NotificationsData } from './navbar.types';
+import type { NavbarUser, NavGroup, NavItem } from './navbar.types';
 import { activeMenuItemClass, getNavIcon, mobileItemClass } from './navbar.config';
-import { MobileNotifications } from './notifications-dropdown';
 
 type MobileNavbarProps = {
   mobileOpen: boolean;
@@ -10,7 +9,6 @@ type MobileNavbarProps = {
   navGroups: NavGroup[];
   user: NavbarUser;
   loadingUser: boolean;
-  notificationsData?: NotificationsData;
   accountActionLabel: string;
   hasOrganizationAccess: boolean;
   canSeeItem: (item: NavItem) => boolean;
@@ -45,7 +43,6 @@ export default function MobileNavbar({
   navGroups,
   user,
   loadingUser,
-  notificationsData,
   accountActionLabel,
   hasOrganizationAccess,
   canSeeItem,
@@ -59,8 +56,11 @@ export default function MobileNavbar({
 }: MobileNavbarProps) {
   return (
     <div
-      className={`mt-2 overflow-hidden rounded-3xl border border-white/10 bg-emerald-950/95 shadow-xl shadow-emerald-950/30 backdrop-blur transition-all duration-300 ease-out lg:hidden ${
-        mobileOpen ? 'max-h-[760px] p-3 opacity-100' : 'max-h-0 border-transparent p-0 opacity-0'
+      id="mobile-navigation"
+      className={`mt-2 rounded-3xl border border-white/10 bg-emerald-950/95 shadow-xl shadow-emerald-950/30 backdrop-blur transition-[max-height,opacity,padding,border-color] duration-300 ease-out lg:hidden ${
+        mobileOpen
+          ? 'max-h-[calc(100dvh-5.5rem)] touch-pan-y overflow-y-auto overscroll-contain p-3 opacity-100 [-webkit-overflow-scrolling:touch]'
+          : 'max-h-0 overflow-hidden border-transparent p-0 opacity-0'
       }`}
     >
       <div className="flex flex-col gap-1.5">
@@ -99,10 +99,6 @@ export default function MobileNavbar({
         )}
 
         <ThemeToggle className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-white/15" />
-
-        {!loadingUser && user && (
-          <MobileNotifications data={notificationsData} onNavigate={closeMobileMenu} />
-        )}
 
         {!loadingUser && !user && (
           <button

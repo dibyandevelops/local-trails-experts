@@ -11,6 +11,9 @@ const toneClass: Record<NotificationTone, string> = {
   danger: 'bg-red-300',
 };
 
+export const notificationsScrollAreaClass =
+  'max-h-[min(360px,calc(100dvh-9rem))] touch-pan-y overflow-y-auto overscroll-contain py-1 [-webkit-overflow-scrolling:touch]';
+
 function formatNotificationTime(value: string) {
   const timestamp = new Date(value).getTime();
   if (!Number.isFinite(timestamp)) return 'Recent';
@@ -52,13 +55,21 @@ function NotificationRow({ item, onNavigate }: { item: NotificationItem; onNavig
   );
 }
 
-export function NotificationsDropdown({ data }: { data?: NotificationsData }) {
+export function NotificationsDropdown({
+  data,
+  onNavigate,
+  onOpenChange,
+}: {
+  data?: NotificationsData;
+  onNavigate?: () => void;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const notifications = data?.notifications || [];
   const unreadCount = data?.unreadCount || 0;
   const visibleCount = unreadCount > 9 ? '9+' : unreadCount;
 
   return (
-    <DropdownMenu.Root modal={false}>
+    <DropdownMenu.Root modal={false} onOpenChange={onOpenChange}>
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
@@ -80,9 +91,14 @@ export function NotificationsDropdown({ data }: { data?: NotificationsData }) {
             <p className="text-sm font-bold text-white">Notifications</p>
             <p className="mt-0.5 text-xs text-emerald-100/70">Recent updates based on your account role.</p>
           </div>
-          <div className="max-h-[360px] overflow-y-auto py-1">
+          <div
+            data-testid="notifications-scroll-area"
+            className={notificationsScrollAreaClass}
+          >
             {notifications.length > 0 ? (
-              notifications.map((item) => <NotificationRow key={item.id} item={item} />)
+              notifications.map((item) => (
+                <NotificationRow key={item.id} item={item} onNavigate={onNavigate} />
+              ))
             ) : (
               <div className="px-3 py-6 text-center text-sm text-emerald-100/75">
                 No recent notifications.
@@ -92,46 +108,5 @@ export function NotificationsDropdown({ data }: { data?: NotificationsData }) {
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
-  );
-}
-
-export function MobileNotifications({ data, onNavigate }: { data?: NotificationsData; onNavigate: () => void }) {
-  const notifications = (data?.notifications || []).slice(0, 4);
-  const unreadCount = data?.unreadCount || 0;
-
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-2">
-      <div className="flex items-center justify-between px-2 py-1.5">
-        <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-50">
-          <Bell className="h-4 w-4" aria-hidden="true" />
-          Notifications
-        </span>
-        {unreadCount > 0 && (
-          <span className="rounded-full bg-lime-300 px-1.5 py-0.5 text-[10px] font-bold text-green-950">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </div>
-      {notifications.length > 0 ? (
-        <div className="mt-1 space-y-1">
-          {notifications.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              onClick={onNavigate}
-              className="flex gap-2 rounded-xl px-2 py-2 text-left hover:bg-white/10"
-            >
-              <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneClass[item.tone]}`} />
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-white">{item.title}</span>
-                <span className="line-clamp-2 block text-xs leading-5 text-emerald-100/75">{item.description}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <p className="px-2 py-3 text-sm text-emerald-100/70">No recent notifications.</p>
-      )}
-    </div>
   );
 }
