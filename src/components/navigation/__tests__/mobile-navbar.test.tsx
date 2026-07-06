@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import MobileNavbar from '@/components/navigation/mobile-navbar';
 import {
   MobileNotificationsPanel,
@@ -102,5 +102,23 @@ describe('MobileNavbar', () => {
 
     expect(panel).toHaveClass('overflow-hidden', 'max-h-0');
     expect(screen.queryByText('Trail update')).not.toBeInTheDocument();
+  });
+
+  it('forwards dropdown trigger props to the notification button', () => {
+    const handlePointerDown = vi.fn();
+    render(
+      <NotificationIconButton
+        aria-haspopup="menu"
+        data-state="closed"
+        onPointerDown={handlePointerDown}
+      />
+    );
+
+    const trigger = screen.getByRole('button', { name: 'View notifications' });
+    expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+    expect(trigger).toHaveAttribute('data-state', 'closed');
+
+    fireEvent.pointerDown(trigger);
+    expect(handlePointerDown).toHaveBeenCalledTimes(1);
   });
 });

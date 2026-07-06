@@ -239,6 +239,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     return item.label;
   };
 
+  const toggleMobileNotifications = () => {
+    setMobileOpen(false);
+    setMobileNotificationsOpen((value) => !value);
+  };
+
   const accountInitial =
     user?.name?.trim()?.charAt(0).toUpperCase() ||
     user?.email?.charAt(0).toUpperCase() ||
@@ -255,10 +260,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 data={notificationsData}
                 expanded={mobileNotificationsOpen}
                 controls="mobile-notifications"
-                onClick={() => {
-                  setMobileOpen(false);
-                  setMobileNotificationsOpen((value) => !value);
-                }}
+                onClick={toggleMobileNotifications}
               />
             )}
             <button

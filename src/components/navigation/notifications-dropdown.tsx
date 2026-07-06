@@ -1,13 +1,11 @@
 import Link from 'next/link';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Bell } from 'lucide-react';
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import type { NotificationItem, NotificationsData, NotificationTone } from './navbar.types';
 import {
   dropdownContentClass,
   dropdownItemClass,
-  mobilePanelBaseClass,
-  mobilePanelClosedClass,
-  mobilePanelOpenClass,
 } from './navbar.config';
 
 const toneClass: Record<NotificationTone, string> = {
@@ -61,31 +59,34 @@ function NotificationRow({ item, onNavigate }: { item: NotificationItem; onNavig
   );
 }
 
-export function NotificationIconButton({
-  data,
-  expanded,
-  controls,
-  onClick,
-}: {
+type NotificationIconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   data?: NotificationsData;
   expanded?: boolean;
   controls?: string;
-  onClick?: () => void;
-}) {
+};
+
+export const NotificationIconButton = forwardRef<HTMLButtonElement, NotificationIconButtonProps>(function NotificationIconButton({
+  data,
+  expanded,
+  controls,
+  className,
+  ...buttonProps
+}, ref) {
   const unreadCount = data?.unreadCount || 0;
   const visibleCount = unreadCount > 9 ? '9+' : unreadCount;
 
   return (
     <button
+      {...buttonProps}
+      ref={ref}
       type="button"
-      onClick={onClick}
-      className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full border border-white/15 bg-white/10 leading-none transition-colors hover:bg-white/15"
-      aria-label="View notifications"
-      aria-expanded={expanded}
-      aria-controls={controls}
-      title="View recent notifications"
+      className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full border border-white/15 bg-white/10 leading-none transition-colors hover:bg-white/15 ${className || ''}`}
+      aria-label={buttonProps['aria-label'] || 'View notifications'}
+      aria-expanded={expanded ?? buttonProps['aria-expanded']}
+      aria-controls={controls || buttonProps['aria-controls']}
+      title={buttonProps.title || 'View recent notifications'}
     >
-      <Bell className="h-4 w-4" aria-hidden="true" />
+      <Bell className="pointer-events-none h-4 w-4" aria-hidden="true" />
       {unreadCount > 0 && (
         <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-lime-300 px-1.5 py-0.5 text-center text-[10px] font-bold text-green-950">
           {visibleCount}
@@ -93,7 +94,7 @@ export function NotificationIconButton({
       )}
     </button>
   );
-}
+});
 
 export function MobileNotificationsPanel({
   open,
@@ -112,8 +113,10 @@ export function MobileNotificationsPanel({
       id="mobile-notifications"
       aria-hidden={!open}
       aria-label="Notifications"
-      className={`${mobilePanelBaseClass} ${
-        open ? mobilePanelOpenClass : mobilePanelClosedClass
+      className={`fixed left-4 right-4 top-[4.75rem] z-50 rounded-3xl border border-white/10 bg-emerald-950/95 shadow-xl shadow-emerald-950/30 backdrop-blur transition-[max-height,opacity,transform] duration-200 ease-out lg:hidden ${
+        open
+          ? 'max-h-[calc(100dvh-5.75rem)] touch-pan-y overflow-y-auto overscroll-contain p-3 opacity-100 [-webkit-overflow-scrolling:touch]'
+          : 'pointer-events-none max-h-0 overflow-hidden p-0 opacity-0 -translate-y-2'
       }`}
     >
       {open ? (
