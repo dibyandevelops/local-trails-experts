@@ -11,6 +11,7 @@ import {
   MapPinned,
   Mountain,
   PlusCircle,
+  ShoppingBag,
   Sparkles,
   Store,
   Users,
@@ -28,6 +29,7 @@ export const navGroups: NavGroup[] = [
       { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Organizations', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Campaigns', href: '/campaigns', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+      { label: 'Marketplace', href: '/marketplace', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Cycle Hubs', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       { label: 'Services', href: '/services', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
       {
@@ -69,6 +71,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/organizations': Users,
   '/organizations/create': Building2,
   '/campaigns': CircleDollarSign,
+  '/marketplace': ShoppingBag,
   '/store-locator': Store,
   '/services': BriefcaseBusiness,
   '/events/create': PlusCircle,
@@ -89,7 +92,7 @@ export const navButtonIdleClass = 'text-emerald-50/90 hover:bg-white/10 hover:te
 export const navButtonActiveClass =
   'border border-lime-300/45 bg-lime-300/15 text-lime-50 shadow-sm shadow-emerald-950/20';
 export const dropdownContentClass =
-  'z-30 flex w-60 flex-col gap-1 rounded-2xl border border-white/10 bg-emerald-950/95 p-2 text-sm text-white shadow-xl shadow-emerald-950/30 backdrop-blur';
+  'z-50 flex w-60 flex-col gap-1 rounded-2xl border border-white/10 bg-emerald-950/95 p-2 text-sm text-white shadow-xl shadow-emerald-950/30 backdrop-blur';
 export const dropdownItemClass =
   'rounded-xl px-3 py-2 text-sm font-semibold outline-none transition-colors';
 export const mobileItemClass = 'rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors';

@@ -111,6 +111,10 @@ export const QUERY_KEYS = {
     all: () => ['stores'] as const,
     list: (params: Record<string, unknown>) => ['stores', params] as const,
   },
+  marketplace: {
+    page: ['marketplace'] as const,
+    admin: ['admin', 'marketplace'] as const,
+  },
   organizations: {
     detail: (slugOrId?: string | null) => ['organization-detail', slugOrId || ''] as const,
   },

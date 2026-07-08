@@ -24,7 +24,7 @@ const FEATURE_LINKS = [
   { label: 'Organizations', href: '/organizations' },
   { label: 'Campaigns', href: '/campaigns' },
   { label: 'Cycle hubs', href: '/store-locator' },
-  { label: 'Shop', badge: 'Coming soon' },
+  { label: 'Marketplace', href: '/marketplace' },
 ];
 
 const EXPERT_LINKS_BASE = [
