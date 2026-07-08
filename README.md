@@ -135,6 +135,9 @@ src/hooks/trails/
 src/services/trails/
 ```
 
+The marketplace implementation is documented in
+[docs/marketplace.md](docs/marketplace.md).
+
 ## Architecture Checks
 
 Run the hard boundary check:
