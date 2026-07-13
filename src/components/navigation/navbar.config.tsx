@@ -5,6 +5,7 @@ import {
   CalendarDays,
   CircleDollarSign,
   Dumbbell,
+  Flag,
   NotebookText,
   House,
   Map,
@@ -19,23 +20,38 @@ import {
 } from 'lucide-react';
 import type { NavGroup, NavItem } from './navbar.types';
 
+const allUsers = ['anonymous', 'participant', 'expert', 'admin'] as const;
+
 export const navGroups: NavGroup[] = [
   {
     label: 'Explore',
-    items: [
-      { label: 'Events', href: '/events', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Ride with Experts', href: '/ride-with-experts', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Ride Notes', href: '/ride-notes', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Community Rides', href: '/community-rides', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Organizations', href: '/organizations', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Campaigns', href: '/campaigns', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Marketplace', href: '/marketplace', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Cycle Hubs', href: '/store-locator', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
-      { label: 'Services', href: '/services', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+    items: [],
+    sections: [
       {
-        label: 'Expert Directory',
-        href: '/experts',
-        showFor: ['anonymous', 'participant', 'expert', 'admin'],
+        label: 'Discover rides',
+        items: [
+          { label: 'Events', href: '/events', showFor: [...allUsers] },
+          { label: 'Ride with Experts', href: '/ride-with-experts', showFor: [...allUsers] },
+          { label: 'Community Rides', href: '/community-rides', showFor: [...allUsers] },
+          { label: 'Ride Notes', href: '/ride-notes', showFor: [...allUsers] },
+        ],
+      },
+      {
+        label: 'Community',
+        items: [
+          { label: 'Organizations', href: '/organizations', showFor: [...allUsers] },
+          { label: 'Campaigns', href: '/campaigns', showFor: [...allUsers] },
+          { label: 'Kora Prep Note', href: '/ride-notes/how-to-prepare-for-kora-2026', showFor: [...allUsers] },
+          { label: 'Expert Directory', href: '/experts', showFor: [...allUsers] },
+        ],
+      },
+      {
+        label: 'Cycling services',
+        items: [
+          { label: 'Marketplace', href: '/marketplace', showFor: [...allUsers] },
+          { label: 'Cycle Hubs', href: '/store-locator', showFor: [...allUsers] },
+          { label: 'Services', href: '/services', showFor: [...allUsers] },
+        ],
       },
     ],
   },
@@ -72,6 +88,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/organizations/create': Building2,
   '/campaigns': CircleDollarSign,
   '/marketplace': ShoppingBag,
+  '/ride-notes/how-to-prepare-for-kora-2026': Flag,
   '/store-locator': Store,
   '/services': BriefcaseBusiness,
   '/events/create': PlusCircle,
@@ -87,14 +104,14 @@ export function getNavIcon(href: string) {
 }
 
 export const navButtonClass =
-  'inline-flex h-10 items-center rounded-full px-3 text-sm font-semibold transition-colors';
+  'inline-flex h-10 items-center rounded-full px-3 text-sm font-semibold transition-colors outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70 focus-visible:ring-offset-1 focus-visible:ring-offset-emerald-950';
 export const navButtonIdleClass = 'text-emerald-50/90 hover:bg-white/10 hover:text-white';
 export const navButtonActiveClass =
   'border border-lime-300/45 bg-lime-300/15 text-lime-50 shadow-sm shadow-emerald-950/20';
 export const dropdownContentClass =
   'z-50 flex w-60 flex-col gap-1 rounded-2xl border border-white/10 bg-emerald-950/95 p-2 text-sm text-white shadow-xl shadow-emerald-950/30 backdrop-blur';
 export const dropdownItemClass =
-  'rounded-xl px-3 py-2 text-sm font-semibold outline-none transition-colors';
+  'rounded-xl px-3 py-2 text-sm font-semibold outline-none transition-colors focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70';
 export const mobileItemClass = 'rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors';
 export const activeMenuItemClass = 'border border-lime-300/35 bg-lime-300/15 text-lime-50';
 export const mobilePanelBaseClass =

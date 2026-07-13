@@ -39,6 +39,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl('/events'), lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: absoluteUrl('/ride-notes'), lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: absoluteUrl('/experts'), lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: absoluteUrl('/help'), lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: absoluteUrl('/updates'), lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: absoluteUrl('/purpose'), lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: absoluteUrl('/support-locoxperts'), lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: absoluteUrl('/store-locator'), lastModified: now, changeFrequency: 'weekly', priority: 0.5 },

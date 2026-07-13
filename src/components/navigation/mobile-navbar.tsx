@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import ThemeToggle from '@/components/theme-toggle';
-import type { NavbarUser, NavGroup, NavItem } from './navbar.types';
+import type { NavbarUser, NavGroup, NavItem, NavSection } from './navbar.types';
 import {
   activeMenuItemClass,
   getNavIcon,
@@ -44,6 +46,67 @@ function MobileBadge({ badge, active }: { badge?: string; active: boolean }) {
   );
 }
 
+function MobileSection({
+  section,
+  canSeeItem,
+  isNavItemActive,
+  getNavLabel,
+  closeMobileMenu,
+  open,
+  onToggle,
+}: {
+  section: NavSection;
+  canSeeItem: (item: NavItem) => boolean;
+  isNavItemActive: (href: string) => boolean;
+  getNavLabel: (item: NavItem) => string;
+  closeMobileMenu: () => void;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const visibleItems = section.items.filter(canSeeItem);
+  if (visibleItems.length === 0) return null;
+
+  return (
+    <div className="border-t border-white/10 pt-2 first:border-t-0 first:pt-0">
+      {section.label && (
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-200/65 transition-colors hover:bg-white/10 hover:text-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70"
+          aria-expanded={open}
+          onClick={onToggle}
+        >
+          <span>{section.label}</span>
+          <ChevronDown
+            className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
+      )}
+      <div className={`${open || !section.label ? 'flex' : 'hidden'} flex-col gap-1.5`}>
+        {visibleItems.map((item) => {
+          const itemActive = isNavItemActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`truncate whitespace-nowrap ${mobileItemClass} ${
+                itemActive ? activeMenuItemClass : 'text-emerald-50 hover:bg-white/10'
+              }`}
+              onClick={closeMobileMenu}
+            >
+              <span className="inline-flex items-center gap-2">
+                <span aria-hidden="true">{getNavIcon(item.href)}</span>
+                <span>{getNavLabel(item)}</span>
+                <MobileBadge badge={item.badge} active={itemActive} />
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function MobileNavbar({
   mobileOpen,
   navItems,
@@ -61,6 +124,12 @@ export default function MobileNavbar({
   handleViewProfile,
   handleLogout,
 }: MobileNavbarProps) {
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!mobileOpen) setOpenSection(null);
+  }, [mobileOpen]);
+
   return (
     <div
       id="mobile-navigation"
@@ -69,7 +138,7 @@ export default function MobileNavbar({
       }`}
     >
       <div className="flex flex-col gap-1.5">
-        {[...navItems, ...navGroups.flatMap((group) => group.items)].map((item) => {
+        {navItems.map((item) => {
           if (!canSeeItem(item)) return null;
           const itemActive = isNavItemActive(item.href);
           return (
@@ -88,6 +157,26 @@ export default function MobileNavbar({
               </span>
             </Link>
           );
+        })}
+        {navGroups.map((group) => {
+          const sections = group.sections || [{ label: '', items: group.items }];
+          return sections.map((section) => {
+            const sectionKey = `${group.label}-${section.label}`;
+            return (
+              <MobileSection
+                key={sectionKey}
+                section={section}
+                canSeeItem={canSeeItem}
+                isNavItemActive={isNavItemActive}
+                getNavLabel={getNavLabel}
+                closeMobileMenu={closeMobileMenu}
+                open={openSection === sectionKey}
+                onToggle={() =>
+                  setOpenSection((current) => (current === sectionKey ? null : sectionKey))
+                }
+              />
+            );
+          });
         })}
 
         {!loadingUser && !user && (

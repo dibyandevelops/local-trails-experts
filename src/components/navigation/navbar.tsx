@@ -227,7 +227,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   };
 
   const hasExactVisibleNavMatch =
-    navGroups.some((group) => group.items.some((item) => canSeeItem(item) && item.href === pathname)) ||
+    navGroups.some((group) =>
+      (group.sections || [{ label: '', items: group.items }]).some((section) =>
+        section.items.some((item) => canSeeItem(item) && item.href === pathname)
+      )
+    ) ||
     navItems.some((item) => canSeeItem(item) && item.href === pathname);
   const isNavItemActive = (href: string) => {
     if (pathname === href) return true;

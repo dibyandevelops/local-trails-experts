@@ -25,6 +25,7 @@ const FEATURE_LINKS = [
   { label: 'Campaigns', href: '/campaigns' },
   { label: 'Cycle hubs', href: '/store-locator' },
   { label: 'Marketplace', href: '/marketplace' },
+  { label: 'Kora prep note', href: '/ride-notes/how-to-prepare-for-kora-2026' },
 ];
 
 const EXPERT_LINKS_BASE = [

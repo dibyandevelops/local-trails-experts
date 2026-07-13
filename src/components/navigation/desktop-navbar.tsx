@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import ThemeToggle from '@/components/theme-toggle';
 import type { MutableRefObject } from 'react';
 import type { NavbarUser, NavGroup, NavItem, NotificationsData } from './navbar.types';
@@ -14,6 +14,7 @@ import {
   navButtonClass,
   navButtonIdleClass,
 } from './navbar.config';
+import type { NavSection } from './navbar.types';
 
 type DesktopNavbarProps = {
   navItems: NavItem[];
@@ -52,6 +53,72 @@ function NavBadge({ badge, active }: { badge?: string; active: boolean }) {
   );
 }
 
+function NavSectionContent({
+  section,
+  canSeeItem,
+  isNavItemActive,
+  getNavLabel,
+  onPointerEnter,
+  onPointerLeave,
+}: {
+  section: NavSection;
+  canSeeItem: (item: NavItem) => boolean;
+  isNavItemActive: (href: string) => boolean;
+  getNavLabel: (item: NavItem) => string;
+  onPointerEnter: () => void;
+  onPointerLeave: () => void;
+}) {
+  const visibleItems = section.items.filter(canSeeItem);
+  if (visibleItems.length === 0) return null;
+
+  const itemLinks = visibleItems.map((item) => {
+    const itemActive = isNavItemActive(item.href);
+    return (
+      <DropdownMenu.Item asChild key={item.href}>
+        <Link
+          href={item.href}
+          className={`block ${dropdownItemClass} ${
+            itemActive
+              ? activeMenuItemClass
+              : 'text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10'
+          }`}
+        >
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden="true">{getNavIcon(item.href)}</span>
+            <span className="block truncate">{getNavLabel(item)}</span>
+            <NavBadge badge={item.badge} active={itemActive} />
+          </span>
+        </Link>
+      </DropdownMenu.Item>
+    );
+  });
+
+  if (!section.label) {
+    return <div className="flex flex-col gap-1">{itemLinks}</div>;
+  }
+
+  return (
+    <DropdownMenu.Sub>
+      <DropdownMenu.SubTrigger
+        className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.12em] text-emerald-200/70 outline-none transition-colors hover:bg-white/10 hover:text-emerald-100 data-[state=open]:bg-white/10 data-[highlighted]:bg-white/10 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70"
+      >
+        <span>{section.label}</span>
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+      </DropdownMenu.SubTrigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.SubContent
+          sideOffset={6}
+          className={dropdownContentClass}
+          onPointerEnter={onPointerEnter}
+          onPointerLeave={onPointerLeave}
+        >
+          {itemLinks}
+        </DropdownMenu.SubContent>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Sub>
+  );
+}
+
 export default function DesktopNavbar({
   navItems,
   navGroups,
@@ -80,9 +147,10 @@ export default function DesktopNavbar({
   };
 
   const scheduleGroupClose = (label: string) => {
+    clearHoverClose();
     hoverCloseTimeout.current = setTimeout(() => {
       setOpenGroup((current) => (current === label ? null : current));
-    }, 120);
+    }, 250);
   };
 
   return (
@@ -103,7 +171,8 @@ export default function DesktopNavbar({
       })}
 
       {navGroups.map((group) => {
-        const visibleItems = group.items.filter(canSeeItem);
+        const sections = group.sections || [{ label: '', items: group.items }];
+        const visibleItems = sections.flatMap((section) => section.items).filter(canSeeItem);
         if (visibleItems.length === 0) return null;
         const groupActive = visibleItems.some((item) => isNavItemActive(item.href));
 
@@ -121,7 +190,7 @@ export default function DesktopNavbar({
                     groupActive ? navButtonActiveClass : navButtonIdleClass
                   }`}
                   aria-label={`${group.label} menu`}
-                  onPointerMove={() => {
+                  onPointerEnter={() => {
                     clearHoverClose();
                     setOpenGroup(group.label);
                   }}
@@ -133,33 +202,23 @@ export default function DesktopNavbar({
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content
-                  sideOffset={8}
+                  sideOffset={4}
                   align="start"
                   className={dropdownContentClass}
                   onPointerEnter={clearHoverClose}
                   onPointerLeave={() => scheduleGroupClose(group.label)}
                 >
-                  {visibleItems.map((item) => {
-                    const itemActive = isNavItemActive(item.href);
-                    return (
-                      <DropdownMenu.Item asChild key={item.href}>
-                        <Link
-                          href={item.href}
-                          className={`block ${dropdownItemClass} ${
-                            itemActive
-                              ? activeMenuItemClass
-                              : 'text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10'
-                          }`}
-                        >
-                          <span className="inline-flex items-center gap-2">
-                            <span aria-hidden="true">{getNavIcon(item.href)}</span>
-                            <span className="block truncate">{getNavLabel(item)}</span>
-                            <NavBadge badge={item.badge} active={itemActive} />
-                          </span>
-                        </Link>
-                      </DropdownMenu.Item>
-                    );
-                  })}
+                  {sections.map((section) => (
+                    <NavSectionContent
+                      key={section.label || group.label}
+                      section={section}
+                      canSeeItem={canSeeItem}
+                      isNavItemActive={isNavItemActive}
+                      getNavLabel={getNavLabel}
+                      onPointerEnter={clearHoverClose}
+                      onPointerLeave={() => scheduleGroupClose(group.label)}
+                    />
+                  ))}
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>

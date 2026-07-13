@@ -15,6 +15,12 @@ export type NavItem = {
 export type NavGroup = {
   label: string;
   items: NavItem[];
+  sections?: NavSection[];
+};
+
+export type NavSection = {
+  label: string;
+  items: NavItem[];
 };
 
 export type NavbarUser = User | null;

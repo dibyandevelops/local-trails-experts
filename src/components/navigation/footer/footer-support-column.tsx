@@ -38,6 +38,16 @@ export default function FooterSupportColumn({
           </Link>
         </li>
         <li>
+          <Link className="hover:underline" href="/help">
+            Help guide
+          </Link>
+        </li>
+        <li>
+          <Link className="hover:underline" href="/updates">
+            Platform updates
+          </Link>
+        </li>
+        <li>
           <Link className="hover:underline" href="/privacy">
             Privacy policy
           </Link>
