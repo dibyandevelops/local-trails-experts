@@ -11,8 +11,6 @@
     "architecture:report": "node scripts/check-architecture.mjs --report",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
-    "db:seed:kora-ride-note": "node scripts/seed-kora-ride-note.js",
-    "db:seed:bikefarm": "node scripts/seed-bikefarm-content.js",
     "db:smoke": "node scripts/db-smoke.js",
     "test": "vitest run",
     "test:watch": "vitest",
