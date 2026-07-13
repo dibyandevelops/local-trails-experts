@@ -48,16 +48,6 @@ export async function GET(
 
     const organization = result.rows[0];
 
-    if (!organization.is_verified) {
-      const auth = getAuthFromRequest(request);
-      const canPreview = auth?.role === 'admin' || (
-        auth ? await canOperateOrganization(auth.sub, organization.id) : false
-      );
-      if (!canPreview) {
-        return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
-      }
-    }
-
     if (!includeDetail) {
       return NextResponse.json({ organization }, { status: 200 });
     }

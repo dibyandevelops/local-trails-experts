@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
 
     if (!isPlatformAdmin) {
       where.push('o.is_active = TRUE');
-      where.push('o.is_verified = TRUE');
     }
 
     if (query) {

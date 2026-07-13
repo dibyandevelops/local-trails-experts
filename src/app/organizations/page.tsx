@@ -44,6 +44,11 @@ export default async function OrganizationsPage() {
                       Verified
                     </span>
                   )}
+                  {!org.is_verified && (
+                    <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                      Pending verification
+                    </span>
+                  )}
                 </div>
                 {org.tagline && (
                   <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">{org.tagline}</p>
