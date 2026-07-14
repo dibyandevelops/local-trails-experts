@@ -15,8 +15,8 @@ function isValidDate(value: string) {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'participant') {
-      return NextResponse.json({ error: 'Participant account required.' }, { status: 401 });
+    if (!auth) {
+      return NextResponse.json({ error: 'Login is required to request a service.' }, { status: 401 });
     }
 
     const { serviceId } = await context.params;
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
              o.name AS organization_name
       FROM organization_services s
       JOIN organizations o ON o.id = s.organization_id
-      WHERE s.id = $1 AND s.is_active = TRUE AND o.is_active = TRUE AND o.is_verified = TRUE
+      WHERE s.id = $1 AND s.is_active = TRUE AND o.is_active = TRUE
       LIMIT 1
       `,
       [serviceId]
@@ -56,12 +56,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const userResult = await pool.query(
-      `SELECT name, email, phone FROM users WHERE id = $1 AND role = 'participant' LIMIT 1`,
+      `SELECT name, email, phone FROM users WHERE id = $1 LIMIT 1`,
       [auth.sub]
     );
     const user = userResult.rows[0];
     if (!user) {
-      return NextResponse.json({ error: 'Participant account not found.' }, { status: 404 });
+      return NextResponse.json({ error: 'Account not found.' }, { status: 404 });
     }
 
     const service = serviceResult.rows[0];

@@ -5,7 +5,6 @@ import {
   CalendarDays,
   CircleDollarSign,
   Dumbbell,
-  Flag,
   NotebookText,
   House,
   Map,
@@ -41,7 +40,6 @@ export const navGroups: NavGroup[] = [
         items: [
           { label: 'Organizations', href: '/organizations', showFor: [...allUsers] },
           { label: 'Campaigns', href: '/campaigns', showFor: [...allUsers] },
-          { label: 'Kora Prep Note', href: '/ride-notes/how-to-prepare-for-kora-2026', showFor: [...allUsers] },
           { label: 'Expert Directory', href: '/experts', showFor: [...allUsers] },
         ],
       },
@@ -88,7 +86,6 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/organizations/create': Building2,
   '/campaigns': CircleDollarSign,
   '/marketplace': ShoppingBag,
-  '/ride-notes/how-to-prepare-for-kora-2026': Flag,
   '/store-locator': Store,
   '/services': BriefcaseBusiness,
   '/events/create': PlusCircle,

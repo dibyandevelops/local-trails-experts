@@ -3,21 +3,28 @@
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useQueryClient } from '@tanstack/react-query';
-import { CalendarCheck, X } from 'lucide-react';
+import { CalendarCheck, MessageCircle, X } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
 
+// Keep the booking flow available for a later relaunch while it is hidden from public service cards.
+const serviceBookingEnabled = false;
+
 export default function ServiceBookingButton({
   serviceId,
   serviceTitle,
   organizationName,
+  organizationPhone,
+  organizationWhatsappUrl,
   className,
 }: {
   serviceId: string;
   serviceTitle: string;
   organizationName?: string | null;
+  organizationPhone?: string | null;
+  organizationWhatsappUrl?: string | null;
   className?: string;
 }) {
   const { data: currentUser = null, isLoading } = useCurrentUser();
@@ -30,6 +37,18 @@ export default function ServiceBookingButton({
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+
+  const whatsappHref = (() => {
+    if (organizationWhatsappUrl?.trim()) return organizationWhatsappUrl.trim();
+    const rawPhone = organizationPhone?.trim() || '';
+    if (!rawPhone) return null;
+    let digits = rawPhone.replace(/\D/g, '');
+    if (digits.startsWith('00')) digits = digits.slice(2);
+    if (digits.length === 10 && digits.startsWith('9')) digits = `977${digits}`;
+    if (digits.length < 10) return null;
+    const text = `Namaste, I would like to ask about ${serviceTitle} on LocoXperts.`;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+  })();
 
   const openBooking = () => {
     setMessage('');
@@ -50,10 +69,6 @@ export default function ServiceBookingButton({
           },
         })
       );
-      return;
-    }
-    if (currentUser.role !== 'participant') {
-      setMessage('Service bookings are available from participant accounts.');
       return;
     }
     setPhone(currentUser.phone || '');
@@ -96,20 +111,34 @@ export default function ServiceBookingButton({
 
   return (
     <>
-      <div>
-        <button
-          type="button"
-          onClick={openBooking}
-          className={
-            className ||
-            'inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400'
-          }
-        >
-          <CalendarCheck className="h-4 w-4" />
-          Request booking
-        </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {serviceBookingEnabled && (
+          <button
+            type="button"
+            onClick={openBooking}
+            className={
+              className ||
+              'inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400'
+            }
+          >
+            <CalendarCheck className="h-4 w-4" />
+            Request booking
+          </button>
+        )}
+        {whatsappHref && (
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label={`Contact ${organizationName || 'the organization'} on WhatsApp about ${serviceTitle}`}
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-950/70"
+          >
+            <MessageCircle className="h-4 w-4" aria-hidden="true" />
+            WhatsApp
+          </a>
+        )}
         {message && (
-          <p className="mt-2 max-w-sm text-xs text-gray-600 dark:text-slate-300" role="status">
+          <p className="basis-full text-xs text-gray-600 dark:text-slate-300" role="status">
             {message}
           </p>
         )}

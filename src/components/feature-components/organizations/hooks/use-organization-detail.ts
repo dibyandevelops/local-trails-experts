@@ -11,6 +11,8 @@ export type OrganizationDetail = {
   description: string | null;
   logo_url: string | null;
   website_url: string | null;
+  whatsapp_url: string | null;
+  contact_phone: string | null;
   city: string | null;
   country: string | null;
   is_verified: boolean;

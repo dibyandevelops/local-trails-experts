@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const category = String(request.nextUrl.searchParams.get('category') || '').trim();
     const search = String(request.nextUrl.searchParams.get('q') || '').trim();
     const values: unknown[] = [];
-    const where = ['s.is_active = TRUE', 'o.is_active = TRUE', 'o.is_verified = TRUE'];
+    const where = ['s.is_active = TRUE', 'o.is_active = TRUE'];
     if (category) {
       values.push(category);
       where.push(`s.category = $${values.length}`);
@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
     const result = await pool.query(
       `
       SELECT s.*, o.name AS organization_name, o.slug AS organization_slug,
-             o.logo_url AS organization_logo_url, o.is_verified AS organization_is_verified
+             o.logo_url AS organization_logo_url, o.is_verified AS organization_is_verified,
+             o.whatsapp_url AS organization_whatsapp_url, o.contact_phone AS organization_contact_phone
       FROM organization_services s
       JOIN organizations o ON o.id = s.organization_id
       WHERE ${where.join(' AND ')}

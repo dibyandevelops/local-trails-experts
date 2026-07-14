@@ -5,9 +5,13 @@ import ServiceBookingButton from './service-booking-button';
 export default function OrganizationServicesSection({
   services,
   organizationName,
+  organizationPhone,
+  organizationWhatsappUrl,
 }: {
   services: OrganizationService[];
   organizationName?: string | null;
+  organizationPhone?: string | null;
+  organizationWhatsappUrl?: string | null;
 }) {
   if (!services.length) return null;
   return (
@@ -26,6 +30,8 @@ export default function OrganizationServicesSection({
                 serviceId={service.id}
                 serviceTitle={service.title}
                 organizationName={organizationName}
+                organizationPhone={service.contact_phone || organizationPhone}
+                organizationWhatsappUrl={organizationWhatsappUrl}
               />
             </div>
           </article>

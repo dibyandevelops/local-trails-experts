@@ -73,6 +73,8 @@ export default function OrganizationDetailClient({ slug }: { slug: string }) {
           <OrganizationServicesSection
             services={data.services || []}
             organizationName={data.organization.name}
+            organizationPhone={data.organization.contact_phone}
+            organizationWhatsappUrl={data.organization.whatsapp_url}
           />
           <OrganizationGallerySection
             items={data.galleryItems}
