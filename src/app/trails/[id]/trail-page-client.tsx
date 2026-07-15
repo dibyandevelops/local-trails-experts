@@ -34,7 +34,11 @@ import {
   uploadTrailRoute,
 } from '@/services/trails/trails.service';
 import EventForm from '@/components/feature-components/event-form/event-form';
-import { getMapStyle, type MapStyleMode } from '@/lib/map-styles';
+import {
+  getMapLibreCompatibleMapStyle,
+  getMapStyle,
+  type MapStyleMode,
+} from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
 import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
@@ -120,7 +124,12 @@ type TrailService = {
 const MapSection = dynamic(() => import('./trail-map-section'), {
   ssr: false,
   loading: () => (
-    <div className="mb-6 h-[360px] w-full animate-pulse rounded-xl border border-emerald-200/60 bg-emerald-50 dark:border-emerald-900/60 dark:bg-slate-900 sm:h-[460px] lg:h-[600px]" />
+    <div className="mb-6 flex h-[300px] w-full items-center justify-center rounded-xl border border-gray-200 bg-gray-100 shadow-sm sm:h-[460px] lg:h-[600px] dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white/90 px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-200">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" aria-hidden="true" />
+        Loading trail map...
+      </div>
+    </div>
   ),
 });
 
@@ -432,8 +441,12 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     return saved === 'map' || saved === 'satellite' ? saved : 'map';
   });
   const [mapProvider, setMapProvider] = useState<'internal' | 'komoot'>('internal');
-  const mapStyle = useMemo(() => getMapStyle(mapStyleMode), [mapStyleMode]);
+  const [mapEngine, setMapEngine] = useState<'free' | 'mapbox'>('free');
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
+  const mapStyle = useMemo(
+    () => (mapEngine === 'mapbox' && mapboxToken ? getMapStyle(mapStyleMode) : getMapLibreCompatibleMapStyle(mapStyleMode)),
+    [mapEngine, mapStyleMode, mapboxToken]
+  );
 
   useEffect(() => {
     try {
@@ -1862,6 +1875,24 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         />
       )}
 
+      <div id="trail-map" className="relative left-1/2 w-screen -translate-x-1/2 scroll-mt-28 sm:left-auto sm:w-auto sm:translate-x-0">
+        <MapSection
+          hasRoute={hasRoute}
+          routeGeoJSON={routeGeoJSON}
+          routeData={routeData}
+          mapCenter={mapCenter}
+          mapStyle={mapStyle}
+          mapStyleMode={mapStyleMode}
+          mapEngine={mapEngine}
+          mapboxToken={mapboxToken}
+          onMapEngineChange={setMapEngine}
+          onStyleModeChange={setMapStyleMode}
+          komootEmbedUrl={trail.komoot_embed_url || null}
+          mapProvider={mapProvider}
+          onMapProviderChange={setMapProvider}
+        />
+      </div>
+
       <section className="relative overflow-hidden rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-4 shadow-lg shadow-emerald-100/60 sm:p-5 dark:border-emerald-900/70 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900/30 dark:shadow-emerald-950/30">
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-700/30" />
         <div className="pointer-events-none absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-lime-200/40 blur-3xl dark:bg-lime-700/20" />
@@ -1892,22 +1923,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                   Trail Requested
                 </span>
               )}
-            </div>
-
-            <div id="trail-map" className="scroll-mt-28 [&>div]:mb-0">
-              <MapSection
-                hasRoute={hasRoute}
-                routeGeoJSON={routeGeoJSON}
-                routeData={routeData}
-                mapCenter={mapCenter}
-                mapStyle={mapStyle}
-                mapStyleMode={mapStyleMode}
-                mapboxToken={mapboxToken}
-                onStyleModeChange={setMapStyleMode}
-                komootEmbedUrl={trail.komoot_embed_url || null}
-                mapProvider={mapProvider}
-                onMapProviderChange={setMapProvider}
-              />
             </div>
 
             <div className="mt-4 rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-950/70">
@@ -2114,17 +2129,19 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
 
       <TrailWeatherForecast latitude={trail.latitude} longitude={trail.longitude} />
 
-      <section
-        id="route-guide"
-        className="mt-4 scroll-mt-28 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
-      >
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-          Route guide
-        </p>
-        <p className="mt-2 text-sm leading-7 text-gray-700 dark:text-slate-200">
-          {trail.description?.trim() || 'Route description will be added soon.'}
-        </p>
-      </section>
+      {trail.description?.trim() && (
+        <section
+          id="route-guide"
+          className="mt-4 scroll-mt-28 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+            Route guide
+          </p>
+          <p className="mt-2 text-sm leading-7 text-gray-700 dark:text-slate-200">
+            {trail.description.trim()}
+          </p>
+        </section>
+      )}
 
       {!!trail.safety_labels?.length && (
         <section className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/25">

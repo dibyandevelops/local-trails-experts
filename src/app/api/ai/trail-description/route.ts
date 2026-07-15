@@ -34,6 +34,36 @@ function buildPrompt(data: TrailDescriptionInput) {
   ].join('\n');
 }
 
+function formatDistance(distance?: string | number) {
+  if (distance == null || distance === '') return null;
+  const numeric = Number(distance);
+  if (Number.isFinite(numeric)) return `${numeric.toFixed(numeric >= 10 ? 0 : 1)} km`;
+  return `${distance} km`;
+}
+
+function buildLocalTrailDescription(data: TrailDescriptionInput) {
+  const name = String(data.name || '').trim() || 'This trail';
+  const location = String(data.location || '').trim();
+  const sport = String(data.sport_type || '').trim().replace(/_/g, ' ');
+  const difficulty = String(data.difficulty || '').trim().replace(/_/g, ' ');
+  const distance = formatDistance(data.distance_km);
+  const elevationValue = Number(data.elevation_gain_m);
+  const elevation = data.elevation_gain_m && Number.isFinite(elevationValue)
+    ? `${Math.round(elevationValue)} m of climbing`
+    : null;
+  const time = data.estimated_time_hours ? `about ${data.estimated_time_hours} hours` : null;
+  const details = [difficulty, distance, elevation, time].filter(Boolean);
+
+  const firstSentence = location
+    ? `${name} is a ${sport || 'trail'} route around ${location}.`
+    : `${name} is a ${sport || 'trail'} route worth reviewing before you ride.`;
+  const secondSentence = details.length
+    ? `Expect ${details.join(', ')}, and check local trail conditions before heading out.`
+    : 'Check the route, local conditions, and your ride plan before heading out.';
+
+  return `${firstSentence} ${secondSentence}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
@@ -44,14 +74,6 @@ export async function POST(request: NextRequest) {
     const limited = await rateLimit(request, 'ai-trail-description', 5, 60);
     if (limited) return limited;
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'OPENAI_API_KEY is not configured.' },
-        { status: 500 }
-      );
-    }
-
     const body = (await request.json()) as TrailDescriptionInput;
     if (
       String(body.name || '').length > 160 ||
@@ -61,6 +83,15 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json({ error: 'Prompt fields are too long.' }, { status: 400 });
     }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { description: buildLocalTrailDescription(body), source: 'local-fallback' },
+        { status: 200 }
+      );
+    }
+
     const prompt = buildPrompt(body);
     const result = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -88,7 +119,14 @@ export async function POST(request: NextRequest) {
       error?: { message?: string };
     };
     if (!result.ok) {
-      throw new Error(resultBody.error?.message || `OpenAI request failed (${result.status})`);
+      const errorMessage = resultBody.error?.message || `OpenAI request failed (${result.status})`;
+      if (result.status === 429 || /quota|billing/i.test(errorMessage)) {
+        return NextResponse.json(
+          { description: buildLocalTrailDescription(body), source: 'local-fallback', warning: errorMessage },
+          { status: 200 }
+        );
+      }
+      throw new Error(errorMessage);
     }
     const outputText = resultBody.choices?.[0]?.message?.content || '';
 

@@ -1,16 +1,24 @@
 'use client';
 
 import * as React from 'react';
-import Map, {
+import MapboxMap, {
+  FullscreenControl as MapboxFullscreenControl,
+  Layer as MapboxLayer,
+  Marker as MapboxMarker,
+  NavigationControl as MapboxNavigationControl,
+  ScaleControl as MapboxScaleControl,
+  Source as MapboxSource,
+} from 'react-map-gl/mapbox';
+import MapLibreMap, {
   FullscreenControl,
   Layer,
   Marker,
   NavigationControl,
   ScaleControl,
   Source,
-  type MapRef,
-} from 'react-map-gl/mapbox';
+} from 'react-map-gl/maplibre';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import type { RouteData } from '@/types';
 import type { MapStyleMode } from '@/lib/map-styles';
 import { extractKomootEmbedUrl, getKomootNavigateUrl } from '@/lib/komoot';
@@ -30,7 +38,9 @@ type TrailMapSectionProps = {
   mapCenter: { longitude: number; latitude: number; zoom: number };
   mapStyle: string;
   mapStyleMode: MapStyleMode;
+  mapEngine: 'free' | 'mapbox';
   mapboxToken?: string;
+  onMapEngineChange: (engine: 'free' | 'mapbox') => void;
   onStyleModeChange: (mode: MapStyleMode) => void;
   komootEmbedUrl?: string | null;
   mapProvider: 'internal' | 'komoot';
@@ -44,15 +54,18 @@ function TrailMapSection({
   mapCenter,
   mapStyle,
   mapStyleMode,
+  mapEngine,
   mapboxToken,
+  onMapEngineChange,
   onStyleModeChange,
   komootEmbedUrl,
   mapProvider,
   onMapProviderChange,
 }: TrailMapSectionProps) {
-  const mapRef = React.useRef<MapRef | null>(null);
+  const mapRef = React.useRef<any>(null);
   const watchIdRef = React.useRef<number | null>(null);
   const followLocationRef = React.useRef(false);
+  const [mapLoaded, setMapLoaded] = React.useState(false);
   const [userLocation, setUserLocation] = React.useState<{
     latitude: number;
     longitude: number;
@@ -66,6 +79,15 @@ function TrailMapSection({
   const normalizedKomootEmbedUrl = extractKomootEmbedUrl(komootUrl);
   const hasKomootEmbed = Boolean(normalizedKomootEmbedUrl);
   const komootOpenUrl = getKomootNavigateUrl(normalizedKomootEmbedUrl);
+  const canUseMapbox = Boolean(mapboxToken);
+  const activeMapEngine = mapEngine === 'mapbox' && canUseMapbox ? 'mapbox' : 'free';
+  const MapComponent = activeMapEngine === 'mapbox' ? MapboxMap : MapLibreMap;
+  const ActiveSource = activeMapEngine === 'mapbox' ? MapboxSource : Source;
+  const ActiveLayer = activeMapEngine === 'mapbox' ? MapboxLayer : Layer;
+  const ActiveMarker = activeMapEngine === 'mapbox' ? MapboxMarker : Marker;
+  const ActiveNavigationControl = activeMapEngine === 'mapbox' ? MapboxNavigationControl : NavigationControl;
+  const ActiveFullscreenControl = activeMapEngine === 'mapbox' ? MapboxFullscreenControl : FullscreenControl;
+  const ActiveScaleControl = activeMapEngine === 'mapbox' ? MapboxScaleControl : ScaleControl;
 
   const stopFollowingLocation = React.useCallback(() => {
     if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -127,6 +149,10 @@ function TrailMapSection({
 
   React.useEffect(() => stopFollowingLocation, [stopFollowingLocation]);
 
+  React.useEffect(() => {
+    setMapLoaded(false);
+  }, [activeMapEngine, mapStyle]);
+
   if (hasKomootEmbed && mapProvider === 'komoot') {
     return (
       <div className="mb-6 overflow-hidden rounded-xl border border-emerald-200/60 bg-white shadow-[0_20px_60px_-25px_rgba(2,6,23,0.5)] dark:border-emerald-900/60 dark:bg-slate-950">
@@ -177,52 +203,59 @@ function TrailMapSection({
   }
 
   return hasRoute ? (
-    <div className="mb-6 h-[360px] w-full overflow-hidden rounded-xl border border-white/20 bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)] sm:h-[460px] lg:h-[600px]">
-      <Map
-        ref={mapRef}
-        initialViewState={mapCenter}
-        style={{ width: '100%', height: '100%' }}
-        mapStyle={mapStyle}
-        mapboxAccessToken={mapboxToken}
-        onLoad={() => {
-          if (!mapboxToken) return;
-          const map = mapRef.current?.getMap() as any;
-          if (!map) return;
-          if (!map.getSource('mapbox-dem')) {
-            map.addSource('mapbox-dem', {
-              type: 'raster-dem',
-              url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-              tileSize: 512,
-              maxzoom: 14,
-            });
-          }
-          map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.1 });
-        }}
-        onDragStart={() => {
-          if (followLocationRef.current) stopFollowingLocation();
-        }}
-      >
-        <div className="absolute right-2 top-2 z-10 inline-flex max-w-[calc(100%-1rem)] overflow-hidden rounded-lg border border-white/15 bg-slate-950/75 shadow-lg backdrop-blur sm:right-3 sm:top-3">
-          {hasKomootEmbed && (
+    <div className="mb-6">
+      <div className="mb-2 flex items-center justify-end gap-2 px-2 sm:px-0">
+        {hasKomootEmbed && (
+          <button
+            type="button"
+            onClick={() => onMapProviderChange('komoot')}
+            className="h-9 shrink-0 whitespace-nowrap rounded-lg border border-emerald-200 bg-white px-3 text-xs font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-900 dark:bg-slate-950 dark:text-emerald-100 dark:hover:bg-emerald-950/40"
+            aria-label="Switch to Komoot route view"
+          >
+            Komoot
+          </button>
+        )}
+        {canUseMapbox && (
+          <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
             <button
               type="button"
-              onClick={() => onMapProviderChange('komoot')}
-              className="px-2.5 py-2 text-[11px] font-semibold text-white/90 transition hover:bg-white/10 sm:px-3 sm:text-xs"
-              title="Switch to Komoot route view"
+              aria-pressed={activeMapEngine === 'free'}
+              onClick={() => onMapEngineChange('free')}
+              className={`h-9 shrink-0 whitespace-nowrap px-3 text-xs font-semibold transition ${
+                activeMapEngine === 'free'
+                  ? 'bg-emerald-700 text-white'
+                  : 'text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900'
+              }`}
+              aria-label="Use free map provider"
             >
-              Komoot
+              Free
             </button>
-          )}
+            <button
+              type="button"
+              aria-pressed={activeMapEngine === 'mapbox'}
+              onClick={() => onMapEngineChange('mapbox')}
+              className={`h-9 shrink-0 whitespace-nowrap px-3 text-xs font-semibold transition ${
+                activeMapEngine === 'mapbox'
+                  ? 'bg-emerald-700 text-white'
+                  : 'text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900'
+              }`}
+              aria-label="Use Mapbox provider"
+            >
+              Mapbox
+            </button>
+          </div>
+        )}
+        <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <button
             type="button"
             aria-pressed={mapStyleMode === 'satellite'}
             onClick={() => onStyleModeChange('satellite')}
-              className={`px-2.5 py-2 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
+            className={`h-9 shrink-0 whitespace-nowrap px-3 text-xs font-semibold transition ${
               mapStyleMode === 'satellite'
-                ? 'bg-white/15 text-white'
-                : 'text-white/80 hover:bg-white/10'
+                ? 'bg-emerald-700 text-white'
+                : 'text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900'
             }`}
-            title="Satellite imagery with places/labels"
+            aria-label="Use satellite map style"
           >
             Satellite
           </button>
@@ -230,61 +263,107 @@ function TrailMapSection({
             type="button"
             aria-pressed={mapStyleMode === 'map'}
             onClick={() => onStyleModeChange('map')}
-              className={`px-2.5 py-2 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
+            className={`h-9 shrink-0 whitespace-nowrap px-3 text-xs font-semibold transition ${
               mapStyleMode === 'map'
-                ? 'bg-white/15 text-white'
-                : 'text-white/80 hover:bg-white/10'
+                ? 'bg-emerald-700 text-white'
+                : 'text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900'
             }`}
-            title="Simple map view with places"
+            aria-label="Use simple map style"
           >
             Map
           </button>
         </div>
-        <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-11rem)] flex-wrap items-center gap-1.5 sm:left-3 sm:top-3 sm:max-w-[calc(100%-15rem)] sm:gap-2">
-          <button
-            type="button"
-            onClick={isFollowingLocation ? stopFollowingLocation : startFollowingLocation}
-            className={`rounded-lg border px-2.5 py-2 text-[11px] font-semibold shadow-lg backdrop-blur transition sm:px-3 sm:text-xs ${
-              isFollowingLocation
-                ? 'border-emerald-300 bg-emerald-600 text-white hover:bg-emerald-700'
-                : 'border-white/15 bg-slate-950/70 text-white/90 hover:bg-slate-900/90'
-            }`}
-            aria-pressed={isFollowingLocation}
-            title="Show and follow your current location"
-          >
-            {isFollowingLocation ? 'Stop following' : 'Use my location'}
-          </button>
-          <button
-            type="button"
-            onClick={recenterMap}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-slate-950/75 text-white/90 shadow-lg backdrop-blur transition hover:bg-slate-900/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
-            aria-label="Recenter on trail route"
-            title={userLocation ? 'Recenter on my location' : 'Recenter on trail route'}
-          >
-            <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
-              <path d="M10 2.25a.75.75 0 0 1 .75.75v1.3a5.75 5.75 0 0 1 4.95 4.95H17a.75.75 0 0 1 0 1.5h-1.3a5.75 5.75 0 0 1-4.95 4.95V17a.75.75 0 0 1-1.5 0v-1.3a5.75 5.75 0 0 1-4.95-4.95H3a.75.75 0 0 1 0-1.5h1.3a5.75 5.75 0 0 1 4.95-4.95V3a.75.75 0 0 1 .75-.75Zm0 3.5A4.25 4.25 0 1 0 10 14.25 4.25 4.25 0 0 0 10 5.75Z" fill="currentColor" />
-              <circle cx="10" cy="10" r="1.5" fill="currentColor" />
-            </svg>
-          </button>
-          {locationStatus !== 'idle' && (
-            <span
-              className="rounded-lg border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[11px] font-medium text-white/90 shadow-lg backdrop-blur"
-              role="status"
-              aria-live="polite"
+      </div>
+      <div className="relative h-[300px] w-full overflow-hidden bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)] sm:h-[460px] lg:h-[600px]">
+        <MapComponent
+          key={`${activeMapEngine}-${mapStyleMode}`}
+          ref={mapRef}
+          initialViewState={mapCenter}
+          style={{ width: '100%', height: '100%' }}
+          mapStyle={mapStyle}
+          {...(activeMapEngine === 'mapbox' ? { mapboxAccessToken: mapboxToken } : {})}
+          onLoad={() => {
+            setMapLoaded(true);
+            if (activeMapEngine !== 'mapbox' || !mapboxToken) return;
+            const map = mapRef.current?.getMap() as any;
+            if (!map) return;
+            if (!map.getSource('mapbox-dem')) {
+              map.addSource('mapbox-dem', {
+                type: 'raster-dem',
+                url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                tileSize: 512,
+                maxzoom: 14,
+              });
+            }
+            map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.1 });
+          }}
+          onDragStart={() => {
+            if (followLocationRef.current) stopFollowingLocation();
+          }}
+        >
+        <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-1rem)] items-start sm:left-3 sm:top-3">
+          <div className="inline-flex max-w-full items-stretch overflow-hidden rounded-lg border border-white/15 bg-slate-950/80 shadow-lg backdrop-blur">
+            <button
+              type="button"
+              onClick={isFollowingLocation ? stopFollowingLocation : startFollowingLocation}
+              className={`h-9 shrink-0 whitespace-nowrap border-0 border-r border-white/15 px-3 text-xs font-semibold transition ${
+                isFollowingLocation
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  : 'bg-transparent text-white/90 hover:bg-white/10'
+              }`}
+              aria-pressed={isFollowingLocation}
+              aria-label={isFollowingLocation ? 'Stop following current location' : 'Show and follow current location'}
             >
-              {locationStatus === 'requesting' && 'Requesting GPS...'}
-              {locationStatus === 'active' && 'GPS active'}
-              {locationStatus === 'denied' && 'Location permission denied'}
-              {locationStatus === 'unavailable' && 'Location unavailable'}
-            </span>
-          )}
+              <span className="sm:hidden">{isFollowingLocation ? 'Stop' : 'Locate me'}</span>
+              <span className="hidden sm:inline">{isFollowingLocation ? 'Stop following' : 'Use my location'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={recenterMap}
+              className="inline-flex h-9 w-10 shrink-0 items-center justify-center border-0 border-r border-white/15 bg-transparent text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-300"
+              aria-label="Recenter on trail route"
+            >
+              <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+                <path d="M10 2.25a.75.75 0 0 1 .75.75v1.3a5.75 5.75 0 0 1 4.95 4.95H17a.75.75 0 0 1 0 1.5h-1.3a5.75 5.75 0 0 1-4.95 4.95V17a.75.75 0 0 1-1.5 0v-1.3a5.75 5.75 0 0 1-4.95-4.95H3a.75.75 0 0 1 0-1.5h1.3a5.75 5.75 0 0 1 4.95-4.95V3a.75.75 0 0 1 .75-.75Zm0 3.5A4.25 4.25 0 1 0 10 14.25 4.25 4.25 0 0 0 10 5.75Z" fill="currentColor" />
+                <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+              </svg>
+            </button>
+            {locationStatus !== 'idle' && (
+              <span
+                className="inline-flex h-9 shrink-0 items-center whitespace-nowrap border-0 bg-transparent px-3 text-[11px] font-medium text-white/90"
+                role="status"
+                aria-live="polite"
+              >
+                <span className="sm:hidden">
+                  {locationStatus === 'requesting' && 'GPS...'}
+                  {locationStatus === 'active' && 'GPS'}
+                  {locationStatus === 'denied' && 'Denied'}
+                  {locationStatus === 'unavailable' && 'No GPS'}
+                </span>
+                <span className="hidden sm:inline">
+                  {locationStatus === 'requesting' && 'Requesting GPS...'}
+                  {locationStatus === 'active' && 'GPS active'}
+                  {locationStatus === 'denied' && 'Location permission denied'}
+                  {locationStatus === 'unavailable' && 'Location unavailable'}
+                </span>
+              </span>
+            )}
+          </div>
         </div>
-        <NavigationControl position="bottom-right" showCompass showZoom />
-        <FullscreenControl position="bottom-right" />
-        <ScaleControl position="bottom-left" unit="metric" />
+        {!mapLoaded && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/25 backdrop-blur-[1px]">
+            <div className="flex items-center gap-3 rounded-lg border border-white/20 bg-slate-950/85 px-4 py-3 text-sm font-semibold text-white shadow-xl">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200/40 border-t-emerald-400" aria-hidden="true" />
+              Loading trail map...
+            </div>
+          </div>
+        )}
+        <ActiveNavigationControl position="bottom-right" showCompass showZoom />
+        <ActiveFullscreenControl position="bottom-right" />
+        <ActiveScaleControl position="bottom-left" unit="metric" />
         {routeGeoJSON && (
-          <Source id="route" type="geojson" data={routeGeoJSON as any}>
-            <Layer
+          <ActiveSource id="route" type="geojson" data={routeGeoJSON as any}>
+            <ActiveLayer
               id="route-line-glow"
               type="line"
               paint={{
@@ -294,7 +373,7 @@ function TrailMapSection({
                 'line-blur': 1,
               }}
             />
-            <Layer
+            <ActiveLayer
               id="route-line-casing"
               type="line"
               paint={{
@@ -303,7 +382,7 @@ function TrailMapSection({
                 'line-opacity': 0.9,
               }}
             />
-            <Layer
+            <ActiveLayer
               id="route-line-core"
               type="line"
               paint={{
@@ -312,7 +391,7 @@ function TrailMapSection({
                 'line-opacity': 0.98,
               }}
             />
-            <Layer
+            <ActiveLayer
               id="route-line-highlight"
               type="line"
               paint={{
@@ -321,10 +400,10 @@ function TrailMapSection({
                 'line-opacity': 0.85,
               }}
             />
-          </Source>
+          </ActiveSource>
         )}
         {routeGeoJSON && (
-          <Layer
+          <ActiveLayer
             id="route-arrows-layer"
             type="symbol"
             source="route"
@@ -348,7 +427,7 @@ function TrailMapSection({
         )}
         {hasRoute && routeData && routeData.coordinates.length > 0 && (
           <>
-            <Marker
+            <ActiveMarker
               longitude={routeData.coordinates[0].longitude}
               latitude={routeData.coordinates[0].latitude}
               anchor="bottom"
@@ -356,8 +435,8 @@ function TrailMapSection({
               <div className="rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
                 Start
               </div>
-            </Marker>
-            <Marker
+            </ActiveMarker>
+            <ActiveMarker
               longitude={routeData.coordinates[routeData.coordinates.length - 1].longitude}
               latitude={routeData.coordinates[routeData.coordinates.length - 1].latitude}
               anchor="bottom"
@@ -365,11 +444,11 @@ function TrailMapSection({
               <div className="rounded bg-red-500 px-2 py-1 text-xs font-semibold text-white">
                 End
               </div>
-            </Marker>
+            </ActiveMarker>
           </>
         )}
         {userLocation && (
-          <Marker
+          <ActiveMarker
             longitude={userLocation.longitude}
             latitude={userLocation.latitude}
             anchor="center"
@@ -378,9 +457,10 @@ function TrailMapSection({
               className="h-4 w-4 rounded-full border-2 border-white bg-sky-500 shadow-[0_0_0_5px_rgba(14,165,233,0.25)]"
               title={`Your location, accuracy about ${Math.round(userLocation.accuracy)} metres`}
             />
-          </Marker>
+          </ActiveMarker>
         )}
-      </Map>
+        </MapComponent>
+      </div>
     </div>
   ) : (
     <div className="mb-6 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
