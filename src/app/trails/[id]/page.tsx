@@ -12,6 +12,7 @@ import { absoluteUrl, SITE_NAME } from '@/lib/seo';
 import { getTrailShareDescription, getTrailShareTitle } from '@/lib/trail-share';
 
 export const revalidate = 300;
+export const dynamicParams = true;
 
 type Params = {
   id: string;
