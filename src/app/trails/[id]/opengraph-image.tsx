@@ -49,7 +49,7 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
   const location = compactLocation(trail?.location) || 'Nepal';
   const sport = getTrailSportLabel(trail?.sport_type);
   const photoUrl = getTrailPhotoUrl(trail);
-  const logoUrl = absoluteUrl('/icons/logo-transparent-source.png');
+  const previewPhotoUrl = photoUrl || absoluteUrl('/images/trail-og-fallback.jpg');
 
   return new ImageResponse(
     (
@@ -177,54 +177,17 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
                 background: '#0f172a',
               }}
             >
-              {photoUrl ? (
-                <img
-                  src={photoUrl}
-                  alt=""
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background:
-                      'radial-gradient(circle at 50% 35%, rgba(190,242,100,0.22), rgba(6,78,59,0.38) 34%, rgba(2,6,23,0.92) 74%), linear-gradient(135deg, #064e3b, #020617)',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 190,
-                      height: 190,
-                      borderRadius: 42,
-                      background: 'rgba(255,255,255,0.94)',
-                      boxShadow: '0 28px 80px rgba(2,6,23,0.36)',
-                    }}
-                  >
-                    <img
-                      src={logoUrl}
-                      alt=""
-                      style={{
-                        width: 150,
-                        height: 150,
-                        objectFit: 'contain',
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
+              <img
+                src={previewPhotoUrl}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
               <div
                 style={{
                   position: 'absolute',
