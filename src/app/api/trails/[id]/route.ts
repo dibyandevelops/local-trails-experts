@@ -22,11 +22,42 @@ export async function GET(
   try {
     const communityNameSql = COMMUNITY_NAME.replace(/'/g, "''");
     const { id } = await params;
+    const includeRoute = request.nextUrl.searchParams.get('includeRoute') !== 'false';
+    const trailFields = includeRoute
+      ? 't.*'
+      : `
+          t.id,
+          t.slug,
+          t.name,
+          t.description,
+          t.difficulty,
+          t.sport_type,
+          t.location,
+          t.safety_labels,
+          t.is_hazardous,
+          t.hazard_note,
+          t.hazard_updated_by,
+          t.hazard_updated_at,
+          t.latitude,
+          t.longitude,
+          t.distance_km,
+          t.elevation_gain_m,
+          t.estimated_time_hours,
+          t.image_url,
+          t.trail_images,
+          t.komoot_embed_url,
+          NULL::jsonb AS route_data,
+          t.created_at,
+          t.updated_at,
+          t.submitted_by_user_id,
+          t.status,
+          t.is_hidden
+        `;
 
     const result = await pool.query(
       `
         SELECT
-          t.*,
+          ${trailFields},
           CASE
             WHEN u.role = 'admin' THEN '${communityNameSql}'
             ELSE u.name

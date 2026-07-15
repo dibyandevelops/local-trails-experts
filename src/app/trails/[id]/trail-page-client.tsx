@@ -526,8 +526,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     isLoading: loading,
     error,
   } = useQuery<Trail>({
-    queryKey: QUERY_KEYS.trails.byId(trailId),
-    queryFn: ({ signal }) => fetchTrailById(trailId, signal),
+    queryKey: [...QUERY_KEYS.trails.byId(trailId), 'summary'],
+    queryFn: ({ signal }) => fetchTrailById(trailId, signal, { includeRoute: false }),
     enabled: Boolean(trailId),
     initialData: initialTrail ?? undefined,
     staleTime: 60_000,

@@ -130,11 +130,19 @@ export async function fetchTrailsPaginated(
   }
 }
 
-export async function fetchTrailById(trailId: string, signal?: AbortSignal) {
+export async function fetchTrailById(
+  trailId: string,
+  signal?: AbortSignal,
+  options: { includeRoute?: boolean } = {}
+) {
   try {
+    const params =
+      typeof options.includeRoute === 'boolean'
+        ? { includeRoute: String(options.includeRoute) }
+        : undefined;
     const { data } = await apiClient.get<{ trail: Trail }>(
       `${ApiPath.Trails}/${trailId}`,
-      { signal }
+      { signal, params }
     );
     return data.trail;
   } catch (error) {

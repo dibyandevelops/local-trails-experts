@@ -36,7 +36,7 @@ export function useTrailAutocompleteOptions({
         },
         signal
       ),
-    enabled,
+    enabled: enabled && search.length >= 2,
     staleTime: 60_000,
     select: (data) => data.trails,
   });
