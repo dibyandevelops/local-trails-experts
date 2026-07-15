@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { getTrailSeo } from '@/lib/data/public-trails';
-import { SITE_NAME } from '@/lib/seo';
+import { absoluteUrl, SITE_NAME } from '@/lib/seo';
 import {
   getTrailShareDescription,
   getTrailShareStats,
@@ -29,6 +29,14 @@ function compactLocation(location?: string | null) {
     .join(', ');
 }
 
+function getTrailPhotoUrl(trail: Awaited<ReturnType<typeof getTrailSeo>>) {
+  const firstGalleryImage = Array.isArray(trail?.trail_images)
+    ? trail.trail_images.find((image) => typeof image === 'string' && image.trim())
+    : null;
+  const image = trail?.image_url || firstGalleryImage || null;
+  return image ? absoluteUrl(image) : null;
+}
+
 export default async function TrailOpenGraphImage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
   const trail = await getTrailSeo(id);
@@ -40,6 +48,8 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
   const stats = trail ? getTrailShareStats(trail).slice(0, 3) : [];
   const location = compactLocation(trail?.location) || 'Nepal';
   const sport = getTrailSportLabel(trail?.sport_type);
+  const photoUrl = getTrailPhotoUrl(trail);
+  const logoUrl = absoluteUrl('/icons/logo-transparent-source.png');
 
   return new ImageResponse(
     (
@@ -154,7 +164,7 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
               overflow: 'hidden',
               borderRadius: 30,
               border: '1px solid rgba(167,243,208,0.45)',
-              background: '#d9f99d',
+              background: '#022c22',
               boxShadow: '0 24px 80px rgba(2,6,23,0.45)',
             }}
           >
@@ -164,149 +174,63 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
                 display: 'flex',
                 position: 'relative',
                 overflow: 'hidden',
-                background: 'linear-gradient(180deg, #bae6fd 0%, #d9f99d 46%, #064e3b 100%)',
+                background: '#0f172a',
               }}
             >
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt=""
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background:
+                      'radial-gradient(circle at 50% 35%, rgba(190,242,100,0.22), rgba(6,78,59,0.38) 34%, rgba(2,6,23,0.92) 74%), linear-gradient(135deg, #064e3b, #020617)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 190,
+                      height: 190,
+                      borderRadius: 42,
+                      background: 'rgba(255,255,255,0.94)',
+                      boxShadow: '0 28px 80px rgba(2,6,23,0.36)',
+                    }}
+                  >
+                    <img
+                      src={logoUrl}
+                      alt=""
+                      style={{
+                        width: 150,
+                        height: 150,
+                        objectFit: 'contain',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
               <div
                 style={{
                   position: 'absolute',
                   inset: 0,
                   background:
-                    'radial-gradient(circle at 75% 18%, rgba(254,249,195,0.95) 0 34px, rgba(254,249,195,0) 35px), linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0) 38%)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: -80,
-                  bottom: 145,
-                  width: 290,
-                  height: 170,
-                  borderRadius: '58% 42% 0 0',
-                  background: '#0f766e',
-                  transform: 'rotate(7deg)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  right: -42,
-                  bottom: 136,
-                  width: 320,
-                  height: 205,
-                  borderRadius: '54% 46% 0 0',
-                  background: '#047857',
-                  transform: 'rotate(-8deg)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 42,
-                  bottom: 112,
-                  width: 330,
-                  height: 175,
-                  borderRadius: '50% 50% 0 0',
-                  background: '#166534',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: 162,
-                  background: 'linear-gradient(180deg, #16a34a, #052e16)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 42,
-                  bottom: 44,
-                  width: 310,
-                  height: 138,
-                  border: '12px solid rgba(236,253,245,0.96)',
-                  borderTopColor: 'transparent',
-                  borderRightColor: '#bbf7d0',
-                  borderRadius: '55% 45% 50% 50%',
-                  transform: 'rotate(-9deg)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 53,
-                  bottom: 55,
-                  width: 288,
-                  height: 114,
-                  border: '6px solid #10b981',
-                  borderTopColor: 'transparent',
-                  borderRightColor: '#34d399',
-                  borderRadius: '55% 45% 50% 50%',
-                  transform: 'rotate(-9deg)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 153,
-                  bottom: 119,
-                  width: 66,
-                  height: 66,
-                  borderRadius: 999,
-                  background: '#f97316',
-                  border: '7px solid #fff7ed',
-                  boxShadow: '0 16px 35px rgba(2,6,23,0.24)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 171,
-                  bottom: 139,
-                  width: 30,
-                  height: 30,
-                  borderRadius: 999,
-                  border: '5px solid #022c22',
-                  background: 'transparent',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 195,
-                  bottom: 139,
-                  width: 30,
-                  height: 30,
-                  borderRadius: 999,
-                  border: '5px solid #022c22',
-                  background: 'transparent',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 195,
-                  bottom: 174,
-                  width: 38,
-                  height: 5,
-                  borderRadius: 999,
-                  background: '#022c22',
-                  transform: 'rotate(26deg)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 177,
-                  bottom: 170,
-                  width: 34,
-                  height: 5,
-                  borderRadius: 999,
-                  background: '#022c22',
-                  transform: 'rotate(-35deg)',
+                    'linear-gradient(180deg, rgba(2,6,23,0.08), rgba(2,6,23,0.12) 38%, rgba(2,6,23,0.82)), linear-gradient(90deg, rgba(2,44,34,0.66), rgba(2,6,23,0.08))',
                 }}
               />
               <div
@@ -323,7 +247,7 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
                   fontWeight: 900,
                 }}
               >
-                Trail preview
+                {photoUrl ? 'Trail photo' : SITE_NAME}
               </div>
               <div
                 style={{
@@ -339,7 +263,7 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
                   fontWeight: 900,
                 }}
               >
-                Nepal ride route
+                {sport}
               </div>
             </div>
             <div
