@@ -1,13 +1,12 @@
 'use client';
 
 import { useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Trail } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { TRAIL_SPORTS } from '@/services/constants/sports';
-import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
-import TrailRequestModal from '@/components/feature-components/trail-request/trail-request-modal';
 import {
   getDifficultyLabel,
 } from '@/services/constants/difficulty';
@@ -38,6 +37,16 @@ import {
   TrailsToast,
 } from '@/components/feature-components/trails/trails-page-dialogs';
 
+const TrailImageCarouselModal = dynamic(() => import('@/components/ui/trail-image-carousel-modal'), {
+  ssr: false,
+});
+
+const TrailRequestModal = dynamic(
+  () => import('@/components/feature-components/trail-request/trail-request-modal'),
+  {
+    ssr: false,
+  }
+);
 
 function TrailsPageContent() {
   const router = useRouter();
@@ -221,6 +230,7 @@ function TrailsPageContent() {
   } = useTrailsPageData({
     filterQuery,
     pageSize: initialPageSize,
+    loadExperts: requestOpen,
     mapTrailId,
     mapOpen,
     mapTrailSummary,

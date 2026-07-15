@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
+const PUBLIC_TRAIL_MAP_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
+};
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -36,10 +40,12 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ trail }, { status: 200 });
+    return NextResponse.json(
+      { trail },
+      { status: 200, headers: PUBLIC_TRAIL_MAP_CACHE_HEADERS }
+    );
   } catch (error) {
     console.error('Error fetching trail map:', error);
     return NextResponse.json({ error: 'Failed to fetch trail map data' }, { status: 500 });
   }
 }
-

@@ -12,6 +12,9 @@ import { rateLimit } from '@/lib/rate-limit';
 const MAX_TRAIL_UPLOAD_BYTES = 2 * 1024 * 1024;
 const MAX_TRAIL_IMAGES = 12;
 const MAX_IMAGE_URL_LENGTH = 2000;
+const PUBLIC_TRAILS_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+};
 
 function parseOptionalNumber(raw: string | null) {
   if (!raw || !raw.trim()) return null;
@@ -264,7 +267,10 @@ export async function GET(request: NextRequest) {
         ORDER BY t.name ASC
       `;
       const result = await pool.query(requestQuery, params);
-      return NextResponse.json({ trails: result.rows || [] }, { status: 200 });
+      return NextResponse.json(
+        { trails: result.rows || [] },
+        { status: 200, headers: auth ? undefined : PUBLIC_TRAILS_CACHE_HEADERS }
+      );
     }
 
     const baseOrderBy = (() => {
@@ -416,7 +422,7 @@ export async function GET(request: NextRequest) {
           hasPrevPage: page > 1,
         },
       },
-      { status: 200 }
+      { status: 200, headers: auth ? undefined : PUBLIC_TRAILS_CACHE_HEADERS }
     );
   } catch (error) {
     console.error('Error fetching trails:', error);

@@ -33,7 +33,6 @@ import {
   updateTrail,
   uploadTrailRoute,
 } from '@/services/trails/trails.service';
-import EventForm from '@/components/feature-components/event-form/event-form';
 import {
   getMapLibreCompatibleMapStyle,
   getMapStyle,
@@ -41,7 +40,6 @@ import {
 } from '@/lib/map-styles';
 import { resizeImageToDataUrl } from '@/lib/image';
 import DateText from '@/components/ui/date-text';
-import TrailImageCarouselModal from '@/components/ui/trail-image-carousel-modal';
 import { getTrailAttributionLabel } from '@/lib/trail-attribution';
 import ThemedDropdown, { type ThemedDropdownItem } from '@/components/ui/themed-dropdown';
 import AppDialog from '@/components/ui/app-dialog';
@@ -53,7 +51,6 @@ import {
   trailUpdateTypeLabelByValue,
   type TrailUpdateType,
 } from '@/lib/trail-updates';
-import TrailWeatherForecast from './trail-weather-forecast';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
 const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
@@ -131,6 +128,20 @@ const MapSection = dynamic(() => import('./trail-map-section'), {
       </div>
     </div>
   ),
+});
+const EventForm = dynamic(() => import('@/components/feature-components/event-form/event-form'), {
+  ssr: false,
+  loading: () => (
+    <div className="grid min-h-64 place-items-center rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm font-semibold text-gray-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+      Loading event form...
+    </div>
+  ),
+});
+const TrailImageCarouselModal = dynamic(() => import('@/components/ui/trail-image-carousel-modal'), {
+  ssr: false,
+});
+const TrailWeatherForecast = dynamic(() => import('./trail-weather-forecast'), {
+  ssr: false,
 });
 
 type TrailContextSectionProps = {
@@ -444,6 +455,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [mapProvider, setMapProvider] = useState<'internal' | 'komoot'>('internal');
   const [mapEngine, setMapEngine] = useState<'free' | 'mapbox'>('free');
   const [hideMapSwitchOnMobile, setHideMapSwitchOnMobile] = useState(false);
+  const [loadSecondaryDetails, setLoadSecondaryDetails] = useState(false);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
   const mapStyle = useMemo(
     () => (mapEngine === 'mapbox' && mapboxToken ? getMapStyle(mapStyleMode) : getMapLibreCompatibleMapStyle(mapStyleMode)),
@@ -476,6 +488,22 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       window.removeEventListener('resize', updateMapSwitchVisibility);
     };
   }, []);
+
+  useEffect(() => {
+    if (loadSecondaryDetails) return;
+
+    const idleCallback =
+      typeof window !== 'undefined' && 'requestIdleCallback' in window
+        ? window.requestIdleCallback
+        : null;
+    if (idleCallback) {
+      const idleId = idleCallback(() => setLoadSecondaryDetails(true), { timeout: 1800 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = window.setTimeout(() => setLoadSecondaryDetails(true), 800);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadSecondaryDetails]);
 
   useEffect(() => {
     const closeTransientUi = () => {
@@ -517,7 +545,9 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
-    enabled: !EXPERTS_BETA_ENABLED,
+    enabled: requestModalOpen && !EXPERTS_BETA_ENABLED,
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const { data: trailOrganizations = [] } = useQuery<TrailOrganization[]>({
     queryKey: ['trail-organizations', trailId],
@@ -529,7 +559,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       }
       return (data?.organizations || []) as TrailOrganization[];
     },
-    enabled: Boolean(trailId),
+    enabled: loadSecondaryDetails && Boolean(trailId),
   });
   const { data: trailUpdates = [] } = useQuery<TrailUpdateLog[]>({
     queryKey: ['trail-updates', trailId],
@@ -541,7 +571,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       }
       return (data?.updates || []) as TrailUpdateLog[];
     },
-    enabled: Boolean(trailId),
+    enabled: loadSecondaryDetails && Boolean(trailId),
   });
   const { data: trailServices = [] } = useQuery<TrailService[]>({
     queryKey: ['trail-services', trailId],
@@ -553,7 +583,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       }
       return (data?.services || []) as TrailService[];
     },
-    enabled: Boolean(trailId),
+    enabled: loadSecondaryDetails && Boolean(trailId),
     staleTime: 60_000,
   });
 
@@ -563,7 +593,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   }>({
     queryKey: QUERY_KEYS.trails.reviews(trailId),
     queryFn: ({ signal }) => fetchTrailReviews(trailId, signal),
-    enabled: Boolean(trailId),
+    enabled: loadSecondaryDetails && Boolean(trailId),
   });
   const { data: joinedEvents = [] } = useQuery({
     queryKey: QUERY_KEYS.events.joinedByParticipant,
@@ -2167,7 +2197,9 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         )}
       </section>
 
-      <TrailWeatherForecast latitude={trail.latitude} longitude={trail.longitude} />
+      {loadSecondaryDetails && (
+        <TrailWeatherForecast latitude={trail.latitude} longitude={trail.longitude} />
+      )}
 
       {trail.description?.trim() && (
         <section

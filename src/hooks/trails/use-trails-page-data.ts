@@ -47,6 +47,7 @@ type TrailRequestMutationPayload = TrailRequestPayload & { trailId: string };
 type UseTrailsPageDataOptions = {
   filterQuery: TrailFilters;
   pageSize: number;
+  loadExperts?: boolean;
   mapTrailId: string | null;
   mapOpen: boolean;
   mapTrailSummary: Trail | null;
@@ -58,6 +59,7 @@ type UseTrailsPageDataOptions = {
 export function useTrailsPageData({
   filterQuery,
   pageSize,
+  loadExperts = false,
   mapTrailId,
   mapOpen,
   mapTrailSummary,
@@ -71,7 +73,9 @@ export function useTrailsPageData({
   const { data: experts = [] } = useQuery<User[]>({
     queryKey: QUERY_KEYS.experts.verified,
     queryFn: ({ signal }) => fetchVerifiedExperts(signal),
-    enabled: !EXPERTS_BETA_ENABLED,
+    enabled: loadExperts && !EXPERTS_BETA_ENABLED,
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: savedTrailsData } = useQuery<SavedTrailsResponse>({
