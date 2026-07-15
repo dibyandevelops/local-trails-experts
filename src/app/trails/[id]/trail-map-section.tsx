@@ -52,6 +52,7 @@ function TrailMapSection({
 }: TrailMapSectionProps) {
   const mapRef = React.useRef<MapRef | null>(null);
   const watchIdRef = React.useRef<number | null>(null);
+  const followLocationRef = React.useRef(false);
   const [userLocation, setUserLocation] = React.useState<{
     latitude: number;
     longitude: number;
@@ -71,6 +72,7 @@ function TrailMapSection({
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
+    followLocationRef.current = false;
     setIsFollowingLocation(false);
   }, []);
 
@@ -82,6 +84,7 @@ function TrailMapSection({
 
     stopFollowingLocation();
     setLocationStatus('requesting');
+    followLocationRef.current = true;
     setIsFollowingLocation(true);
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
@@ -92,11 +95,13 @@ function TrailMapSection({
         };
         setUserLocation(nextLocation);
         setLocationStatus('active');
-        mapRef.current?.flyTo({
-          center: [nextLocation.longitude, nextLocation.latitude],
-          zoom: Math.max(mapRef.current.getZoom(), 15),
-          duration: 700,
-        });
+        if (followLocationRef.current && mapRef.current) {
+          mapRef.current.flyTo({
+            center: [nextLocation.longitude, nextLocation.latitude],
+            zoom: Math.max(mapRef.current.getZoom(), 15),
+            duration: 700,
+          });
+        }
       },
       (error) => {
         stopFollowingLocation();
@@ -105,6 +110,15 @@ function TrailMapSection({
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
   }, [stopFollowingLocation]);
+
+  const recenterMap = React.useCallback(() => {
+    if (isFollowingLocation) stopFollowingLocation();
+    mapRef.current?.flyTo({
+      center: [mapCenter.longitude, mapCenter.latitude],
+      zoom: mapCenter.zoom,
+      duration: 700,
+    });
+  }, [isFollowingLocation, mapCenter.latitude, mapCenter.longitude, mapCenter.zoom, stopFollowingLocation]);
 
   React.useEffect(() => {
     // Ask for location access as soon as the trail map is opened.
@@ -184,13 +198,16 @@ function TrailMapSection({
           }
           map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.1 });
         }}
+        onDragStart={() => {
+          if (followLocationRef.current) stopFollowingLocation();
+        }}
       >
-        <div className="absolute right-3 top-3 z-10 inline-flex overflow-hidden rounded-lg border border-white/15 bg-slate-950/70 shadow-lg backdrop-blur">
+        <div className="absolute right-2 top-2 z-10 inline-flex max-w-[calc(100%-1rem)] overflow-hidden rounded-lg border border-white/15 bg-slate-950/75 shadow-lg backdrop-blur sm:right-3 sm:top-3">
           {hasKomootEmbed && (
             <button
               type="button"
               onClick={() => onMapProviderChange('komoot')}
-              className="px-3 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/10"
+              className="px-2.5 py-2 text-[11px] font-semibold text-white/90 transition hover:bg-white/10 sm:px-3 sm:text-xs"
               title="Switch to Komoot route view"
             >
               Komoot
@@ -200,7 +217,7 @@ function TrailMapSection({
             type="button"
             aria-pressed={mapStyleMode === 'satellite'}
             onClick={() => onStyleModeChange('satellite')}
-            className={`px-3 py-2 text-xs font-semibold transition ${
+              className={`px-2.5 py-2 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
               mapStyleMode === 'satellite'
                 ? 'bg-white/15 text-white'
                 : 'text-white/80 hover:bg-white/10'
@@ -213,7 +230,7 @@ function TrailMapSection({
             type="button"
             aria-pressed={mapStyleMode === 'map'}
             onClick={() => onStyleModeChange('map')}
-            className={`px-3 py-2 text-xs font-semibold transition ${
+              className={`px-2.5 py-2 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
               mapStyleMode === 'map'
                 ? 'bg-white/15 text-white'
                 : 'text-white/80 hover:bg-white/10'
@@ -223,11 +240,11 @@ function TrailMapSection({
             Map
           </button>
         </div>
-        <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-7rem)] flex-wrap items-center gap-2">
+        <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-11rem)] flex-wrap items-center gap-1.5 sm:left-3 sm:top-3 sm:max-w-[calc(100%-15rem)] sm:gap-2">
           <button
             type="button"
             onClick={isFollowingLocation ? stopFollowingLocation : startFollowingLocation}
-            className={`rounded-lg border px-3 py-2 text-xs font-semibold shadow-lg backdrop-blur transition ${
+            className={`rounded-lg border px-2.5 py-2 text-[11px] font-semibold shadow-lg backdrop-blur transition sm:px-3 sm:text-xs ${
               isFollowingLocation
                 ? 'border-emerald-300 bg-emerald-600 text-white hover:bg-emerald-700'
                 : 'border-white/15 bg-slate-950/70 text-white/90 hover:bg-slate-900/90'
@@ -236,6 +253,18 @@ function TrailMapSection({
             title="Show and follow your current location"
           >
             {isFollowingLocation ? 'Stop following' : 'Use my location'}
+          </button>
+          <button
+            type="button"
+            onClick={recenterMap}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-slate-950/75 text-white/90 shadow-lg backdrop-blur transition hover:bg-slate-900/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+            aria-label="Recenter on trail route"
+            title={userLocation ? 'Recenter on my location' : 'Recenter on trail route'}
+          >
+            <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+              <path d="M10 2.25a.75.75 0 0 1 .75.75v1.3a5.75 5.75 0 0 1 4.95 4.95H17a.75.75 0 0 1 0 1.5h-1.3a5.75 5.75 0 0 1-4.95 4.95V17a.75.75 0 0 1-1.5 0v-1.3a5.75 5.75 0 0 1-4.95-4.95H3a.75.75 0 0 1 0-1.5h1.3a5.75 5.75 0 0 1 4.95-4.95V3a.75.75 0 0 1 .75-.75Zm0 3.5A4.25 4.25 0 1 0 10 14.25 4.25 4.25 0 0 0 10 5.75Z" fill="currentColor" />
+              <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+            </svg>
           </button>
           {locationStatus !== 'idle' && (
             <span
@@ -250,8 +279,8 @@ function TrailMapSection({
             </span>
           )}
         </div>
-        <NavigationControl position="top-right" showCompass showZoom />
-        <FullscreenControl position="top-right" />
+        <NavigationControl position="bottom-right" showCompass showZoom />
+        <FullscreenControl position="bottom-right" />
         <ScaleControl position="bottom-left" unit="metric" />
         {routeGeoJSON && (
           <Source id="route" type="geojson" data={routeGeoJSON as any}>

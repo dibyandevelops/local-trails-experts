@@ -49,6 +49,7 @@ import {
   trailUpdateTypeLabelByValue,
   type TrailUpdateType,
 } from '@/lib/trail-updates';
+import TrailWeatherForecast from './trail-weather-forecast';
 
 const TRAILS_LAST_URL_KEY = 'trails_last_url';
 const EXPERT_ASSOCIATED_TRAILS_QUERY_KEY = ['expert-associated-trails'];
@@ -2110,6 +2111,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           </div>
         )}
       </section>
+
+      <TrailWeatherForecast latitude={trail.latitude} longitude={trail.longitude} />
 
       <section
         id="route-guide"

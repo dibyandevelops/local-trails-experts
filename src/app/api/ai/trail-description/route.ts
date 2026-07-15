@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 import { rateLimit } from '@/lib/rate-limit';
 import { getAuthFromRequest } from '@/lib/auth';
 
@@ -45,10 +44,10 @@ export async function POST(request: NextRequest) {
     const limited = await rateLimit(request, 'ai-trail-description', 5, 60);
     if (limited) return limited;
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'GEMINI_API_KEY is not configured.' },
+        { error: 'OPENAI_API_KEY is not configured.' },
         { status: 500 }
       );
     }
@@ -63,20 +62,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt fields are too long.' }, { status: 400 });
     }
     const prompt = buildPrompt(body);
-    const client = new GoogleGenAI({ apiKey });
-    const result = await client.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: prompt,
-      config: {
-        temperature: 0.6,
-        maxOutputTokens: 180,
+    const result = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        temperature: 0.85,
+        max_tokens: 220,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You write vivid but trustworthy trail copy for LocoXperts, a Nepal-focused cycling platform. Be creative with phrasing, but never invent terrain, views, facilities, hazards, or landmarks that were not provided. Keep safety claims cautious.',
+          },
+          { role: 'user', content: prompt },
+        ],
+      }),
     });
 
-    const outputText = (result.text ?? '').toString();
+    const resultBody = (await result.json().catch(() => ({}))) as {
+      choices?: Array<{ message?: { content?: string | null } }>;
+      error?: { message?: string };
+    };
+    if (!result.ok) {
+      throw new Error(resultBody.error?.message || `OpenAI request failed (${result.status})`);
+    }
+    const outputText = resultBody.choices?.[0]?.message?.content || '';
 
     return NextResponse.json(
-      { description: String(outputText).trim() },
+      { description: outputText.trim(), source: 'openai' },
       { status: 200 }
     );
   } catch (error) {
@@ -88,7 +105,7 @@ export async function POST(request: NextRequest) {
       { status: message.includes('429') ? 429 : 500 }
     );
     if (message.includes('429')) {
-      res.headers.set('x-rate-limit-source', 'gemini');
+      res.headers.set('x-rate-limit-source', 'openai');
     }
     return res;
   }

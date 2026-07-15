@@ -398,7 +398,12 @@ export default function MultiTrailSubmissionForm({
       if (err?.response?.status === 429) {
         setError('AI rate limit hit. Please wait a moment and try again.');
       } else {
-        setError('Failed to generate description.');
+        const serverMessage = err?.response?.data?.error;
+        setError(
+          typeof serverMessage === 'string' && serverMessage.trim()
+            ? serverMessage
+            : 'Failed to generate description. Please check the server AI configuration.'
+        );
       }
     } finally {
       setGeneratingIndex(null);
