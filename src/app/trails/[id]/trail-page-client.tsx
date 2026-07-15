@@ -615,8 +615,9 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   );
 
   useEffect(() => {
-    setMapProvider(hasKomootEmbed ? 'komoot' : 'internal');
-  }, [trailId, hasKomootEmbed]);
+    // Keep the LocoXperts map as the default. Komoot remains an optional fallback.
+    setMapProvider('internal');
+  }, [trailId]);
   const mapCenter = useMemo(() => {
     if (mapBounds) {
       return {
@@ -1383,6 +1384,15 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       onSelect: () => scrollToTrailSection('trail-map'),
       separatorBefore: !komootNavigateUrl,
     },
+    ...(hasRoute && routeData
+      ? [
+          {
+            label: 'Download GPX route',
+            onSelect: () => downloadGpx(trail.name, routeData),
+            separatorBefore: true,
+          } as ThemedDropdownItem,
+        ]
+      : []),
     {
       label: 'Jump to route guide',
       onSelect: () => scrollToTrailSection('route-guide'),

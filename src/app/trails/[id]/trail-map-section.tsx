@@ -51,10 +51,67 @@ function TrailMapSection({
   onMapProviderChange,
 }: TrailMapSectionProps) {
   const mapRef = React.useRef<MapRef | null>(null);
+  const watchIdRef = React.useRef<number | null>(null);
+  const [userLocation, setUserLocation] = React.useState<{
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+  } | null>(null);
+  const [isFollowingLocation, setIsFollowingLocation] = React.useState(false);
+  const [locationStatus, setLocationStatus] = React.useState<
+    'idle' | 'requesting' | 'active' | 'denied' | 'unavailable'
+  >('idle');
   const komootUrl = (komootEmbedUrl || '').trim();
   const normalizedKomootEmbedUrl = extractKomootEmbedUrl(komootUrl);
   const hasKomootEmbed = Boolean(normalizedKomootEmbedUrl);
   const komootOpenUrl = getKomootNavigateUrl(normalizedKomootEmbedUrl);
+
+  const stopFollowingLocation = React.useCallback(() => {
+    if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    setIsFollowingLocation(false);
+  }, []);
+
+  const startFollowingLocation = React.useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocationStatus('unavailable');
+      return;
+    }
+
+    stopFollowingLocation();
+    setLocationStatus('requesting');
+    setIsFollowingLocation(true);
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const nextLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
+        setUserLocation(nextLocation);
+        setLocationStatus('active');
+        mapRef.current?.flyTo({
+          center: [nextLocation.longitude, nextLocation.latitude],
+          zoom: Math.max(mapRef.current.getZoom(), 15),
+          duration: 700,
+        });
+      },
+      (error) => {
+        stopFollowingLocation();
+        setLocationStatus(error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable');
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+  }, [stopFollowingLocation]);
+
+  React.useEffect(() => {
+    // Ask for location access as soon as the trail map is opened.
+    startFollowingLocation();
+  }, [startFollowingLocation]);
+
+  React.useEffect(() => stopFollowingLocation, [stopFollowingLocation]);
 
   if (hasKomootEmbed && mapProvider === 'komoot') {
     return (
@@ -166,6 +223,33 @@ function TrailMapSection({
             Map
           </button>
         </div>
+        <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-7rem)] flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={isFollowingLocation ? stopFollowingLocation : startFollowingLocation}
+            className={`rounded-lg border px-3 py-2 text-xs font-semibold shadow-lg backdrop-blur transition ${
+              isFollowingLocation
+                ? 'border-emerald-300 bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'border-white/15 bg-slate-950/70 text-white/90 hover:bg-slate-900/90'
+            }`}
+            aria-pressed={isFollowingLocation}
+            title="Show and follow your current location"
+          >
+            {isFollowingLocation ? 'Stop following' : 'Use my location'}
+          </button>
+          {locationStatus !== 'idle' && (
+            <span
+              className="rounded-lg border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[11px] font-medium text-white/90 shadow-lg backdrop-blur"
+              role="status"
+              aria-live="polite"
+            >
+              {locationStatus === 'requesting' && 'Requesting GPS...'}
+              {locationStatus === 'active' && 'GPS active'}
+              {locationStatus === 'denied' && 'Location permission denied'}
+              {locationStatus === 'unavailable' && 'Location unavailable'}
+            </span>
+          )}
+        </div>
         <NavigationControl position="top-right" showCompass showZoom />
         <FullscreenControl position="top-right" />
         <ScaleControl position="bottom-left" unit="metric" />
@@ -254,6 +338,18 @@ function TrailMapSection({
               </div>
             </Marker>
           </>
+        )}
+        {userLocation && (
+          <Marker
+            longitude={userLocation.longitude}
+            latitude={userLocation.latitude}
+            anchor="center"
+          >
+            <div
+              className="h-4 w-4 rounded-full border-2 border-white bg-sky-500 shadow-[0_0_0_5px_rgba(14,165,233,0.25)]"
+              title={`Your location, accuracy about ${Math.round(userLocation.accuracy)} metres`}
+            />
+          </Marker>
         )}
       </Map>
     </div>
