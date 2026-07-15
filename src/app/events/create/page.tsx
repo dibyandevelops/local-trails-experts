@@ -1,8 +1,17 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
-import EventForm from '@/components/feature-components/event-form/event-form';
 import { SportType } from '@/types';
+
+const EventForm = dynamic(() => import('@/components/feature-components/event-form/event-form'), {
+  ssr: false,
+  loading: () => (
+    <div className="grid min-h-[360px] place-items-center rounded-2xl border border-gray-200 bg-white p-6 text-sm font-semibold text-gray-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+      Loading event form...
+    </div>
+  ),
+});
 
 export default function CreateEventPage() {
   const searchParams = useSearchParams();

@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type {
@@ -14,7 +15,6 @@ import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { TRAIL_SPORTS, getSportLabel } from '@/services/constants/sports';
 import * as Dialog from '@radix-ui/react-dialog';
-import EventForm from '@/components/feature-components/event-form/event-form';
 import { useQuery } from '@tanstack/react-query';
 import { fetchExpertStravaSummary } from '@/services/experts/experts.service';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
@@ -29,6 +29,15 @@ import DashboardProfileCard, {
   type DashboardProfileInfoItem,
 } from '@/components/ui/dashboard-profile-card';
 import TrailAssociationsSection from '@/components/ui/trail-associations-section';
+
+const EventForm = dynamic(() => import('@/components/feature-components/event-form/event-form'), {
+  ssr: false,
+  loading: () => (
+    <div className="grid min-h-64 place-items-center rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm font-semibold text-gray-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+      Loading event form...
+    </div>
+  ),
+});
 
 type ExpertTrailRequest = {
   id: string;

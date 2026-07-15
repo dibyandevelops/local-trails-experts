@@ -1,5 +1,16 @@
 import type { Metadata } from 'next';
-import StoreLocatorClient from '@/components/feature-components/store-locator/store-locator-client';
+import dynamic from 'next/dynamic';
+
+const StoreLocatorClient = dynamic(
+  () => import('@/components/feature-components/store-locator/store-locator-client'),
+  {
+    loading: () => (
+      <div className="grid min-h-[420px] place-items-center rounded-3xl border border-gray-200 bg-white p-6 text-sm font-semibold text-gray-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        Loading cycle hubs map...
+      </div>
+    ),
+  }
+);
 
 export const metadata: Metadata = {
   title: 'Cycle Hubs',

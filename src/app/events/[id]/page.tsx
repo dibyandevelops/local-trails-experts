@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { Booking, Event } from '@/types';
@@ -14,9 +15,27 @@ import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { ESEWA_ENABLED } from '@/lib/feature-flags';
 import { resizeImageToDataUrl } from '@/lib/image';
 import * as Dialog from '@radix-ui/react-dialog';
-import EventForm from '@/components/feature-components/event-form/event-form';
-import CommunityEventForm from '@/components/feature-components/community-event-form/community-event-form';
 import { COMMUNITY_NAME } from '@/lib/branding';
+
+const EventForm = dynamic(() => import('@/components/feature-components/event-form/event-form'), {
+  ssr: false,
+  loading: () => (
+    <div className="grid min-h-64 place-items-center rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm font-semibold text-gray-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+      Loading event form...
+    </div>
+  ),
+});
+const CommunityEventForm = dynamic(
+  () => import('@/components/feature-components/community-event-form/community-event-form'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid min-h-64 place-items-center rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm font-semibold text-gray-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        Loading event form...
+      </div>
+    ),
+  }
+);
 
 function wrapPosterText(value: string, maxLength = 34) {
   const words = value.trim().split(/\s+/);

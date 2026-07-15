@@ -7,9 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import Navbar from '@/components/navigation/navbar';
 import Footer from '@/components/navigation/footer';
 import PWARegister from '@/components/pwa-register';
-import PushNotificationPrompt from '@/components/push-notification-prompt';
-import ParticipantBookingsFab from '@/components/navigation/participant-bookings-fab';
-import LocaleFloatingSwitcher from '@/components/i18n/locale-floating-switcher';
+import AppShellExtras from '@/components/app-shell-extras';
 import { getServerAuthPayload } from '@/lib/auth-server';
 import type { AuthTokenPayload } from '@/lib/auth';
 import {
@@ -148,10 +146,8 @@ export default async function RootLayout({
         <Analytics />
         <PWARegister />
         <MainContent>
-          <PushNotificationPrompt initialUser={initialUser} />
           <Navbar initialUser={initialUser} />
-          <ParticipantBookingsFab />
-          <LocaleFloatingSwitcher />
+          <AppShellExtras initialUser={initialUser} />
           <main id="main-content" tabIndex={-1} className="container mx-auto flex-grow px-4 py-8">
             {children}
           </main>

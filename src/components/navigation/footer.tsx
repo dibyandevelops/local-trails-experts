@@ -1,12 +1,19 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import type { User } from '@/types';
 import FooterInfoColumn from '@/components/navigation/footer/footer-info-column';
 import FooterLinksColumn from '@/components/navigation/footer/footer-links-column';
 import FooterSupportColumn from '@/components/navigation/footer/footer-support-column';
-import FeedbackModal from '@/components/navigation/footer/feedback-modal';
-import CollaborationRequestModal from '@/components/navigation/footer/collaboration-request-modal';
+
+const FeedbackModal = dynamic(() => import('@/components/navigation/footer/feedback-modal'), {
+  ssr: false,
+});
+const CollaborationRequestModal = dynamic(
+  () => import('@/components/navigation/footer/collaboration-request-modal'),
+  { ssr: false }
+);
 
 function buildMailto(params: { to?: string; subject: string; body: string }) {
   const subject = encodeURIComponent(params.subject);
