@@ -9,6 +9,7 @@ import {
 } from '@/lib/trail-share';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const alt = 'Trail preview';
 export const size = {
   width: 1200,
