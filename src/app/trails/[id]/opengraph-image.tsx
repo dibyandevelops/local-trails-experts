@@ -29,14 +29,6 @@ function compactLocation(location?: string | null) {
     .join(', ');
 }
 
-function getCoordinateLabel(latitude?: number | null, longitude?: number | null) {
-  if (latitude == null || longitude == null) return 'Nepal trail map preview';
-  const lat = Number(latitude);
-  const lng = Number(longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return 'Nepal trail map preview';
-  return `${lat.toFixed(3)}, ${lng.toFixed(3)}`;
-}
-
 export default async function TrailOpenGraphImage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
   const trail = await getTrailSeo(id);
@@ -48,7 +40,6 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
   const stats = trail ? getTrailShareStats(trail).slice(0, 3) : [];
   const location = compactLocation(trail?.location) || 'Nepal';
   const sport = getTrailSportLabel(trail?.sport_type);
-  const coordinateLabel = getCoordinateLabel(trail?.latitude, trail?.longitude);
 
   return new ImageResponse(
     (
@@ -172,51 +163,157 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
                 height: 412,
                 display: 'flex',
                 position: 'relative',
-                background:
-                  'linear-gradient(135deg, rgba(187,247,208,1), rgba(134,239,172,0.85) 40%, rgba(191,219,254,0.8))',
+                overflow: 'hidden',
+                background: 'linear-gradient(180deg, #bae6fd 0%, #d9f99d 46%, #064e3b 100%)',
               }}
             >
               <div
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  backgroundImage:
-                    'linear-gradient(rgba(6,78,59,0.14) 2px, transparent 2px), linear-gradient(90deg, rgba(6,78,59,0.12) 2px, transparent 2px)',
-                  backgroundSize: '58px 58px',
+                  background:
+                    'radial-gradient(circle at 75% 18%, rgba(254,249,195,0.95) 0 34px, rgba(254,249,195,0) 35px), linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0) 38%)',
                 }}
               />
               <div
                 style={{
                   position: 'absolute',
-                  left: 60,
-                  top: 58,
-                  width: 250,
-                  height: 288,
-                  border: '12px solid rgba(4,120,87,0.88)',
-                  borderLeftColor: 'transparent',
-                  borderBottomColor: '#10b981',
-                  borderRadius: '48% 42% 52% 44%',
-                  transform: 'rotate(-18deg)',
+                  left: -80,
+                  bottom: 145,
+                  width: 290,
+                  height: 170,
+                  borderRadius: '58% 42% 0 0',
+                  background: '#0f766e',
+                  transform: 'rotate(7deg)',
                 }}
               />
               <div
                 style={{
                   position: 'absolute',
-                  left: 173,
-                  top: 178,
-                  width: 52,
-                  height: 52,
+                  right: -42,
+                  bottom: 136,
+                  width: 320,
+                  height: 205,
+                  borderRadius: '54% 46% 0 0',
+                  background: '#047857',
+                  transform: 'rotate(-8deg)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 42,
+                  bottom: 112,
+                  width: 330,
+                  height: 175,
+                  borderRadius: '50% 50% 0 0',
+                  background: '#166534',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 162,
+                  background: 'linear-gradient(180deg, #16a34a, #052e16)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 42,
+                  bottom: 44,
+                  width: 310,
+                  height: 138,
+                  border: '12px solid rgba(236,253,245,0.96)',
+                  borderTopColor: 'transparent',
+                  borderRightColor: '#bbf7d0',
+                  borderRadius: '55% 45% 50% 50%',
+                  transform: 'rotate(-9deg)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 53,
+                  bottom: 55,
+                  width: 288,
+                  height: 114,
+                  border: '6px solid #10b981',
+                  borderTopColor: 'transparent',
+                  borderRightColor: '#34d399',
+                  borderRadius: '55% 45% 50% 50%',
+                  transform: 'rotate(-9deg)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 153,
+                  bottom: 119,
+                  width: 66,
+                  height: 66,
                   borderRadius: 999,
-                  background: '#0ea5e9',
-                  border: '8px solid #ecfeff',
-                  boxShadow: '0 0 0 10px rgba(14,165,233,0.24)',
+                  background: '#f97316',
+                  border: '7px solid #fff7ed',
+                  boxShadow: '0 16px 35px rgba(2,6,23,0.24)',
                 }}
               />
               <div
                 style={{
                   position: 'absolute',
-                  left: 34,
-                  top: 32,
+                  left: 171,
+                  bottom: 139,
+                  width: 30,
+                  height: 30,
+                  borderRadius: 999,
+                  border: '5px solid #022c22',
+                  background: 'transparent',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 195,
+                  bottom: 139,
+                  width: 30,
+                  height: 30,
+                  borderRadius: 999,
+                  border: '5px solid #022c22',
+                  background: 'transparent',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 195,
+                  bottom: 174,
+                  width: 38,
+                  height: 5,
+                  borderRadius: 999,
+                  background: '#022c22',
+                  transform: 'rotate(26deg)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 177,
+                  bottom: 170,
+                  width: 34,
+                  height: 5,
+                  borderRadius: 999,
+                  background: '#022c22',
+                  transform: 'rotate(-35deg)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 148,
+                  top: 28,
                   display: 'flex',
                   background: 'rgba(6,47,36,0.9)',
                   color: '#ecfdf5',
@@ -226,15 +323,15 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
                   fontWeight: 900,
                 }}
               >
-                Map preview
+                Trail preview
               </div>
               <div
                 style={{
                   position: 'absolute',
-                  right: 28,
-                  bottom: 28,
+                  left: 26,
+                  bottom: 26,
                   display: 'flex',
-                  background: 'rgba(255,255,255,0.92)',
+                  background: 'rgba(255,255,255,0.9)',
                   color: '#064e3b',
                   borderRadius: 16,
                   padding: '10px 14px',
@@ -242,7 +339,7 @@ export default async function TrailOpenGraphImage({ params }: { params: Promise<
                   fontWeight: 900,
                 }}
               >
-                {coordinateLabel}
+                Nepal ride route
               </div>
             </div>
             <div
