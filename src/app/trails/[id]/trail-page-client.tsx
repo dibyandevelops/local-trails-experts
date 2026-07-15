@@ -443,6 +443,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   });
   const [mapProvider, setMapProvider] = useState<'internal' | 'komoot'>('internal');
   const [mapEngine, setMapEngine] = useState<'free' | 'mapbox'>('free');
+  const [hideMapSwitchOnMobile, setHideMapSwitchOnMobile] = useState(false);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
   const mapStyle = useMemo(
     () => (mapEngine === 'mapbox' && mapboxToken ? getMapStyle(mapStyleMode) : getMapLibreCompatibleMapStyle(mapStyleMode)),
@@ -456,6 +457,25 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       // ignore
     }
   }, [mapStyleMode]);
+
+  useEffect(() => {
+    const updateMapSwitchVisibility = () => {
+      if (window.matchMedia('(min-width: 640px)').matches) {
+        setHideMapSwitchOnMobile(false);
+        return;
+      }
+
+      setHideMapSwitchOnMobile(window.scrollY > 8);
+    };
+
+    updateMapSwitchVisibility();
+    window.addEventListener('scroll', updateMapSwitchVisibility, { passive: true });
+    window.addEventListener('resize', updateMapSwitchVisibility);
+    return () => {
+      window.removeEventListener('scroll', updateMapSwitchVisibility);
+      window.removeEventListener('resize', updateMapSwitchVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     const closeTransientUi = () => {
@@ -1893,7 +1913,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         />
       )}
 
-      <div id="trail-map" className="sticky top-24 z-20 ml-[calc(50%-50vw)] w-screen scroll-mt-32 sm:relative sm:top-auto sm:z-auto sm:ml-0 sm:w-auto sm:scroll-mt-28">
+      <div id="trail-map" className="sticky top-[74px] z-20 ml-[calc(50%-50vw)] w-screen scroll-mt-32 sm:relative sm:top-auto sm:z-auto sm:ml-0 sm:w-auto sm:scroll-mt-28">
         <MapSection
           hasRoute={hasRoute}
           isRouteLoading={loadingTrailMap && !routeData}
@@ -1904,6 +1924,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           mapStyleMode={mapStyleMode}
           mapEngine={mapEngine}
           mapboxToken={mapboxToken}
+          hideSwitchOnMobile={hideMapSwitchOnMobile}
           onMapEngineChange={setMapEngine}
           onStyleModeChange={setMapStyleMode}
           komootEmbedUrl={trail.komoot_embed_url || null}

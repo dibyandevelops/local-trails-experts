@@ -41,6 +41,7 @@ type TrailMapSectionProps = {
   mapStyleMode: MapStyleMode;
   mapEngine: 'free' | 'mapbox';
   mapboxToken?: string;
+  hideSwitchOnMobile?: boolean;
   onMapEngineChange: (engine: 'free' | 'mapbox') => void;
   onStyleModeChange: (mode: MapStyleMode) => void;
   komootEmbedUrl?: string | null;
@@ -58,6 +59,7 @@ function TrailMapSection({
   mapStyleMode,
   mapEngine,
   mapboxToken,
+  hideSwitchOnMobile = false,
   onMapEngineChange,
   onStyleModeChange,
   komootEmbedUrl,
@@ -234,7 +236,11 @@ function TrailMapSection({
 
   return hasRoute ? (
     <div className="mb-6">
-      <div className="mb-2 hidden items-center justify-end gap-2 bg-transparent px-2 sm:flex sm:px-0">
+      <div
+        className={`mb-2 items-center justify-end gap-2 overflow-x-auto bg-transparent px-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex sm:overflow-visible sm:px-0 ${
+          hideSwitchOnMobile ? 'hidden' : 'flex'
+        }`}
+      >
         {hasKomootEmbed && (
           <button
             type="button"
@@ -331,7 +337,7 @@ function TrailMapSection({
             if (followLocationRef.current) stopFollowingLocation();
           }}
         >
-        <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-1rem)] items-start sm:left-3 sm:top-3">
+        <div className="absolute left-2 top-3 z-10 flex max-w-[calc(100%-1rem)] items-start sm:left-3 sm:top-3">
           <div className="inline-flex max-w-full items-stretch overflow-hidden rounded-lg border border-white/15 bg-slate-950/80 shadow-lg backdrop-blur">
             <button
               type="button"
