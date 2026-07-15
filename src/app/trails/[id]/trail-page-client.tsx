@@ -416,6 +416,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [requestAcceptTerms, setRequestAcceptTerms] = useState(false);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastTitle, setToastTitle] = useState('Trail updated');
   const [toastDescription, setToastDescription] = useState('');
@@ -485,10 +486,11 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
     refetchOnMount: false,
   });
 
-  const { data: trailMapData } = useQuery<Trail>({
+  const { data: trailMapData, isLoading: loadingTrailMap } = useQuery<Trail>({
     queryKey: ['trail-map', trailId],
     queryFn: ({ signal }) => fetchTrailMapById(trailId, signal),
     enabled: Boolean(trailId),
+    initialData: initialTrail?.route_data ? initialTrail : undefined,
     staleTime: 5 * 60_000,
   });
 
@@ -1200,8 +1202,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const copyTrailLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      setActionMessage('Trail link copied.');
-      setTimeout(() => setActionMessage(null), 2000);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1800);
     } catch {
       setActionMessage('Unable to copy link.');
       setTimeout(() => setActionMessage(null), 2000);
@@ -1371,10 +1373,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       disabled: savedTrailMutation.isPending,
     },
     {
-      label: 'Share trail',
-      onSelect: copyTrailLink,
-    },
-    {
       label: !currentUser
         ? 'Write Review (Login)'
         : !canReviewTrail
@@ -1394,9 +1392,13 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         ]
       : []),
     {
+      label: 'Open in app navigator',
+      href: navigatorUrl,
+      separatorBefore: Boolean(komootNavigateUrl),
+    },
+    {
       label: 'Jump to map',
       onSelect: () => scrollToTrailSection('trail-map'),
-      separatorBefore: !komootNavigateUrl,
     },
     ...(hasRoute && routeData
       ? [
@@ -1745,23 +1747,39 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
             )}
             <CampaignSupportDropdown campaigns={activeCampaigns} />
             <TrailAlertsDropdown updates={trailUpdates} />
-            <a
-              href={navigatorUrl}
+            <button
+              type="button"
+              onClick={copyTrailLink}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-100"
-              aria-label="Open in LocoXperts Navigator"
-              title="Open in LocoXperts Navigator"
+              aria-label={shareCopied ? 'Trail link copied' : 'Share trail'}
+              title={shareCopied ? 'Copied' : 'Share trail'}
             >
-              <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
-                <path
-                  d="M11.5 3.5h5v5M16.25 3.75l-7 7M8.25 5H5.5A2.5 2.5 0 0 0 3 7.5v7A2.5 2.5 0 0 0 5.5 17h7a2.5 2.5 0 0 0 2.5-2.5v-2.75"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </a>
+              {shareCopied ? (
+                <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
+                  <path
+                    d="m4.5 10.3 3.4 3.4 7.6-7.8"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
+                  <path
+                    d="M7.45 8.75 12.25 6M7.45 11.25l4.8 2.75"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="5.5" cy="10" r="2.3" fill="currentColor" />
+                  <circle cx="14.5" cy="4.75" r="2.3" fill="currentColor" />
+                  <circle cx="14.5" cy="15.25" r="2.3" fill="currentColor" />
+                </svg>
+              )}
+            </button>
             <button
               type="button"
               onClick={handleToggleSavedTrail}
@@ -1875,9 +1893,10 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         />
       )}
 
-      <div id="trail-map" className="relative left-1/2 w-screen -translate-x-1/2 scroll-mt-28 sm:left-auto sm:w-auto sm:translate-x-0">
+      <div id="trail-map" className="sticky top-24 z-20 ml-[calc(50%-50vw)] w-screen scroll-mt-32 sm:relative sm:top-auto sm:z-auto sm:ml-0 sm:w-auto sm:scroll-mt-28">
         <MapSection
           hasRoute={hasRoute}
+          isRouteLoading={loadingTrailMap && !routeData}
           routeGeoJSON={routeGeoJSON}
           routeData={routeData}
           mapCenter={mapCenter}

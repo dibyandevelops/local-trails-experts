@@ -33,6 +33,7 @@ type GeoJSON = {
 
 type TrailMapSectionProps = {
   hasRoute: boolean;
+  isRouteLoading?: boolean;
   routeGeoJSON: GeoJSON;
   routeData: RouteData | null;
   mapCenter: { longitude: number; latitude: number; zoom: number };
@@ -49,6 +50,7 @@ type TrailMapSectionProps = {
 
 function TrailMapSection({
   hasRoute,
+  isRouteLoading = false,
   routeGeoJSON,
   routeData,
   mapCenter,
@@ -142,16 +144,29 @@ function TrailMapSection({
     });
   }, [isFollowingLocation, mapCenter.latitude, mapCenter.longitude, mapCenter.zoom, stopFollowingLocation]);
 
-  React.useEffect(() => {
-    // Ask for location access as soon as the trail map is opened.
-    startFollowingLocation();
-  }, [startFollowingLocation]);
-
   React.useEffect(() => stopFollowingLocation, [stopFollowingLocation]);
 
   React.useEffect(() => {
     setMapLoaded(false);
   }, [activeMapEngine, mapStyle]);
+
+  React.useEffect(() => {
+    if (!mapLoaded || !routeData?.coordinates?.length || !mapRef.current) return;
+    if (followLocationRef.current) return;
+
+    const lats = routeData.coordinates.map((point) => point.latitude);
+    const lons = routeData.coordinates.map((point) => point.longitude);
+    const bounds = [
+      [Math.min(...lons), Math.min(...lats)],
+      [Math.max(...lons), Math.max(...lats)],
+    ] as [[number, number], [number, number]];
+
+    mapRef.current.fitBounds(bounds, {
+      padding: { top: 58, right: 48, bottom: 42, left: 48 },
+      duration: 0,
+      maxZoom: 15,
+    });
+  }, [mapLoaded, routeData]);
 
   if (hasKomootEmbed && mapProvider === 'komoot') {
     return (
@@ -202,29 +217,44 @@ function TrailMapSection({
     );
   }
 
+  if (isRouteLoading) {
+    return (
+      <div className="mb-6">
+        <div className="h-[300px] w-full bg-slate-900 shadow-[0_20px_60px_-25px_rgba(2,6,23,0.8)] sm:h-[460px] lg:h-[600px]">
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-950">
+            <div className="flex items-center gap-3 rounded-lg border border-white/20 bg-slate-950/85 px-4 py-3 text-sm font-semibold text-white shadow-xl">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200/40 border-t-emerald-400" aria-hidden="true" />
+              Loading trail map...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return hasRoute ? (
     <div className="mb-6">
-      <div className="mb-2 flex items-center justify-end gap-2 px-2 sm:px-0">
+      <div className="mb-2 hidden items-center justify-end gap-2 bg-transparent px-2 sm:flex sm:px-0">
         {hasKomootEmbed && (
           <button
             type="button"
             onClick={() => onMapProviderChange('komoot')}
-            className="h-9 shrink-0 whitespace-nowrap rounded-lg border border-emerald-200 bg-white px-3 text-xs font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-900 dark:bg-slate-950 dark:text-emerald-100 dark:hover:bg-emerald-950/40"
+            className="h-9 shrink-0 whitespace-nowrap rounded-lg border border-emerald-200/70 bg-white/70 px-3 text-xs font-semibold text-emerald-800 shadow-sm backdrop-blur transition hover:bg-emerald-50/90 dark:border-emerald-900/70 dark:bg-slate-950/60 dark:text-emerald-100 dark:hover:bg-emerald-950/50"
             aria-label="Switch to Komoot route view"
           >
             Komoot
           </button>
         )}
         {canUseMapbox && (
-          <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-gray-200/70 bg-white/70 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-950/60">
             <button
               type="button"
               aria-pressed={activeMapEngine === 'free'}
               onClick={() => onMapEngineChange('free')}
               className={`h-9 shrink-0 whitespace-nowrap px-3 text-xs font-semibold transition ${
                 activeMapEngine === 'free'
-                  ? 'bg-emerald-700 text-white'
-                  : 'text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900'
+                  ? 'bg-emerald-700/90 text-white'
+                  : 'text-gray-800 hover:bg-white/70 dark:text-slate-100 dark:hover:bg-slate-900/70'
               }`}
               aria-label="Use free map provider"
             >
@@ -236,8 +266,8 @@ function TrailMapSection({
               onClick={() => onMapEngineChange('mapbox')}
               className={`h-9 shrink-0 whitespace-nowrap px-3 text-xs font-semibold transition ${
                 activeMapEngine === 'mapbox'
-                  ? 'bg-emerald-700 text-white'
-                  : 'text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900'
+                  ? 'bg-emerald-700/90 text-white'
+                  : 'text-gray-800 hover:bg-white/70 dark:text-slate-100 dark:hover:bg-slate-900/70'
               }`}
               aria-label="Use Mapbox provider"
             >
@@ -245,15 +275,15 @@ function TrailMapSection({
             </button>
           </div>
         )}
-        <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-gray-200/70 bg-white/70 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-950/60">
           <button
             type="button"
             aria-pressed={mapStyleMode === 'satellite'}
             onClick={() => onStyleModeChange('satellite')}
             className={`h-9 shrink-0 whitespace-nowrap px-3 text-xs font-semibold transition ${
               mapStyleMode === 'satellite'
-                ? 'bg-emerald-700 text-white'
-                : 'text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900'
+                ? 'bg-emerald-700/90 text-white'
+                : 'text-gray-800 hover:bg-white/70 dark:text-slate-100 dark:hover:bg-slate-900/70'
             }`}
             aria-label="Use satellite map style"
           >
@@ -265,8 +295,8 @@ function TrailMapSection({
             onClick={() => onStyleModeChange('map')}
             className={`h-9 shrink-0 whitespace-nowrap px-3 text-xs font-semibold transition ${
               mapStyleMode === 'map'
-                ? 'bg-emerald-700 text-white'
-                : 'text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-900'
+                ? 'bg-emerald-700/90 text-white'
+                : 'text-gray-800 hover:bg-white/70 dark:text-slate-100 dark:hover:bg-slate-900/70'
             }`}
             aria-label="Use simple map style"
           >
@@ -320,13 +350,14 @@ function TrailMapSection({
             <button
               type="button"
               onClick={recenterMap}
-              className="inline-flex h-9 w-10 shrink-0 items-center justify-center border-0 border-r border-white/15 bg-transparent text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-300"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 border-0 border-r border-white/15 bg-transparent px-3 text-xs font-semibold text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-300"
               aria-label="Recenter on trail route"
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
                 <path d="M10 2.25a.75.75 0 0 1 .75.75v1.3a5.75 5.75 0 0 1 4.95 4.95H17a.75.75 0 0 1 0 1.5h-1.3a5.75 5.75 0 0 1-4.95 4.95V17a.75.75 0 0 1-1.5 0v-1.3a5.75 5.75 0 0 1-4.95-4.95H3a.75.75 0 0 1 0-1.5h1.3a5.75 5.75 0 0 1 4.95-4.95V3a.75.75 0 0 1 .75-.75Zm0 3.5A4.25 4.25 0 1 0 10 14.25 4.25 4.25 0 0 0 10 5.75Z" fill="currentColor" />
                 <circle cx="10" cy="10" r="1.5" fill="currentColor" />
               </svg>
+              <span>Route</span>
             </button>
             {locationStatus !== 'idle' && (
               <span

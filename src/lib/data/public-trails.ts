@@ -14,6 +14,9 @@ export type TrailSeo = {
   location: string;
   latitude: number | null;
   longitude: number | null;
+  distance_km: number | null;
+  elevation_gain_m: number | null;
+  estimated_time_hours: number | null;
   difficulty: string;
   sport_type: string | null;
   image_url: string | null;
@@ -32,6 +35,9 @@ export async function getTrailSeo(identifier: string): Promise<TrailSeo | null> 
       location,
       latitude,
       longitude,
+      distance_km,
+      elevation_gain_m,
+      estimated_time_hours,
       difficulty,
       sport_type,
       image_url,
