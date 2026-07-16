@@ -65,6 +65,16 @@ function mapRideNote(row: any): PublicRideNote {
   };
 }
 
+function plainText(value: string) {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function summarizeForSeo(note: PublicRideNote) {
+  const source = plainText(note.excerpt || note.content);
+  if (source.length <= 160) return source;
+  return `${source.slice(0, 157).replace(/\s+\S*$/, '')}...`;
+}
+
 const rideNoteSelect = `
   rn.id,
   rn.slug,
@@ -194,8 +204,17 @@ export async function getRideNoteSeo(slug: string) {
   if (!note) return null;
   return {
     title: note.title,
-    description: note.excerpt || note.content.slice(0, 150),
+    description: summarizeForSeo(note),
     image: note.cover_image_url,
     slug: note.slug,
+    category: note.category,
+    published_at: note.published_at,
+    created_at: note.created_at,
+    updated_at: note.updated_at,
+    author_name: note.author_name,
+    expert_name: note.expert_name,
+    organization_name: note.organization_name,
+    trail_name: note.trail_name,
+    trail_location: note.trail_location,
   };
 }

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import RideNoteShareButton from '@/components/ride-notes/ride-note-share-button';
 import { getPublicRideNoteBySlug, getRideNoteSeo, type RideNoteCategory } from '@/lib/data/public-ride-notes';
+import { jsonLdStringify } from '@/lib/jsonld';
 import { absoluteUrl, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 
 type RideNotePageProps = {
@@ -32,6 +33,12 @@ function renderContent(content: string) {
     .filter(Boolean);
 }
 
+function getNoteDescription(excerpt: string | null, content: string) {
+  const source = (excerpt || content).replace(/\s+/g, ' ').trim();
+  if (source.length <= 160) return source;
+  return `${source.slice(0, 157).replace(/\s+\S*$/, '')}...`;
+}
+
 export async function generateMetadata({ params }: RideNotePageProps): Promise<Metadata> {
   const { slug } = await params;
   const seo = await getRideNoteSeo(slug);
@@ -43,15 +50,35 @@ export async function generateMetadata({ params }: RideNotePageProps): Promise<M
   }
 
   const image = seo.image || DEFAULT_OG_IMAGE_PATH;
+  const authorName = seo.expert_name || seo.author_name || seo.organization_name || SITE_NAME;
+  const categoryLabel = categoryLabels[seo.category];
   return {
     title: seo.title,
     description: seo.description,
     alternates: { canonical: `/ride-notes/${seo.slug}` },
+    authors: [{ name: authorName }],
+    keywords: [
+      seo.title,
+      categoryLabel,
+      'Nepal cycling',
+      'Nepal mountain biking',
+      'Kathmandu MTB trails',
+      'local cycling guides Nepal',
+      'LocoXperts ride notes',
+      seo.trail_name,
+      seo.trail_location,
+    ].filter(Boolean) as string[],
+    robots: { index: true, follow: true },
     openGraph: {
       title: seo.title,
       description: seo.description,
       url: `/ride-notes/${seo.slug}`,
       type: 'article',
+      publishedTime: seo.published_at || seo.created_at,
+      modifiedTime: seo.updated_at || seo.published_at || seo.created_at,
+      authors: [authorName],
+      section: categoryLabel,
+      tags: ['cycling', 'mountain biking', 'Nepal', categoryLabel, seo.trail_name].filter(Boolean) as string[],
       images: [{ url: absoluteUrl(image), width: 1200, height: 630, alt: SITE_NAME }],
     },
     twitter: {
@@ -70,9 +97,70 @@ export default async function RideNoteDetailPage({ params }: RideNotePageProps) 
 
   const paragraphs = renderContent(note.content);
   const date = formatDate(note.published_at || note.created_at);
+  const canonicalUrl = absoluteUrl(`/ride-notes/${note.slug}`);
+  const imageUrl = absoluteUrl(note.cover_image_url || DEFAULT_OG_IMAGE_PATH);
+  const description = getNoteDescription(note.excerpt, note.content);
+  const authorName = note.expert_name || note.author_name || note.organization_name || SITE_NAME;
+  const articleJsonLd = jsonLdStringify({
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: note.title,
+    description,
+    image: imageUrl,
+    datePublished: note.published_at || note.created_at,
+    dateModified: note.updated_at || note.published_at || note.created_at,
+    author: {
+      '@type': note.organization_name && !note.expert_name ? 'Organization' : 'Person',
+      name: authorName,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: absoluteUrl('/home'),
+      logo: {
+        '@type': 'ImageObject',
+        url: absoluteUrl('/icons/logo-transparent-source.png'),
+      },
+    },
+    mainEntityOfPage: canonicalUrl,
+    articleSection: categoryLabels[note.category],
+    about: [note.trail_name, note.trail_location, 'Mountain biking in Nepal'].filter(Boolean),
+  });
+  const breadcrumbJsonLd = jsonLdStringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: SITE_NAME,
+        item: absoluteUrl('/home'),
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Ride Notes',
+        item: absoluteUrl('/ride-notes'),
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: note.title,
+        item: canonicalUrl,
+      },
+    ],
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: articleJsonLd }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }}
+      />
       <article className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         {note.cover_image_url && (
           // eslint-disable-next-line @next/next/no-img-element

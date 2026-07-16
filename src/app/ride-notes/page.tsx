@@ -2,13 +2,29 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import RideNoteShareButton from '@/components/ride-notes/ride-note-share-button';
 import { getPublicRideNotes, type PublicRideNote, type RideNoteCategory } from '@/lib/data/public-ride-notes';
-import { absoluteUrl } from '@/lib/seo';
+import { jsonLdStringify } from '@/lib/jsonld';
+import { absoluteUrl, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'Ride Notes',
   description:
     'Local trail guides, expert notes, ride reports, safety updates, and trail work stories from LocoXperts.',
   alternates: { canonical: '/ride-notes' },
+  openGraph: {
+    title: 'Ride Notes',
+    description:
+      'Local trail guides, expert notes, ride reports, safety updates, and trail work stories from LocoXperts.',
+    url: '/ride-notes',
+    type: 'website',
+    images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE_PATH), width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Ride Notes',
+    description:
+      'Local trail guides, expert notes, ride reports, safety updates, and trail work stories from LocoXperts.',
+    images: [absoluteUrl(DEFAULT_OG_IMAGE_PATH)],
+  },
 };
 
 const categoryLabels: Record<RideNoteCategory, string> = {
@@ -38,9 +54,58 @@ function getNoteMeta(note: PublicRideNote) {
 export default async function RideNotesPage() {
   const notes = await getPublicRideNotes();
   const [featuredNote, ...restNotes] = notes;
+  const collectionJsonLd = jsonLdStringify({
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Ride Notes',
+    description:
+      'Local trail guides, expert notes, ride reports, safety updates, and trail work stories from LocoXperts.',
+    url: absoluteUrl('/ride-notes'),
+    isPartOf: {
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: absoluteUrl('/home'),
+    },
+    hasPart: notes.slice(0, 12).map((note) => ({
+      '@type': 'BlogPosting',
+      headline: note.title,
+      description: note.excerpt || note.content.replace(/\s+/g, ' ').trim().slice(0, 160),
+      url: absoluteUrl(`/ride-notes/${note.slug}`),
+      image: absoluteUrl(note.cover_image_url || DEFAULT_OG_IMAGE_PATH),
+      datePublished: note.published_at || note.created_at,
+      dateModified: note.updated_at || note.published_at || note.created_at,
+      articleSection: categoryLabels[note.category],
+    })),
+  });
+  const breadcrumbJsonLd = jsonLdStringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: SITE_NAME,
+        item: absoluteUrl('/home'),
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Ride Notes',
+        item: absoluteUrl('/ride-notes'),
+      },
+    ],
+  });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: collectionJsonLd }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }}
+      />
       <header className="relative overflow-hidden rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-lime-50/60 px-6 py-8 shadow-sm dark:border-emerald-900/60 dark:from-slate-950 dark:via-slate-950 dark:to-emerald-950/40 md:px-8">
         <div className="pointer-events-none absolute -right-16 top-0 h-48 w-48 rounded-full bg-emerald-300/20 blur-3xl dark:bg-lime-300/10" />
         <div className="relative">
