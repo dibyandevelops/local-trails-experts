@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, type FormEvent } from 'react';
-import { useTrailAutocompleteOptions } from '@/hooks/use-trail-autocomplete-options';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { getDifficultyLabel } from '@/services/constants/difficulty';
 import { getSportLabel } from '@/services/constants/sports';
 import type { Trail } from '@/types';
@@ -21,6 +20,13 @@ type HomeTrailSearchProps = {
     empty: string;
   };
 };
+
+type HomeTrailSearchCopy = NonNullable<HomeTrailSearchProps['copy']>;
+
+const AUTOCOMPLETE_MIN_LENGTH = 2;
+const AUTOCOMPLETE_PAGE_SIZE = 5;
+const AUTOCOMPLETE_DEBOUNCE_MS = 300;
+const SKELETON_ROWS = 4;
 
 function getTrailHref(trail: Trail) {
   return `/trails/${encodeURIComponent(trail.slug || trail.id)}`;
@@ -48,16 +54,107 @@ const defaultCopy = {
   empty: 'No trails found for this search yet. Try a broader keyword.',
 };
 
+async function fetchMatchingTrails(query: string, signal: AbortSignal) {
+  const params = new URLSearchParams({
+    search: query,
+    page: '1',
+    pageSize: String(AUTOCOMPLETE_PAGE_SIZE),
+  });
+  const response = await fetch(`/api/trails?${params.toString()}`, { signal });
+  if (!response.ok) return [];
+
+  const data = (await response.json()) as { trails?: Trail[] };
+  return Array.isArray(data.trails) ? data.trails : [];
+}
+
+function useHomeTrailAutocomplete(query: string) {
+  const trimmedQuery = query.trim();
+  const enabled = trimmedQuery.length >= AUTOCOMPLETE_MIN_LENGTH;
+  const [matchingTrails, setMatchingTrails] = useState<Trail[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      setMatchingTrails([]);
+      setIsFetching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setIsFetching(true);
+      try {
+        const trails = await fetchMatchingTrails(trimmedQuery, controller.signal);
+        setMatchingTrails(trails);
+      } catch (error) {
+        if ((error as DOMException)?.name !== 'AbortError') {
+          setMatchingTrails([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsFetching(false);
+      }
+    }, AUTOCOMPLETE_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [enabled, trimmedQuery]);
+
+  return { enabled, isFetching, matchingTrails, trimmedQuery };
+}
+
+function TrailResultsSkeleton() {
+  return (
+    <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+      {Array.from({ length: SKELETON_ROWS }).map((_, index) => (
+        <div
+          key={index}
+          className="h-11 animate-pulse border-b border-emerald-800/10 bg-emerald-100/50 dark:border-lime-300/10 dark:bg-lime-300/5"
+        />
+      ))}
+    </div>
+  );
+}
+
+function TrailResultsList({ trails }: { trails: Trail[] }) {
+  return (
+    <div className="grid gap-x-6 sm:grid-cols-2">
+      {trails.map((trail) => (
+        <Link
+          key={trail.id}
+          href={getTrailHref(trail)}
+          className="group border-b border-emerald-800/10 py-3 transition hover:border-emerald-700/40 dark:border-lime-300/10 dark:hover:border-lime-200/50"
+        >
+          <span className="block truncate text-sm font-black text-emerald-950 group-hover:text-emerald-700 dark:text-slate-50 dark:group-hover:text-lime-200">
+            {trail.name}
+          </span>
+          <span className="mt-1 block truncate text-xs text-gray-600 dark:text-slate-400">
+            {getTrailMeta(trail)}
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function EmptyTrailResults({ copy }: { copy: HomeTrailSearchCopy }) {
+  return (
+    <p className="border-b border-emerald-950/10 py-3 text-sm text-gray-600 dark:border-lime-300/10 dark:text-slate-300">
+      {copy.empty}
+    </p>
+  );
+}
+
 export default function HomeTrailSearch({ featuredTrails, copy = defaultCopy }: HomeTrailSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const trimmedQuery = query.trim();
-  const searchEnabled = trimmedQuery.length >= 2;
-  const { data: matchingTrails = [], isFetching } = useTrailAutocompleteOptions({
-    query,
+  const {
     enabled: searchEnabled,
-    pageSize: 5,
-  });
+    isFetching,
+    matchingTrails,
+    trimmedQuery,
+  } = useHomeTrailAutocomplete(query);
 
   const trailsToShow = useMemo(
     () => (searchEnabled ? matchingTrails : featuredTrails),
@@ -122,35 +219,11 @@ export default function HomeTrailSearch({ featuredTrails, copy = defaultCopy }: 
         </div>
 
         {searchEnabled && isFetching ? (
-          <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-11 animate-pulse border-b border-emerald-800/10 bg-emerald-100/50 dark:border-lime-300/10 dark:bg-lime-300/5"
-              />
-            ))}
-          </div>
+          <TrailResultsSkeleton />
         ) : trailsToShow.length > 0 ? (
-          <div className="grid gap-x-6 sm:grid-cols-2">
-            {trailsToShow.map((trail) => (
-              <Link
-                key={trail.id}
-                href={getTrailHref(trail)}
-                className="group border-b border-emerald-800/10 py-3 transition hover:border-emerald-700/40 dark:border-lime-300/10 dark:hover:border-lime-200/50"
-              >
-                <span className="block truncate text-sm font-black text-emerald-950 group-hover:text-emerald-700 dark:text-slate-50 dark:group-hover:text-lime-200">
-                  {trail.name}
-                </span>
-                <span className="mt-1 block truncate text-xs text-gray-600 dark:text-slate-400">
-                  {getTrailMeta(trail)}
-                </span>
-              </Link>
-            ))}
-          </div>
+          <TrailResultsList trails={trailsToShow} />
         ) : (
-          <p className="border-b border-emerald-950/10 py-3 text-sm text-gray-600 dark:border-lime-300/10 dark:text-slate-300">
-            {copy.empty}
-          </p>
+          <EmptyTrailResults copy={copy} />
         )}
       </div>
     </div>
