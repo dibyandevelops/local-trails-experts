@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import RideNoteChecklist from '@/components/ride-notes/ride-note-checklist';
 import RideNoteShareButton from '@/components/ride-notes/ride-note-share-button';
 import { getPublicRideNoteBySlug, getRideNoteSeo, type RideNoteCategory } from '@/lib/data/public-ride-notes';
 import { jsonLdStringify } from '@/lib/jsonld';
@@ -8,6 +9,16 @@ import { absoluteUrl, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 
 type RideNotePageProps = {
   params: Promise<{ slug: string }>;
+};
+
+type RideNoteContentBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'checklist'; sections: RideNoteChecklistSection[] };
+
+type RideNoteChecklistSection = {
+  heading: string | null;
+  description: string | null;
+  items: string[];
 };
 
 const categoryLabels: Record<RideNoteCategory, string> = {
@@ -27,10 +38,54 @@ function formatDate(value: string | null) {
 }
 
 function renderContent(content: string) {
-  return content
+  const blocks = content
     .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+    .map((block): RideNoteContentBlock | RideNoteChecklistSection | null => {
+      const lines = block
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length === 0) return null;
+
+      const heading = lines[0].endsWith(':') && !lines[0].startsWith('- ')
+        ? lines[0].replace(/:$/, '')
+        : null;
+      const blockLines = heading ? lines.slice(1) : lines;
+      const firstListIndex = blockLines.findIndex((line) => line.startsWith('- '));
+      const descriptionLines = firstListIndex > 0 ? blockLines.slice(0, firstListIndex) : [];
+      const listLines = firstListIndex >= 0 ? blockLines.slice(firstListIndex) : blockLines;
+      const items = listLines
+        .filter((line) => line.startsWith('- '))
+        .map((line) => line.replace(/^- /, '').trim())
+        .filter(Boolean);
+
+      if (items.length > 0 && items.length === listLines.length) {
+        return {
+          heading,
+          description: descriptionLines.length > 0 ? descriptionLines.join(' ') : null,
+          items,
+        };
+      }
+
+      return { type: 'paragraph', text: lines.join(' ') };
+    })
+    .filter((block): block is RideNoteContentBlock | RideNoteChecklistSection => block !== null);
+
+  return blocks.reduce<RideNoteContentBlock[]>((accumulator, block) => {
+    if ('items' in block) {
+      const previousBlock = accumulator[accumulator.length - 1];
+      if (previousBlock?.type === 'checklist') {
+        previousBlock.sections.push(block);
+        return accumulator;
+      }
+      accumulator.push({ type: 'checklist', sections: [block] });
+      return accumulator;
+    }
+
+    accumulator.push(block);
+    return accumulator;
+  }, []);
 }
 
 function getNoteDescription(excerpt: string | null, content: string) {
@@ -223,9 +278,19 @@ export default async function RideNoteDetailPage({ params }: RideNotePageProps) 
           </div>
 
           <div className="mt-8 space-y-5 text-base leading-8 text-gray-700 dark:text-slate-200">
-            {paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
+            {paragraphs.map((block, index) => {
+              if (block.type === 'checklist') {
+                return (
+                  <RideNoteChecklist
+                    key={index}
+                    title={note.title}
+                    sections={block.sections}
+                  />
+                );
+              }
+
+              return <p key={index}>{block.text}</p>;
+            })}
           </div>
 
           {note.trail_name && (

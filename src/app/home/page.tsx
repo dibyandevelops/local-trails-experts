@@ -49,6 +49,12 @@ function getRideNoteMeta(note: PublicRideNote) {
     .join(' / ');
 }
 
+function getRideNoteDescription(note: PublicRideNote) {
+  const source = (note.excerpt || note.content).replace(/\s+/g, ' ').trim();
+  if (source.length <= 120) return source;
+  return `${source.slice(0, 117).replace(/\s+\S*$/, '')}...`;
+}
+
 export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
   const copy = homeCopy[locale];
   const [spotlight, featuredTrails, rideNotes] = await Promise.all([
@@ -126,7 +132,7 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
                     {copy.readMore}
                   </Link>
                 </div>
-                <div className="grid gap-x-6 sm:grid-cols-3">
+                <div className="grid gap-x-6 gap-y-1 sm:grid-cols-3">
                   {rideNotes.map((note) => (
                     <Link
                       key={note.id}
@@ -141,6 +147,9 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
                           {getRideNoteMeta(note)}
                         </span>
                       )}
+                      <span className="mt-2 block line-clamp-3 text-xs leading-5 text-emerald-950/70 dark:text-slate-300">
+                        {getRideNoteDescription(note)}
+                      </span>
                     </Link>
                   ))}
                 </div>
