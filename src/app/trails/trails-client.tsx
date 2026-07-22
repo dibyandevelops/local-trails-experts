@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Trail } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -257,16 +257,50 @@ function TrailsPageContent() {
   const hasTrailsData = trails.length > 0;
   const hasInitialError = Boolean(error) && !hasTrailsData;
   const hasTransientError = Boolean(error) && hasTrailsData;
+  const shouldGateTrailPreview = !loadingCurrentUser && !user;
+  const visibleTrails = shouldGateTrailPreview ? trails.slice(0, 3) : trails;
+  const hasMoreTrailsForGuestPreview = Boolean(hasNextPage) || (pagination?.total ?? trails.length) > 3;
+  const previewGateRef = useRef<HTMLDivElement>(null);
+  const didOpenPreviewGate = useRef(false);
   const { mapStyle, mapStyleMode, setMapStyleMode } = useTrailsMapStyle();
   useSyncOpenFilters(filtersOpen, syncDraftFilters);
   const loadMoreRef = useTrailsScrollLoading({
     isInitialLoading,
     trailsLength: trails.length,
-    hasNextPage: Boolean(hasNextPage),
+    hasNextPage: Boolean(hasNextPage) && !shouldGateTrailPreview,
     isFetchingNextPage,
     isLoading,
     fetchNextPage,
   });
+
+  useEffect(() => {
+    if (!shouldGateTrailPreview || trails.length < 3 || !hasMoreTrailsForGuestPreview) return;
+    const node = previewGateRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting || didOpenPreviewGate.current) return;
+        didOpenPreviewGate.current = true;
+        const next =
+          typeof window !== 'undefined'
+            ? `${window.location.pathname}${window.location.search}`
+            : '/trails';
+        window.dispatchEvent(
+          new CustomEvent('open-register', {
+            detail: {
+              message: 'Create a free account or sign in to view more local trails.',
+              next,
+            },
+          })
+        );
+      },
+      { root: null, rootMargin: '0px 0px -15% 0px', threshold: 0.35 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMoreTrailsForGuestPreview, shouldGateTrailPreview, trails.length]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -477,7 +511,7 @@ function TrailsPageContent() {
       />
 
       <TrailsResults
-        trails={trails}
+        trails={visibleTrails}
         viewMode={viewMode}
         sort={sort}
         pagination={pagination}
@@ -503,6 +537,8 @@ function TrailsPageContent() {
         associatingTrailId={associatingTrailId}
         requestFeedback={requestFeedback}
         loadMoreRef={loadMoreRef}
+        previewGateRef={previewGateRef}
+        showPreviewGate={shouldGateTrailPreview && trails.length >= 3 && hasMoreTrailsForGuestPreview}
         onResetFilters={resetFilters}
         onSortChange={setSort}
         onToggleSavedTrail={toggleSavedTrail}

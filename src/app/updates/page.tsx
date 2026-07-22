@@ -50,7 +50,7 @@ const updates = [
     points: [
       'New Help page for common platform tasks.',
       'FAQ remains available for policy and general questions.',
-      'Kora preparation is now published as a practical Ride Note for local riders.',
+      'Post-event ride guidance is now published as a practical Ride Note for local riders.',
     ],
   },
 ];

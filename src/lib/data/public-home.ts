@@ -160,7 +160,7 @@ export async function getHomeFeaturedTrails(limit = 5): Promise<Trail[]> {
       WHERE status = 'approved'
         AND COALESCE(is_hidden, FALSE) = FALSE
       ORDER BY created_at DESC NULLS LAST, id DESC
-      -- After the Kora campaign, randomize this list again if variety is preferred:
+      -- After short-term campaigns, randomize this list again if variety is preferred:
       -- ORDER BY RANDOM()
       LIMIT $1
       `,
