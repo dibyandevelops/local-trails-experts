@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const auth = getAuthFromRequest(request);
     if (!auth) {
-      return NextResponse.json({ error: 'Login is required to request a service.' }, { status: 401 });
+      return NextResponse.json({ error: 'Sign in is required to request a service.' }, { status: 401 });
     }
 
     const { serviceId } = await context.params;
@@ -99,6 +99,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   } catch (error) {
     console.error('Error creating service booking:', error);
-    return NextResponse.json({ error: 'Failed to request service booking.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to request service.' }, { status: 500 });
   }
 }

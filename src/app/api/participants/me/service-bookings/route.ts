@@ -5,7 +5,7 @@ import { getAuthFromRequest } from '@/lib/auth';
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'participant') {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const result = await pool.query(
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'participant') {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const body = await request.json();

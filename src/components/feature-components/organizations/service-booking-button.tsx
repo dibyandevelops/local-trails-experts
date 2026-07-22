@@ -9,9 +9,6 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
 
-// Keep the booking flow available for a later relaunch while it is hidden from public service cards.
-const serviceBookingEnabled = false;
-
 export default function ServiceBookingButton({
   serviceId,
   serviceTitle,
@@ -64,7 +61,7 @@ export default function ServiceBookingButton({
       window.dispatchEvent(
         new CustomEvent('open-register', {
           detail: {
-            message: 'Create a participant account to request this service.',
+            message: 'Create a free account or sign in to request this service.',
             next,
           },
         })
@@ -112,19 +109,17 @@ export default function ServiceBookingButton({
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        {serviceBookingEnabled && (
-          <button
-            type="button"
-            onClick={openBooking}
-            className={
-              className ||
-              'inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400'
-            }
-          >
-            <CalendarCheck className="h-4 w-4" />
-            Request booking
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={openBooking}
+          className={
+            className ||
+            'inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400'
+          }
+        >
+          <CalendarCheck className="h-4 w-4" />
+          Request service
+        </button>
         {whatsappHref && (
           <a
             href={whatsappHref}
@@ -151,10 +146,10 @@ export default function ServiceBookingButton({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Dialog.Title className="text-xl font-bold text-gray-950 dark:text-white">
-                  Request {serviceTitle}
+                  Request service
                 </Dialog.Title>
                 <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                  {organizationName ? `${organizationName} will` : 'The organization will'} review your preferred schedule and confirm it.
+                  Ask {organizationName || 'the organization'} about {serviceTitle}. They will review your preferred schedule and confirm it.
                 </Dialog.Description>
               </div>
               <Dialog.Close className="rounded-full border border-gray-200 p-2 dark:border-slate-700 dark:text-slate-300">
@@ -163,7 +158,7 @@ export default function ServiceBookingButton({
             </div>
 
             <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
-              Requesting as <strong>{currentUser?.name || currentUser?.email}</strong>. This is a booking request, not an immediate confirmation or payment.
+              Requesting as <strong>{currentUser?.name || currentUser?.email}</strong>. This sends a service request only. Confirmation and payment happen after the organization replies.
             </div>
 
             <form onSubmit={submitBooking} className="mt-5 grid gap-4 sm:grid-cols-2">
