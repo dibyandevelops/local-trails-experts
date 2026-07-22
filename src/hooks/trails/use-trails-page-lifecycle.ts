@@ -10,17 +10,13 @@ type ScrollLoadingOptions = {
   isInitialLoading: boolean;
   trailsLength: number;
   hasNextPage: boolean;
-  isFetchingNextPage: boolean;
-  isLoading: boolean;
   fetchNextPage: () => Promise<unknown>;
 };
 
-export function useTrailsScrollLoading({
+export function useTrailsScrollRestoration({
   isInitialLoading,
   trailsLength,
   hasNextPage,
-  isFetchingNextPage,
-  isLoading,
   fetchNextPage,
 }: ScrollLoadingOptions): RefObject<HTMLDivElement> {
   const didRestoreScroll = useRef(false);
@@ -58,22 +54,23 @@ export function useTrailsScrollLoading({
     };
   }, [fetchNextPage, hasNextPage, isInitialLoading, trailsLength]);
 
-  useEffect(() => {
-    const node = loadMoreRef.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting || !didRestoreScroll.current) return;
-        if (!hasNextPage || isFetchingNextPage || isLoading) return;
-        void fetchNextPage();
-      },
-      { root: null, rootMargin: '300px 0px', threshold: 0.01 }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, trailsLength]);
+  // infinite scrolling logic
+  // useEffect(() => {
+  //   const node = loadMoreRef.current;
+  //   if (!node) return;
+  //
+  //   const observer = new IntersectionObserver(
+  //     ([entry]) => {
+  //       if (!entry?.isIntersecting || !didRestoreScroll.current) return;
+  //       if (!hasNextPage || isFetchingNextPage || isLoading) return;
+  //       void fetchNextPage();
+  //     },
+  //     { root: null, rootMargin: '300px 0px', threshold: 0.01 }
+  //   );
+  //
+  //   observer.observe(node);
+  //   return () => observer.disconnect();
+  // }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, trailsLength]);
 
   return loadMoreRef;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Trail } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -22,7 +22,7 @@ import { useTrailsPageData } from '@/hooks/trails/use-trails-page-data';
 import {
   usePageShowReset,
   useSyncOpenFilters,
-  useTrailsScrollLoading,
+  useTrailsScrollRestoration,
 } from '@/hooks/trails/use-trails-page-lifecycle';
 import { useTrailsMapStyle } from '@/hooks/trails/use-trails-map-style';
 import {
@@ -47,6 +47,26 @@ const TrailRequestModal = dynamic(
     ssr: false,
   }
 );
+
+const TRAILS_PAGE_SIZE = 4;
+const GUEST_TRAILS_PREVIEW_MESSAGE =
+  'Create a free account or sign in to view more local trails.';
+
+function getCurrentTrailsPath() {
+  if (typeof window === 'undefined') return '/trails';
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+function openTrailsRegisterPrompt(message: string) {
+  window.dispatchEvent(
+    new CustomEvent('open-register', {
+      detail: {
+        message,
+        next: getCurrentTrailsPath(),
+      },
+    })
+  );
+}
 
 function TrailsPageContent() {
   const router = useRouter();
@@ -145,7 +165,7 @@ function TrailsPageContent() {
     onCreateEventFromUrl: openCreateEventFromUrl,
   });
 
-  const initialPageSize = viewMode === 'quick' ? 10 : 3;
+  const initialPageSize = TRAILS_PAGE_SIZE;
 
   const getTrailImages = (trail: Trail) =>
     Array.from(
@@ -258,49 +278,17 @@ function TrailsPageContent() {
   const hasInitialError = Boolean(error) && !hasTrailsData;
   const hasTransientError = Boolean(error) && hasTrailsData;
   const shouldGateTrailPreview = !loadingCurrentUser && !user;
-  const visibleTrails = shouldGateTrailPreview ? trails.slice(0, 3) : trails;
-  const hasMoreTrailsForGuestPreview = Boolean(hasNextPage) || (pagination?.total ?? trails.length) > 3;
-  const previewGateRef = useRef<HTMLDivElement>(null);
-  const didOpenPreviewGate = useRef(false);
+  const visibleTrails = shouldGateTrailPreview ? trails.slice(0, TRAILS_PAGE_SIZE) : trails;
+  const hasMoreTrailsForGuestPreview =
+    Boolean(hasNextPage) || (pagination?.total ?? trails.length) > TRAILS_PAGE_SIZE;
   const { mapStyle, mapStyleMode, setMapStyleMode } = useTrailsMapStyle();
   useSyncOpenFilters(filtersOpen, syncDraftFilters);
-  const loadMoreRef = useTrailsScrollLoading({
+  useTrailsScrollRestoration({
     isInitialLoading,
     trailsLength: trails.length,
     hasNextPage: Boolean(hasNextPage) && !shouldGateTrailPreview,
-    isFetchingNextPage,
-    isLoading,
     fetchNextPage,
   });
-
-  useEffect(() => {
-    if (!shouldGateTrailPreview || trails.length < 3 || !hasMoreTrailsForGuestPreview) return;
-    const node = previewGateRef.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting || didOpenPreviewGate.current) return;
-        didOpenPreviewGate.current = true;
-        const next =
-          typeof window !== 'undefined'
-            ? `${window.location.pathname}${window.location.search}`
-            : '/trails';
-        window.dispatchEvent(
-          new CustomEvent('open-register', {
-            detail: {
-              message: 'Create a free account or sign in to view more local trails.',
-              next,
-            },
-          })
-        );
-      },
-      { root: null, rootMargin: '0px 0px -15% 0px', threshold: 0.35 }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hasMoreTrailsForGuestPreview, shouldGateTrailPreview, trails.length]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,18 +303,7 @@ function TrailsPageContent() {
       return;
     }
     if (!user) {
-      const next =
-        typeof window !== 'undefined'
-          ? `${window.location.pathname}${window.location.search}`
-          : '/trails';
-      window.dispatchEvent(
-        new CustomEvent('open-register', {
-          detail: {
-            message: 'Create a participant account to plan a ride with a local guide.',
-            next,
-          },
-        })
-      );
+      openTrailsRegisterPrompt('Create a participant account to plan a ride with a local guide.');
       return;
     }
     if (user.role !== 'participant') {
@@ -428,15 +405,7 @@ function TrailsPageContent() {
       return;
     }
     if (!user) {
-      const next =
-        typeof window !== 'undefined'
-          ? `${window.location.pathname}${window.location.search}`
-          : '/trails';
-      window.dispatchEvent(
-        new CustomEvent('open-register', {
-          detail: { message: 'Create an account to save trails for later.', next },
-        })
-      );
+      openTrailsRegisterPrompt('Create an account to save trails for later.');
       return;
     }
     savedTrailMutation.mutate({
@@ -470,6 +439,14 @@ function TrailsPageContent() {
     setCreateEventTrailId(trail.id);
     setCreateEventSport(trail.sport_type || 'mtb');
     setCreateEventOpen(true);
+  };
+
+  const handleShowMoreTrails = () => {
+    if (shouldGateTrailPreview) {
+      openTrailsRegisterPrompt(GUEST_TRAILS_PREVIEW_MESSAGE);
+      return;
+    }
+    void fetchNextPage();
   };
 
   return (
@@ -536,11 +513,19 @@ function TrailsPageContent() {
         unhidingTrailId={unhidingTrailId}
         associatingTrailId={associatingTrailId}
         requestFeedback={requestFeedback}
-        loadMoreRef={loadMoreRef}
-        previewGateRef={previewGateRef}
-        showPreviewGate={shouldGateTrailPreview && trails.length >= 3 && hasMoreTrailsForGuestPreview}
+        showPreviewGate={
+          shouldGateTrailPreview &&
+          trails.length >= TRAILS_PAGE_SIZE &&
+          hasMoreTrailsForGuestPreview
+        }
+        hasNextPage={
+          shouldGateTrailPreview
+            ? hasMoreTrailsForGuestPreview
+            : Boolean(hasNextPage)
+        }
         onResetFilters={resetFilters}
         onSortChange={setSort}
+        onShowMore={handleShowMoreTrails}
         onToggleSavedTrail={toggleSavedTrail}
         onEditTrail={(trail) => router.push(`/upload?trailId=${trail.id}`)}
         onDeleteTrail={(trailId) => deleteMutation.mutate(trailId)}

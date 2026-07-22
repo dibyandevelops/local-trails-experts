@@ -3,6 +3,10 @@ import 'server-only';
 import pool from '@/lib/db';
 import type { Trail } from '@/types';
 
+const eventRouteFilterSql = `
+  AND lower(concat_ws(' ', name, slug)) NOT LIKE '%kora%'
+`;
+
 type HomeSpotlight =
   | {
       type: 'event';
@@ -97,6 +101,7 @@ export async function getHomeSpotlight(): Promise<HomeSpotlight | null> {
       FROM trails
       WHERE status = 'approved'
         AND COALESCE(is_hidden, FALSE) = FALSE
+        ${eventRouteFilterSql}
       ORDER BY RANDOM()
       LIMIT 1
       `
@@ -159,6 +164,7 @@ export async function getHomeFeaturedTrails(limit = 5): Promise<Trail[]> {
       FROM trails
       WHERE status = 'approved'
         AND COALESCE(is_hidden, FALSE) = FALSE
+        ${eventRouteFilterSql}
       ORDER BY created_at DESC NULLS LAST, id DESC
       -- After short-term campaigns, randomize this list again if variety is preferred:
       -- ORDER BY RANDOM()

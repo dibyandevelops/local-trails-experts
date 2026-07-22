@@ -59,7 +59,7 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
   const copy = homeCopy[locale];
   const [spotlight, featuredTrails, rideNotes] = await Promise.all([
     getHomeSpotlight(),
-    getHomeFeaturedTrails(5),
+    getHomeFeaturedTrails(4),
     getPublicRideNotes(3),
   ]);
   const websiteJsonLd = jsonLdStringify({

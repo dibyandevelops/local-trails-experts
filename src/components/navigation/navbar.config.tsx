@@ -112,8 +112,8 @@ export const dropdownItemClass =
 export const mobileItemClass = 'rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors';
 export const activeMenuItemClass = 'border border-lime-300/35 bg-lime-300/15 text-lime-50';
 export const mobilePanelBaseClass =
-  'mt-2 rounded-3xl border border-white/10 bg-emerald-950/95 shadow-xl shadow-emerald-950/30 backdrop-blur transition-[max-height,opacity,padding,border-color] duration-300 ease-out lg:hidden';
+  'fixed left-4 right-4 top-[4.75rem] z-50 rounded-3xl border border-white/10 bg-emerald-950/95 shadow-xl shadow-emerald-950/30 backdrop-blur transition-[max-height,opacity,transform] duration-200 ease-out lg:hidden';
 export const mobilePanelOpenClass =
   'max-h-[calc(100dvh-5.5rem)] touch-pan-y overflow-y-auto overscroll-contain p-3 opacity-100 [-webkit-overflow-scrolling:touch]';
 export const mobilePanelClosedClass =
-  'max-h-0 overflow-hidden border-transparent p-0 opacity-0';
+  'pointer-events-none max-h-0 overflow-hidden p-0 opacity-0 -translate-y-2';

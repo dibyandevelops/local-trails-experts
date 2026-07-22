@@ -59,6 +59,7 @@ async function fetchMatchingTrails(query: string, signal: AbortSignal) {
     search: query,
     page: '1',
     pageSize: String(AUTOCOMPLETE_PAGE_SIZE),
+    excludeEventRoutes: 'true',
   });
   const response = await fetch(`/api/trails?${params.toString()}`, { signal });
   if (!response.ok) return [];

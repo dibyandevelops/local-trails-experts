@@ -1,4 +1,3 @@
-import type { RefObject } from 'react';
 import type { Trail } from '@/types';
 import type { TrailsPagination } from '@/services/trails/trails.service';
 import { TrailGallery } from './trail-gallery';
@@ -30,11 +29,11 @@ type TrailsResultsProps = {
   unhidingTrailId: string | null;
   associatingTrailId: string | null;
   requestFeedback: string;
-  loadMoreRef: RefObject<HTMLDivElement>;
-  previewGateRef: RefObject<HTMLDivElement>;
   showPreviewGate: boolean;
+  hasNextPage: boolean;
   onResetFilters: () => void;
   onSortChange: (sort: TrailSort) => void;
+  onShowMore: () => void;
   onToggleSavedTrail: (trail: Trail) => void;
   onEditTrail: (trail: Trail) => void;
   onDeleteTrail: (trailId: string) => void;
@@ -47,6 +46,66 @@ type TrailsResultsProps = {
   onCreateEvent: (trail: Trail) => void;
   onToggleGuideTrail: (trail: Trail, isAssociated: boolean) => void;
 };
+
+function TrailPreviewGate() {
+  return (
+    <div className="mt-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 text-center shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/35 dark:via-slate-950 dark:to-slate-900">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-800 dark:text-lime-200">
+        Trail preview
+      </p>
+      <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-emerald-950 dark:text-white">
+        Sign in to keep exploring.
+      </h2>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-emerald-950/75 dark:text-slate-300">
+        The first four trails are open as a preview. Use Show more to create a free account or
+        sign in before viewing the full list.
+      </p>
+    </div>
+  );
+}
+
+function TrailsPaginationFooter({
+  showing,
+  total,
+  showPreviewGate,
+  hasNextPage,
+  isFetchingNextPage,
+  onShowMore,
+}: {
+  showing: number;
+  total: number;
+  showPreviewGate: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onShowMore: () => void;
+}) {
+  const helperText = showPreviewGate
+    ? 'Use Show more to create an account or sign in before viewing the full list.'
+    : hasNextPage
+      ? 'Load the next set when you are ready.'
+      : 'You have reached the end of the current results.';
+
+  return (
+    <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white/80 p-4 dark:border-emerald-900/50 dark:bg-slate-950/60 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm font-black text-gray-950 dark:text-white">
+          Showing {showing} of {total} trails
+        </p>
+        <p className="mt-1 text-xs text-gray-600 dark:text-slate-400">{helperText}</p>
+      </div>
+      {hasNextPage && (
+        <button
+          type="button"
+          onClick={onShowMore}
+          disabled={isFetchingNextPage}
+          className="inline-flex min-h-10 items-center justify-center rounded-full bg-emerald-800 px-5 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60 dark:bg-lime-300 dark:text-emerald-950 dark:hover:bg-lime-200"
+        >
+          {isFetchingNextPage ? 'Loading...' : 'Show more'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function TrailsResults({
   trails,
@@ -72,11 +131,11 @@ export function TrailsResults({
   unhidingTrailId,
   associatingTrailId,
   requestFeedback,
-  loadMoreRef,
-  previewGateRef,
   showPreviewGate,
+  hasNextPage,
   onResetFilters,
   onSortChange,
+  onShowMore,
   onToggleSavedTrail,
   onEditTrail,
   onDeleteTrail,
@@ -89,6 +148,8 @@ export function TrailsResults({
   onCreateEvent,
   onToggleGuideTrail,
 }: TrailsResultsProps) {
+  const totalTrails = pagination?.total ?? trails.length;
+
   if (isInitialLoading) {
     return (
       <>
@@ -153,62 +214,16 @@ export function TrailsResults({
           onToggleExpertTrail={onToggleGuideTrail}
         />
       </div>
-      {showPreviewGate && (
-        <div
-          ref={previewGateRef}
-          className="mt-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 text-center shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/35 dark:via-slate-950 dark:to-slate-900"
-        >
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-800 dark:text-lime-200">
-            Trail preview
-          </p>
-          <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-emerald-950 dark:text-white">
-            Sign in to keep exploring.
-          </h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-emerald-950/75 dark:text-slate-300">
-            The first three trails are open as a preview. Create a free account or sign in to view
-            more routes, save trails, and plan rides with local support.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                const next = `${window.location.pathname}${window.location.search}`;
-                window.dispatchEvent(
-                  new CustomEvent('open-register', {
-                    detail: {
-                      message: 'Create a free account to view more local trails.',
-                      next,
-                    },
-                  })
-                );
-              }}
-              className="inline-flex min-h-10 items-center justify-center rounded-full bg-emerald-800 px-5 text-sm font-black text-white transition hover:bg-emerald-700 dark:bg-lime-300 dark:text-emerald-950 dark:hover:bg-lime-200"
-            >
-              Create account
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const next = `${window.location.pathname}${window.location.search}`;
-                window.dispatchEvent(
-                  new CustomEvent('open-login', {
-                    detail: {
-                      message: 'Sign in to continue viewing trails.',
-                      next,
-                    },
-                  })
-                );
-              }}
-              className="inline-flex min-h-10 items-center justify-center rounded-full border border-emerald-300 bg-white px-5 text-sm font-black text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-800 dark:bg-slate-950 dark:text-emerald-100 dark:hover:bg-emerald-950/40"
-            >
-              Sign in
-            </button>
-          </div>
-        </div>
-      )}
+      {showPreviewGate && <TrailPreviewGate />}
       {isFetchingNextPage && <><p className="sr-only" role="status" aria-live="polite">Loading more trails...</p><TrailsLoadMoreSkeleton viewMode={viewMode} /></>}
-      {pagination && <div className="mt-6 rounded-2xl border border-gray-200 bg-white/80 p-3 dark:border-emerald-900/50 dark:bg-slate-950/60"><p className="text-sm text-gray-600 dark:text-slate-300">Showing {trails.length} of {pagination.total} trails</p></div>}
-      {!showPreviewGate && <div ref={loadMoreRef} className="h-2 w-full" aria-hidden="true" />}
+      <TrailsPaginationFooter
+        showing={trails.length}
+        total={totalTrails}
+        showPreviewGate={showPreviewGate}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        onShowMore={onShowMore}
+      />
       {requestFeedback && <div className="mt-3 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">{requestFeedback}</div>}
     </>
   );

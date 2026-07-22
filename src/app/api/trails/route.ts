@@ -15,6 +15,16 @@ const MAX_IMAGE_URL_LENGTH = 2000;
 const PUBLIC_TRAILS_CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
 };
+const EVENT_ROUTE_SEARCH_TERMS = ['kora'];
+
+function getEventRouteRankSql(alias = 't') {
+  return `
+    CASE
+      WHEN lower(concat_ws(' ', ${alias}.name, ${alias}.slug)) LIKE '%kora%' THEN 1
+      ELSE 0
+    END
+  `;
+}
 
 function parseOptionalNumber(raw: string | null) {
   if (!raw || !raw.trim()) return null;
@@ -47,6 +57,7 @@ export async function GET(request: NextRequest) {
     const hasUserCoords = lat !== null && lng !== null;
     const sort = (searchParams.get('sort') || '').trim();
     const randomSeed = (searchParams.get('randomSeed') || '').trim();
+    const excludeEventRoutes = searchParams.get('excludeEventRoutes') === 'true';
     const distanceMinRaw = searchParams.get('distanceMin');
     const distanceMaxRaw = searchParams.get('distanceMax');
     const rideProfile = (searchParams.get('rideProfile') || '').trim();
@@ -66,6 +77,9 @@ export async function GET(request: NextRequest) {
       .map((token) => token.trim())
       .filter((token) => token.length >= 2)
       .slice(0, 8);
+    const isEventRouteSearch = searchTokens.some((token) =>
+      EVENT_ROUTE_SEARCH_TERMS.includes(token)
+    );
 
     let whereClause = ' WHERE 1=1';
     const params: any[] = [];
@@ -103,6 +117,9 @@ export async function GET(request: NextRequest) {
 
     // Temporary: hide local tours from the main listing.
     whereClause += ` AND t.sport_type NOT IN ('local_tour')`;
+    if (excludeEventRoutes) {
+      whereClause += ` AND ${getEventRouteRankSql()} = 0`;
+    }
 
     if (search) {
       const searchPatternParam = paramIndex++;
@@ -304,9 +321,12 @@ export async function GET(request: NextRequest) {
           return 't.name ASC';
       }
     })();
+    const eventRouteOrder = !excludeEventRoutes && !isEventRouteSearch
+      ? `${getEventRouteRankSql()} ASC, `
+      : '';
     const orderBy = searchRelevanceOrder
-      ? `${searchRelevanceOrder} ${baseOrderBy}`
-      : baseOrderBy;
+      ? `${eventRouteOrder}${searchRelevanceOrder} ${baseOrderBy}`
+      : `${eventRouteOrder}${baseOrderBy}`;
 
     const listQuery = `
       SELECT
