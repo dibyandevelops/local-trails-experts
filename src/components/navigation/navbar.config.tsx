@@ -39,6 +39,7 @@ export const navGroups: NavGroup[] = [
         label: 'Community',
         items: [
           { label: 'Organizations', href: '/organizations', showFor: [...allUsers] },
+          { label: 'Partner Plan', href: '/organizations/subscription', showFor: [...allUsers] },
           { label: 'Campaigns', href: '/campaigns', showFor: [...allUsers] },
           { label: 'Expert Directory', href: '/experts', showFor: [...allUsers] },
         ],
@@ -83,6 +84,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/community-rides': Bike,
   '/experts': Users,
   '/organizations': Users,
+  '/organizations/subscription': CircleDollarSign,
   '/organizations/create': Building2,
   '/campaigns': CircleDollarSign,
   '/marketplace': ShoppingBag,

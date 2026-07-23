@@ -9,6 +9,8 @@ export const dynamic = 'force-dynamic';
 const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_LOGO_URL_LENGTH = 650_000;
+const SUBSCRIPTION_STATUSES = new Set(['inactive', 'trialing', 'active', 'past_due', 'cancelled']);
+const SUBSCRIPTION_PLANS = new Set(['free', 'starter', 'partner', 'pro']);
 
 function buildLookup(idOrSlug: string) {
   if (UUID_V4_REGEX.test(idOrSlug)) {
@@ -213,9 +215,12 @@ export async function PATCH(
       'country',
       'is_verified',
       'is_active',
+      'subscription_status',
+      'subscription_plan',
+      'subscription_expires_at',
     ] as const;
 
-    const platformOnlyFields = new Set(['slug', 'is_verified', 'is_active']);
+    const platformOnlyFields = new Set(['slug', 'is_verified', 'is_active', 'subscription_status', 'subscription_plan', 'subscription_expires_at']);
 
     const updates: string[] = [];
     const values: unknown[] = [value];
@@ -242,6 +247,24 @@ export async function PATCH(
         } else if (field === 'country' && typeof raw === 'string') {
           updates.push(`${field} = $${idx}`);
           values.push(raw.trim() || 'Nepal');
+        } else if (field === 'subscription_status' && typeof raw === 'string') {
+          const status = raw.trim();
+          if (!SUBSCRIPTION_STATUSES.has(status)) {
+            return NextResponse.json({ error: 'Invalid subscription status.' }, { status: 400 });
+          }
+          updates.push(`${field} = $${idx}`);
+          values.push(status);
+        } else if (field === 'subscription_plan' && typeof raw === 'string') {
+          const plan = raw.trim();
+          if (!SUBSCRIPTION_PLANS.has(plan)) {
+            return NextResponse.json({ error: 'Invalid subscription plan.' }, { status: 400 });
+          }
+          updates.push(`${field} = $${idx}`);
+          values.push(plan);
+        } else if (field === 'subscription_expires_at') {
+          const expiresAt = typeof raw === 'string' ? raw.trim() : '';
+          updates.push(`${field} = $${idx}`);
+          values.push(expiresAt || null);
         } else if (
           typeof raw === 'string' &&
           [

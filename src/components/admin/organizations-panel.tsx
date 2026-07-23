@@ -23,6 +23,9 @@ type OrganizationForm = {
   contact_phone: string;
   is_verified: boolean;
   is_active: boolean;
+  subscription_status: 'inactive' | 'trialing' | 'active' | 'past_due' | 'cancelled';
+  subscription_plan: 'free' | 'starter' | 'partner' | 'pro';
+  subscription_expires_at: string;
 };
 
 const emptyForm: OrganizationForm = {
@@ -37,6 +40,9 @@ const emptyForm: OrganizationForm = {
   contact_phone: '',
   is_verified: false,
   is_active: true,
+  subscription_status: 'inactive',
+  subscription_plan: 'free',
+  subscription_expires_at: '',
 };
 
 function OrganizationVisibilityBadge({ isActive }: { isActive: boolean }) {
@@ -152,6 +158,11 @@ export default function OrganizationsPanel() {
       contact_phone: org.contact_phone || '',
       is_verified: org.is_verified,
       is_active: org.is_active,
+      subscription_status: org.subscription_status || 'inactive',
+      subscription_plan: org.subscription_plan || 'free',
+      subscription_expires_at: org.subscription_expires_at
+        ? new Date(org.subscription_expires_at).toISOString().slice(0, 10)
+        : '',
     });
   };
 
@@ -323,6 +334,35 @@ export default function OrganizationsPanel() {
         </label>
       </div>
 
+      <div className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 md:grid-cols-3">
+        <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Subscription
+          <select {...register('subscription_status')} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm normal-case text-gray-900">
+            <option value="inactive">Inactive</option>
+            <option value="trialing">Trialing</option>
+            <option value="active">Active</option>
+            <option value="past_due">Past due</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </label>
+        <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Plan
+          <select {...register('subscription_plan')} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm normal-case text-gray-900">
+            <option value="free">Free</option>
+            <option value="starter">Starter</option>
+            <option value="partner">Partner</option>
+            <option value="pro">Pro</option>
+          </select>
+        </label>
+        <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Expires
+          <input type="date" {...register('subscription_expires_at')} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm normal-case text-gray-900" />
+        </label>
+        <p className="text-xs leading-5 text-gray-600 md:col-span-3">
+          Revenue features require the organization to be verified and subscription status to be active or trialing.
+        </p>
+      </div>
+
       <div className="flex justify-end gap-2">
         <button
           type="button"
@@ -427,6 +467,9 @@ export default function OrganizationsPanel() {
                                 Verified
                               </span>
                             )}
+                            <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-amber-700 dark:bg-amber-950/50 dark:text-amber-200">
+                              {organization.subscription_status || 'inactive'}
+                            </span>
                           </div>
                           <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">/{organization.slug}</p>
                           {organization.tagline && (

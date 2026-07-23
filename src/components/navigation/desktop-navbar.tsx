@@ -282,14 +282,24 @@ export default function DesktopNavbar({
                 </button>
               </DropdownMenu.Item>
               {hasOrganizationAccess && (
-                <DropdownMenu.Item asChild>
-                  <Link
-                    href="/organizations/me"
-                    className={`block text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10 ${dropdownItemClass}`}
-                  >
-                    Organization Dashboard
-                  </Link>
-                </DropdownMenu.Item>
+                <>
+                  <DropdownMenu.Item asChild>
+                    <Link
+                      href="/organizations/me"
+                      className={`block text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10 ${dropdownItemClass}`}
+                    >
+                      Organization Dashboard
+                    </Link>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item asChild>
+                    <Link
+                      href="/organizations/me/subscription"
+                      className={`block text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10 ${dropdownItemClass}`}
+                    >
+                      Organization Subscription
+                    </Link>
+                  </DropdownMenu.Item>
+                </>
               )}
               <DropdownMenu.Item asChild>
                 <button

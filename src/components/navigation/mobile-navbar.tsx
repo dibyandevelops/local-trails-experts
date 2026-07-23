@@ -217,13 +217,22 @@ export default function MobileNavbar({
               {accountActionLabel}
             </button>
             {hasOrganizationAccess && (
-              <Link
-                href="/organizations/me"
-                className={`${mobileItemClass} text-left text-emerald-50 hover:bg-white/10`}
-                onClick={closeMobileMenu}
-              >
-                Organization Dashboard
-              </Link>
+              <>
+                <Link
+                  href="/organizations/me"
+                  className={`${mobileItemClass} text-left text-emerald-50 hover:bg-white/10`}
+                  onClick={closeMobileMenu}
+                >
+                  Organization Dashboard
+                </Link>
+                <Link
+                  href="/organizations/me/subscription"
+                  className={`${mobileItemClass} text-left text-emerald-50 hover:bg-white/10`}
+                  onClick={closeMobileMenu}
+                >
+                  Organization Subscription
+                </Link>
+              </>
             )}
             <button
               type="button"

@@ -229,6 +229,9 @@ export type OrganizationOption = {
   country?: string | null;
   is_verified: boolean;
   is_active: boolean;
+  subscription_status?: 'inactive' | 'trialing' | 'active' | 'past_due' | 'cancelled';
+  subscription_plan?: 'free' | 'starter' | 'partner' | 'pro';
+  subscription_expires_at?: string | null;
   member_count?: number;
   trail_count?: number;
 };
@@ -510,6 +513,9 @@ export async function createAdminOrganization(input: {
   logo_url?: string;
   is_verified?: boolean;
   is_active?: boolean;
+  subscription_status?: 'inactive' | 'trialing' | 'active' | 'past_due' | 'cancelled';
+  subscription_plan?: 'free' | 'starter' | 'partner' | 'pro';
+  subscription_expires_at?: string | null;
 }) {
   try {
     const { data } = await apiClient.post<{ organization: OrganizationOption }>(
@@ -540,6 +546,9 @@ export async function updateAdminOrganization(
     logo_url: string;
     is_verified: boolean;
     is_active: boolean;
+    subscription_status: 'inactive' | 'trialing' | 'active' | 'past_due' | 'cancelled';
+    subscription_plan: 'free' | 'starter' | 'partner' | 'pro';
+    subscription_expires_at: string | null;
   }>
 ) {
   try {

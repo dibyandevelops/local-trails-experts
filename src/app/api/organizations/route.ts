@@ -5,6 +5,9 @@ import { isAllowedImageUrl } from '@/lib/image-url';
 
 export const dynamic = 'force-dynamic';
 
+const SUBSCRIPTION_STATUSES = new Set(['inactive', 'trialing', 'active', 'past_due', 'cancelled']);
+const SUBSCRIPTION_PLANS = new Set(['free', 'starter', 'partner', 'pro']);
+
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
@@ -65,6 +68,9 @@ export async function GET(request: NextRequest) {
         o.country,
         o.is_verified,
         o.is_active,
+        COALESCE(o.subscription_status, 'inactive') AS subscription_status,
+        COALESCE(o.subscription_plan, 'free') AS subscription_plan,
+        o.subscription_expires_at,
         o.created_by_user_id,
         o.created_at,
         o.updated_at,
@@ -109,6 +115,9 @@ export async function POST(request: NextRequest) {
       country?: string | null;
       is_verified?: boolean;
       is_active?: boolean;
+      subscription_status?: string;
+      subscription_plan?: string;
+      subscription_expires_at?: string | null;
     };
 
     const slug = (body.slug || '').trim().toLowerCase();
@@ -130,6 +139,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const subscriptionStatus = body.subscription_status || 'inactive';
+    const subscriptionPlan = body.subscription_plan || 'free';
+    if (!SUBSCRIPTION_STATUSES.has(subscriptionStatus)) {
+      return NextResponse.json({ error: 'Invalid subscription status.' }, { status: 400 });
+    }
+    if (!SUBSCRIPTION_PLANS.has(subscriptionPlan)) {
+      return NextResponse.json({ error: 'Invalid subscription plan.' }, { status: 400 });
+    }
 
     const client = await pool.connect();
     try {
@@ -139,11 +156,12 @@ export async function POST(request: NextRequest) {
         INSERT INTO organizations (
           slug, name, tagline, description, logo_url, website_url, instagram_url, facebook_url,
           whatsapp_url, contact_email, contact_phone, city, country, is_verified, is_active,
+          subscription_status, subscription_plan, subscription_expires_at,
           created_by_user_id, owner_user_id
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8,
-          $9, $10, $11, $12, $13, $14, $15, $16, $17
+          $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
         )
         RETURNING *
         `,
@@ -163,6 +181,9 @@ export async function POST(request: NextRequest) {
           body.country?.trim() || 'Nepal',
           Boolean(body.is_verified),
           body.is_active ?? true,
+          subscriptionStatus,
+          subscriptionPlan,
+          body.subscription_expires_at || null,
           auth.sub,
           null,
         ]

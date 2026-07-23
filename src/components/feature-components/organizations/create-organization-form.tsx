@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Building2 } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { resizeImageToDataUrl } from '@/lib/image';
@@ -24,6 +24,13 @@ type OrganizationForm = {
 };
 
 type CreatedOrganization = { id: string; slug: string; name: string };
+
+type ManagedOrganization = {
+  id: string;
+  slug: string;
+  name: string;
+  owner_user_id: string | null;
+};
 
 type ExpertApplicationForm = {
   name: string;
@@ -63,6 +70,13 @@ async function createOrganization(values: OrganizationForm) {
   return data as { success: true; organization: CreatedOrganization };
 }
 
+async function fetchManagedOrganizations() {
+  const response = await fetch('/api/organizations/me', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error || 'Failed to check organization ownership.');
+  return data as { organizations: ManagedOrganization[] };
+}
+
 async function submitExpertApplication(values: ExpertApplicationForm) {
   const response = await fetch('/api/experts/apply', {
     method: 'POST',
@@ -76,6 +90,7 @@ async function submitExpertApplication(values: ExpertApplicationForm) {
 
 export default function CreateOrganizationForm() {
   const { data: user = null, isLoading } = useCurrentUser();
+  const queryClient = useQueryClient();
   const [createdOrganization, setCreatedOrganization] = useState<CreatedOrganization | null>(null);
   const [logoMessage, setLogoMessage] = useState('');
   const {
@@ -99,9 +114,21 @@ export default function CreateOrganizationForm() {
   });
   const name = watch('name');
   const logoUrl = watch('logo_url');
+  const managedOrganizationsQuery = useQuery({
+    queryKey: ['managed-organizations-create-gate'],
+    queryFn: fetchManagedOrganizations,
+    enabled: Boolean(user && user.role === 'expert' && user.is_verified_expert),
+    staleTime: 30_000,
+  });
   const mutation = useMutation({
     mutationFn: createOrganization,
-    onSuccess: (data) => setCreatedOrganization(data.organization),
+    onSuccess: async (data) => {
+      setCreatedOrganization(data.organization);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['managed-organizations-create-gate'] }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.auth.me }),
+      ]);
+    },
   });
 
   useEffect(() => {
@@ -168,6 +195,34 @@ export default function CreateOrganizationForm() {
     );
   }
 
+  if (managedOrganizationsQuery.isLoading) {
+    return <div className="mx-auto max-w-4xl px-4 py-12 text-sm text-gray-600">Checking organization ownership...</div>;
+  }
+  if (managedOrganizationsQuery.error) {
+    return (
+      <AccessMessage
+        title="Could not check organization ownership"
+        body={managedOrganizationsQuery.error.message}
+        href="/organizations/me"
+        action="Open organization dashboard"
+      />
+    );
+  }
+
+  const ownedOrganization = managedOrganizationsQuery.data?.organizations.find(
+    (organization) => organization.owner_user_id === user.id
+  );
+  if (ownedOrganization) {
+    return (
+      <AccessMessage
+        title={`${ownedOrganization.name} is already connected to this account`}
+        body="Each verified expert account can own one organization. Manage your existing organization from the dashboard instead of creating another one."
+        href="/organizations/me"
+        action="Open organization dashboard"
+      />
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <header className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 dark:border-emerald-900 dark:from-emerald-950/40 dark:to-slate-950">
@@ -176,6 +231,9 @@ export default function CreateOrganizationForm() {
         <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
           Your verified expert account will become the organization owner. Each expert may own one organization.
         </p>
+        <Link href="/organizations/subscription" className="mt-4 inline-flex rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-slate-950 dark:text-emerald-200">
+          See the Partner Plan
+        </Link>
       </header>
 
       <form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="mt-6 grid gap-4 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:grid-cols-2">

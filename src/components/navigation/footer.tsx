@@ -29,6 +29,7 @@ const FEATURE_LINKS = [
   { label: 'Events', href: '/events' },
   { label: 'Expert directory', href: '/experts' },
   { label: 'Organizations', href: '/organizations' },
+  { label: 'Partner plan', href: '/organizations/subscription' },
   { label: 'Campaigns', href: '/campaigns' },
   { label: 'Cycle hubs', href: '/store-locator' },
   { label: 'Marketplace', href: '/marketplace' },

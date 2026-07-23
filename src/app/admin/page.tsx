@@ -17,6 +17,7 @@ const RideNotesPanel = dynamic(() => import('@/components/admin/ride-notes-panel
 const UpcomingEventsPanel = dynamic(() => import('@/components/admin/upcoming-events-panel'), { loading: AdminPanelLoading });
 const StoresAdminPanel = dynamic(() => import('@/components/admin/stores-admin-panel'), { loading: AdminPanelLoading });
 const OrganizationsPanel = dynamic(() => import('@/components/admin/organizations-panel'), { loading: AdminPanelLoading });
+const OrganizationSubscriptionPaymentsPanel = dynamic(() => import('@/components/admin/organization-subscription-payments-panel'), { loading: AdminPanelLoading });
 const OrganizationMembersPanel = dynamic(() => import('@/components/admin/organization-members-panel'), { loading: AdminPanelLoading });
 const FundraisingCampaignsPanel = dynamic(() => import('@/components/admin/fundraising-campaigns-panel'), { loading: AdminPanelLoading });
 const OrganizationOpsPanel = dynamic(() => import('@/components/admin/organization-ops-panel'), { loading: AdminPanelLoading });
@@ -199,6 +200,7 @@ export default function AdminPage() {
       >
         <StoresAdminPanel />
         <MarketplaceModerationPanel />
+        <OrganizationSubscriptionPaymentsPanel />
         <OrganizationsPanel />
         <OrganizationMembersPanel />
         <FundraisingCampaignsPanel />

@@ -31,7 +31,16 @@ export async function GET(request: NextRequest) {
         o.country,
         o.is_verified,
         o.is_active,
-        o.owner_user_id
+        o.owner_user_id,
+        COALESCE(o.subscription_status, 'inactive') AS subscription_status,
+        COALESCE(o.subscription_plan, 'free') AS subscription_plan,
+        o.subscription_expires_at,
+        (
+          o.is_active = TRUE
+          AND o.is_verified = TRUE
+          AND COALESCE(o.subscription_status, 'inactive') IN ('trialing', 'active')
+          AND (o.subscription_expires_at IS NULL OR o.subscription_expires_at > NOW())
+        ) AS can_create_revenue_features
       FROM organization_members om
       JOIN organizations o ON o.id = om.organization_id
       WHERE om.user_id = $1
