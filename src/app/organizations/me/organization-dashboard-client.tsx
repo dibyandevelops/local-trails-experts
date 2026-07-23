@@ -9,6 +9,7 @@ import OrganizationCampaignsManagementPanel from '@/components/feature-component
 import OrganizationMembersManagementPanel from '@/components/feature-components/organizations/organization-members-management-panel';
 import OrganizationServicesManagementPanel from '@/components/feature-components/organizations/organization-services-management-panel';
 import OrganizationGalleryManagementPanel from '@/components/feature-components/organizations/organization-gallery-management-panel';
+import OrganizationPromotionsManagementPanel from '@/components/feature-components/organizations/organization-promotions-management-panel';
 import OrganizationTrailsManagementPanel from '@/components/feature-components/organizations/organization-trails-management-panel';
 import OrganizationServiceBookingsPanel from '@/components/feature-components/organizations/organization-service-bookings-panel';
 
@@ -289,7 +290,18 @@ export default function OrganizationDashboardClient() {
       <OrganizationServiceBookingsPanel organizationId={effectiveOrgId} />
 
       {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
-        <OrganizationCampaignsManagementPanel organizationId={effectiveOrgId} trails={orgTrails} />
+        <OrganizationPromotionsManagementPanel
+          organizationId={effectiveOrgId}
+          canCreateRevenueFeatures={Boolean(selectedOrg?.can_create_revenue_features)}
+        />
+      )}
+
+      {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
+        <OrganizationCampaignsManagementPanel
+          organizationId={effectiveOrgId}
+          trails={orgTrails}
+          canCreateRevenueFeatures={Boolean(selectedOrg?.can_create_revenue_features)}
+        />
       )}
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">

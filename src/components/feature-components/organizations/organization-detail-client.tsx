@@ -5,6 +5,7 @@ import OrganizationCampaignsSection from './organization-campaigns-section';
 import OrganizationGallerySection from './organization-gallery-section';
 import OrganizationMembersSection from './organization-members-section';
 import OrganizationProfileHeader from './organization-profile-header';
+import OrganizationPromotionsSection from './organization-promotions-section';
 import OrganizationTrailsSection from './organization-trails-section';
 import OrganizationUpdatesSection from './organization-updates-section';
 import OrganizationServicesSection from './organization-services-section';
@@ -68,6 +69,10 @@ export default function OrganizationDetailClient({ slug }: { slug: string }) {
         }
       >
         <div className="space-y-6">
+          <OrganizationPromotionsSection
+            promotions={data.promotions || []}
+            organizationName={data.organization.name}
+          />
           <OrganizationTrailsSection trails={data.trails} />
           <OrganizationUpdatesSection updates={data.updates} />
           <OrganizationServicesSection

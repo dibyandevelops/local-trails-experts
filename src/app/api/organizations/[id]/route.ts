@@ -57,8 +57,12 @@ export async function GET(
     if (!organization.is_active) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
+    const canShowRevenueFeatures =
+      organization.is_verified === true &&
+      ['trialing', 'active'].includes(organization.subscription_status || 'inactive') &&
+      (!organization.subscription_expires_at || new Date(organization.subscription_expires_at) > new Date());
 
-    const [trailsResult, galleryResult, campaignsResult, membersResult, updatesResult, servicesResult] =
+    const [trailsResult, galleryResult, campaignsResult, membersResult, updatesResult, servicesResult, promotionsResult] =
       await Promise.all([
         pool.query(
           `
@@ -101,10 +105,11 @@ export async function GET(
           FROM fundraising_campaigns
           WHERE organization_id = $1
             AND status IN ('active', 'looking_for_funds', 'completed', 'paused')
+            AND $2 = TRUE
           ORDER BY created_at DESC
           LIMIT 3
           `,
-          [organization.id]
+          [organization.id, canShowRevenueFeatures]
         ),
         pool.query(
           `
@@ -155,11 +160,33 @@ export async function GET(
           SELECT id, category, title, description, price_npr::text, price_note,
                  location, contact_email, contact_phone, website_url, image_url
           FROM organization_services
-          WHERE organization_id = $1 AND is_active = TRUE
+          WHERE organization_id = $1 AND is_active = TRUE AND $2 = TRUE
           ORDER BY created_at DESC
           LIMIT 8
           `,
-          [organization.id]
+          [organization.id, canShowRevenueFeatures]
+        ),
+        pool.query(
+          `
+          SELECT
+            id,
+            title,
+            description,
+            cta_label,
+            cta_url,
+            image_url,
+            starts_at::text,
+            ends_at::text
+          FROM organization_promotions
+          WHERE organization_id = $1
+            AND is_active = TRUE
+            AND starts_at <= CURRENT_DATE
+            AND (ends_at IS NULL OR ends_at >= CURRENT_DATE)
+            AND $2 = TRUE
+          ORDER BY starts_at DESC, created_at DESC
+          LIMIT 1
+          `,
+          [organization.id, canShowRevenueFeatures]
         ),
       ]);
 
@@ -172,6 +199,7 @@ export async function GET(
         members: membersResult.rows,
         updates: updatesResult.rows,
         services: servicesResult.rows,
+        promotions: promotionsResult.rows,
       },
       { status: 200 }
     );

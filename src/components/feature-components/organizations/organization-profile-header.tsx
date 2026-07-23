@@ -6,6 +6,11 @@ export default function OrganizationProfileHeader({
 }: {
   organization: OrganizationDetail;
 }) {
+  const isPartner =
+    organization.is_verified &&
+    ['trialing', 'active'].includes(organization.subscription_status || 'inactive') &&
+    (!organization.subscription_expires_at || new Date(organization.subscription_expires_at) > new Date());
+
   return (
     <header className="rounded-xl border border-emerald-200/70 bg-white p-5 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900/70">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -22,6 +27,11 @@ export default function OrganizationProfileHeader({
             {organization.is_verified && (
               <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
                 Verified
+              </span>
+            )}
+            {isPartner && (
+              <span className="rounded-full border border-cyan-300 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-800 dark:border-cyan-900/60 dark:bg-cyan-950/40 dark:text-cyan-200">
+                Partner
               </span>
             )}
           </div>

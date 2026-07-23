@@ -10,6 +10,10 @@ export type OrganizationRow = {
   city: string | null;
   country: string | null;
   is_verified: boolean;
+  subscription_status: 'inactive' | 'trialing' | 'active' | 'past_due' | 'cancelled' | null;
+  subscription_plan: 'free' | 'starter' | 'partner' | 'pro' | null;
+  subscription_expires_at: string | null;
+  can_create_revenue_features: boolean;
   member_count: number;
   trail_count: number;
 };
@@ -26,6 +30,14 @@ export async function getPublicOrganizations(): Promise<OrganizationRow[]> {
       o.city,
       o.country,
       o.is_verified,
+      o.subscription_status,
+      o.subscription_plan,
+      o.subscription_expires_at::text,
+      (
+        o.is_verified = TRUE
+        AND COALESCE(o.subscription_status, 'inactive') IN ('trialing', 'active')
+        AND (o.subscription_expires_at IS NULL OR o.subscription_expires_at > NOW())
+      ) AS can_create_revenue_features,
       COUNT(DISTINCT om.user_id)::int AS member_count,
       COUNT(DISTINCT to2.trail_id)::int AS trail_count
     FROM organizations o
@@ -33,7 +45,7 @@ export async function getPublicOrganizations(): Promise<OrganizationRow[]> {
     LEFT JOIN trail_organizations to2 ON to2.organization_id = o.id
     WHERE o.is_active = TRUE
     GROUP BY o.id
-    ORDER BY o.is_verified DESC, o.created_at DESC
+    ORDER BY can_create_revenue_features DESC, o.is_verified DESC, trail_count DESC, o.created_at DESC
     `
   );
 

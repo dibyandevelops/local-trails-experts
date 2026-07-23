@@ -16,6 +16,9 @@ export type OrganizationDetail = {
   city: string | null;
   country: string | null;
   is_verified: boolean;
+  subscription_status?: 'inactive' | 'trialing' | 'active' | 'past_due' | 'cancelled' | null;
+  subscription_plan?: 'free' | 'starter' | 'partner' | 'pro' | null;
+  subscription_expires_at?: string | null;
   member_count?: number;
   trail_count?: number;
 };
@@ -92,6 +95,17 @@ export type OrganizationService = {
   image_url: string | null;
 };
 
+export type OrganizationPromotion = {
+  id: string;
+  title: string;
+  description: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
+  image_url: string | null;
+  starts_at: string;
+  ends_at: string | null;
+};
+
 export type OrganizationDetailPayload = {
   organization: OrganizationDetail;
   trails: OrganizationTrailRelation[];
@@ -100,6 +114,7 @@ export type OrganizationDetailPayload = {
   members: OrganizationMember[];
   updates: OrganizationTrailUpdate[];
   services: OrganizationService[];
+  promotions: OrganizationPromotion[];
 };
 
 async function fetchOrganizationDetail(slug: string): Promise<OrganizationDetailPayload> {
