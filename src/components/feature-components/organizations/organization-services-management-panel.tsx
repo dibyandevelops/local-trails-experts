@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import * as Dialog from '@radix-ui/react-dialog';
 import { BriefcaseBusiness, Sparkles, X } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -72,9 +73,11 @@ async function serviceRequest(organizationId: string, init?: RequestInit): Promi
 export default function OrganizationServicesManagementPanel({
   organizationId,
   organization,
+  canCreateRevenueFeatures = false,
 }: {
   organizationId: string;
   organization?: OrganizationServiceDefaults;
+  canCreateRevenueFeatures?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [imageMessage, setImageMessage] = useState('');
@@ -156,16 +159,26 @@ export default function OrganizationServicesManagementPanel({
         <button
           type="button"
           onClick={() => {
+            if (!canCreateRevenueFeatures) return;
             reset(defaultValues);
             setImageMessage('');
             setOpen(true);
           }}
-          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white dark:bg-emerald-500 dark:text-slate-950"
+          disabled={!canCreateRevenueFeatures}
+          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-slate-950"
         >
           <BriefcaseBusiness className="h-4 w-4" />
           Add service
         </button>
       </div>
+      {!canCreateRevenueFeatures && (
+        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-100">
+          Service publishing is available after the organization is verified and subscribed.{' '}
+          <Link href="/organizations/subscription" className="font-bold underline underline-offset-2">
+            View the Partner Plan
+          </Link>
+        </p>
+      )}
 
       {query.isLoading ? (
         <p className="mt-5 text-sm text-gray-500 dark:text-slate-400">Loading services...</p>

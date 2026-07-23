@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Mail, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -103,7 +104,13 @@ export default function MarketplaceListingCard({
         ) : null}
 
         <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-slate-800 dark:text-slate-400">
-          <span>Seller: {listing.seller.name}</span>
+          {listing.seller.organizationSlug ? (
+            <Link href={`/organizations/${listing.seller.organizationSlug}`} className="font-semibold underline underline-offset-2">
+              {listing.seller.name}
+            </Link>
+          ) : (
+            <span>Seller: {listing.seller.name}</span>
+          )}
           {!isOwner ? (
             <button
               type="button"

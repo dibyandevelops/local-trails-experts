@@ -52,6 +52,9 @@ export type MarketplaceSeller = {
   phone: string | null;
   email: string | null;
   isVerified: boolean;
+  organizationId: string | null;
+  organizationName: string | null;
+  organizationSlug: string | null;
 };
 
 export type MarketplaceListing = {
@@ -111,6 +114,16 @@ export type MarketplaceViewer = {
   isPhoneVerified: boolean;
   phone: string | null;
   email: string | null;
+  revenueOrganization: {
+    id: string;
+    slug: string;
+    name: string;
+    isVerified: boolean;
+    subscriptionStatus: string;
+    subscriptionPlan: string;
+    subscriptionExpiresAt: string | null;
+    canCreateRevenueFeatures: boolean;
+  } | null;
 };
 
 export type MarketplacePageData = {

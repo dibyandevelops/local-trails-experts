@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
-import { canAdministerOrganization } from '@/lib/organization-access';
+import { canAdministerOrganization, canUseOrganizationRevenueFeatures } from '@/lib/organization-access';
 import { isAllowedImageUrl } from '@/lib/image-url';
 
 const VALID_STATUSES = new Set([
@@ -62,6 +62,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!auth) {
       return NextResponse.json({ error: 'Organization admin access required.' }, { status: 403 });
     }
+    if (!(await canUseOrganizationRevenueFeatures(id))) {
+      return NextResponse.json(
+        { error: 'A verified organization with an active subscription is required to create campaigns.' },
+        { status: 403 }
+      );
+    }
     const body = await request.json();
     const title = String(body?.title || '').trim();
     const trailId = String(body?.trail_id || '').trim();
@@ -118,6 +124,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const status = String(body?.status || '').trim();
     if (!campaignId || !VALID_STATUSES.has(status)) {
       return NextResponse.json({ error: 'Campaign id and valid status are required.' }, { status: 400 });
+    }
+    if (['active', 'looking_for_funds'].includes(status) && !(await canUseOrganizationRevenueFeatures(id))) {
+      return NextResponse.json(
+        { error: 'A verified organization with an active subscription is required to publish campaigns.' },
+        { status: 403 }
+      );
     }
     const result = await pool.query(
       `

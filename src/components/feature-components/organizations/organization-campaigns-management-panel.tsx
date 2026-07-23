@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import * as Dialog from '@radix-ui/react-dialog';
 import { HandHeart, ImagePlus, X } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -56,9 +57,11 @@ async function campaignRequest(organizationId: string, init?: RequestInit): Prom
 export default function OrganizationCampaignsManagementPanel({
   organizationId,
   trails,
+  canCreateRevenueFeatures = false,
 }: {
   organizationId: string;
   trails: TrailOption[];
+  canCreateRevenueFeatures?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [qrMessage, setQrMessage] = useState<string | null>(null);
@@ -155,13 +158,25 @@ export default function OrganizationCampaignsManagementPanel({
         </div>
         <button
           type="button"
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white dark:bg-emerald-500 dark:text-slate-950"
+          onClick={() => {
+            if (!canCreateRevenueFeatures) return;
+            setOpen(true);
+          }}
+          disabled={!canCreateRevenueFeatures}
+          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-slate-950"
         >
           <HandHeart className="h-4 w-4" />
           Create campaign
         </button>
       </div>
+      {!canCreateRevenueFeatures && (
+        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-100">
+          Campaign publishing is available after the organization is verified and subscribed.{' '}
+          <Link href="/organizations/subscription" className="font-bold underline underline-offset-2">
+            View the Partner Plan
+          </Link>
+        </p>
+      )}
 
       {query.isLoading ? (
         <p className="mt-5 text-sm text-gray-500 dark:text-slate-400">Loading campaigns...</p>

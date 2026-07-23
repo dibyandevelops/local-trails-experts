@@ -29,6 +29,10 @@ type ManagedOrganization = {
   country: string | null;
   is_verified: boolean;
   owner_user_id: string | null;
+  subscription_status: 'inactive' | 'trialing' | 'active' | 'past_due' | 'cancelled';
+  subscription_plan: 'free' | 'starter' | 'partner' | 'pro';
+  subscription_expires_at: string | null;
+  can_create_revenue_features: boolean;
   membership_role: 'org_owner' | 'org_admin' | 'org_editor';
 };
 
@@ -231,6 +235,14 @@ export default function OrganizationDashboardClient() {
             {selectedOrg.tagline ? <span> · {selectedOrg.tagline}</span> : null}
           </div>
         )}
+        {selectedOrg && !selectedOrg.can_create_revenue_features && (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-100">
+            Verified organization status and an active subscription are required before this organization can publish marketplace listings, services, or campaigns.
+            <Link href="/organizations/me/subscription" className="ml-1 font-bold underline underline-offset-2">
+              View subscription
+            </Link>
+          </div>
+        )}
         <div className="mt-4 flex flex-wrap gap-2">
           {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
             <button
@@ -246,6 +258,14 @@ export default function OrganizationDashboardClient() {
               Owner account
             </span>
           )}
+          {(selectedOrg?.membership_role === 'org_owner' || selectedOrg?.membership_role === 'org_admin') && (
+            <Link
+              href="/organizations/me/subscription"
+              className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200 dark:hover:bg-emerald-900/60"
+            >
+              Subscription
+            </Link>
+          )}
         </div>
         {message && <p className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">{message}</p>}
       </section>
@@ -260,7 +280,11 @@ export default function OrganizationDashboardClient() {
         <OrganizationMembersManagementPanel organizationId={effectiveOrgId} />
       )}
 
-      <OrganizationServicesManagementPanel organizationId={effectiveOrgId} organization={selectedOrg} />
+      <OrganizationServicesManagementPanel
+        organizationId={effectiveOrgId}
+        organization={selectedOrg}
+        canCreateRevenueFeatures={Boolean(selectedOrg?.can_create_revenue_features)}
+      />
 
       <OrganizationServiceBookingsPanel organizationId={effectiveOrgId} />
 

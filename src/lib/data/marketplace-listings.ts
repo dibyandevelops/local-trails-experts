@@ -12,6 +12,7 @@ import {
   type MarketplaceReportReason,
   type MarketplaceReportStatus,
 } from '@/lib/marketplace';
+import { getRevenueOrganizationForUser } from '@/lib/organization-access';
 
 export class MarketplaceDataError extends Error {
   constructor(
@@ -24,6 +25,7 @@ export class MarketplaceDataError extends Error {
 
 const listingSelect = `
   ml.id,
+  ml.organization_id,
   ml.owner_user_id,
   ml.title,
   ml.listing_type,
@@ -44,6 +46,8 @@ const listingSelect = `
   owner.phone AS seller_phone,
   owner.email AS seller_email,
   owner.phone_verified_at IS NOT NULL AS seller_is_verified,
+  org.name AS seller_organization_name,
+  org.slug AS seller_organization_slug,
   COALESCE(
     (SELECT json_agg(image.image_url ORDER BY image.sort_order)
      FROM marketplace_listing_images image
@@ -85,10 +89,13 @@ function mapListing(row: any, revealAllContact = false): MarketplaceListing {
     images: row.images || [],
     seller: {
       id: row.owner_user_id,
-      name: row.seller_name || 'Local rider',
+      name: row.seller_organization_name || row.seller_name || 'Local rider',
       phone: mayShowPhone ? selectedPhone : null,
       email: mayShowEmail ? selectedEmail : null,
-      isVerified: Boolean(row.seller_is_verified),
+      isVerified: Boolean(row.seller_organization_name || row.seller_is_verified),
+      organizationId: row.organization_id || null,
+      organizationName: row.seller_organization_name || null,
+      organizationSlug: row.seller_organization_slug || null,
     },
     reportCount: Number(row.report_count || 0),
     openReportCount: Number(row.open_report_count || 0),
@@ -104,6 +111,7 @@ async function selectListings(where: string, values: unknown[], revealAllContact
     SELECT ${listingSelect}
     FROM marketplace_listings ml
     JOIN users owner ON owner.id = ml.owner_user_id
+    LEFT JOIN organizations org ON org.id = ml.organization_id
     WHERE ${where}
     ORDER BY ml.created_at DESC
     LIMIT 200
@@ -114,7 +122,16 @@ async function selectListings(where: string, values: unknown[], revealAllContact
 }
 
 export async function getPublicMarketplaceListings() {
-  return selectListings("ml.status = 'active'", []);
+  return selectListings(
+    `
+    ml.status = 'active'
+    AND org.is_active = TRUE
+    AND org.is_verified = TRUE
+    AND COALESCE(org.subscription_status, 'inactive') IN ('trialing', 'active')
+    AND (org.subscription_expires_at IS NULL OR org.subscription_expires_at > NOW())
+    `,
+    []
+  );
 }
 
 export async function getMarketplacePageData(userId?: string | null): Promise<MarketplacePageData> {
@@ -137,6 +154,7 @@ export async function getMarketplacePageData(userId?: string | null): Promise<Ma
     selectListings("ml.owner_user_id = $1 AND ml.status <> 'deleted'", [userId], true),
   ]);
   const user = userResult.rows[0];
+  const revenueOrganization = user ? await getRevenueOrganizationForUser(userId) : null;
   return {
     listings,
     myListings,
@@ -147,6 +165,7 @@ export async function getMarketplacePageData(userId?: string | null): Promise<Ma
           isPhoneVerified: Boolean(user.is_phone_verified),
           phone: user.phone || null,
           email: user.email || null,
+          revenueOrganization,
         }
       : null,
     listingLimit: MARKETPLACE_LISTING_LIMIT,
@@ -169,6 +188,13 @@ export async function createMarketplaceListing(userId: string, input: Marketplac
   try {
     await client.query('BEGIN');
     await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`marketplace:${userId}`]);
+    const revenueOrganization = await getRevenueOrganizationForUser(userId);
+    if (!revenueOrganization?.canCreateRevenueFeatures) {
+      throw new MarketplaceDataError(
+        'A verified organization with an active subscription is required to publish marketplace listings.',
+        'forbidden'
+      );
+    }
     const userResult = await client.query(
       `SELECT id, role, phone, phone_verified_at FROM users WHERE id = $1 FOR UPDATE`,
       [userId]
@@ -189,13 +215,14 @@ export async function createMarketplaceListing(userId: string, input: Marketplac
     const result = await client.query(
       `
       INSERT INTO marketplace_listings (
-        owner_user_id, title, listing_type, category, condition, price_npr,
+        organization_id, owner_user_id, title, listing_type, category, condition, price_npr,
         location, fit_label, description, highlights, contact_methods, contact_value
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8, ''), $9, $10::text[], $11::text[], $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9, ''), $10, $11::text[], $12::text[], $13)
       RETURNING id
       `,
       [
+        revenueOrganization.id,
         userId,
         input.title,
         input.listingType,
@@ -288,6 +315,15 @@ export async function setMarketplaceListingStatus(
     if (!listing || listing.status === 'deleted') throw new MarketplaceDataError('Listing not found.', 'not_found');
     if (actor.role !== 'admin' && listing.owner_user_id !== actor.sub) {
       throw new MarketplaceDataError('You cannot manage this listing.', 'forbidden');
+    }
+    if (status === 'active' && actor.role !== 'admin') {
+      const revenueOrganization = await getRevenueOrganizationForUser(actor.sub);
+      if (!revenueOrganization?.canCreateRevenueFeatures) {
+        throw new MarketplaceDataError(
+          'A verified organization with an active subscription is required to activate marketplace listings.',
+          'forbidden'
+        );
+      }
     }
     if (actor.role !== 'admin' && status === 'deleted') {
       throw new MarketplaceDataError('Use the delete action for this listing.', 'forbidden');

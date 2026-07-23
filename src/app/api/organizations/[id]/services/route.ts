@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
-import { canOperateOrganization } from '@/lib/organization-access';
+import { canOperateOrganization, canUseOrganizationRevenueFeatures } from '@/lib/organization-access';
 import { isAllowedImageUrl } from '@/lib/image-url';
 import { inferOrganizationServiceCategory } from '@/lib/organization-service-category';
 
@@ -52,6 +52,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const auth = await requireOperator(request, id);
     if (!auth) {
       return NextResponse.json({ error: 'Organization expert access required.' }, { status: 403 });
+    }
+    if (!(await canUseOrganizationRevenueFeatures(id))) {
+      return NextResponse.json(
+        { error: 'A verified organization with an active subscription is required to publish services.' },
+        { status: 403 }
+      );
     }
     const body = await request.json();
     const title = String(body?.title || '').trim();
@@ -118,6 +124,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const serviceId = String(body?.service_id || '').trim();
     if (!serviceId || typeof body?.is_active !== 'boolean') {
       return NextResponse.json({ error: 'Service id and active state are required.' }, { status: 400 });
+    }
+    if (body.is_active && !(await canUseOrganizationRevenueFeatures(id))) {
+      return NextResponse.json(
+        { error: 'A verified organization with an active subscription is required to activate services.' },
+        { status: 403 }
+      );
     }
     const result = await pool.query(
       `UPDATE organization_services SET is_active = $3, updated_at = NOW()

@@ -172,6 +172,9 @@ export async function fetchPublicTrailByIdentifier(
       WHERE fc.trail_id = t.id
         AND fc.status IN ('active', 'looking_for_funds')
         AND org.is_active = TRUE
+        AND org.is_verified = TRUE
+        AND COALESCE(org.subscription_status, 'inactive') IN ('trialing', 'active')
+        AND (org.subscription_expires_at IS NULL OR org.subscription_expires_at > NOW())
     ) active_campaigns ON TRUE
     WHERE (t.slug = $1 OR t.id::text = $1)
       AND t.status = 'approved'

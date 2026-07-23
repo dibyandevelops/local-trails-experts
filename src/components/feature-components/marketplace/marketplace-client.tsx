@@ -60,9 +60,11 @@ export default function MarketplaceClient({ initialData }: { initialData: Market
   const liveListingCount = data.myListings.filter(
     (listing) => listing.status === 'active' || listing.status === 'hidden'
   ).length;
+  const revenueOrganization = data.viewer?.revenueOrganization || null;
   const mayCreate = Boolean(
     data.viewer &&
-      (data.viewer.role === 'admin' || data.viewer.isPhoneVerified) &&
+      revenueOrganization?.canCreateRevenueFeatures &&
+      data.viewer.isPhoneVerified &&
       liveListingCount < data.listingLimit
   );
 
@@ -71,7 +73,7 @@ export default function MarketplaceClient({ initialData }: { initialData: Market
       window.location.href = '/?login=1&next=%2Fmarketplace';
       return;
     }
-    if (data.viewer.role !== 'admin' && !data.viewer.isPhoneVerified) return;
+    if (!mayCreate) return;
     setEditingListing(null);
     setFormOpen(true);
   };
@@ -115,7 +117,7 @@ export default function MarketplaceClient({ initialData }: { initialData: Market
               Buy and sell cycles, parts, and ride accessories.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-gray-600 dark:text-slate-300">
-              Find useful gear from verified local riders, or give your own equipment a second life.
+              Find useful gear from verified local organizations, cycle hubs, and local riding teams.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button type="button" onClick={openCreateFlow} disabled={Boolean(data.viewer) && !mayCreate} className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">
@@ -125,7 +127,14 @@ export default function MarketplaceClient({ initialData }: { initialData: Market
                 Find a cycle hub for inspection
               </Link>
             </div>
-            {data.viewer && data.viewer.role !== 'admin' && !data.viewer.isPhoneVerified ? (
+            {data.viewer && !revenueOrganization?.canCreateRevenueFeatures ? (
+              <p className="mt-3 text-sm text-amber-800 dark:text-amber-300">
+                Marketplace posting is available to verified organizations with an active subscription.{' '}
+                <Link href="/organizations/subscription" className="font-bold underline underline-offset-2">
+                  View the Partner Plan
+                </Link>
+              </p>
+            ) : data.viewer && !data.viewer.isPhoneVerified ? (
               <p className="mt-3 text-sm text-amber-800 dark:text-amber-300">
                 <Link href={profileHref} className="font-bold underline underline-offset-2">Verify your phone number</Link> to post marketplace items.
               </p>

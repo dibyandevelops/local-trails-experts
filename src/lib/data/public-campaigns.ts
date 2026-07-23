@@ -33,6 +33,12 @@ export type CampaignMetadata = {
 };
 
 const PUBLIC_CAMPAIGN_STATUSES = "('active', 'looking_for_funds', 'completed', 'paused')";
+const PUBLIC_REVENUE_ORGANIZATION_FILTER = `
+  o.is_active = TRUE
+  AND o.is_verified = TRUE
+  AND COALESCE(o.subscription_status, 'inactive') IN ('trialing', 'active')
+  AND (o.subscription_expires_at IS NULL OR o.subscription_expires_at > NOW())
+`;
 
 export async function getPublicCampaigns(): Promise<CampaignRow[]> {
   const result = await pool.query(
@@ -53,7 +59,7 @@ export async function getPublicCampaigns(): Promise<CampaignRow[]> {
     JOIN organizations o ON o.id = fc.organization_id
     LEFT JOIN trails t ON t.id = fc.trail_id
     WHERE fc.status IN ${PUBLIC_CAMPAIGN_STATUSES}
-      AND o.is_active = TRUE
+      AND ${PUBLIC_REVENUE_ORGANIZATION_FILTER}
     ORDER BY
       CASE fc.status
         WHEN 'looking_for_funds' THEN 1
@@ -78,7 +84,7 @@ export async function getPublicCampaignMetadata(
     JOIN organizations o ON o.id = fc.organization_id
     WHERE fc.id = $1
       AND fc.status IN ${PUBLIC_CAMPAIGN_STATUSES}
-      AND o.is_active = TRUE
+      AND ${PUBLIC_REVENUE_ORGANIZATION_FILTER}
     LIMIT 1
     `,
     [campaignId]
@@ -116,7 +122,7 @@ export async function getPublicCampaignDetail(
     LEFT JOIN trails t ON t.id = fc.trail_id
     WHERE fc.id = $1
       AND fc.status IN ${PUBLIC_CAMPAIGN_STATUSES}
-      AND o.is_active = TRUE
+      AND ${PUBLIC_REVENUE_ORGANIZATION_FILTER}
     LIMIT 1
     `,
     [campaignId]
