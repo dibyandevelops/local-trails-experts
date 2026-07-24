@@ -9,6 +9,7 @@ import {
   getOrganizationSubscriptionAmount,
   isValidOrganizationSubscriptionMonths,
 } from '@/lib/organization-subscriptions';
+import { getOrganizationSubscriptionSettings } from '@/lib/organization-subscription-settings';
 import { rateLimit } from '@/lib/rate-limit';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -72,6 +73,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const auth = await requireOrganizationAdmin(request, id);
     if (!auth) {
       return NextResponse.json({ error: 'Organization admin access required.' }, { status: 403 });
+    }
+    const settings = await getOrganizationSubscriptionSettings();
+    if (!settings.is_payment_enabled || !settings.payment_qr_image_url) {
+      return NextResponse.json(
+        { error: 'Subscription payments are not open yet.' },
+        { status: 403 }
+      );
     }
 
     const body = (await request.json()) as Record<string, unknown>;

@@ -51,11 +51,15 @@ type SubscriptionPayment = {
   created_at: string;
 };
 
+type SubscriptionSettings = {
+  payment_qr_image_url: string | null;
+  payment_note: string;
+  is_payment_enabled: boolean;
+  updated_at: string | null;
+};
+
 const monthlyPriceNpr = ORGANIZATION_SUBSCRIPTION_PRICE_NPR;
-const paymentQrImageUrl = process.env.NEXT_PUBLIC_ORGANIZATION_SUBSCRIPTION_QR_IMAGE_URL || '';
-const paymentNote =
-  process.env.NEXT_PUBLIC_ORGANIZATION_SUBSCRIPTION_PAYMENT_NOTE ||
-  'Scan the QR, pay from your wallet or bank app, then upload the payment screenshot for admin review.';
+const defaultPaymentNote = 'Scan the QR, pay from your wallet or bank app, then upload the payment screenshot for admin review.';
 
 async function fetchOrganizationAccess() {
   const response = await fetch('/api/organizations/me', { cache: 'no-store' });
@@ -71,6 +75,13 @@ async function fetchPayments(organizationId: string) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.error || 'Failed to load subscription payments.');
   return data as { payments: SubscriptionPayment[]; monthly_price_npr: number };
+}
+
+async function fetchSubscriptionSettings() {
+  const response = await fetch('/api/organization-subscription-settings', { cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error || 'Failed to load subscription payment settings.');
+  return data as { settings: SubscriptionSettings };
 }
 
 async function submitPayment({
@@ -134,6 +145,10 @@ export default function OrganizationSubscriptionClient() {
     queryFn: fetchOrganizationAccess,
     retry: false,
   });
+  const settingsQuery = useQuery({
+    queryKey: ['organization-subscription-settings'],
+    queryFn: fetchSubscriptionSettings,
+  });
   const organizations = useMemo(() => accessQuery.data?.organizations || [], [accessQuery.data?.organizations]);
   const selectedOrganization = organizations.find((organization) => organization.id === selectedOrgId) || organizations[0];
   const paymentsQuery = useQuery({
@@ -157,7 +172,11 @@ export default function OrganizationSubscriptionClient() {
   });
   const totalAmount = getOrganizationSubscriptionAmount(months);
   const pendingPayment = paymentsQuery.data?.payments.find((payment) => payment.status === 'pending') || null;
-  const canSubmitPayment = Boolean(paymentQrImageUrl && proofImageUrl && !pendingPayment);
+  const settings = settingsQuery.data?.settings || null;
+  const paymentQrImageUrl = settings?.payment_qr_image_url || '';
+  const paymentNote = settings?.payment_note || defaultPaymentNote;
+  const isPaymentEnabled = Boolean(settings?.is_payment_enabled && paymentQrImageUrl);
+  const canSubmitPayment = Boolean(isPaymentEnabled && proofImageUrl && !pendingPayment);
 
   const handleProofUpload = async (file: File | null) => {
     if (!file) {
@@ -351,8 +370,8 @@ export default function OrganizationSubscriptionClient() {
                     setMessage('Upload payment screenshot before submitting.');
                     return;
                   }
-                  if (!paymentQrImageUrl) {
-                    setMessage('Subscription payment QR is not configured yet.');
+                  if (!isPaymentEnabled) {
+                    setMessage('Subscription payments are not open yet.');
                     return;
                   }
                   if (pendingPayment) {
@@ -431,9 +450,14 @@ export default function OrganizationSubscriptionClient() {
                     A payment is already pending review. Submit another payment after admin reviews it.
                   </p>
                 )}
-                {!paymentQrImageUrl && (
+                {settingsQuery.error && (
                   <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/70 dark:bg-rose-950/35 dark:text-rose-100">
-                    Payment QR is missing. Configure the subscription QR before accepting organization payments.
+                    {settingsQuery.error instanceof Error ? settingsQuery.error.message : 'Could not load payment settings.'}
+                  </p>
+                )}
+                {!isPaymentEnabled && (
+                  <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/70 dark:bg-rose-950/35 dark:text-rose-100">
+                    Subscription payments are paused. Please wait until the payment QR is available.
                   </p>
                 )}
                 <button
