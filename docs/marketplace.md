@@ -21,8 +21,7 @@ Deleted listings are soft-deleted. The row remains in the database with `status 
 Listing creation:
 
 - Requires login.
-- Requires phone verification for normal users.
-- Admins can create without phone verification.
+- Requires a verified organization with an active subscription.
 - Each seller is limited to 5 live listings. Live means `active` or `hidden`.
 
 Listing management:
@@ -62,6 +61,7 @@ Marketplace schema lives in:
 
 - `database/migrations/065_create_marketplace_listings.sql`
 - `database/migrations/066_marketplace_single_contact_value.sql`
+- `database/migrations/067_add_organization_subscriptions.sql`
 
 Main tables:
 
@@ -131,11 +131,12 @@ limit, and updates matching seeded listings instead of duplicating them.
 After applying marketplace migrations:
 
 1. Visit `/marketplace` as a guest and confirm active listings load.
-2. Log in as a phone-verified user and create a listing with photos.
+2. Log in as a verified organization owner with an active subscription and create a listing with photos.
 3. Edit the listing and change price, description, photos, and contact method/value.
 4. Hide, restore, mark sold, and delete the listing from the seller panel.
 5. Log in as another user and report a listing.
 6. Log in as admin and edit, hide, restore, sell, delete, and review reports from `/admin`.
+7. Confirm a user without active organization revenue access cannot publish or reactivate listings.
 
 ## Current Tradeoffs
 

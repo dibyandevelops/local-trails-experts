@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
-import { canOperateOrganization } from '@/lib/organization-access';
+import { canOperateOrganization, canUseOrganizationRevenueFeatures } from '@/lib/organization-access';
 
 const VALID_LEVELS = new Set(['beginner', 'intermediate', 'advanced', 'expert']);
 const VALID_PROGRAM_TYPES = new Set(['guided_ride', 'training', 'skills_clinic', 'tour']);
@@ -99,6 +99,12 @@ export async function POST(
     const { id: organizationId } = await params;
     if (!auth || !(await canOperateOrganization(auth.sub, organizationId))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!(await canUseOrganizationRevenueFeatures(organizationId))) {
+      return NextResponse.json(
+        { error: 'A verified organization with an active subscription is required to publish ride programs.' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -232,6 +238,12 @@ export async function PATCH(
     const programId = String(body?.id || '').trim();
     if (!programId || typeof body?.is_active !== 'boolean') {
       return NextResponse.json({ error: 'Program id and active state are required.' }, { status: 400 });
+    }
+    if (body.is_active && !(await canUseOrganizationRevenueFeatures(organizationId))) {
+      return NextResponse.json(
+        { error: 'A verified organization with an active subscription is required to activate ride programs.' },
+        { status: 403 }
+      );
     }
 
     const result = await pool.query(

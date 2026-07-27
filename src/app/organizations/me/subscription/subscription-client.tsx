@@ -56,6 +56,8 @@ type SubscriptionSettings = {
   payment_note: string;
   is_payment_enabled: boolean;
   updated_at: string | null;
+  updated_by_admin_name: string | null;
+  updated_by_admin_email: string | null;
 };
 
 const monthlyPriceNpr = ORGANIZATION_SUBSCRIPTION_PRICE_NPR;
@@ -172,11 +174,24 @@ export default function OrganizationSubscriptionClient() {
   });
   const totalAmount = getOrganizationSubscriptionAmount(months);
   const pendingPayment = paymentsQuery.data?.payments.find((payment) => payment.status === 'pending') || null;
+  const latestRejectedPayment = paymentsQuery.data?.payments.find((payment) => payment.status === 'rejected') || null;
   const settings = settingsQuery.data?.settings || null;
   const paymentQrImageUrl = settings?.payment_qr_image_url || '';
   const paymentNote = settings?.payment_note || defaultPaymentNote;
   const isPaymentEnabled = Boolean(settings?.is_payment_enabled && paymentQrImageUrl);
   const canSubmitPayment = Boolean(isPaymentEnabled && proofImageUrl && !pendingPayment);
+  const subscriptionStatusMessage =
+    selectedOrganization?.can_create_revenue_features && selectedOrganization.subscription_expires_at
+      ? `Subscription active until ${formatDate(selectedOrganization.subscription_expires_at)}.`
+      : selectedOrganization?.can_create_revenue_features
+        ? 'Subscription is active.'
+        : pendingPayment
+          ? 'Payment submitted, waiting for approval.'
+          : latestRejectedPayment
+            ? 'Last payment was rejected. You can submit a new proof.'
+            : isPaymentEnabled
+              ? 'Payment is open. Submit proof after paying by QR.'
+              : 'Payment is not open yet.';
 
   const handleProofUpload = async (file: File | null) => {
     if (!file) {
@@ -311,7 +326,7 @@ export default function OrganizationSubscriptionClient() {
                     : 'Revenue features are locked until approval.'}
                 </p>
                 <p className="mt-1">
-                  Approved subscription payment unlocks marketplace listings, cycling services, and campaigns.
+                  {subscriptionStatusMessage}
                 </p>
               </div>
             </section>
@@ -357,7 +372,7 @@ export default function OrganizationSubscriptionClient() {
                   <img src={paymentQrImageUrl} alt="Subscription payment QR" className="aspect-square w-full rounded-xl bg-white object-contain p-2" />
                 ) : (
                   <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white p-4 text-center text-xs text-gray-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-                    Add NEXT_PUBLIC_ORGANIZATION_SUBSCRIPTION_QR_IMAGE_URL to show payment QR.
+                    Payment QR is not available yet.
                   </div>
                 )}
                 <p className="mt-3 text-xs leading-5 text-gray-600 dark:text-slate-300">{paymentNote}</p>
@@ -450,6 +465,11 @@ export default function OrganizationSubscriptionClient() {
                     A payment is already pending review. Submit another payment after admin reviews it.
                   </p>
                 )}
+                {!pendingPayment && latestRejectedPayment?.admin_note ? (
+                  <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/70 dark:bg-rose-950/35 dark:text-rose-100">
+                    Last rejection note: {latestRejectedPayment.admin_note}
+                  </p>
+                ) : null}
                 {settingsQuery.error && (
                   <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/70 dark:bg-rose-950/35 dark:text-rose-100">
                     {settingsQuery.error instanceof Error ? settingsQuery.error.message : 'Could not load payment settings.'}
@@ -465,7 +485,15 @@ export default function OrganizationSubscriptionClient() {
                   disabled={submitMutation.isPending || !canSubmitPayment}
                   className="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-emerald-950"
                 >
-                  {submitMutation.isPending ? 'Submitting...' : 'Submit payment for review'}
+                  {submitMutation.isPending
+                    ? 'Submitting...'
+                    : pendingPayment
+                      ? 'Payment waiting for approval'
+                      : !isPaymentEnabled
+                        ? 'Payment not open yet'
+                        : !proofImageUrl
+                          ? 'Upload proof to continue'
+                          : 'Submit payment for review'}
                 </button>
               </form>
             </div>

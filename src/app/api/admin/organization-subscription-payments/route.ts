@@ -63,6 +63,9 @@ export async function PATCH(request: NextRequest) {
     if (!paymentId || !['approved', 'rejected'].includes(status)) {
       return NextResponse.json({ error: 'Payment id and valid status are required.' }, { status: 400 });
     }
+    if (status === 'rejected' && !adminNote) {
+      return NextResponse.json({ error: 'A rejection note is required when rejecting a payment.' }, { status: 400 });
+    }
 
     await client.query('BEGIN');
     const paymentResult = await client.query(

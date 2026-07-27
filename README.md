@@ -59,18 +59,12 @@ platform's public API; it is not a second web build.
    Redis, Google, Strava, eSewa, Mapbox, and AI variables are optional and only required for their
    corresponding integrations. Never commit real credentials.
 
-   Organization subscriptions use manual QR payment review. To accept subscription payments,
-   configure:
-
-   ```dotenv
-   NEXT_PUBLIC_ORGANIZATION_SUBSCRIPTION_QR_IMAGE_URL=https://example.com/subscription-qr.png
-   NEXT_PUBLIC_ORGANIZATION_SUBSCRIPTION_PAYMENT_NOTE=Pay NPR 5,000 per month and upload the payment screenshot.
-   ```
-
-   Organization subscription payments are fixed at NPR 5,000 per month. Organization owners submit
-   payment proof from `/organizations/me/subscription`; admins approve or reject proofs from the
-   Admin Operations panel. Approval verifies the organization, extends its subscription, boosts it
-   in the public directory, and unlocks a monthly profile promotion slot.
+   Organization subscriptions use manual QR payment review. Admins upload the QR, edit the payment
+   note, and open or pause payments from the Admin Operations panel. Organization subscription
+   payments are fixed at NPR 5,000 per month. Organization owners submit payment proof from
+   `/organizations/me/subscription`; admins approve or reject proofs from the same Admin Operations
+   panel. Approval verifies the organization, extends its subscription, boosts it in the public
+   directory, and unlocks revenue features.
 
 3. Create the local database when using local PostgreSQL:
 
@@ -150,6 +144,9 @@ src/services/trails/
 
 The marketplace implementation is documented in
 [docs/marketplace.md](docs/marketplace.md).
+
+The organization subscription and revenue-feature access rules are documented in
+[docs/organization-subscriptions.md](docs/organization-subscriptions.md).
 
 ## Architecture Checks
 

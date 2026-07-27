@@ -6,6 +6,8 @@ export type OrganizationSubscriptionSettings = {
   payment_note: string;
   is_payment_enabled: boolean;
   updated_at: string | null;
+  updated_by_admin_name: string | null;
+  updated_by_admin_email: string | null;
 };
 
 export const DEFAULT_ORGANIZATION_SUBSCRIPTION_PAYMENT_NOTE =
@@ -14,9 +16,16 @@ export const DEFAULT_ORGANIZATION_SUBSCRIPTION_PAYMENT_NOTE =
 export async function getOrganizationSubscriptionSettings(): Promise<OrganizationSubscriptionSettings> {
   const result = await pool.query(
     `
-    SELECT payment_qr_image_url, payment_note, is_payment_enabled, updated_at::text
-    FROM platform_subscription_settings
-    WHERE id = TRUE
+    SELECT
+      settings.payment_qr_image_url,
+      settings.payment_note,
+      settings.is_payment_enabled,
+      settings.updated_at::text,
+      admin.name AS updated_by_admin_name,
+      admin.email AS updated_by_admin_email
+    FROM platform_subscription_settings settings
+    LEFT JOIN users admin ON admin.id = settings.updated_by_admin_id
+    WHERE settings.id = TRUE
     LIMIT 1
     `
   );
@@ -26,5 +35,7 @@ export async function getOrganizationSubscriptionSettings(): Promise<Organizatio
     payment_note: row?.payment_note || DEFAULT_ORGANIZATION_SUBSCRIPTION_PAYMENT_NOTE,
     is_payment_enabled: Boolean(row?.is_payment_enabled),
     updated_at: row?.updated_at || null,
+    updated_by_admin_name: row?.updated_by_admin_name || null,
+    updated_by_admin_email: row?.updated_by_admin_email || null,
   };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ImagePlus, Save } from 'lucide-react';
+import { AlertTriangle, ImagePlus, Save } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { resizeImageToDataUrl } from '@/lib/image';
 
@@ -10,6 +10,8 @@ type SubscriptionSettings = {
   payment_note: string;
   is_payment_enabled: boolean;
   updated_at: string | null;
+  updated_by_admin_name: string | null;
+  updated_by_admin_email: string | null;
 };
 
 const defaultPaymentNote =
@@ -39,6 +41,7 @@ export default function OrganizationSubscriptionSettingsPanel() {
   const [paymentNote, setPaymentNote] = useState(defaultPaymentNote);
   const [isPaymentEnabled, setIsPaymentEnabled] = useState(false);
   const [imageMessage, setImageMessage] = useState('');
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
 
   const query = useQuery({
     queryKey: ['organization-subscription-settings'],
@@ -57,6 +60,7 @@ export default function OrganizationSubscriptionSettingsPanel() {
       }),
     onSuccess: async (data) => {
       queryClient.setQueryData(['organization-subscription-settings'], data);
+      setShowDisableConfirm(false);
       await queryClient.invalidateQueries({ queryKey: ['my-organization-subscription'] });
     },
   });
@@ -66,7 +70,15 @@ export default function OrganizationSubscriptionSettingsPanel() {
     setPaymentQrImageUrl(query.data.settings.payment_qr_image_url || '');
     setPaymentNote(query.data.settings.payment_note || defaultPaymentNote);
     setIsPaymentEnabled(query.data.settings.is_payment_enabled);
+    setShowDisableConfirm(false);
   }, [query.data?.settings]);
+
+  const savedSettings = query.data?.settings || null;
+  const savedPaymentEnabled = Boolean(savedSettings?.is_payment_enabled);
+  const hasSavedQr = Boolean(savedSettings?.payment_qr_image_url);
+  const savedUpdater = savedSettings?.updated_by_admin_name || savedSettings?.updated_by_admin_email || 'Unknown admin';
+  const willDisablePayments = savedPaymentEnabled && !isPaymentEnabled;
+  const canSave = !save.isPending && (!willDisablePayments || showDisableConfirm);
 
   const handleQrUpload = async (file: File | null) => {
     if (!file) return;
@@ -123,6 +135,26 @@ export default function OrganizationSubscriptionSettingsPanel() {
         </p>
       ) : null}
 
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">QR status</p>
+          <p className="mt-2 text-sm font-semibold text-gray-950 dark:text-slate-100">
+            {hasSavedQr ? 'QR uploaded' : 'No QR uploaded'}
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Payment access</p>
+          <p className="mt-2 text-sm font-semibold text-gray-950 dark:text-slate-100">
+            {savedPaymentEnabled && hasSavedQr ? 'Organizations can submit' : 'Submissions paused'}
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Last update</p>
+          <p className="mt-2 text-sm font-semibold text-gray-950 dark:text-slate-100">{formatDate(savedSettings?.updated_at || null)}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">By {savedUpdater}</p>
+        </div>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-900">
           {paymentQrImageUrl ? (
@@ -172,7 +204,10 @@ export default function OrganizationSubscriptionSettingsPanel() {
             <input
               type="checkbox"
               checked={isPaymentEnabled}
-              onChange={(event) => setIsPaymentEnabled(event.target.checked)}
+              onChange={(event) => {
+                setIsPaymentEnabled(event.target.checked);
+                setShowDisableConfirm(false);
+              }}
               className="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-700"
             />
             <span>
@@ -182,13 +217,32 @@ export default function OrganizationSubscriptionSettingsPanel() {
               </span>
             </span>
           </label>
+          {willDisablePayments ? (
+            <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-100">
+              <input
+                type="checkbox"
+                checked={showDisableConfirm}
+                onChange={(event) => setShowDisableConfirm(event.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-amber-300 text-amber-700"
+              />
+              <span>
+                <span className="flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="h-4 w-4" />
+                  Confirm payment pause
+                </span>
+                <span className="mt-1 block text-xs leading-5">
+                  Organizations will not be able to submit new subscription payment proofs until payments are enabled again.
+                </span>
+              </span>
+            </label>
+          ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-gray-500 dark:text-slate-400">
-              Last updated: {formatDate(query.data?.settings.updated_at || null)}
+              Save after uploading a new QR or changing payment access.
             </p>
             <button
               type="button"
-              disabled={save.isPending}
+              disabled={!canSave}
               onClick={() => save.mutate()}
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             >

@@ -63,6 +63,7 @@ function statusClass(status: PaymentStatus) {
 export default function OrganizationSubscriptionPaymentsPanel() {
   const queryClient = useQueryClient();
   const [adminNoteById, setAdminNoteById] = useState<Record<string, string>>({});
+  const [reviewMessageById, setReviewMessageById] = useState<Record<string, string>>({});
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin-organization-subscription-payments'],
     queryFn: fetchSubscriptionPayments,
@@ -71,6 +72,7 @@ export default function OrganizationSubscriptionPaymentsPanel() {
     mutationFn: reviewSubscriptionPayment,
     onSuccess: async (nextData) => {
       queryClient.setQueryData(['admin-organization-subscription-payments'], nextData);
+      setReviewMessageById({});
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['admin-organizations'] }),
         queryClient.invalidateQueries({ queryKey: ['my-organization-subscription'] }),
@@ -79,6 +81,15 @@ export default function OrganizationSubscriptionPaymentsPanel() {
   });
   const payments = data?.payments || [];
   const pendingCount = payments.filter((payment) => payment.status === 'pending').length;
+  const handleReview = (paymentId: string, status: 'approved' | 'rejected') => {
+    const adminNote = adminNoteById[paymentId] || '';
+    if (status === 'rejected' && !adminNote.trim()) {
+      setReviewMessageById((current) => ({ ...current, [paymentId]: 'Add a reason before rejecting this payment.' }));
+      return;
+    }
+    setReviewMessageById((current) => ({ ...current, [paymentId]: '' }));
+    review.mutate({ id: paymentId, status, admin_note: adminNote });
+  };
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-6">
@@ -158,9 +169,12 @@ export default function OrganizationSubscriptionPaymentsPanel() {
                       <textarea
                         rows={2}
                         value={adminNoteById[payment.id] || ''}
-                        onChange={(event) => setAdminNoteById((current) => ({ ...current, [payment.id]: event.target.value }))}
+                        onChange={(event) => {
+                          setAdminNoteById((current) => ({ ...current, [payment.id]: event.target.value }));
+                          setReviewMessageById((current) => ({ ...current, [payment.id]: '' }));
+                        }}
                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                        placeholder="Optional note"
+                        placeholder="Optional for approval, required for rejection"
                       />
                     ) : (
                       <p className="max-w-xs text-xs text-gray-600 dark:text-slate-300">{payment.admin_note || '-'}</p>
@@ -168,23 +182,30 @@ export default function OrganizationSubscriptionPaymentsPanel() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {payment.status === 'pending' ? (
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          disabled={review.isPending}
-                          onClick={() => review.mutate({ id: payment.id, status: 'approved', admin_note: adminNoteById[payment.id] || '' })}
-                          className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          disabled={review.isPending}
-                          onClick={() => review.mutate({ id: payment.id, status: 'rejected', admin_note: adminNoteById[payment.id] || '' })}
-                          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 disabled:opacity-60 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-200"
-                        >
-                          Reject
-                        </button>
+                      <div>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={review.isPending}
+                            onClick={() => handleReview(payment.id, 'approved')}
+                            className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={review.isPending}
+                            onClick={() => handleReview(payment.id, 'rejected')}
+                            className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 disabled:opacity-60 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-200"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                        {reviewMessageById[payment.id] ? (
+                          <p className="mt-2 text-right text-xs font-semibold text-rose-700 dark:text-rose-300">
+                            {reviewMessageById[payment.id]}
+                          </p>
+                        ) : null}
                       </div>
                     ) : (
                       <span className="text-xs text-gray-500 dark:text-slate-400">{payment.reviewed_by_name || 'Reviewed'}</span>
