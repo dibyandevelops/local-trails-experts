@@ -757,6 +757,20 @@ export default function MultiTrailSubmissionForm({
                       )}
                       {values[index]?.image_url?.trim() && (
                         <div className="mt-2 rounded-lg border border-gray-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
+                          <div className="mb-2 flex items-center justify-between gap-3">
+                            <p className="truncate text-xs font-medium text-gray-600 dark:text-slate-300">
+                              Cover image selected
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setValue(`trails.${index}.image_url`, '', { shouldDirty: true });
+                              }}
+                              className="shrink-0 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/70"
+                            >
+                              Remove image
+                            </button>
+                          </div>
                           <div className="relative h-28 w-full overflow-hidden rounded-md">
                             <Image
                               src={values[index].image_url}

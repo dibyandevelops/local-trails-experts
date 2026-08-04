@@ -8,10 +8,12 @@ import { DEFAULT_TRAIL_SPORT } from '@/services/constants/sports';
 import { buildBrandedEmail, getAppUrl } from '@/lib/email-templates';
 import { getUniqueTrailSlug } from '@/lib/trail-slug';
 import { rateLimit } from '@/lib/rate-limit';
+import { isAllowedImageUrl } from '@/lib/image-url';
 
 const MAX_TRAIL_UPLOAD_BYTES = 2 * 1024 * 1024;
 const MAX_TRAIL_IMAGES = 12;
-const MAX_IMAGE_URL_LENGTH = 2000;
+const MAX_TEXT_URL_LENGTH = 2000;
+const MAX_TRAIL_IMAGE_LENGTH = 500_000;
 const PUBLIC_TRAILS_CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
 };
@@ -500,7 +502,7 @@ export async function POST(request: NextRequest) {
             (value): value is string =>
               typeof value === 'string' &&
               value.length > 0 &&
-              value.length <= MAX_IMAGE_URL_LENGTH
+              isAllowedImageUrl(value, MAX_TRAIL_IMAGE_LENGTH)
           ).slice(0, MAX_TRAIL_IMAGES);
         }
       } catch {
@@ -565,11 +567,16 @@ export async function POST(request: NextRequest) {
       difficulty.length > 80 ||
       location.length > 240 ||
       sport_type.length > 80 ||
-      image_url.length > MAX_IMAGE_URL_LENGTH ||
-      komoot_embed_url.length > MAX_IMAGE_URL_LENGTH
+      komoot_embed_url.length > MAX_TEXT_URL_LENGTH
     ) {
       return NextResponse.json(
         { error: 'Trail details are too long.' },
+        { status: 400 }
+      );
+    }
+    if (image_url && !isAllowedImageUrl(image_url, MAX_TRAIL_IMAGE_LENGTH)) {
+      return NextResponse.json(
+        { error: 'Trail cover image must be a valid HTTPS image URL or a compressed image upload under 500 KB.' },
         { status: 400 }
       );
     }
