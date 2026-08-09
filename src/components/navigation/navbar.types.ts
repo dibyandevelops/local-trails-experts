@@ -35,6 +35,7 @@ export type NotificationItem = {
   href: string;
   createdAt: string;
   tone: NotificationTone;
+  read: boolean;
 };
 
 export type NotificationsData = {

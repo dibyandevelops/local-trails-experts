@@ -65,6 +65,7 @@ describe('MobileNavbar', () => {
           href: '/trails/example',
           createdAt: new Date().toISOString(),
           tone: 'info' as const,
+          read: false,
         },
       ],
     };

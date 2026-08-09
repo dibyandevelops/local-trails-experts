@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Bell } from 'lucide-react';
+import { Bell, CheckCheck, X } from 'lucide-react';
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import type { NotificationItem, NotificationsData, NotificationTone } from './navbar.types';
 import {
@@ -36,15 +36,28 @@ function formatNotificationTime(value: string) {
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(new Date(value));
 }
 
-function NotificationRow({ item, onNavigate }: { item: NotificationItem; onNavigate?: () => void }) {
+function NotificationRow({
+  item,
+  onNavigate,
+  onMarkRead,
+  onDismiss,
+}: {
+  item: NotificationItem;
+  onNavigate?: () => void;
+  onMarkRead?: (id: string) => void;
+  onDismiss?: (id: string) => void;
+}) {
   return (
-    <DropdownMenu.Item asChild>
+    <div className={`group flex gap-2 rounded-2xl ${item.read ? 'opacity-75' : ''}`}>
       <Link
         href={item.href}
-        onClick={onNavigate}
-        className={`flex w-full gap-3 text-left ${dropdownItemClass} text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10`}
+        onClick={() => {
+          onMarkRead?.(item.id);
+          onNavigate?.();
+        }}
+        className={`flex min-w-0 flex-1 gap-3 text-left ${dropdownItemClass} text-emerald-50 hover:bg-white/10 data-[highlighted]:bg-white/10`}
       >
-        <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneClass[item.tone]}`} />
+        <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.read ? 'bg-emerald-100/25' : toneClass[item.tone]}`} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-white">{item.title}</span>
           <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-emerald-100/80">
@@ -55,7 +68,18 @@ function NotificationRow({ item, onNavigate }: { item: NotificationItem; onNavig
           </span>
         </span>
       </Link>
-    </DropdownMenu.Item>
+      {onDismiss ? (
+        <button
+          type="button"
+          onClick={() => onDismiss(item.id)}
+          className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-emerald-100/60 transition hover:bg-white/10 hover:text-white"
+          aria-label={`Dismiss ${item.title}`}
+          title="Dismiss notification"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -100,10 +124,16 @@ export function MobileNotificationsPanel({
   open,
   data,
   onNavigate,
+  onMarkRead,
+  onMarkAllRead,
+  onDismiss,
 }: {
   open: boolean;
   data?: NotificationsData;
   onNavigate: () => void;
+  onMarkRead?: (id: string) => void;
+  onMarkAllRead?: () => void;
+  onDismiss?: (id: string) => void;
 }) {
   const notifications = data?.notifications || [];
   const unreadCount = data?.unreadCount || 0;
@@ -124,11 +154,24 @@ export function MobileNotificationsPanel({
           <div className="border-b border-white/10 px-2 pb-3 pt-1">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-bold text-white">Notifications</p>
-              {unreadCount > 0 ? (
-                <span className="rounded-full bg-lime-300 px-2 py-0.5 text-[10px] font-bold text-green-950">
-                  {unreadCount > 9 ? '9+' : unreadCount} new
-                </span>
-              ) : null}
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 ? (
+                  <span className="rounded-full bg-lime-300 px-2 py-0.5 text-[10px] font-bold text-green-950">
+                    {unreadCount > 9 ? '9+' : unreadCount} new
+                  </span>
+                ) : null}
+                {unreadCount > 0 && onMarkAllRead ? (
+                  <button
+                    type="button"
+                    onClick={onMarkAllRead}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-emerald-100/75 hover:bg-white/10 hover:text-white"
+                    aria-label="Mark all notifications as read"
+                    title="Mark all read"
+                  >
+                    <CheckCheck className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
             </div>
             <p className="mt-1 text-xs text-emerald-100/70">
               Recent updates based on your account role.
@@ -138,25 +181,40 @@ export function MobileNotificationsPanel({
           <div className="mt-2 flex flex-col gap-1.5">
             {notifications.length > 0 ? (
               notifications.map((item) => (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  onClick={onNavigate}
-                  className="flex gap-3 rounded-2xl px-3 py-2.5 text-left text-emerald-50 transition-colors hover:bg-white/10"
-                >
-                  <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${toneClass[item.tone]}`} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-white">
-                      {item.title}
+                <div key={item.id} className={`flex gap-2 rounded-2xl ${item.read ? 'opacity-75' : ''}`}>
+                  <Link
+                    href={item.href}
+                    onClick={() => {
+                      onMarkRead?.(item.id);
+                      onNavigate();
+                    }}
+                    className="flex min-w-0 flex-1 gap-3 rounded-2xl px-3 py-2.5 text-left text-emerald-50 transition-colors hover:bg-white/10"
+                  >
+                    <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${item.read ? 'bg-emerald-100/25' : toneClass[item.tone]}`} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-white">
+                        {item.title}
+                      </span>
+                      <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-emerald-100/80">
+                        {item.description}
+                      </span>
+                      <span className="mt-1 block text-[11px] font-semibold uppercase tracking-wide text-emerald-200/70">
+                        {formatNotificationTime(item.createdAt)}
+                      </span>
                     </span>
-                    <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-emerald-100/80">
-                      {item.description}
-                    </span>
-                    <span className="mt-1 block text-[11px] font-semibold uppercase tracking-wide text-emerald-200/70">
-                      {formatNotificationTime(item.createdAt)}
-                    </span>
-                  </span>
-                </Link>
+                  </Link>
+                  {onDismiss ? (
+                    <button
+                      type="button"
+                      onClick={() => onDismiss(item.id)}
+                      className="mt-2 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-emerald-100/60 transition hover:bg-white/10 hover:text-white"
+                      aria-label={`Dismiss ${item.title}`}
+                      title="Dismiss notification"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
+                </div>
               ))
             ) : (
               <p className="px-3 py-6 text-center text-sm text-emerald-100/75">
@@ -174,12 +232,19 @@ export function NotificationsDropdown({
   data,
   onNavigate,
   onOpenChange,
+  onMarkRead,
+  onMarkAllRead,
+  onDismiss,
 }: {
   data?: NotificationsData;
   onNavigate?: () => void;
   onOpenChange?: (open: boolean) => void;
+  onMarkRead?: (id: string) => void;
+  onMarkAllRead?: () => void;
+  onDismiss?: (id: string) => void;
 }) {
   const notifications = data?.notifications || [];
+  const unreadCount = data?.unreadCount || 0;
 
   return (
     <DropdownMenu.Root modal={false} onOpenChange={onOpenChange}>
@@ -189,7 +254,19 @@ export function NotificationsDropdown({
       <DropdownMenu.Portal>
         <DropdownMenu.Content sideOffset={8} align="end" className={`${dropdownContentClass} w-[360px] max-w-[calc(100vw-2rem)] p-2`}>
           <div className="border-b border-white/10 px-3 py-2">
-            <p className="text-sm font-bold text-white">Notifications</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-bold text-white">Notifications</p>
+              {unreadCount > 0 && onMarkAllRead ? (
+                <button
+                  type="button"
+                  onClick={onMarkAllRead}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-bold text-emerald-100 transition hover:bg-white/10 hover:text-white"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  Mark read
+                </button>
+              ) : null}
+            </div>
             <p className="mt-0.5 text-xs text-emerald-100/70">Recent updates based on your account role.</p>
           </div>
           <div
@@ -198,7 +275,13 @@ export function NotificationsDropdown({
           >
             {notifications.length > 0 ? (
               notifications.map((item) => (
-                <NotificationRow key={item.id} item={item} onNavigate={onNavigate} />
+                <NotificationRow
+                  key={item.id}
+                  item={item}
+                  onNavigate={onNavigate}
+                  onMarkRead={onMarkRead}
+                  onDismiss={onDismiss}
+                />
               ))
             ) : (
               <div className="px-3 py-6 text-center text-sm text-emerald-100/75">

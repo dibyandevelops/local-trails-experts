@@ -35,6 +35,10 @@ type DesktopNavbarProps = {
   openRegister: () => void;
   handleViewProfile: () => void;
   handleLogout: () => void;
+  handleNotificationsOpenChange: (open: boolean) => void;
+  markNotificationRead: (id: string) => void;
+  dismissNotification: (id: string) => void;
+  markAllNotificationsRead: () => void;
 };
 
 function NavBadge({ badge, active }: { badge?: string; active: boolean }) {
@@ -138,6 +142,10 @@ export default function DesktopNavbar({
   openRegister,
   handleViewProfile,
   handleLogout,
+  handleNotificationsOpenChange,
+  markNotificationRead,
+  dismissNotification,
+  markAllNotificationsRead,
 }: DesktopNavbarProps) {
   const clearHoverClose = () => {
     if (hoverCloseTimeout.current) {
@@ -238,7 +246,15 @@ export default function DesktopNavbar({
 
       <ThemeToggle className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 text-sm font-semibold transition-colors hover:bg-white/15" />
 
-      {!loadingUser && user && <NotificationsDropdown data={notificationsData} />}
+      {!loadingUser && user && (
+        <NotificationsDropdown
+          data={notificationsData}
+          onOpenChange={handleNotificationsOpenChange}
+          onMarkRead={markNotificationRead}
+          onMarkAllRead={markAllNotificationsRead}
+          onDismiss={dismissNotification}
+        />
+      )}
 
       {!loadingUser && !user && (
         <button

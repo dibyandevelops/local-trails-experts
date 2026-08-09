@@ -14,6 +14,7 @@ type NotificationItem = {
   href: string;
   createdAt: string;
   tone: NotificationTone;
+  read?: boolean;
 };
 
 function toIsoDate(value: unknown) {
@@ -26,6 +27,45 @@ function sortAndLimit(items: NotificationItem[], limit = 8) {
   return items
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, limit);
+}
+
+function normalizeNotificationIds(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return Array.from(
+    new Set(
+      value
+        .map((item) => String(item || '').trim())
+        .filter((item) => item.length > 0 && item.length <= 240)
+    )
+  ).slice(0, 50);
+}
+
+async function applyNotificationReceipts(userId: string, items: NotificationItem[]) {
+  const ids = items.map((item) => item.id);
+  if (ids.length === 0) return { notifications: [], unreadCount: 0 };
+
+  const receiptResult = await pool.query(
+    `
+    SELECT notification_id, read_at, dismissed_at
+    FROM notification_receipts
+    WHERE user_id = $1
+      AND notification_id = ANY($2::text[])
+    `,
+    [userId, ids]
+  );
+  const receipts = new Map<
+    string,
+    { read_at: string | Date | null; dismissed_at: string | Date | null }
+  >(receiptResult.rows.map((row) => [row.notification_id, row]));
+  const visible = items
+    .filter((item) => !receipts.get(item.id)?.dismissed_at)
+    .map((item) => ({ ...item, read: Boolean(receipts.get(item.id)?.read_at) }));
+  const recent = sortAndLimit(visible);
+
+  return {
+    notifications: recent,
+    unreadCount: recent.filter((item) => !item.read).length,
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -567,17 +607,82 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const recentNotifications = sortAndLimit(notifications);
+    const notificationState = await applyNotificationReceipts(auth.sub, notifications);
 
     return NextResponse.json(
       {
-        notifications: recentNotifications,
-        unreadCount: recentNotifications.length,
+        notifications: notificationState.notifications,
+        unreadCount: notificationState.unreadCount,
       },
       { status: 200 }
     );
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const auth = getAuthFromRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const action = String(body.action || '').trim();
+    const notificationIds = normalizeNotificationIds(
+      body.notification_ids || (body.notification_id ? [body.notification_id] : [])
+    );
+
+    if (!['mark_read', 'mark_unread', 'dismiss'].includes(action) || notificationIds.length === 0) {
+      return NextResponse.json(
+        { error: 'A valid notification action and at least one notification id are required.' },
+        { status: 400 }
+      );
+    }
+
+    if (action === 'mark_read') {
+      await pool.query(
+        `
+        INSERT INTO notification_receipts (user_id, notification_id, read_at, dismissed_at)
+        SELECT $1::uuid, unnest($2::text[]), NOW(), NULL
+        ON CONFLICT (user_id, notification_id) DO UPDATE SET
+          read_at = NOW(),
+          dismissed_at = NULL,
+          updated_at = NOW()
+        `,
+        [auth.sub, notificationIds]
+      );
+    } else if (action === 'mark_unread') {
+      await pool.query(
+        `
+        INSERT INTO notification_receipts (user_id, notification_id, read_at, dismissed_at)
+        SELECT $1::uuid, unnest($2::text[]), NULL, NULL
+        ON CONFLICT (user_id, notification_id) DO UPDATE SET
+          read_at = NULL,
+          dismissed_at = NULL,
+          updated_at = NOW()
+        `,
+        [auth.sub, notificationIds]
+      );
+    } else {
+      await pool.query(
+        `
+        INSERT INTO notification_receipts (user_id, notification_id, read_at, dismissed_at)
+        SELECT $1::uuid, unnest($2::text[]), NOW(), NOW()
+        ON CONFLICT (user_id, notification_id) DO UPDATE SET
+          read_at = NOW(),
+          dismissed_at = NOW(),
+          updated_at = NOW()
+        `,
+        [auth.sub, notificationIds]
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating notifications:', error);
+    return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 });
   }
 }

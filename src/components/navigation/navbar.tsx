@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Menu, X } from 'lucide-react';
 import LoginModal from '@/components/auth/login-modal';
 import RegisterModal from '@/components/auth/register-modal';
@@ -40,6 +40,30 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     enabled: Boolean(user),
     refetchInterval: 30000,
     retry: false,
+  });
+  const notificationIds = notificationsData?.notifications.map((item) => item.id) || [];
+  const updateNotificationsMutation = useMutation({
+    mutationFn: async ({
+      action,
+      notificationIds: ids,
+    }: {
+      action: 'mark_read' | 'dismiss';
+      notificationIds: string[];
+    }) => {
+      if (ids.length === 0) return { success: true };
+      const response = await fetch('/api/me/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, notification_ids: ids }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || 'Failed to update notifications');
+      return data as { success: boolean };
+    },
+    onSettled: () => {
+      if (!user) return;
+      void queryClient.invalidateQueries({ queryKey: ['me-notifications', user.id, user.role] });
+    },
   });
   const { data: eventsCount = 0 } = useQuery<number>({
     queryKey: ['navbar-events-count'],
@@ -245,7 +269,64 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
   const toggleMobileNotifications = () => {
     setMobileOpen(false);
-    setMobileNotificationsOpen((value) => !value);
+    setMobileNotificationsOpen((value) => {
+      const next = !value;
+      if (next) markAllNotificationsRead();
+      return next;
+    });
+  };
+
+  const markNotificationRead = (id: string) => {
+    if (!user || !id) return;
+    queryClient.setQueryData<NotificationsData>(
+      ['me-notifications', user.id, user.role],
+      (current) => {
+        if (!current) return current;
+        const notifications = current.notifications.map((item) =>
+          item.id === id ? { ...item, read: true } : item
+        );
+        return {
+          ...current,
+          notifications,
+          unreadCount: notifications.filter((item) => !item.read).length,
+        };
+      }
+    );
+    updateNotificationsMutation.mutate({ action: 'mark_read', notificationIds: [id] });
+  };
+
+  const markAllNotificationsRead = () => {
+    if (!user || notificationIds.length === 0 || !notificationsData?.unreadCount) return;
+    queryClient.setQueryData<NotificationsData>(
+      ['me-notifications', user.id, user.role],
+      (current) => current ? {
+        ...current,
+        notifications: current.notifications.map((item) => ({ ...item, read: true })),
+        unreadCount: 0,
+      } : current
+    );
+    updateNotificationsMutation.mutate({ action: 'mark_read', notificationIds });
+  };
+
+  const dismissNotification = (id: string) => {
+    if (!user || !id) return;
+    queryClient.setQueryData<NotificationsData>(
+      ['me-notifications', user.id, user.role],
+      (current) => {
+        if (!current) return current;
+        const notifications = current.notifications.filter((item) => item.id !== id);
+        return {
+          ...current,
+          notifications,
+          unreadCount: notifications.filter((item) => !item.read).length,
+        };
+      }
+    );
+    updateNotificationsMutation.mutate({ action: 'dismiss', notificationIds: [id] });
+  };
+
+  const handleNotificationsOpenChange = (open: boolean) => {
+    if (open) markAllNotificationsRead();
   };
 
   const accountInitial =
@@ -301,6 +382,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             openRegister={openRegister}
             handleViewProfile={handleViewProfile}
             handleLogout={handleLogout}
+            handleNotificationsOpenChange={handleNotificationsOpenChange}
+            markNotificationRead={markNotificationRead}
+            dismissNotification={dismissNotification}
+            markAllNotificationsRead={markAllNotificationsRead}
           />
         </div>
 
@@ -326,6 +411,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             open={mobileNotificationsOpen}
             data={notificationsData}
             onNavigate={() => setMobileNotificationsOpen(false)}
+            onMarkRead={markNotificationRead}
+            onMarkAllRead={markAllNotificationsRead}
+            onDismiss={dismissNotification}
           />
         ) : null}
       </div>
