@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { type FieldError, useForm } from 'react-hook-form';
 import {
   createAdminOrganization,
   deleteAdminOrganization,
@@ -45,6 +45,33 @@ const emptyForm: OrganizationForm = {
   subscription_expires_at: '',
 };
 
+const organizationSlugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidOptionalUrl(value?: string) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return true;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function getInputClass(error?: FieldError) {
+  return `w-full rounded-lg border px-3 py-2 text-sm ${
+    error
+      ? 'border-red-300 bg-red-50 text-red-950 outline-red-500'
+      : 'border-gray-300 bg-white text-gray-900'
+  }`;
+}
+
+function FieldMessage({ error }: { error?: FieldError }) {
+  if (!error?.message) return null;
+  return <p className="mt-1 text-xs font-medium text-red-600">{error.message}</p>;
+}
+
 function OrganizationVisibilityBadge({ isActive }: { isActive: boolean }) {
   return (
     <span
@@ -62,6 +89,7 @@ function OrganizationVisibilityBadge({ isActive }: { isActive: boolean }) {
 export default function OrganizationsPanel() {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
@@ -92,24 +120,30 @@ export default function OrganizationsPanel() {
     mutationFn: (values: OrganizationForm) => createAdminOrganization(values),
     onSuccess: async () => {
       await invalidateOrganizations();
+      setFormError(null);
       setMessage('Trail builder created.');
       reset(emptyForm);
       setSelectedOrganizationId('');
       setFormOpen(false);
     },
-    onError: (error) =>
-      setMessage(error instanceof Error ? error.message : 'Failed to create organization.'),
+    onError: (error) => {
+      setMessage(null);
+      setFormError(error instanceof Error ? error.message : 'Failed to create organization.');
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: (values: OrganizationForm) => updateAdminOrganization(selectedOrganizationId, values),
     onSuccess: async () => {
       await invalidateOrganizations();
+      setFormError(null);
       setMessage('Trail builder updated.');
       setFormOpen(false);
     },
-    onError: (error) =>
-      setMessage(error instanceof Error ? error.message : 'Failed to update organization.'),
+    onError: (error) => {
+      setMessage(null);
+      setFormError(error instanceof Error ? error.message : 'Failed to update organization.');
+    },
   });
 
   const visibilityMutation = useMutation({
@@ -169,16 +203,17 @@ export default function OrganizationsPanel() {
   const handleLogoUpload = async (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setMessage('Please upload a valid image file for the organization logo.');
+      setFormError('Please upload a valid image file for the organization logo.');
       return;
     }
     setLogoUploadPending(true);
     setMessage(null);
+    setFormError(null);
     try {
       const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 512, quality: 0.86 });
       setValue('logo_url', dataUrl, { shouldDirty: true });
     } catch {
-      setMessage('Failed to process organization logo.');
+      setFormError('Failed to process organization logo.');
     } finally {
       setLogoUploadPending(false);
     }
@@ -186,6 +221,8 @@ export default function OrganizationsPanel() {
 
   const openCreate = () => {
     setSelectedOrganizationId('');
+    setMessage(null);
+    setFormError(null);
     reset(emptyForm);
     setFormMode('create');
     setFormOpen(true);
@@ -193,6 +230,8 @@ export default function OrganizationsPanel() {
 
   const openEditForOrganization = (organization: OrganizationOption) => {
     setSelectedOrganizationId(organization.id);
+    setMessage(null);
+    setFormError(null);
     hydrateOrganizationForm(organization);
     setFormMode('edit');
     setFormOpen(true);
@@ -207,67 +246,119 @@ export default function OrganizationsPanel() {
 
   const organizationForm = (
     <form
-      onSubmit={handleSubmit((values) =>
-        formMode === 'create' ? createMutation.mutate(values) : updateMutation.mutate(values)
-      )}
+      onSubmit={handleSubmit((values) => {
+        setFormError(null);
+        if (formMode === 'create') {
+          createMutation.mutate(values);
+          return;
+        }
+        updateMutation.mutate(values);
+      })}
       className="mt-5 space-y-4"
     >
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
+        >
+          {formError}
+        </div>
+      )}
       <div className="grid gap-3 md:grid-cols-2">
-        <div>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Slug
           <input
-            {...register('slug', { required: 'Slug is required.' })}
+            {...register('slug', {
+              required: 'Slug is required.',
+              maxLength: { value: 120, message: 'Slug must be 120 characters or fewer.' },
+              pattern: {
+                value: organizationSlugPattern,
+                message: 'Use lowercase letters, numbers, and single hyphens only.',
+              },
+            })}
             placeholder="Slug (e.g. trail-builders-nepal)"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            aria-invalid={Boolean(errors.slug)}
+            className={`mt-1 ${getInputClass(errors.slug)}`}
           />
-          {errors.slug?.message && (
-            <p className="mt-1 text-xs text-red-600">{errors.slug.message}</p>
-          )}
-        </div>
-        <div>
+          <FieldMessage error={errors.slug} />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Organization name
           <input
-            {...register('name', { required: 'Trail builder name is required.' })}
+            {...register('name', {
+              required: 'Trail builder name is required.',
+              maxLength: { value: 160, message: 'Name must be 160 characters or fewer.' },
+            })}
             placeholder="Trail builder name"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            aria-invalid={Boolean(errors.name)}
+            className={`mt-1 ${getInputClass(errors.name)}`}
           />
-          {errors.name?.message && (
-            <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
-          )}
-        </div>
-        <input
-          {...register('tagline')}
-          placeholder="Tagline"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          {...register('city')}
-          placeholder="City"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          {...register('country')}
-          placeholder="Country"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          {...register('logo_url')}
-          placeholder="Logo URL or uploaded image data"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          {...register('website_url')}
-          placeholder="Website URL"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          {...register('contact_email')}
-          placeholder="Contact email"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          {...register('contact_phone')}
-          placeholder="Contact phone"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
+          <FieldMessage error={errors.name} />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Tagline
+          <input
+            {...register('tagline')}
+            placeholder="Tagline"
+            className={`mt-1 ${getInputClass(errors.tagline)}`}
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          City
+          <input
+            {...register('city')}
+            placeholder="City"
+            className={`mt-1 ${getInputClass(errors.city)}`}
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Country
+          <input
+            {...register('country')}
+            placeholder="Country"
+            className={`mt-1 ${getInputClass(errors.country)}`}
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Logo URL
+          <input
+            {...register('logo_url')}
+            placeholder="Logo URL or uploaded image data"
+            className={`mt-1 ${getInputClass(errors.logo_url)}`}
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Website URL
+          <input
+            {...register('website_url', {
+              validate: (value) => isValidOptionalUrl(value) || 'Enter a valid http or https URL.',
+            })}
+            placeholder="Website URL"
+            aria-invalid={Boolean(errors.website_url)}
+            className={`mt-1 ${getInputClass(errors.website_url)}`}
+          />
+          <FieldMessage error={errors.website_url} />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Contact email
+          <input
+            {...register('contact_email', {
+              validate: (value) => !value.trim() || emailPattern.test(value.trim()) || 'Enter a valid email address.',
+            })}
+            placeholder="Contact email"
+            aria-invalid={Boolean(errors.contact_email)}
+            className={`mt-1 ${getInputClass(errors.contact_email)}`}
+          />
+          <FieldMessage error={errors.contact_email} />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+          Contact phone
+          <input
+            {...register('contact_phone')}
+            placeholder="Contact phone"
+            className={`mt-1 ${getInputClass(errors.contact_phone)}`}
+          />
+        </label>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -374,8 +465,6 @@ export default function OrganizationsPanel() {
         <button
           type="submit"
           disabled={
-            !form.slug.trim() ||
-            !form.name.trim() ||
             createMutation.isPending ||
             updateMutation.isPending ||
             logoUploadPending ||

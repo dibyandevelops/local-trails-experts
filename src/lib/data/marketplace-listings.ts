@@ -127,8 +127,6 @@ export async function getPublicMarketplaceListings() {
     ml.status = 'active'
     AND org.is_active = TRUE
     AND org.is_verified = TRUE
-    AND COALESCE(org.subscription_status, 'inactive') IN ('trialing', 'active')
-    AND (org.subscription_expires_at IS NULL OR org.subscription_expires_at > NOW())
     `,
     []
   );

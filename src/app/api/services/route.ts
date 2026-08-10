@@ -12,8 +12,6 @@ export async function GET(request: NextRequest) {
       's.is_active = TRUE',
       'o.is_active = TRUE',
       'o.is_verified = TRUE',
-      "COALESCE(o.subscription_status, 'inactive') IN ('trialing', 'active')",
-      '(o.subscription_expires_at IS NULL OR o.subscription_expires_at > NOW())',
     ];
     if (category) {
       values.push(category);
