@@ -179,6 +179,45 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
         </p>
       </div>
 
+      <section className="mx-auto max-w-5xl px-4 pt-7 md:px-8 md:pt-9" aria-labelledby="platform-transparency">
+        <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:p-6">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-lime-200">
+            {copy.transparency.eyebrow}
+          </p>
+          <div className="mt-3 grid gap-5 lg:grid-cols-[0.9fr_1.4fr] lg:items-start">
+            <div>
+              <h2 id="platform-transparency" className="text-2xl font-black text-gray-950 dark:text-white">
+                {copy.transparency.title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
+                {copy.transparency.description}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
+                {copy.transparency.privacyPrefix}{' '}
+                <Link
+                  href={localizePath('/privacy', locale)}
+                  className="font-bold text-emerald-800 underline underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
+                >
+                  {copy.transparency.privacyLink}
+                </Link>{' '}
+                {copy.transparency.privacySuffix}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {copy.transparency.items.map((item) => (
+                <article
+                  key={item.title}
+                  className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <h3 className="text-sm font-black text-gray-950 dark:text-slate-50">{item.title}</h3>
+                  <p className="mt-2 text-xs leading-5 text-gray-600 dark:text-slate-300">{item.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <nav
         aria-label={copy.exploreLabel}
         className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-3 px-4 py-6 text-sm font-semibold text-gray-600 dark:text-slate-400 md:px-8 md:py-8"
