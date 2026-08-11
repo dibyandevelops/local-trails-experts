@@ -1,11 +1,20 @@
 import 'server-only';
 
 import pool from '@/lib/db';
-import type { Trail } from '@/types';
 
 const eventRouteFilterSql = `
   AND lower(concat_ws(' ', name, slug)) NOT LIKE '%kora%'
 `;
+
+export type HomeFeaturedTrail = {
+  id: string;
+  slug: string | null;
+  name: string;
+  difficulty: string | null;
+  sport_type: string | null;
+  location: string | null;
+  distance_km: number | string | null;
+};
 
 type HomeSpotlight =
   | {
@@ -138,7 +147,7 @@ export async function getHomeSpotlight(): Promise<HomeSpotlight | null> {
   };
 }
 
-export async function getHomeFeaturedTrails(limit = 5): Promise<Trail[]> {
+export async function getHomeFeaturedTrails(limit = 5): Promise<HomeFeaturedTrail[]> {
   try {
     const result = await pool.query(
       `
@@ -149,18 +158,7 @@ export async function getHomeFeaturedTrails(limit = 5): Promise<Trail[]> {
         difficulty,
         sport_type,
         location,
-        is_hazardous,
-        latitude,
-        longitude,
-        distance_km,
-        elevation_gain_m,
-        estimated_time_hours,
-        image_url,
-        komoot_embed_url,
-        created_at,
-        updated_at,
-        status,
-        is_hidden
+        distance_km
       FROM trails
       WHERE status = 'approved'
         AND COALESCE(is_hidden, FALSE) = FALSE
@@ -173,24 +171,7 @@ export async function getHomeFeaturedTrails(limit = 5): Promise<Trail[]> {
       [limit]
     );
 
-    return result.rows.map((trail) => ({
-      ...trail,
-      description: null,
-      safety_labels: [],
-      hazard_note: null,
-      hazard_updated_by: null,
-      hazard_updated_at: null,
-      average_rating: null,
-      review_count: null,
-      trail_images: [],
-      route_data: null,
-      submitted_by_user_id: null,
-      submitted_by_name: null,
-      submitted_by_email: null,
-      created_by: null,
-      created_at: trail.created_at instanceof Date ? trail.created_at.toISOString() : trail.created_at,
-      updated_at: trail.updated_at instanceof Date ? trail.updated_at.toISOString() : trail.updated_at,
-    })) as Trail[];
+    return result.rows as HomeFeaturedTrail[];
   } catch (error) {
     console.warn('home: failed to fetch featured trails', error);
     return [];

@@ -133,25 +133,28 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
                   </Link>
                 </div>
                 <div className="grid gap-x-6 gap-y-1 sm:grid-cols-3">
-                  {rideNotes.map((note) => (
-                    <Link
-                      key={note.id}
-                      href={`/ride-notes/${note.slug}`}
-                      className="group border-b border-emerald-950/10 py-3 transition hover:border-emerald-700/40 dark:border-lime-300/10 dark:hover:border-lime-200/50"
-                    >
-                      <span className="block line-clamp-2 text-sm font-black text-gray-950 group-hover:text-emerald-800 dark:text-slate-50 dark:group-hover:text-lime-200">
-                        {note.title}
-                      </span>
-                      {getRideNoteMeta(note) && (
-                        <span className="mt-1 block truncate text-xs text-gray-600 dark:text-slate-400">
-                          {getRideNoteMeta(note)}
+                  {rideNotes.map((note) => {
+                    const meta = getRideNoteMeta(note);
+                    return (
+                      <Link
+                        key={note.id}
+                        href={`/ride-notes/${note.slug}`}
+                        className="group border-b border-emerald-950/10 py-3 transition hover:border-emerald-700/40 dark:border-lime-300/10 dark:hover:border-lime-200/50"
+                      >
+                        <span className="block line-clamp-2 text-sm font-black text-gray-950 group-hover:text-emerald-800 dark:text-slate-50 dark:group-hover:text-lime-200">
+                          {note.title}
                         </span>
-                      )}
-                      <span className="mt-2 block line-clamp-3 text-xs leading-5 text-emerald-950/70 dark:text-slate-300">
-                        {getRideNoteDescription(note)}
-                      </span>
-                    </Link>
-                  ))}
+                        {meta && (
+                          <span className="mt-1 block truncate text-xs text-gray-600 dark:text-slate-400">
+                            {meta}
+                          </span>
+                        )}
+                        <span className="mt-2 block line-clamp-3 text-xs leading-5 text-emerald-950/70 dark:text-slate-300">
+                          {getRideNoteDescription(note)}
+                        </span>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -159,60 +162,79 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl px-4 pt-6 md:px-8 md:pt-8">
-        <p className="max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-400">
-          {copy.supportPrefix}{' '}
-          <Link
-            href="/support-locoxperts"
-            className="font-bold text-emerald-800 underline underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
-          >
-            {copy.supportLink}
-          </Link>
-          {' '}{copy.supportSuffix}
-        </p>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-400">
-          {copy.expertOrganizationPrompt}{' '}
-          <Link href={localizePath('/experts/join', locale)} className="font-bold text-emerald-800 underline underline-offset-4 dark:text-lime-200">
-            {copy.expertOrganizationLink}
-          </Link>
-          .
-        </p>
-      </div>
-
-      <section className="mx-auto max-w-5xl px-4 pt-7 md:px-8 md:pt-9" aria-labelledby="platform-transparency">
-        <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:p-6">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-lime-200">
-            {copy.transparency.eyebrow}
-          </p>
-          <div className="mt-3 grid gap-5 lg:grid-cols-[0.9fr_1.4fr] lg:items-start">
+      <section
+        className="mx-auto max-w-5xl px-4 pt-7 [contain-intrinsic-size:0_520px] [content-visibility:auto] md:px-8 md:pt-9"
+        aria-labelledby="platform-transparency"
+      >
+        <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr] lg:items-stretch">
+          <aside className="flex flex-col justify-between rounded-2xl border border-emerald-100 bg-emerald-50/55 p-5 dark:border-slate-800 dark:bg-slate-950 md:p-6">
             <div>
-              <h2 id="platform-transparency" className="text-2xl font-black text-gray-950 dark:text-white">
-                {copy.transparency.title}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                {copy.transparency.description}
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-800 dark:text-lime-200">
+                LocoXperts
               </p>
-              <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                {copy.transparency.privacyPrefix}{' '}
+              <p className="mt-3 text-sm leading-6 text-emerald-950/75 dark:text-slate-300">
+                {copy.supportPrefix}{' '}
                 <Link
-                  href={localizePath('/privacy', locale)}
-                  className="font-bold text-emerald-800 underline underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
+                  href="/support-locoxperts"
+                  className="font-bold text-emerald-900 underline underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
                 >
-                  {copy.transparency.privacyLink}
-                </Link>{' '}
-                {copy.transparency.privacySuffix}
+                  {copy.supportLink}
+                </Link>
+                {' '}{copy.supportSuffix}
+              </p>
+              <p className="mt-4 text-sm leading-6 text-emerald-950/75 dark:text-slate-300">
+                {copy.expertOrganizationPrompt}{' '}
+                <Link
+                  href={localizePath('/experts/join', locale)}
+                  className="font-bold text-emerald-900 underline underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
+                >
+                  {copy.expertOrganizationLink}
+                </Link>
+                .
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {copy.transparency.items.map((item) => (
-                <article
-                  key={item.title}
-                  className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900"
-                >
-                  <h3 className="text-sm font-black text-gray-950 dark:text-slate-50">{item.title}</h3>
-                  <p className="mt-2 text-xs leading-5 text-gray-600 dark:text-slate-300">{item.body}</p>
-                </article>
-              ))}
+            <Link
+              href={localizePath('/purpose', locale)}
+              className="mt-5 inline-flex w-fit items-center text-xs font-black uppercase tracking-[0.14em] text-emerald-900 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
+            >
+              {copy.exploreLabel}
+            </Link>
+          </aside>
+
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:p-6">
+            <div className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-lime-200">
+                  {copy.transparency.eyebrow}
+                </p>
+                <h2 id="platform-transparency" className="mt-3 text-2xl font-black leading-tight text-gray-950 dark:text-white">
+                  {copy.transparency.title}
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
+                  {copy.transparency.description}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
+                  {copy.transparency.privacyPrefix}{' '}
+                  <Link
+                    href={localizePath('/privacy', locale)}
+                    className="font-bold text-emerald-800 underline underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
+                  >
+                    {copy.transparency.privacyLink}
+                  </Link>{' '}
+                  {copy.transparency.privacySuffix}
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                {copy.transparency.items.map((item) => (
+                  <article
+                    key={item.title}
+                    className="min-h-[128px] rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <h3 className="text-sm font-black text-gray-950 dark:text-slate-50">{item.title}</h3>
+                    <p className="mt-2 text-xs leading-5 text-gray-600 dark:text-slate-300">{item.body}</p>
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </div>

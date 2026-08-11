@@ -5,10 +5,19 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { getDifficultyLabel } from '@/services/constants/difficulty';
 import { getSportLabel } from '@/services/constants/sports';
-import type { Trail } from '@/types';
+
+export type HomeTrailSearchResult = {
+  id: string;
+  slug: string | null;
+  name: string;
+  difficulty: string | null;
+  sport_type: string | null;
+  location: string | null;
+  distance_km: number | string | null;
+};
 
 type HomeTrailSearchProps = {
-  featuredTrails: Trail[];
+  featuredTrails: HomeTrailSearchResult[];
   copy?: {
     label: string;
     placeholder: string;
@@ -28,11 +37,11 @@ const AUTOCOMPLETE_PAGE_SIZE = 5;
 const AUTOCOMPLETE_DEBOUNCE_MS = 300;
 const SKELETON_ROWS = 4;
 
-function getTrailHref(trail: Trail) {
+function getTrailHref(trail: HomeTrailSearchResult) {
   return `/trails/${encodeURIComponent(trail.slug || trail.id)}`;
 }
 
-function getTrailMeta(trail: Trail) {
+function getTrailMeta(trail: HomeTrailSearchResult) {
   return [
     trail.location,
     trail.difficulty ? getDifficultyLabel(trail.difficulty) : '',
@@ -64,14 +73,14 @@ async function fetchMatchingTrails(query: string, signal: AbortSignal) {
   const response = await fetch(`/api/trails?${params.toString()}`, { signal });
   if (!response.ok) return [];
 
-  const data = (await response.json()) as { trails?: Trail[] };
+  const data = (await response.json()) as { trails?: HomeTrailSearchResult[] };
   return Array.isArray(data.trails) ? data.trails : [];
 }
 
 function useHomeTrailAutocomplete(query: string) {
   const trimmedQuery = query.trim();
   const enabled = trimmedQuery.length >= AUTOCOMPLETE_MIN_LENGTH;
-  const [matchingTrails, setMatchingTrails] = useState<Trail[]>([]);
+  const [matchingTrails, setMatchingTrails] = useState<HomeTrailSearchResult[]>([]);
   const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
@@ -118,7 +127,7 @@ function TrailResultsSkeleton() {
   );
 }
 
-function TrailResultsList({ trails }: { trails: Trail[] }) {
+function TrailResultsList({ trails }: { trails: HomeTrailSearchResult[] }) {
   return (
     <div className="grid gap-x-6 sm:grid-cols-2">
       {trails.map((trail) => (
@@ -174,7 +183,7 @@ export default function HomeTrailSearch({ featuredTrails, copy = defaultCopy }: 
         onSubmit={handleSubmit}
         className="max-w-3xl border-b-2 border-emerald-800 bg-transparent pb-2 dark:border-lime-300"
       >
-        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-3">
           <label htmlFor="home-trail-search" className="sr-only">
             {copy.label}
           </label>
@@ -190,7 +199,7 @@ export default function HomeTrailSearch({ featuredTrails, copy = defaultCopy }: 
           />
           <button
             type="submit"
-            className="justify-self-start pb-2 text-sm font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100 md:justify-self-end"
+            className="min-h-9 justify-self-start pb-1 text-sm font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100 sm:justify-self-end sm:pb-2"
           >
             {copy.button}
           </button>
