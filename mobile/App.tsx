@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   Share,
@@ -256,6 +257,7 @@ export default function App() {
       <SafeAreaProvider>
         <SafeAreaView style={styles.emptyScreen}>
           <StatusBar style="light" />
+          <Image source={require('./assets/icon.png')} style={styles.logoImage} />
           <Text style={styles.brand}>LOCOXPERTS NAVIGATOR</Text>
           <Text style={styles.emptyTitle}>Choose a Trail</Text>
           <Text style={styles.muted}>
@@ -428,6 +430,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
     backgroundColor: '#071711',
+  },
+  logoImage: {
+    width: 68,
+    height: 68,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: 'rgba(94, 227, 173, 0.3)',
+    marginBottom: 2,
   },
   brand: { color: '#5ee3ad', fontSize: 13, fontWeight: '900', letterSpacing: 1.5 },
   emptyTitle: { color: '#f8fafc', fontSize: 26, fontWeight: '900', textAlign: 'center' },
