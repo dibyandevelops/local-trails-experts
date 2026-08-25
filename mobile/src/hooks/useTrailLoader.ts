@@ -3,7 +3,7 @@ import * as Linking from 'expo-linking';
 import * as DocumentPicker from 'expo-document-picker';
 import { fetchNavigationTrail } from '../api';
 import { parseGpx } from '../gpx';
-import { cacheTrail, readCachedTrail } from '../storage';
+import { cacheTrail, getRecentTrails, readCachedTrail, type RecentTrailItem } from '../storage';
 import { trailIdentifierFromUrl } from '../url';
 import type { NavigationTrail, RoutePoint } from '../types';
 
@@ -23,6 +23,12 @@ export function useTrailLoader() {
   const [trail, setTrail] = useState<NavigationTrail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [recentTrails, setRecentTrails] = useState<RecentTrailItem[]>([]);
+
+  const refreshRecentTrails = useCallback(async () => {
+    const list = await getRecentTrails();
+    setRecentTrails(list);
+  }, []);
 
   const loadTrail = useCallback(async (nextIdentifier: string) => {
     if (!nextIdentifier) return;
@@ -47,8 +53,9 @@ export function useTrailLoader() {
       }
     } finally {
       setLoading(false);
+      refreshRecentTrails();
     }
-  }, []);
+  }, [refreshRecentTrails]);
 
   const importGpx = useCallback(async () => {
     setError('');
@@ -68,21 +75,31 @@ export function useTrailLoader() {
 
       setIdentifier(importedTrail.id);
       setTrail(importedTrail);
+      await cacheTrail(importedTrail.id, importedTrail);
+      refreshRecentTrails();
       return importedTrail;
     } catch (importError) {
       const msg = importError instanceof Error ? importError.message : 'Could not import this GPX file.';
       setError(msg);
       throw new Error(msg);
     }
-  }, []);
+  }, [refreshRecentTrails]);
+
+  const resetTrail = useCallback(() => {
+    setIdentifier('');
+    setTrail(null);
+    setError('');
+    refreshRecentTrails();
+  }, [refreshRecentTrails]);
 
   useEffect(() => {
+    refreshRecentTrails();
     Linking.getInitialURL().then((url) => loadTrail(trailIdentifierFromUrl(url)));
     const subscription = Linking.addEventListener('url', ({ url }) => {
       loadTrail(trailIdentifierFromUrl(url));
     });
     return () => subscription.remove();
-  }, [loadTrail]);
+  }, [loadTrail, refreshRecentTrails]);
 
   return {
     identifier,
@@ -90,8 +107,11 @@ export function useTrailLoader() {
     setTrail,
     loading,
     error,
+    recentTrails,
     setError,
     loadTrail,
     importGpx,
+    resetTrail,
+    refreshRecentTrails,
   };
 }

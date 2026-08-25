@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
+  ScrollView,
+  Share,
   StatusBar as NativeStatusBar,
   StyleSheet,
   Text,
@@ -12,11 +15,12 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
 import type { CameraRef } from '@maplibre/maplibre-react-native';
 
+import { ElevationProfilePanel } from './src/components/ElevationProfilePanel';
 import { NavigationHeader } from './src/components/NavigationHeader';
 import { NavigationControls } from './src/components/NavigationControls';
 import { NavigationHud } from './src/components/NavigationHud';
 import { TrailMap } from './src/components/TrailMap';
-import { routeBounds } from './src/geo';
+import { calculateElevationMetrics, routeBounds } from './src/geo';
 import { isValidRoutePoint, useTrailLoader } from './src/hooks/useTrailLoader';
 import { useOfflineMap } from './src/hooks/useOfflineMap';
 import {
@@ -25,8 +29,11 @@ import {
   useTrailNavigation,
 } from './src/hooks/useTrailNavigation';
 
-const MAP_STYLE =
-  process.env.EXPO_PUBLIC_MAP_STYLE_URL || 'https://tiles.openfreemap.org/styles/liberty';
+const MAP_STYLES = [
+  { name: 'Outdoor', url: 'https://tiles.openfreemap.org/styles/liberty' },
+  { name: 'Clean', url: 'https://tiles.openfreemap.org/styles/bright' },
+  { name: 'Dark', url: 'https://tiles.openfreemap.org/styles/dark' },
+];
 
 export default function App() {
   useKeepAwake();
@@ -37,22 +44,30 @@ export default function App() {
     trail,
     loading,
     error,
+    recentTrails,
+    loadTrail,
     importGpx,
+    resetTrail,
   } = useTrailLoader();
 
+  const [mapStyleIndex, setMapStyleIndex] = useState(0);
   const [mapError, setMapError] = useState('');
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [showElevation, setShowElevation] = useState(false);
+
+  const currentMapStyle = MAP_STYLES[mapStyleIndex % MAP_STYLES.length];
 
   const route = useMemo(
     () => (trail?.route_data?.coordinates || []).filter(isValidRoutePoint),
     [trail]
   );
   const bounds = useMemo(() => (route.length >= 2 ? routeBounds(route) : null), [route]);
+  const elevationMetrics = useMemo(() => calculateElevationMetrics(route), [route]);
 
   const {
     offlineStatus,
     downloadOfflineMap,
-  } = useOfflineMap(trail, bounds, MAP_STYLE);
+  } = useOfflineMap(trail, bounds, currentMapStyle.url);
 
   const {
     navigating,
@@ -85,6 +100,64 @@ export default function App() {
     }, 150);
     return () => clearTimeout(timeout);
   }, [bounds, fitRoute, mapLoaded, trail?.id]);
+
+  const handleReturnToMenu = useCallback(() => {
+    if (navigating) {
+      Alert.alert(
+        'Exit Navigation',
+        'Are you sure you want to end this ride and return to the main menu?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Exit',
+            style: 'destructive',
+            onPress: () => {
+              stopNavigation();
+              resetTrail();
+            },
+          },
+        ]
+      );
+    } else {
+      resetTrail();
+    }
+  }, [navigating, resetTrail, stopNavigation]);
+
+  const handleShareTrail = useCallback(async () => {
+    if (!trail) return;
+    try {
+      const shareUrl = `https://www.locoxperts.com/trails/${trail.slug || trail.id}`;
+      await Share.share({
+        title: trail.name,
+        message: `Check out ${trail.name} on LocoXperts: ${shareUrl}`,
+        url: shareUrl,
+      });
+    } catch {
+      // User dismissed share dialog
+    }
+  }, [trail]);
+
+  const handleCycleMapStyle = useCallback(() => {
+    setMapStyleIndex((prev) => (prev + 1) % MAP_STYLES.length);
+  }, []);
+
+  const handleResetNorth = useCallback(() => {
+    if (currentLocation) {
+      cameraRef.current?.easeTo({
+        center: [currentLocation.longitude, currentLocation.latitude],
+        bearing: 0,
+        pitch: 0,
+        duration: 500,
+      });
+    } else if (bounds) {
+      cameraRef.current?.easeTo({
+        center: [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2],
+        bearing: 0,
+        pitch: 0,
+        duration: 500,
+      });
+    }
+  }, [bounds, currentLocation]);
 
   const routeShape = useMemo(
     () => ({
@@ -168,7 +241,6 @@ export default function App() {
     ? Math.max(0, Math.min(100, ((routeMetrics.totalM - remainingM) / routeMetrics.totalM) * 100))
     : 0;
 
-  const nextPoint = route[Math.min(route.length - 1, nearestIndex + 8)] || route.at(-1) || null;
   const navigationMessage =
     remainingM <= 40
       ? 'You are arriving at the trail finish'
@@ -178,19 +250,49 @@ export default function App() {
           ? 'Following your position'
           : 'Map unlocked · tap recenter to follow';
 
+  // Main Menu / Home Screen
   if (!identifier) {
     return (
       <SafeAreaProvider>
         <SafeAreaView style={styles.emptyScreen}>
           <StatusBar style="light" />
-          <Text style={styles.brand}>LocoXperts Navigator</Text>
-          <Text style={styles.emptyTitle}>Open a trail from LocoXperts</Text>
+          <Text style={styles.brand}>LOCOXPERTS NAVIGATOR</Text>
+          <Text style={styles.emptyTitle}>Choose a Trail</Text>
           <Text style={styles.muted}>
-            No account is needed. Choose “Open in LocoXperts Navigator” on a trail page.
+            Open any route from LocoXperts web or upload a GPX file directly to start offline navigation.
           </Text>
+
           <Pressable style={styles.importButton} onPress={importGpx}>
-            <Text style={styles.importButtonText}>Upload a GPX file</Text>
+            <Text style={styles.importButtonText}>+ Upload GPX File</Text>
           </Pressable>
+
+          {recentTrails.length > 0 ? (
+            <View style={styles.recentSection}>
+              <Text style={styles.recentTitle}>RECENT TRAILS</Text>
+              <ScrollView style={styles.recentList} contentContainerStyle={styles.recentListContent}>
+                {recentTrails.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={styles.recentCard}
+                    onPress={() => loadTrail(item.slug || item.id)}
+                  >
+                    <View style={styles.recentCardText}>
+                      <Text numberOfLines={1} style={styles.recentName}>
+                        {item.name}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.recentLocation}>
+                        {item.location} {item.distance_km ? `· ${item.distance_km} km` : ''}
+                      </Text>
+                    </View>
+                    <View style={styles.difficultyBadge}>
+                      <Text style={styles.difficultyText}>{item.difficulty}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </SafeAreaView>
       </SafeAreaProvider>
@@ -202,7 +304,7 @@ export default function App() {
       <SafeAreaProvider>
         <SafeAreaView style={styles.emptyScreen}>
           <ActivityIndicator color="#34d399" size="large" />
-          <Text style={styles.muted}>Loading trail…</Text>
+          <Text style={styles.muted}>Loading trail route…</Text>
         </SafeAreaView>
       </SafeAreaProvider>
     );
@@ -212,11 +314,16 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <SafeAreaView style={styles.emptyScreen}>
-          <Text style={styles.emptyTitle}>Trail unavailable</Text>
-          <Text style={styles.error}>{error || 'No route is available for this trail.'}</Text>
-          <Pressable style={styles.importButton} onPress={importGpx}>
-            <Text style={styles.importButtonText}>Upload a GPX file instead</Text>
-          </Pressable>
+          <Text style={styles.emptyTitle}>Trail Unavailable</Text>
+          <Text style={styles.error}>{error || 'No route coordinates available for this trail.'}</Text>
+          <View style={styles.actions}>
+            <Pressable style={styles.importButton} onPress={importGpx}>
+              <Text style={styles.importButtonText}>Upload GPX file</Text>
+            </Pressable>
+            <Pressable style={styles.secondaryButton} onPress={resetTrail}>
+              <Text style={styles.secondaryButtonText}>Back to Menu</Text>
+            </Pressable>
+          </View>
         </SafeAreaView>
       </SafeAreaProvider>
     );
@@ -230,7 +337,7 @@ export default function App() {
 
         <TrailMap
           trailId={trail.id}
-          mapStyleUrl={MAP_STYLE}
+          mapStyleUrl={currentMapStyle.url}
           cameraRef={cameraRef}
           bounds={bounds}
           routePadding={routePadding}
@@ -255,14 +362,27 @@ export default function App() {
         />
 
         <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
-          <NavigationHeader trail={trail} mapError={mapError} />
+          <NavigationHeader
+            trail={trail}
+            mapError={mapError}
+            onReturnToMenu={handleReturnToMenu}
+            onShareTrail={handleShareTrail}
+          />
 
           <View style={styles.lowerOverlay} pointerEvents="box-none">
+            {showElevation ? (
+              <ElevationProfilePanel metrics={elevationMetrics} />
+            ) : null}
+
             <NavigationControls
               followingUser={followingUser}
               navigating={navigating}
+              showElevation={showElevation}
               onFocusLocation={focusCurrentLocation}
               onShowEntireRoute={showEntireRoute}
+              onResetNorth={handleResetNorth}
+              onCycleMapStyle={handleCycleMapStyle}
+              onToggleElevation={() => setShowElevation((prev) => !prev)}
             />
 
             <NavigationHud
@@ -306,15 +426,16 @@ const styles = StyleSheet.create({
     gap: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    padding: 24,
     backgroundColor: '#071711',
   },
-  brand: { color: '#5ee3ad', fontSize: 14, fontWeight: '900', letterSpacing: 1.5 },
+  brand: { color: '#5ee3ad', fontSize: 13, fontWeight: '900', letterSpacing: 1.5 },
   emptyTitle: { color: '#f8fafc', fontSize: 26, fontWeight: '900', textAlign: 'center' },
   muted: { color: '#a7b5ae', fontSize: 14, lineHeight: 21, textAlign: 'center' },
   error: { color: '#fca5a5', fontSize: 14, textAlign: 'center' },
   importButton: {
     minHeight: 48,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 22,
@@ -324,5 +445,41 @@ const styles = StyleSheet.create({
     backgroundColor: '#102c21',
   },
   importButtonText: { color: '#6ee7b7', fontSize: 15, fontWeight: '800' },
+  secondaryButton: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 14,
+    backgroundColor: '#102c21',
+  },
+  secondaryButtonText: { color: '#a7f3d0', fontSize: 14, fontWeight: '800' },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  recentSection: { width: '100%', marginTop: 16, gap: 8 },
+  recentTitle: { color: '#6ee7b7', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  recentList: { maxHeight: 220 },
+  recentListContent: { gap: 8 },
+  recentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  recentCardText: { flex: 1, gap: 2 },
+  recentName: { color: '#f8fafc', fontSize: 15, fontWeight: '800' },
+  recentLocation: { color: '#9fb0a7', fontSize: 12 },
+  difficultyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#174d39',
+  },
+  difficultyText: { color: '#a7f3d0', fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
   lowerOverlay: { gap: 9 },
 });

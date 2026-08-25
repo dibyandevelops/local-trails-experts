@@ -4,18 +4,61 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 type NavigationControlsProps = {
   followingUser: boolean;
   navigating: boolean;
+  showElevation?: boolean;
   onFocusLocation: () => void;
   onShowEntireRoute: () => void;
+  onResetNorth?: () => void;
+  onCycleMapStyle?: () => void;
+  onToggleElevation?: () => void;
 };
 
 export function NavigationControls({
   followingUser,
   navigating,
+  showElevation,
   onFocusLocation,
   onShowEntireRoute,
+  onResetNorth,
+  onCycleMapStyle,
+  onToggleElevation,
 }: NavigationControlsProps) {
   return (
     <View style={styles.mapControls}>
+      {onCycleMapStyle ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Switch map style"
+          style={styles.mapControl}
+          onPress={onCycleMapStyle}
+        >
+          <Text style={styles.mapControlSmallIcon}>☵</Text>
+        </Pressable>
+      ) : null}
+
+      {onToggleElevation ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Toggle elevation profile"
+          style={[styles.mapControl, showElevation && styles.mapControlActive]}
+          onPress={onToggleElevation}
+        >
+          <Text style={[styles.mapControlSmallIcon, showElevation && styles.mapControlIconActive]}>
+            ▲
+          </Text>
+        </Pressable>
+      ) : null}
+
+      {onResetNorth ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Reset compass to North"
+          style={styles.mapControl}
+          onPress={onResetNorth}
+        >
+          <Text style={styles.mapControlCompass}>N</Text>
+        </Pressable>
+      ) : null}
+
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={navigating ? 'Recenter and follow my location' : 'Jump to my location'}
@@ -26,6 +69,7 @@ export function NavigationControls({
           {followingUser ? '⌖' : '◎'}
         </Text>
       </Pressable>
+
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Show the entire route"
@@ -41,8 +85,8 @@ export function NavigationControls({
 const styles = StyleSheet.create({
   mapControls: { alignSelf: 'flex-end', gap: 9 },
   mapControl: {
-    width: 48,
-    height: 48,
+    width: 46,
+    height: 46,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -56,6 +100,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   mapControlActive: { borderColor: '#047857', backgroundColor: '#047857' },
-  mapControlIcon: { color: '#16372a', fontSize: 27, fontWeight: '900', lineHeight: 30 },
+  mapControlIcon: { color: '#16372a', fontSize: 26, fontWeight: '900', lineHeight: 28 },
+  mapControlSmallIcon: { color: '#16372a', fontSize: 20, fontWeight: '900', lineHeight: 22 },
+  mapControlCompass: { color: '#047857', fontSize: 16, fontWeight: '900' },
   mapControlIconActive: { color: '#ffffff' },
 });
