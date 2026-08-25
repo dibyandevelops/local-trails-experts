@@ -6,6 +6,7 @@ import {
   cardinalDirectionFromBearing,
   computeSafestRerouteVector,
   fuseSensorHeading,
+  generateRouteDirectionArrows,
   getTurnManeuver,
   metersBetween,
   nearestRoutePoint,
@@ -65,6 +66,17 @@ describe('mobile geospatial calculations', () => {
     const eastBearing = bearingBetween(origin, eastPt);
     expect(eastBearing).toBe(90);
     expect(cardinalDirectionFromBearing(eastBearing)).toBe('E');
+  });
+
+  it('generates directional chevron arrows along route at specified intervals', () => {
+    const arrows = generateRouteDirectionArrows(sampleRoute, 100);
+
+    expect(arrows.length).toBeGreaterThan(10);
+    expect(arrows[0].bearing).toBeDefined();
+    expect(arrows[0].coordinate).toHaveLength(2);
+    // Route goes generally North-East (~45°)
+    expect(arrows[0].bearing).toBeGreaterThanOrEqual(30);
+    expect(arrows[0].bearing).toBeLessThanOrEqual(60);
   });
 
   it('calculates relative turn maneuvers correctly', () => {

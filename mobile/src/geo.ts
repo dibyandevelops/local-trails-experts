@@ -90,6 +90,53 @@ export function getTurnManeuver(targetBearing: number, riderHeading: number): Tu
   return { turnType: 'sharp_left', relativeAngle: diff, instruction: 'Sharp left', arrowIcon: '⤦' };
 }
 
+export type DirectionArrowPoint = {
+  coordinate: [number, number]; // [lon, lat]
+  bearing: number;
+  alongM: number;
+};
+
+/**
+ * Samples directional chevron waypoints along the route polyline at regular distance intervals.
+ */
+export function generateRouteDirectionArrows(
+  points: RoutePoint[],
+  intervalMeters = 60
+): DirectionArrowPoint[] {
+  if (points.length < 2) return [];
+
+  const arrows: DirectionArrowPoint[] = [];
+  let accumulatedDist = 0;
+  let nextTargetDist = intervalMeters / 2;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const segDist = metersBetween(p1, p2);
+
+    while (accumulatedDist + segDist >= nextTargetDist) {
+      const remainingToTarget = nextTargetDist - accumulatedDist;
+      const t = segDist > 0 ? remainingToTarget / segDist : 0;
+
+      const lat = p1.latitude + (p2.latitude - p1.latitude) * t;
+      const lon = p1.longitude + (p2.longitude - p1.longitude) * t;
+      const bearing = bearingBetween(p1, p2);
+
+      arrows.push({
+        coordinate: [lon, lat],
+        bearing,
+        alongM: Math.round(nextTargetDist),
+      });
+
+      nextTargetDist += intervalMeters;
+    }
+
+    accumulatedDist += segDist;
+  }
+
+  return arrows;
+}
+
 /**
  * Fuses Magnetometer compass with GPS Ground Track Doppler Course based on rider velocity.
  * Implements angular deadband thresholding to completely eliminate camera wobble when stationary.

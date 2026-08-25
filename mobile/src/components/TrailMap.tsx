@@ -19,6 +19,8 @@ type TrailMapProps = {
   navigating: boolean;
   mapLoaded: boolean;
   routeShape: any;
+  routeDirectionArrowsShape?: any;
+  userLocationShape?: any;
   completedRouteShape: any;
   shouldShowRerouteGuide: boolean;
   rerouteGuideShape: any;
@@ -39,6 +41,8 @@ export function TrailMap({
   navigating,
   mapLoaded,
   routeShape,
+  routeDirectionArrowsShape,
+  userLocationShape,
   completedRouteShape,
   shouldShowRerouteGuide,
   rerouteGuideShape,
@@ -93,6 +97,29 @@ export function TrailMap({
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
           />
         </GeoJSONSource>
+
+        {routeDirectionArrowsShape ? (
+          <GeoJSONSource id="route-direction-arrows" data={routeDirectionArrowsShape}>
+            <Layer
+              id="route-direction-symbols"
+              type="symbol"
+              layout={{
+                'text-field': '▶',
+                'text-size': 11,
+                'text-rotate': ['get', 'bearing'],
+                'text-rotation-alignment': 'map',
+                'text-allow-overlap': true,
+                'text-ignore-placement': true,
+                'text-keep-upright': false,
+              }}
+              paint={{
+                'text-color': '#064e3b',
+                'text-halo-color': '#a7f3d0',
+                'text-halo-width': 1.5,
+              }}
+            />
+          </GeoJSONSource>
+        ) : null}
 
         {navigating ? (
           <GeoJSONSource id="completed-route" data={completedRouteShape}>
@@ -182,12 +209,52 @@ export function TrailMap({
           />
         </GeoJSONSource>
 
-        <UserLocation
-          animated
-          accuracy
-          heading
-          minDisplacement={1}
-        />
+        {userLocationShape ? (
+          <GeoJSONSource id="custom-user-location" data={userLocationShape}>
+            <Layer
+              id="user-location-accuracy-ring"
+              type="circle"
+              paint={{
+                'circle-radius': ['max', 15, ['get', 'accuracyRadius']],
+                'circle-color': '#34d399',
+                'circle-opacity': 0.18,
+                'circle-stroke-color': '#059669',
+                'circle-stroke-width': 1,
+                'circle-stroke-opacity': 0.4,
+              }}
+            />
+            <Layer
+              id="user-location-puck-body"
+              type="circle"
+              paint={{
+                'circle-radius': 11,
+                'circle-color': '#047857',
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 3,
+              }}
+            />
+            <Layer
+              id="user-location-direction-chevron"
+              type="symbol"
+              layout={{
+                'text-field': '▲',
+                'text-size': 13,
+                'text-rotate': ['get', 'heading'],
+                'text-rotation-alignment': 'map',
+                'text-allow-overlap': true,
+                'text-ignore-placement': true,
+                'text-keep-upright': false,
+              }}
+              paint={{
+                'text-color': '#f8fafc',
+                'text-halo-color': '#047857',
+                'text-halo-width': 1,
+              }}
+            />
+          </GeoJSONSource>
+        ) : (
+          <UserLocation animated accuracy heading minDisplacement={1} />
+        )}
       </Map>
 
       {!mapLoaded ? (

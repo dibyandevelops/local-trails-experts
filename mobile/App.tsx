@@ -21,7 +21,11 @@ import { NavigationHeader } from './src/components/NavigationHeader';
 import { NavigationControls } from './src/components/NavigationControls';
 import { NavigationHud } from './src/components/NavigationHud';
 import { TrailMap } from './src/components/TrailMap';
-import { calculateElevationMetrics, routeBounds } from './src/geo';
+import {
+  calculateElevationMetrics,
+  generateRouteDirectionArrows,
+  routeBounds,
+} from './src/geo';
 import { isValidRoutePoint, useTrailLoader } from './src/hooks/useTrailLoader';
 import { useOfflineMap } from './src/hooks/useOfflineMap';
 import {
@@ -175,6 +179,37 @@ export default function App() {
     }),
     [route]
   );
+
+  const routeDirectionArrowsShape = useMemo(() => {
+    const arrows = generateRouteDirectionArrows(route, 60);
+    return {
+      type: 'FeatureCollection' as const,
+      features: arrows.map((arrow, idx) => ({
+        type: 'Feature' as const,
+        id: idx,
+        properties: { bearing: arrow.bearing },
+        geometry: {
+          type: 'Point' as const,
+          coordinates: arrow.coordinate,
+        },
+      })),
+    };
+  }, [route]);
+
+  const userLocationShape = useMemo(() => {
+    if (!currentLocation) return null;
+    return {
+      type: 'Feature' as const,
+      properties: {
+        heading: userHeading,
+        accuracyRadius: Math.min(35, Math.max(14, (accuracyM || 10) / 2)),
+      },
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [currentLocation.longitude, currentLocation.latitude],
+      },
+    };
+  }, [currentLocation, userHeading, accuracyM]);
 
   const completedRouteShape = useMemo(
     () => ({
@@ -385,6 +420,8 @@ export default function App() {
           navigating={navigating}
           mapLoaded={mapLoaded}
           routeShape={routeShape}
+          routeDirectionArrowsShape={routeDirectionArrowsShape}
+          userLocationShape={userLocationShape}
           completedRouteShape={completedRouteShape}
           shouldShowRerouteGuide={shouldShowRerouteGuide}
           rerouteGuideShape={rerouteGuideShape}
