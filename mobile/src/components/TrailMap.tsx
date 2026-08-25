@@ -73,7 +73,6 @@ export function TrailMap({
       >
         <Camera
           ref={cameraRef}
-          trackUserLocation={followingUser ? 'course' : undefined}
           initialViewState={{
             bounds: [west, south, east, north],
             padding: routePadding,
@@ -138,7 +137,7 @@ export function TrailMap({
                   id="reroute-target-pulse"
                   type="circle"
                   paint={{
-                    'circle-radius': 12,
+                    'circle-radius': 13,
                     'circle-color': '#fbbf24',
                     'circle-opacity': 0.35,
                   }}
@@ -147,7 +146,7 @@ export function TrailMap({
                   id="reroute-target-center"
                   type="circle"
                   paint={{
-                    'circle-radius': 6,
+                    'circle-radius': 6.5,
                     'circle-color': '#f59e0b',
                     'circle-stroke-color': '#ffffff',
                     'circle-stroke-width': 2.5,
@@ -183,7 +182,12 @@ export function TrailMap({
           />
         </GeoJSONSource>
 
-        <UserLocation accuracy heading minDisplacement={1.5} />
+        <UserLocation
+          animated
+          accuracy
+          heading
+          minDisplacement={1}
+        />
       </Map>
 
       {!mapLoaded ? (

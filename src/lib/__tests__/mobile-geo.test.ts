@@ -5,6 +5,8 @@ import {
   calculateElevationMetrics,
   cardinalDirectionFromBearing,
   computeSafestRerouteVector,
+  fuseSensorHeading,
+  getTurnManeuver,
   metersBetween,
   nearestRoutePoint,
   routeBounds,
@@ -65,23 +67,54 @@ describe('mobile geospatial calculations', () => {
     expect(cardinalDirectionFromBearing(eastBearing)).toBe('E');
   });
 
+  it('calculates relative turn maneuvers correctly', () => {
+    // Rider facing North (0°), target is East (90°) -> Turn right (→)
+    const rightManeuver = getTurnManeuver(90, 0);
+    expect(rightManeuver.turnType).toBe('right');
+    expect(rightManeuver.arrowIcon).toBe('→');
+
+    // Rider facing East (90°), target is East (90°) -> Continue straight (↑)
+    const straightManeuver = getTurnManeuver(90, 90);
+    expect(straightManeuver.turnType).toBe('straight');
+    expect(straightManeuver.arrowIcon).toBe('↑');
+
+    // Rider facing North (0°), target is South (180°) -> Turn around (↺)
+    const uTurnManeuver = getTurnManeuver(180, 0);
+    expect(uTurnManeuver.turnType).toBe('u_turn');
+    expect(uTurnManeuver.arrowIcon).toBe('↺');
+  });
+
+  it('fuses sensor heading with speed-based weighting and deadband filter', () => {
+    // When moving fast (speed = 3.5 m/s ≈ 12.6 km/h), GPS course dominates
+    const fastFused = fuseSensorHeading(180, 90, 3.5, 90);
+    expect(Math.round(fastFused)).toBe(90);
+
+    // When stationary (speed = 0), compass dominates
+    const stationaryFused = fuseSensorHeading(180, 90, 0, 180);
+    expect(Math.round(stationaryFused)).toBe(180);
+
+    // Deadband test: micro-oscillation under 2° should not change filtered heading
+    const deadbandResult = fuseSensorHeading(181.2, null, 0, 180);
+    expect(deadbandResult).toBe(180);
+  });
+
   it('smooths compass heading avoiding 359 to 0 flip glitch', () => {
     // Rotating slightly across North boundary: from 358° to 2°
     const smoothed = smoothCompassHeading(358, 2, 0.5);
-    // Should interpolate cleanly across 0° (e.g. ~360° or 0°) rather than swinging back through 180°
     expect(smoothed >= 359 || smoothed <= 1).toBe(true);
   });
 
-  it('computes smooth forward-merging safest reroute vector when off-route', () => {
-    // Rider is 80m West of the middle of the trail
+  it('computes smooth forward-merging safest reroute vector with turn maneuver', () => {
+    // Rider is 80m West of the middle of the trail, facing North (0°)
     const offTrailRider: RoutePoint = { latitude: 27.7080, longitude: 85.3060 };
-    const reroute = computeSafestRerouteVector(offTrailRider, sampleRoute, 30);
+    const reroute = computeSafestRerouteVector(offTrailRider, sampleRoute, 0, 30);
 
     expect(reroute).not.toBeNull();
     expect(reroute!.path.length).toBeGreaterThanOrEqual(4);
     expect(reroute!.distanceM).toBeGreaterThan(0);
-    expect(reroute!.instruction).toContain('Head');
-    expect(reroute!.targetPoint.latitude).toBeGreaterThan(27.7050); // Targets forward on the trail
+    expect(reroute!.maneuver).toBeDefined();
+    expect(reroute!.instruction).toContain('rejoin trail');
+    expect(reroute!.targetPoint.latitude).toBeGreaterThan(27.7050);
   });
 
   it('calculates bounding box with safety padding', () => {
@@ -97,8 +130,6 @@ describe('mobile geospatial calculations', () => {
   it('calculates elevation gain, loss, and min/max altitudes', () => {
     const metrics = calculateElevationMetrics(sampleRoute);
 
-    // Climbs: 1350->1400 (+50), 1400->1450 (+50), 1420->1480 (+60) = 160m
-    // Descent: 1450->1420 (-30) = 30m
     expect(metrics.gainM).toBe(160);
     expect(metrics.lossM).toBe(30);
     expect(metrics.minAltitudeM).toBe(1350);
@@ -107,22 +138,19 @@ describe('mobile geospatial calculations', () => {
   });
 
   it('applies privacy zone masking to start and finish coordinates', () => {
-    // Generate route with dense start and end points
     const denseRoute: RoutePoint[] = [
       { latitude: 27.70000, longitude: 85.30000 },
-      { latitude: 27.70050, longitude: 85.30050 }, // ~78m from start
-      { latitude: 27.70150, longitude: 85.30150 }, // ~235m from start
+      { latitude: 27.70050, longitude: 85.30050 },
+      { latitude: 27.70150, longitude: 85.30150 },
       { latitude: 27.70500, longitude: 85.30500 },
       { latitude: 27.70850, longitude: 85.30850 },
-      { latitude: 27.70950, longitude: 85.30950 }, // ~156m from end
+      { latitude: 27.70950, longitude: 85.30950 },
       { latitude: 27.71000, longitude: 85.31000 },
     ];
 
     const masked = applyPrivacyZone(denseRoute, 200);
 
-    // Initial point must be trimmed beyond 200m
     expect(metersBetween(denseRoute[0], masked[0])).toBeGreaterThanOrEqual(200);
-    // Ending point must be trimmed beyond 200m
     expect(metersBetween(denseRoute[denseRoute.length - 1], masked[masked.length - 1])).toBeGreaterThanOrEqual(150);
   });
 

@@ -4,10 +4,10 @@ import * as Location from 'expo-location';
 import type { CameraRef } from '@maplibre/maplibre-react-native';
 import {
   computeSafestRerouteVector,
+  fuseSensorHeading,
   metersBetween,
   nearestRoutePoint,
   routeDistances,
-  smoothCompassHeading,
   type SafestRerouteGuidance,
 } from '../geo';
 import type { RoutePoint } from '../types';
@@ -55,6 +55,7 @@ export function useTrailNavigation(
   const headingSubscription = useRef<Location.LocationSubscription | null>(null);
   const lastLocation = useRef<RoutePoint | null>(null);
   const currentHeadingRef = useRef<number>(0);
+  const lastCameraUpdateRef = useRef<number>(0);
   const followingUserRef = useRef(false);
   const badLocationWarningShown = useRef(false);
 
@@ -102,11 +103,30 @@ export function useTrailNavigation(
     [currentLocation, route]
   );
 
-  // Computes the shortest and safest forward-merge reconnect trajectory
+  // Computes the direction-aware shortest and safest forward-merge reconnect trajectory
   const safestReroute = useMemo<SafestRerouteGuidance | null>(() => {
     if (!currentLocation || route.length < 2) return null;
-    return computeSafestRerouteVector(currentLocation, route, 25);
-  }, [currentLocation, route]);
+    return computeSafestRerouteVector(currentLocation, route, userHeading, 25);
+  }, [currentLocation, route, userHeading]);
+
+  const updateFollowCamera = useCallback(
+    (targetCenter: RoutePoint, targetHeading: number) => {
+      if (!followingUserRef.current) return;
+      const now = Date.now();
+      // Throttle camera updates to 350ms to prevent Android GL render thread stutter
+      if (now - lastCameraUpdateRef.current < 350) return;
+      lastCameraUpdateRef.current = now;
+
+      cameraRef.current?.easeTo({
+        center: [targetCenter.longitude, targetCenter.latitude],
+        zoom: 16.8,
+        pitch: 45,
+        bearing: targetHeading,
+        duration: 400,
+      });
+    },
+    [cameraRef]
+  );
 
   const appendPoint = useCallback(
     (location: Location.LocationObject) => {
@@ -126,7 +146,8 @@ export function useTrailNavigation(
       }
       badLocationWarningShown.current = false;
       setCurrentLocation(current);
-      setSpeedMps(location.coords.speed != null && location.coords.speed >= 0 ? location.coords.speed : null);
+      const currentSpeed = location.coords.speed != null && location.coords.speed >= 0 ? location.coords.speed : null;
+      setSpeedMps(currentSpeed);
       setAccuracyM(location.coords.accuracy);
 
       if (lastLocation.current) {
@@ -144,22 +165,19 @@ export function useTrailNavigation(
         setRerouteGuideEnabled(false);
       }
 
-      if (followingUserRef.current) {
-        const effectiveHeading =
-          location.coords.heading != null && location.coords.heading >= 0
-            ? location.coords.heading
-            : currentHeadingRef.current;
+      // Fuse speed ground course with filtered orientation
+      const fused = fuseSensorHeading(
+        currentHeadingRef.current,
+        location.coords.heading,
+        currentSpeed,
+        currentHeadingRef.current
+      );
+      currentHeadingRef.current = fused;
+      setUserHeading(fused);
 
-        cameraRef.current?.easeTo({
-          center: [current.longitude, current.latitude],
-          zoom: 16.8,
-          pitch: 45,
-          ...(effectiveHeading >= 0 ? { bearing: effectiveHeading } : {}),
-          duration: 600,
-        });
-      }
+      updateFollowCamera(current, fused);
     },
-    [cameraRef, fitRoute, isLocationUsableForRoute, locationDistanceFromRoute, route, routeMetrics.totalM, setFollowMode]
+    [fitRoute, isLocationUsableForRoute, locationDistanceFromRoute, route, routeMetrics.totalM, setFollowMode, updateFollowCamera]
   );
 
   const requestLocation = useCallback(async () => {
@@ -246,30 +264,38 @@ export function useTrailNavigation(
     setFollowMode(true);
     appendPoint(initialLocation);
 
-    // Watch GPS position
+    // High-precision GPS navigation watcher on Android
     locationSubscription.current = await Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.BestForNavigation,
-        distanceInterval: 2,
-        timeInterval: 1500,
+        distanceInterval: 1, // 1 meter resolution
+        timeInterval: 1000, // 1 second updates
       },
       appendPoint
     );
 
-    // Watch hardware magnetometer heading sensor for smooth orientation
+    // Magnetometer compass sensor with hardware deadband
     try {
       headingSubscription.current = await Location.watchHeadingAsync((headingData) => {
         const trueOrMag = headingData.trueHeading >= 0 ? headingData.trueHeading : headingData.magHeading;
         if (trueOrMag >= 0) {
-          const smoothed = smoothCompassHeading(currentHeadingRef.current, trueOrMag, 0.3);
-          currentHeadingRef.current = smoothed;
-          setUserHeading(smoothed);
+          const fused = fuseSensorHeading(
+            trueOrMag,
+            lastLocation.current?.heading,
+            speedMps,
+            currentHeadingRef.current
+          );
+          currentHeadingRef.current = fused;
+          setUserHeading(fused);
+          if (followingUserRef.current && lastLocation.current) {
+            updateFollowCamera(lastLocation.current, fused);
+          }
         }
       });
     } catch {
       // Heading sensor fallback
     }
-  }, [appendPoint, fitRoute, isLocationUsableForRoute, locationDistanceFromRoute, requestLocation, route.length, routeMetrics.totalM, setFollowMode]);
+  }, [appendPoint, fitRoute, isLocationUsableForRoute, locationDistanceFromRoute, requestLocation, route.length, routeMetrics.totalM, setFollowMode, speedMps, updateFollowCamera]);
 
   const stopNavigation = useCallback(() => {
     locationSubscription.current?.remove();

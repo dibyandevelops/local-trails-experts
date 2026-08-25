@@ -53,6 +53,73 @@ export function cardinalDirectionFromBearing(bearingDeg: number): string {
   return directions[index];
 }
 
+export type TurnManeuver = {
+  turnType: 'straight' | 'slight_right' | 'right' | 'sharp_right' | 'u_turn' | 'sharp_left' | 'left' | 'slight_left';
+  relativeAngle: number;
+  instruction: string;
+  arrowIcon: string;
+};
+
+/**
+ * Calculates real-time turn maneuver prompt relative to rider's current orientation.
+ */
+export function getTurnManeuver(targetBearing: number, riderHeading: number): TurnManeuver {
+  const diff = ((targetBearing - riderHeading + 180) % 360) - 180;
+
+  if (Math.abs(diff) <= 22.5) {
+    return { turnType: 'straight', relativeAngle: diff, instruction: 'Continue straight', arrowIcon: '↑' };
+  }
+  if (diff > 22.5 && diff <= 67.5) {
+    return { turnType: 'slight_right', relativeAngle: diff, instruction: 'Bear slight right', arrowIcon: '↗' };
+  }
+  if (diff > 67.5 && diff <= 112.5) {
+    return { turnType: 'right', relativeAngle: diff, instruction: 'Turn right', arrowIcon: '→' };
+  }
+  if (diff > 112.5 && diff <= 157.5) {
+    return { turnType: 'sharp_right', relativeAngle: diff, instruction: 'Sharp right', arrowIcon: '⤥' };
+  }
+  if (Math.abs(diff) > 157.5) {
+    return { turnType: 'u_turn', relativeAngle: diff, instruction: 'Turn around', arrowIcon: '↺' };
+  }
+  if (diff < -22.5 && diff >= -67.5) {
+    return { turnType: 'slight_left', relativeAngle: diff, instruction: 'Bear slight left', arrowIcon: '↖' };
+  }
+  if (diff < -67.5 && diff >= -112.5) {
+    return { turnType: 'left', relativeAngle: diff, instruction: 'Turn left', arrowIcon: '←' };
+  }
+  return { turnType: 'sharp_left', relativeAngle: diff, instruction: 'Sharp left', arrowIcon: '⤦' };
+}
+
+/**
+ * Fuses Magnetometer compass with GPS Ground Track Doppler Course based on rider velocity.
+ * Implements angular deadband thresholding to completely eliminate camera wobble when stationary.
+ */
+export function fuseSensorHeading(
+  compassHeading: number,
+  gpsHeading: number | null | undefined,
+  speedMps: number | null | undefined,
+  currentFilteredHeading: number
+): number {
+  let rawTargetHeading = compassHeading;
+
+  // If moving at cycling speed (> 4 km/h), GPS ground track is vastly superior to handlebar-distorted compass
+  if (speedMps != null && speedMps >= 1.2 && gpsHeading != null && gpsHeading >= 0) {
+    rawTargetHeading = gpsHeading;
+  } else if (speedMps != null && speedMps >= 0.7 && gpsHeading != null && gpsHeading >= 0) {
+    // Smooth transition blend
+    rawTargetHeading = smoothCompassHeading(compassHeading, gpsHeading, 0.5);
+  }
+
+  // Deadband filter: ignore micro-oscillations below 2 degrees
+  const angleDiff = Math.abs(((rawTargetHeading - currentFilteredHeading + 180) % 360) - 180);
+  if (angleDiff < 2.0) {
+    return currentFilteredHeading;
+  }
+
+  // Circular low-pass filter
+  return smoothCompassHeading(currentFilteredHeading, rawTargetHeading, 0.28);
+}
+
 /**
  * Circular angle smoothing using unit vectors to prevent 359° <-> 0° flip jitter.
  */
@@ -154,6 +221,7 @@ export type SafestRerouteGuidance = {
   cardinalDirection: string;
   distanceM: number;
   instruction: string;
+  maneuver: TurnManeuver;
 };
 
 /**
@@ -163,6 +231,7 @@ export type SafestRerouteGuidance = {
 export function computeSafestRerouteVector(
   currentLocation: RoutePoint,
   route: RoutePoint[],
+  riderHeading = 0,
   lookaheadMeters = 25
 ): SafestRerouteGuidance | null {
   if (route.length < 2) return null;
@@ -183,16 +252,14 @@ export function computeSafestRerouteVector(
   }
   const targetPoint = route[targetIndex] || route[route.length - 1];
 
-  // Generate a 4-point smooth bezier curve from current position to trail merge point
+  // Generate smooth bezier curve from current position to trail merge point
   const p0 = currentLocation;
   const p3 = targetPoint;
 
-  // Tangent vector from route segment
   const nextSegmentIndex = Math.min(route.length - 1, targetIndex + 1);
   const nextPoint = route[nextSegmentIndex] || targetPoint;
   const trailHeadingRad = ((bearingBetween(targetPoint, nextPoint) - 90) * Math.PI) / 180;
 
-  // Control points
   const directDistance = metersBetween(p0, p3);
   const controlDist = directDistance * 0.35;
 
@@ -209,9 +276,8 @@ export function computeSafestRerouteVector(
     longitude: p3.longitude - (Math.cos(trailHeadingRad) * controlDist) / metersPerDegLon,
   };
 
-  // Interpolate 5 curve points for smooth line rendering
   const curvePoints: RoutePoint[] = [];
-  const steps = 5;
+  const steps = 6;
   for (let step = 0; step <= steps; step++) {
     const t = step / steps;
     const u = 1 - t;
@@ -237,6 +303,7 @@ export function computeSafestRerouteVector(
   const initialBearing = bearingBetween(p0, p3);
   const cardinal = cardinalDirectionFromBearing(initialBearing);
   const roundedDist = Math.round(directDistance);
+  const maneuver = getTurnManeuver(initialBearing, riderHeading);
 
   return {
     path: curvePoints,
@@ -244,7 +311,8 @@ export function computeSafestRerouteVector(
     bearingDeg: initialBearing,
     cardinalDirection: cardinal,
     distanceM: roundedDist,
-    instruction: `Head ${cardinal} ${roundedDist} m to rejoin trail`,
+    instruction: `${maneuver.arrowIcon} ${maneuver.instruction} in ${roundedDist} m to rejoin trail`,
+    maneuver,
   };
 }
 
@@ -287,7 +355,6 @@ export function calculateElevationMetrics(points: RoutePoint[]): ElevationMetric
     }
   }
 
-  // Threshold filter for GPS noise/fluctuations (e.g. at least 3m elevation diff to register climb/descent)
   const NOISE_THRESHOLD_M = 2.5;
   for (let i = 1; i < pointsWithElevation.length; i++) {
     const diff = pointsWithElevation[i].elevation - pointsWithElevation[i - 1].elevation;
