@@ -1,4 +1,4 @@
-import type { RoutePoint } from './types';
+import type { ElevationMetrics, RoutePoint } from './types';
 
 export function routeBounds(points: RoutePoint[]): [number, number, number, number] {
   const longitudes = points.map((point) => point.longitude);
@@ -102,4 +102,98 @@ export function nearestRoutePoint(location: RoutePoint, route: RoutePoint[]) {
     inspectSegment(index);
   }
   return { index: closestIndex, distanceM: closestDistance, alongM: closestAlongM, point: closestPoint };
+}
+
+/**
+ * Calculates elevation gain, loss, and min/max altitudes along a GPS route.
+ */
+export function calculateElevationMetrics(points: RoutePoint[]): ElevationMetrics {
+  const pointsWithElevation = points.filter(
+    (p): p is RoutePoint & { elevation: number } => typeof p.elevation === 'number' && Number.isFinite(p.elevation)
+  );
+
+  if (pointsWithElevation.length === 0) {
+    return {
+      gainM: 0,
+      lossM: 0,
+      maxAltitudeM: 0,
+      minAltitudeM: 0,
+      elevationPoints: [],
+    };
+  }
+
+  let gainM = 0;
+  let lossM = 0;
+  let maxAltitudeM = pointsWithElevation[0].elevation;
+  let minAltitudeM = pointsWithElevation[0].elevation;
+  const elevationPoints: Array<{ distanceM: number; elevationM: number }> = [];
+
+  let accumulatedDistance = 0;
+
+  for (let i = 0; i < points.length; i++) {
+    if (i > 0) {
+      accumulatedDistance += metersBetween(points[i - 1], points[i]);
+    }
+    const elev = points[i].elevation;
+    if (typeof elev === 'number' && Number.isFinite(elev)) {
+      elevationPoints.push({
+        distanceM: Math.round(accumulatedDistance),
+        elevationM: Math.round(elev),
+      });
+    }
+  }
+
+  // Threshold filter for GPS noise/fluctuations (e.g. at least 3m elevation diff to register climb/descent)
+  const NOISE_THRESHOLD_M = 2.5;
+  for (let i = 1; i < pointsWithElevation.length; i++) {
+    const diff = pointsWithElevation[i].elevation - pointsWithElevation[i - 1].elevation;
+    maxAltitudeM = Math.max(maxAltitudeM, pointsWithElevation[i].elevation);
+    minAltitudeM = Math.min(minAltitudeM, pointsWithElevation[i].elevation);
+
+    if (Math.abs(diff) >= NOISE_THRESHOLD_M) {
+      if (diff > 0) {
+        gainM += diff;
+      } else {
+        lossM += Math.abs(diff);
+      }
+    }
+  }
+
+  return {
+    gainM: Math.round(gainM),
+    lossM: Math.round(lossM),
+    maxAltitudeM: Math.round(maxAltitudeM),
+    minAltitudeM: Math.round(minAltitudeM),
+    elevationPoints,
+  };
+}
+
+/**
+ * Obfuscates the start and end portions of a GPS route to protect personal residential privacy.
+ * Clips points within `radiusMeters` (default 200m) from origin and termination points.
+ */
+export function applyPrivacyZone(points: RoutePoint[], radiusMeters = 200): RoutePoint[] {
+  if (points.length < 5) return points;
+
+  const startPoint = points[0];
+  const endPoint = points[points.length - 1];
+
+  let startIndex = 0;
+  while (
+    startIndex < points.length - 2 &&
+    metersBetween(startPoint, points[startIndex]) < radiusMeters
+  ) {
+    startIndex++;
+  }
+
+  let endIndex = points.length - 1;
+  while (
+    endIndex > startIndex + 1 &&
+    metersBetween(endPoint, points[endIndex]) < radiusMeters
+  ) {
+    endIndex--;
+  }
+
+  const pruned = points.slice(startIndex, endIndex + 1);
+  return pruned.length >= 2 ? pruned : points;
 }

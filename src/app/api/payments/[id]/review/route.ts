@@ -8,11 +8,21 @@ import {
   buildBrandedEmail,
   getAppUrl,
 } from '@/lib/email-templates';
+import {
+  acquireIdempotencyLock,
+  completeIdempotencyLock,
+  releaseIdempotencyLock,
+} from '@/lib/idempotency';
+import { recordBookingPaymentLedger } from '@/lib/ledger';
+import { logger } from '@/lib/logger';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: paymentId } = await params;
+  const idempotencyKey = `payment:review:${paymentId}`;
+
   try {
     const limited = await rateLimit(request, 'payment-review', 20, 60);
     if (limited) return limited;
@@ -22,7 +32,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id: paymentId } = await params;
     const body = await request.json();
     const action = String(body?.action || '').trim(); // 'approve' | 'reject'
     const reviewNote = String(body?.review_note || '').trim();
@@ -31,10 +40,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid review action.' }, { status: 400 });
     }
 
+    const lock = await acquireIdempotencyLock(idempotencyKey, 30);
+    if (lock.status === 'replayed') {
+      return NextResponse.json(lock.responseBody, { status: lock.responseCode });
+    }
+
     const paymentRes = await pool.query(
       `
       SELECT
-        p.id, p.status, p.booking_id,
+        p.id, p.status, p.booking_id, p.amount_npr,
         b.event_id, b.status AS booking_status,
         e.host_user_id, e.title, e.organizer_email,
         u.name AS participant_name, u.email AS participant_email
@@ -57,6 +71,14 @@ export async function PATCH(
       (auth.role === 'expert' && payment.host_user_id === auth.sub);
     if (!canReview) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // If already approved/paid, return directly
+    if (payment.status === 'paid' && action === 'approve') {
+      return NextResponse.json(
+        { payment: { id: payment.id, status: 'paid', review_note: 'Already approved' } },
+        { status: 200 }
+      );
     }
 
     const nextPaymentStatus = action === 'approve' ? 'paid' : 'failed';
@@ -88,6 +110,19 @@ export async function PATCH(
         `,
         [nextBookingStatus, payment.booking_id]
       );
+
+      if (action === 'approve') {
+        try {
+          await recordBookingPaymentLedger(client, {
+            bookingId: payment.booking_id,
+            transactionRef: `tx:manual:${paymentId}`,
+            amountNpr: Number(payment.amount_npr || 0),
+            expertUserId: payment.host_user_id || null,
+          });
+        } catch (ledgerError) {
+          logger.warn('Failed recording double-entry ledger entry', { error: String(ledgerError) });
+        }
+      }
 
       await client.query('COMMIT');
 
@@ -124,7 +159,9 @@ export async function PATCH(
         }
       }
 
-      return NextResponse.json({ payment: updatedPayment.rows[0] }, { status: 200 });
+      const responsePayload = { payment: updatedPayment.rows[0] };
+      await completeIdempotencyLock(idempotencyKey, 200, responsePayload);
+      return NextResponse.json(responsePayload, { status: 200 });
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -132,7 +169,8 @@ export async function PATCH(
       client.release();
     }
   } catch (error) {
-    console.error('Error reviewing payment proof:', error);
+    await releaseIdempotencyLock(idempotencyKey);
+    logger.error('Error reviewing payment proof', error, { paymentId });
     return NextResponse.json(
       { error: 'Failed to review payment proof.' },
       { status: 500 }
