@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 const OPEN_METEO_URL = 'https://api.open-meteo.com/v1/forecast';
 
@@ -10,6 +11,9 @@ function parseCoordinate(value: string | null, min: number, max: number) {
 }
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'weather-forecast', 30, 60);
+  if (limited) return limited;
+
   const latitude = parseCoordinate(request.nextUrl.searchParams.get('latitude'), -90, 90);
   const longitude = parseCoordinate(request.nextUrl.searchParams.get('longitude'), -180, 180);
 

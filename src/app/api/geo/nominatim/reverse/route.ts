@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'geo-nominatim-reverse', 30, 60);
+  if (limited) return limited;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const lat = searchParams.get('lat');

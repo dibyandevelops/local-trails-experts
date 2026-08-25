@@ -1,7 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getImpactStats } from '@/lib/impact-stats';
+import { rateLimit } from '@/lib/rate-limit';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'impact-stats', 60, 60);
+  if (limited) return limited;
+
   try {
     const stats = await getImpactStats();
     return NextResponse.json({ stats }, { status: 200 });
@@ -10,4 +14,3 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch impact stats' }, { status: 500 });
   }
 }
-

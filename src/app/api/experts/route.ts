@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { SportType, User } from '@/types';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'experts-list', 60, 60);
+  if (limited) return limited;
   try {
     const searchParams = request.nextUrl.searchParams;
     const city = searchParams.get('city');

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { Store } from '@/types';
+import { rateLimit } from '@/lib/rate-limit';
 
 function toNumber(value: string | null) {
   if (!value) return null;
@@ -10,6 +11,8 @@ function toNumber(value: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'stores-list', 60, 60);
+  if (limited) return limited;
   try {
     const auth = getAuthFromRequest(request);
     const searchParams = request.nextUrl.searchParams;

@@ -4,6 +4,7 @@ import { Trail } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { normalizeSafetyLabels } from '@/lib/trail-safety';
 import { COMMUNITY_NAME } from '@/lib/branding';
+import { rateLimit } from '@/lib/rate-limit';
 
 function normalizeKomootEmbedInput(raw: string) {
   const value = raw.trim();
@@ -19,6 +20,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const limited = await rateLimit(request, 'trail-detail', 60, 60);
+  if (limited) return limited;
   try {
     const communityNameSql = COMMUNITY_NAME.replace(/'/g, "''");
     const { id } = await params;
@@ -166,6 +169,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const limited = await rateLimit(request, 'trail-update', 15, 60);
+  if (limited) return limited;
+
   try {
     const auth = getAuthFromRequest(request);
     if (!auth) {

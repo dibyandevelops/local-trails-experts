@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { rateLimit } from '@/lib/rate-limit';
 
 const PUBLIC_TRAIL_MAP_CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
 };
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const limited = await rateLimit(request, 'trail-map', 60, 60);
+  if (limited) return limited;
+
   try {
     const { id } = await params;
     const result = await pool.query(

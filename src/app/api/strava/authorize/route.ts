@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthFromRequest } from '@/lib/auth';
 import { buildStravaAuthorizeUrl, getStravaConfig } from '@/lib/strava';
 import { STRAVA_ENABLED } from '@/lib/feature-flags';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'strava-auth-start', 15, 60);
+  if (limited) return limited;
   try {
     if (!STRAVA_ENABLED) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });

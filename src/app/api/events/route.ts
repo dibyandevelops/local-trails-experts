@@ -4,6 +4,7 @@ import { Event, CreateEventInput, SportType } from '@/types';
 import { getAuthFromRequest } from '@/lib/auth';
 import { COMMUNITY_NAME } from '@/lib/branding';
 import { isAllowedImageUrl } from '@/lib/image-url';
+import { rateLimit } from '@/lib/rate-limit';
 
 const MAX_EVENT_TITLE_LENGTH = 160;
 const MAX_EVENT_DESCRIPTION_LENGTH = 5000;
@@ -25,6 +26,8 @@ type TrailRequestContext = {
 };
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'events-list', 60, 60);
+  if (limited) return limited;
   try {
     const searchParams = request.nextUrl.searchParams;
     const expertise = searchParams.get('expertise');
@@ -204,6 +207,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimit(request, 'events-create', 15, 60);
+  if (limited) return limited;
+
   try {
     const auth = getAuthFromRequest(request);
     if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {

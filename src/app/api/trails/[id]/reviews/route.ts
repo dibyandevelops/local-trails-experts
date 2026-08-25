@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const limited = await rateLimit(request, 'trail-reviews-read', 60, 60);
+  if (limited) return limited;
   try {
     const { id } = await params;
 
@@ -59,6 +62,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const limited = await rateLimit(request, 'trail-reviews-create', 10, 60);
+  if (limited) return limited;
+
   try {
     const auth = getAuthFromRequest(request);
     if (!auth) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { getAuthFromRequest } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 const STATE_COOKIE = 'mtb_google_oauth_state';
 const NEXT_COOKIE = 'mtb_google_oauth_next';
@@ -15,6 +16,8 @@ function safeNextPath(value: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'google-auth-start', 15, 60);
+  if (limited) return limited;
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
   if (!clientId) {

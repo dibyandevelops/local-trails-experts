@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import { isAllowedImageUrl } from '@/lib/image-url';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,8 @@ const SUBSCRIPTION_STATUSES = new Set(['inactive', 'trialing', 'active', 'past_d
 const SUBSCRIPTION_PLANS = new Set(['free', 'starter', 'partner', 'pro']);
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, 'orgs-list', 60, 60);
+  if (limited) return limited;
   try {
     const auth = getAuthFromRequest(request);
     const isPlatformAdmin = auth?.role === 'admin';
