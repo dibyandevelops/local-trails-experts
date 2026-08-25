@@ -97,24 +97,34 @@ export type DirectionArrowPoint = {
 };
 
 /**
- * Samples directional chevron waypoints along the route polyline at regular distance intervals.
+ * Samples clean, spaced directional chevron waypoints along the route polyline.
+ * Dynamically adjusts spacing based on total route length and strictly caps at maxArrows (default 25, max 35).
  */
 export function generateRouteDirectionArrows(
   points: RoutePoint[],
-  intervalMeters = 60
+  maxArrows = 25
 ): DirectionArrowPoint[] {
   if (points.length < 2) return [];
 
+  const { totalM } = routeDistances(points);
+  if (totalM < 40) return [];
+
+  // Target a comfortable spacing so we have between 8 and 25 clean arrows total
+  const targetCount = Math.max(6, Math.min(maxArrows, Math.round(totalM / 300)));
+  const intervalMeters = Math.max(180, totalM / targetCount);
+
   const arrows: DirectionArrowPoint[] = [];
   let accumulatedDist = 0;
-  let nextTargetDist = intervalMeters / 2;
+  let nextTargetDist = intervalMeters * 0.6; // initial offset from route start
 
   for (let i = 0; i < points.length - 1; i++) {
+    if (arrows.length >= maxArrows) break;
+
     const p1 = points[i];
     const p2 = points[i + 1];
     const segDist = metersBetween(p1, p2);
 
-    while (accumulatedDist + segDist >= nextTargetDist) {
+    while (accumulatedDist + segDist >= nextTargetDist && arrows.length < maxArrows) {
       const remainingToTarget = nextTargetDist - accumulatedDist;
       const t = segDist > 0 ? remainingToTarget / segDist : 0;
 

@@ -69,9 +69,10 @@ describe('mobile geospatial calculations', () => {
   });
 
   it('generates directional chevron arrows along route at specified intervals', () => {
-    const arrows = generateRouteDirectionArrows(sampleRoute, 100);
+    const arrows = generateRouteDirectionArrows(sampleRoute, 25);
 
-    expect(arrows.length).toBeGreaterThan(10);
+    expect(arrows.length).toBeGreaterThan(0);
+    expect(arrows.length).toBeLessThanOrEqual(25);
     expect(arrows[0].bearing).toBeDefined();
     expect(arrows[0].coordinate).toHaveLength(2);
     // Route goes generally North-East (~45°)

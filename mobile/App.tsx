@@ -181,7 +181,7 @@ export default function App() {
   );
 
   const routeDirectionArrowsShape = useMemo(() => {
-    const arrows = generateRouteDirectionArrows(route, 60);
+    const arrows = generateRouteDirectionArrows(route, 25);
     return {
       type: 'FeatureCollection' as const,
       features: arrows.map((arrow, idx) => ({

@@ -113,7 +113,7 @@ export function TrailMap({
               type="symbol"
               layout={{
                 'icon-image': 'route-arrow',
-                'icon-size': 0.35,
+                'icon-size': 0.26,
                 'icon-rotate': ['get', 'bearing'],
                 'icon-rotation-alignment': 'map',
                 'icon-allow-overlap': true,
