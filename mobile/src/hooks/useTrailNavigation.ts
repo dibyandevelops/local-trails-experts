@@ -10,6 +10,7 @@ import {
   routeDistances,
   type SafestRerouteGuidance,
 } from '../geo';
+import { fetchRoadRoute, type RoadRouteResult } from '../routing';
 import type { RoutePoint } from '../types';
 
 export const OFF_ROUTE_THRESHOLD_M = 60;
@@ -50,6 +51,8 @@ export function useTrailNavigation(
   const [userHeading, setUserHeading] = useState<number>(0);
   const [followingUser, setFollowingUser] = useState(false);
   const [rerouteGuideEnabled, setRerouteGuideEnabled] = useState(false);
+  const [roadRerouteCoordinates, setRoadRerouteCoordinates] = useState<[number, number][]>([]);
+  const [roadInstruction, setRoadInstruction] = useState<string>('');
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const headingSubscription = useRef<Location.LocationSubscription | null>(null);
@@ -108,6 +111,33 @@ export function useTrailNavigation(
     if (!currentLocation || route.length < 2) return null;
     return computeSafestRerouteVector(currentLocation, route, userHeading, 25);
   }, [currentLocation, route, userHeading]);
+
+  // Fetches real road/street network routing whenever the rider is off-route
+  useEffect(() => {
+    if (!rerouteGuideEnabled || !currentLocation || !safestReroute?.targetPoint) {
+      setRoadRerouteCoordinates([]);
+      setRoadInstruction('');
+      return;
+    }
+
+    let active = true;
+    fetchRoadRoute(currentLocation, safestReroute.targetPoint).then((result: RoadRouteResult) => {
+      if (!active) return;
+      if (result.coordinates && result.coordinates.length > 0) {
+        setRoadRerouteCoordinates(result.coordinates);
+        setRoadInstruction(result.instruction);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    rerouteGuideEnabled,
+    currentLocation?.latitude,
+    currentLocation?.longitude,
+    safestReroute?.targetPoint,
+  ]);
 
   const updateFollowCamera = useCallback(
     (targetCenter: RoutePoint, targetHeading: number) => {
@@ -222,11 +252,18 @@ export function useTrailNavigation(
     setTimeout(() => fitRoute(600), 80);
   }, [fitRoute, setFollowMode]);
 
-  const guideBackToRoute = useCallback(() => {
+  const guideBackToRoute = useCallback(async () => {
     if (!currentLocation || !nearestRoute) return;
     setFollowMode(false);
     setRerouteGuideEnabled(true);
     const targetPoint = safestReroute?.targetPoint || nearestRoute.point;
+
+    // Immediately fetch road route
+    const roadRes = await fetchRoadRoute(currentLocation, targetPoint);
+    if (roadRes.coordinates && roadRes.coordinates.length > 0) {
+      setRoadRerouteCoordinates(roadRes.coordinates);
+      setRoadInstruction(roadRes.instruction);
+    }
 
     cameraRef.current?.fitBounds(
       [
@@ -305,6 +342,8 @@ export function useTrailNavigation(
     setNavigating(false);
     setFollowMode(false);
     setRerouteGuideEnabled(false);
+    setRoadRerouteCoordinates([]);
+    setRoadInstruction('');
   }, [setFollowMode]);
 
   useEffect(() => {
@@ -326,6 +365,8 @@ export function useTrailNavigation(
     userHeading,
     followingUser,
     rerouteGuideEnabled,
+    roadRerouteCoordinates,
+    roadInstruction,
     nearestRoute,
     safestReroute,
     routeMetrics,

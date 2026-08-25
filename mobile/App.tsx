@@ -82,6 +82,8 @@ export default function App() {
     userHeading,
     followingUser,
     rerouteGuideEnabled,
+    roadRerouteCoordinates,
+    roadInstruction,
     nearestRoute,
     safestReroute,
     routeMetrics,
@@ -230,14 +232,18 @@ export default function App() {
       };
     }
 
-    const coords = safestReroute
-      ? safestReroute.path.map((p) => [p.longitude, p.latitude])
-      : nearestRoute
-      ? [
-          [currentLocation.longitude, currentLocation.latitude],
-          [nearestRoute.point.longitude, nearestRoute.point.latitude],
-        ]
-      : [];
+    // Prioritize actual road/street network coordinates from OpenStreetMap
+    const coords =
+      roadRerouteCoordinates && roadRerouteCoordinates.length > 1
+        ? roadRerouteCoordinates
+        : safestReroute
+        ? safestReroute.path.map((p) => [p.longitude, p.latitude])
+        : nearestRoute
+        ? [
+            [currentLocation.longitude, currentLocation.latitude],
+            [nearestRoute.point.longitude, nearestRoute.point.latitude],
+          ]
+        : [];
 
     return {
       type: 'Feature' as const,
@@ -247,7 +253,13 @@ export default function App() {
         coordinates: coords,
       },
     };
-  }, [currentLocation, nearestRoute, safestReroute, shouldShowRerouteGuide]);
+  }, [
+    currentLocation,
+    nearestRoute,
+    roadRerouteCoordinates,
+    safestReroute,
+    shouldShowRerouteGuide,
+  ]);
 
   const rerouteTargetShape = useMemo(() => {
     if (!shouldShowRerouteGuide || !safestReroute?.targetPoint) return null;
@@ -272,7 +284,7 @@ export default function App() {
     remainingM <= 40
       ? 'You are arriving at the trail finish'
       : offRouteM > OFF_ROUTE_THRESHOLD_M
-        ? safestReroute?.instruction || `Return to the route · ${formatDistance(offRouteM)} away`
+        ? roadInstruction || safestReroute?.instruction || `Return to the route · ${formatDistance(offRouteM)} away`
         : followingUser
           ? 'Following your position'
           : 'Map unlocked · tap recenter to follow';
