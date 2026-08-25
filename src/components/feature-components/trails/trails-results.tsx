@@ -29,7 +29,7 @@ type TrailsResultsProps = {
   unhidingTrailId: string | null;
   associatingTrailId: string | null;
   requestFeedback: string;
-  showPreviewGate: boolean;
+  showPreviewGate?: boolean;
   hasNextPage: boolean;
   onResetFilters: () => void;
   onSortChange: (sort: TrailSort) => void;
@@ -47,43 +47,22 @@ type TrailsResultsProps = {
   onToggleGuideTrail: (trail: Trail, isAssociated: boolean) => void;
 };
 
-function TrailPreviewGate() {
-  return (
-    <div className="mt-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 text-center shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/35 dark:via-slate-950 dark:to-slate-900">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-800 dark:text-lime-200">
-        Trail preview
-      </p>
-      <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-emerald-950 dark:text-white">
-        Sign in to keep exploring.
-      </h2>
-      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-emerald-950/75 dark:text-slate-300">
-        The first four trails are open as a preview. Use Show more to create a free account or
-        sign in before viewing the full list.
-      </p>
-    </div>
-  );
-}
-
 function TrailsPaginationFooter({
   showing,
   total,
-  showPreviewGate,
   hasNextPage,
   isFetchingNextPage,
   onShowMore,
 }: {
   showing: number;
   total: number;
-  showPreviewGate: boolean;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   onShowMore: () => void;
 }) {
-  const helperText = showPreviewGate
-    ? 'Use Show more to create an account or sign in before viewing the full list.'
-    : hasNextPage
-      ? 'Load the next set when you are ready.'
-      : 'You have reached the end of the current results.';
+  const helperText = hasNextPage
+    ? 'Load the next set when you are ready.'
+    : 'You have reached the end of the current results.';
 
   return (
     <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white/80 p-4 dark:border-emerald-900/50 dark:bg-slate-950/60 sm:flex-row sm:items-center sm:justify-between">
@@ -131,7 +110,6 @@ export function TrailsResults({
   unhidingTrailId,
   associatingTrailId,
   requestFeedback,
-  showPreviewGate,
   hasNextPage,
   onResetFilters,
   onSortChange,
@@ -214,12 +192,10 @@ export function TrailsResults({
           onToggleExpertTrail={onToggleGuideTrail}
         />
       </div>
-      {showPreviewGate && <TrailPreviewGate />}
       {isFetchingNextPage && <><p className="sr-only" role="status" aria-live="polite">Loading more trails...</p><TrailsLoadMoreSkeleton viewMode={viewMode} /></>}
       <TrailsPaginationFooter
         showing={trails.length}
         total={totalTrails}
-        showPreviewGate={showPreviewGate}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
         onShowMore={onShowMore}

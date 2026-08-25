@@ -48,9 +48,7 @@ const TrailRequestModal = dynamic(
   }
 );
 
-const TRAILS_PAGE_SIZE = 4;
-const GUEST_TRAILS_PREVIEW_MESSAGE =
-  'Create a free account or sign in to view more local trails.';
+const TRAILS_PAGE_SIZE = 12;
 
 function getCurrentTrailsPath() {
   if (typeof window === 'undefined') return '/trails';
@@ -277,16 +275,13 @@ function TrailsPageContent() {
   const hasTrailsData = trails.length > 0;
   const hasInitialError = Boolean(error) && !hasTrailsData;
   const hasTransientError = Boolean(error) && hasTrailsData;
-  const shouldGateTrailPreview = !loadingCurrentUser && !user;
-  const visibleTrails = shouldGateTrailPreview ? trails.slice(0, TRAILS_PAGE_SIZE) : trails;
-  const hasMoreTrailsForGuestPreview =
-    Boolean(hasNextPage) || (pagination?.total ?? trails.length) > TRAILS_PAGE_SIZE;
+  const visibleTrails = trails;
   const { mapStyle, mapStyleMode, setMapStyleMode } = useTrailsMapStyle();
   useSyncOpenFilters(filtersOpen, syncDraftFilters);
   useTrailsScrollRestoration({
     isInitialLoading,
     trailsLength: trails.length,
-    hasNextPage: Boolean(hasNextPage) && !shouldGateTrailPreview,
+    hasNextPage: Boolean(hasNextPage),
     fetchNextPage,
   });
 
@@ -442,10 +437,6 @@ function TrailsPageContent() {
   };
 
   const handleShowMoreTrails = () => {
-    if (shouldGateTrailPreview) {
-      openTrailsRegisterPrompt(GUEST_TRAILS_PREVIEW_MESSAGE);
-      return;
-    }
     void fetchNextPage();
   };
 
@@ -513,16 +504,8 @@ function TrailsPageContent() {
         unhidingTrailId={unhidingTrailId}
         associatingTrailId={associatingTrailId}
         requestFeedback={requestFeedback}
-        showPreviewGate={
-          shouldGateTrailPreview &&
-          trails.length >= TRAILS_PAGE_SIZE &&
-          hasMoreTrailsForGuestPreview
-        }
-        hasNextPage={
-          shouldGateTrailPreview
-            ? hasMoreTrailsForGuestPreview
-            : Boolean(hasNextPage)
-        }
+        showPreviewGate={false}
+        hasNextPage={Boolean(hasNextPage)}
         onResetFilters={resetFilters}
         onSortChange={setSort}
         onShowMore={handleShowMoreTrails}
