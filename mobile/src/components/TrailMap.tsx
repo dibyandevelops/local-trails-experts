@@ -8,7 +8,6 @@ import {
   Map,
   UserLocation,
 } from '@maplibre/maplibre-react-native';
-import type { RoutePoint } from '../types';
 
 type TrailMapProps = {
   trailId: string;
@@ -23,6 +22,7 @@ type TrailMapProps = {
   completedRouteShape: any;
   shouldShowRerouteGuide: boolean;
   rerouteGuideShape: any;
+  rerouteTargetShape?: any;
   routeEndpointsShape: any;
   onMapLoaded: () => void;
   onMapError: (error: string) => void;
@@ -42,6 +42,7 @@ export function TrailMap({
   completedRouteShape,
   shouldShowRerouteGuide,
   rerouteGuideShape,
+  rerouteTargetShape,
   routeEndpointsShape,
   onMapLoaded,
   onMapError,
@@ -106,29 +107,55 @@ export function TrailMap({
         ) : null}
 
         {shouldShowRerouteGuide ? (
-          <GeoJSONSource id="reroute-guide" data={rerouteGuideShape}>
-            <Layer
-              id="reroute-guide-casing"
-              type="line"
-              paint={{
-                'line-color': '#111827',
-                'line-width': 7,
-                'line-opacity': 0.75,
-                'line-dasharray': [0.8, 0.7],
-              }}
-              layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            />
-            <Layer
-              id="reroute-guide-line"
-              type="line"
-              paint={{
-                'line-color': '#fbbf24',
-                'line-width': 4,
-                'line-dasharray': [0.8, 0.7],
-              }}
-              layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            />
-          </GeoJSONSource>
+          <>
+            <GeoJSONSource id="reroute-guide" data={rerouteGuideShape}>
+              <Layer
+                id="reroute-guide-casing"
+                type="line"
+                paint={{
+                  'line-color': '#111827',
+                  'line-width': 7,
+                  'line-opacity': 0.75,
+                  'line-dasharray': [0.8, 0.7],
+                }}
+                layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+              />
+              <Layer
+                id="reroute-guide-line"
+                type="line"
+                paint={{
+                  'line-color': '#fbbf24',
+                  'line-width': 4.5,
+                  'line-dasharray': [0.8, 0.7],
+                }}
+                layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+              />
+            </GeoJSONSource>
+
+            {rerouteTargetShape ? (
+              <GeoJSONSource id="reroute-target" data={rerouteTargetShape}>
+                <Layer
+                  id="reroute-target-pulse"
+                  type="circle"
+                  paint={{
+                    'circle-radius': 12,
+                    'circle-color': '#fbbf24',
+                    'circle-opacity': 0.35,
+                  }}
+                />
+                <Layer
+                  id="reroute-target-center"
+                  type="circle"
+                  paint={{
+                    'circle-radius': 6,
+                    'circle-color': '#f59e0b',
+                    'circle-stroke-color': '#ffffff',
+                    'circle-stroke-width': 2.5,
+                  }}
+                />
+              </GeoJSONSource>
+            ) : null}
+          </>
         ) : null}
 
         <GeoJSONSource id="route-endpoints" data={routeEndpointsShape}>
@@ -156,7 +183,7 @@ export function TrailMap({
           />
         </GeoJSONSource>
 
-        <UserLocation accuracy heading minDisplacement={2} />
+        <UserLocation accuracy heading minDisplacement={1.5} />
       </Map>
 
       {!mapLoaded ? (

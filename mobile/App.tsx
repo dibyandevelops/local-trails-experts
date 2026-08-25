@@ -79,9 +79,11 @@ export default function App() {
     currentLocation,
     speedMps,
     accuracyM,
+    userHeading,
     followingUser,
     rerouteGuideEnabled,
     nearestRoute,
+    safestReroute,
     routeMetrics,
     routePadding,
     startNavigation,
@@ -217,26 +219,50 @@ export default function App() {
     rerouteGuideEnabled &&
     navigating &&
     currentLocation != null &&
-    nearestRoute != null &&
     offRouteM > OFF_ROUTE_THRESHOLD_M;
 
-  const rerouteGuideShape = useMemo(
-    () => ({
+  const rerouteGuideShape = useMemo(() => {
+    if (!shouldShowRerouteGuide || !currentLocation) {
+      return {
+        type: 'Feature' as const,
+        properties: {},
+        geometry: { type: 'LineString' as const, coordinates: [] },
+      };
+    }
+
+    const coords = safestReroute
+      ? safestReroute.path.map((p) => [p.longitude, p.latitude])
+      : nearestRoute
+      ? [
+          [currentLocation.longitude, currentLocation.latitude],
+          [nearestRoute.point.longitude, nearestRoute.point.latitude],
+        ]
+      : [];
+
+    return {
       type: 'Feature' as const,
       properties: {},
       geometry: {
         type: 'LineString' as const,
-        coordinates:
-          shouldShowRerouteGuide && currentLocation && nearestRoute
-            ? [
-                [currentLocation.longitude, currentLocation.latitude],
-                [nearestRoute.point.longitude, nearestRoute.point.latitude],
-              ]
-            : [],
+        coordinates: coords,
       },
-    }),
-    [currentLocation, nearestRoute, shouldShowRerouteGuide]
-  );
+    };
+  }, [currentLocation, nearestRoute, safestReroute, shouldShowRerouteGuide]);
+
+  const rerouteTargetShape = useMemo(() => {
+    if (!shouldShowRerouteGuide || !safestReroute?.targetPoint) return null;
+    return {
+      type: 'Feature' as const,
+      properties: {},
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [
+          safestReroute.targetPoint.longitude,
+          safestReroute.targetPoint.latitude,
+        ],
+      },
+    };
+  }, [safestReroute?.targetPoint, shouldShowRerouteGuide]);
 
   const progressPercent = routeMetrics.totalM
     ? Math.max(0, Math.min(100, ((routeMetrics.totalM - remainingM) / routeMetrics.totalM) * 100))
@@ -246,7 +272,7 @@ export default function App() {
     remainingM <= 40
       ? 'You are arriving at the trail finish'
       : offRouteM > OFF_ROUTE_THRESHOLD_M
-        ? `Return to the route · ${formatDistance(offRouteM)} away`
+        ? safestReroute?.instruction || `Return to the route · ${formatDistance(offRouteM)} away`
         : followingUser
           ? 'Following your position'
           : 'Map unlocked · tap recenter to follow';
@@ -350,6 +376,7 @@ export default function App() {
           completedRouteShape={completedRouteShape}
           shouldShowRerouteGuide={shouldShowRerouteGuide}
           rerouteGuideShape={rerouteGuideShape}
+          rerouteTargetShape={rerouteTargetShape}
           routeEndpointsShape={routeEndpointsShape}
           onMapLoaded={() => {
             setMapLoaded(true);

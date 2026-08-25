@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 import type { CameraRef } from '@maplibre/maplibre-react-native';
-import { metersBetween, nearestRoutePoint, routeDistances } from '../geo';
+import {
+  computeSafestRerouteVector,
+  metersBetween,
+  nearestRoutePoint,
+  routeDistances,
+  smoothCompassHeading,
+  type SafestRerouteGuidance,
+} from '../geo';
 import type { RoutePoint } from '../types';
 
 export const OFF_ROUTE_THRESHOLD_M = 60;
@@ -40,11 +47,14 @@ export function useTrailNavigation(
   const [currentLocation, setCurrentLocation] = useState<RoutePoint | null>(null);
   const [speedMps, setSpeedMps] = useState<number | null>(null);
   const [accuracyM, setAccuracyM] = useState<number | null>(null);
+  const [userHeading, setUserHeading] = useState<number>(0);
   const [followingUser, setFollowingUser] = useState(false);
   const [rerouteGuideEnabled, setRerouteGuideEnabled] = useState(false);
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  const headingSubscription = useRef<Location.LocationSubscription | null>(null);
   const lastLocation = useRef<RoutePoint | null>(null);
+  const currentHeadingRef = useRef<number>(0);
   const followingUserRef = useRef(false);
   const badLocationWarningShown = useRef(false);
 
@@ -87,6 +97,17 @@ export function useTrailNavigation(
     setFollowingUser(enabled);
   }, []);
 
+  const nearestRoute = useMemo(
+    () => (currentLocation ? nearestRoutePoint(currentLocation, route) : null),
+    [currentLocation, route]
+  );
+
+  // Computes the shortest and safest forward-merge reconnect trajectory
+  const safestReroute = useMemo<SafestRerouteGuidance | null>(() => {
+    if (!currentLocation || route.length < 2) return null;
+    return computeSafestRerouteVector(currentLocation, route, 25);
+  }, [currentLocation, route]);
+
   const appendPoint = useCallback(
     (location: Location.LocationObject) => {
       const current = pointFromLocation(location);
@@ -124,13 +145,17 @@ export function useTrailNavigation(
       }
 
       if (followingUserRef.current) {
-        const heading = location.coords.heading;
+        const effectiveHeading =
+          location.coords.heading != null && location.coords.heading >= 0
+            ? location.coords.heading
+            : currentHeadingRef.current;
+
         cameraRef.current?.easeTo({
           center: [current.longitude, current.latitude],
-          zoom: 16.5,
-          pitch: 48,
-          ...(heading != null && heading >= 0 ? { bearing: heading } : {}),
-          duration: 700,
+          zoom: 16.8,
+          pitch: 45,
+          ...(effectiveHeading >= 0 ? { bearing: effectiveHeading } : {}),
+          duration: 600,
         });
       }
     },
@@ -166,8 +191,9 @@ export function useTrailNavigation(
     if (navigating) setFollowMode(true);
     cameraRef.current?.easeTo({
       center: [point.longitude, point.latitude],
-      zoom: navigating ? 16.5 : 15.5,
-      pitch: navigating ? 48 : 0,
+      zoom: navigating ? 16.8 : 15.5,
+      pitch: navigating ? 45 : 0,
+      bearing: currentHeadingRef.current,
       duration: 600,
     });
   }, [cameraRef, currentLocation, fitRoute, isLocationUsableForRoute, locationDistanceFromRoute, navigating, requestLocation, setFollowMode]);
@@ -178,25 +204,22 @@ export function useTrailNavigation(
     setTimeout(() => fitRoute(600), 80);
   }, [fitRoute, setFollowMode]);
 
-  const nearestRoute = useMemo(
-    () => (currentLocation ? nearestRoutePoint(currentLocation, route) : null),
-    [currentLocation, route]
-  );
-
   const guideBackToRoute = useCallback(() => {
     if (!currentLocation || !nearestRoute) return;
     setFollowMode(false);
     setRerouteGuideEnabled(true);
+    const targetPoint = safestReroute?.targetPoint || nearestRoute.point;
+
     cameraRef.current?.fitBounds(
       [
-        Math.min(currentLocation.longitude, nearestRoute.point.longitude) - 0.003,
-        Math.min(currentLocation.latitude, nearestRoute.point.latitude) - 0.003,
-        Math.max(currentLocation.longitude, nearestRoute.point.longitude) + 0.003,
-        Math.max(currentLocation.latitude, nearestRoute.point.latitude) + 0.003,
+        Math.min(currentLocation.longitude, targetPoint.longitude) - 0.003,
+        Math.min(currentLocation.latitude, targetPoint.latitude) - 0.003,
+        Math.max(currentLocation.longitude, targetPoint.longitude) + 0.003,
+        Math.max(currentLocation.latitude, targetPoint.latitude) + 0.003,
       ],
       { padding: routePadding, duration: 600 }
     );
-  }, [cameraRef, currentLocation, nearestRoute, routePadding, setFollowMode]);
+  }, [cameraRef, currentLocation, nearestRoute, routePadding, safestReroute?.targetPoint, setFollowMode]);
 
   const startNavigation = useCallback(async () => {
     if (route.length < 2) return;
@@ -223,19 +246,36 @@ export function useTrailNavigation(
     setFollowMode(true);
     appendPoint(initialLocation);
 
+    // Watch GPS position
     locationSubscription.current = await Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.BestForNavigation,
-        distanceInterval: 3,
-        timeInterval: 2000,
+        distanceInterval: 2,
+        timeInterval: 1500,
       },
       appendPoint
     );
+
+    // Watch hardware magnetometer heading sensor for smooth orientation
+    try {
+      headingSubscription.current = await Location.watchHeadingAsync((headingData) => {
+        const trueOrMag = headingData.trueHeading >= 0 ? headingData.trueHeading : headingData.magHeading;
+        if (trueOrMag >= 0) {
+          const smoothed = smoothCompassHeading(currentHeadingRef.current, trueOrMag, 0.3);
+          currentHeadingRef.current = smoothed;
+          setUserHeading(smoothed);
+        }
+      });
+    } catch {
+      // Heading sensor fallback
+    }
   }, [appendPoint, fitRoute, isLocationUsableForRoute, locationDistanceFromRoute, requestLocation, route.length, routeMetrics.totalM, setFollowMode]);
 
   const stopNavigation = useCallback(() => {
     locationSubscription.current?.remove();
     locationSubscription.current = null;
+    headingSubscription.current?.remove();
+    headingSubscription.current = null;
     setNavigating(false);
     setFollowMode(false);
     setRerouteGuideEnabled(false);
@@ -244,6 +284,7 @@ export function useTrailNavigation(
   useEffect(() => {
     return () => {
       locationSubscription.current?.remove();
+      headingSubscription.current?.remove();
     };
   }, []);
 
@@ -256,9 +297,11 @@ export function useTrailNavigation(
     currentLocation,
     speedMps,
     accuracyM,
+    userHeading,
     followingUser,
     rerouteGuideEnabled,
     nearestRoute,
+    safestReroute,
     routeMetrics,
     routePadding,
     startNavigation,

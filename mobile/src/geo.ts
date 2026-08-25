@@ -24,6 +24,49 @@ export function metersBetween(a: RoutePoint, b: RoutePoint) {
   return 6_371_000 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
 }
 
+/**
+ * Computes forward azimuth/bearing in degrees (0° - 360°) from point A to point B.
+ */
+export function bearingBetween(a: RoutePoint, b: RoutePoint): number {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const degrees = (rad: number) => (rad * 180) / Math.PI;
+
+  const lat1 = radians(a.latitude);
+  const lat2 = radians(b.latitude);
+  const deltaLon = radians(b.longitude - a.longitude);
+
+  const y = Math.sin(deltaLon) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
+
+  const bearing = (degrees(Math.atan2(y, x)) + 360) % 360;
+  return Math.round(bearing);
+}
+
+/**
+ * Returns human-readable cardinal direction (e.g. N, NE, E, SE, S, SW, W, NW).
+ */
+export function cardinalDirectionFromBearing(bearingDeg: number): string {
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const index = Math.round(((bearingDeg % 360) / 45)) % 8;
+  return directions[index];
+}
+
+/**
+ * Circular angle smoothing using unit vectors to prevent 359° <-> 0° flip jitter.
+ */
+export function smoothCompassHeading(currentHeading: number, targetHeading: number, factor = 0.25): number {
+  const radCurrent = (currentHeading * Math.PI) / 180;
+  const radTarget = (targetHeading * Math.PI) / 180;
+
+  const x = Math.cos(radCurrent) * (1 - factor) + Math.cos(radTarget) * factor;
+  const y = Math.sin(radCurrent) * (1 - factor) + Math.sin(radTarget) * factor;
+
+  const smoothed = (Math.atan2(y, x) * 180) / Math.PI;
+  return (smoothed + 360) % 360;
+}
+
 export function distanceFromRoute(location: RoutePoint, route: RoutePoint[]) {
   return nearestRoutePoint(location, route).distanceM;
 }
@@ -102,6 +145,107 @@ export function nearestRoutePoint(location: RoutePoint, route: RoutePoint[]) {
     inspectSegment(index);
   }
   return { index: closestIndex, distanceM: closestDistance, alongM: closestAlongM, point: closestPoint };
+}
+
+export type SafestRerouteGuidance = {
+  path: RoutePoint[];
+  targetPoint: RoutePoint;
+  bearingDeg: number;
+  cardinalDirection: string;
+  distanceM: number;
+  instruction: string;
+};
+
+/**
+ * Computes a direction-aware, tangent-smoothed shortest and safest reconnection path back to the trail.
+ * Avoids directing the rider backwards; instead merges forward with the natural trail trajectory.
+ */
+export function computeSafestRerouteVector(
+  currentLocation: RoutePoint,
+  route: RoutePoint[],
+  lookaheadMeters = 25
+): SafestRerouteGuidance | null {
+  if (route.length < 2) return null;
+
+  const nearest = nearestRoutePoint(currentLocation, route);
+  const { cumulativeM, totalM } = routeDistances(route);
+
+  // Target a smooth forward merge point along the trail
+  const targetAlongM = Math.min(totalM, nearest.alongM + lookaheadMeters);
+
+  // Find corresponding route coordinate for target along distance
+  let targetIndex = nearest.index;
+  for (let i = nearest.index; i < cumulativeM.length; i++) {
+    if (cumulativeM[i] >= targetAlongM) {
+      targetIndex = i;
+      break;
+    }
+  }
+  const targetPoint = route[targetIndex] || route[route.length - 1];
+
+  // Generate a 4-point smooth bezier curve from current position to trail merge point
+  const p0 = currentLocation;
+  const p3 = targetPoint;
+
+  // Tangent vector from route segment
+  const nextSegmentIndex = Math.min(route.length - 1, targetIndex + 1);
+  const nextPoint = route[nextSegmentIndex] || targetPoint;
+  const trailHeadingRad = ((bearingBetween(targetPoint, nextPoint) - 90) * Math.PI) / 180;
+
+  // Control points
+  const directDistance = metersBetween(p0, p3);
+  const controlDist = directDistance * 0.35;
+
+  const metersPerDegLat = 111_320;
+  const metersPerDegLon = Math.max(1, Math.cos((p0.latitude * Math.PI) / 180) * metersPerDegLat);
+
+  const p1: RoutePoint = {
+    latitude: p0.latitude + (p3.latitude - p0.latitude) * 0.35,
+    longitude: p0.longitude + (p3.longitude - p0.longitude) * 0.35,
+  };
+
+  const p2: RoutePoint = {
+    latitude: p3.latitude - (Math.sin(trailHeadingRad) * controlDist) / metersPerDegLat,
+    longitude: p3.longitude - (Math.cos(trailHeadingRad) * controlDist) / metersPerDegLon,
+  };
+
+  // Interpolate 5 curve points for smooth line rendering
+  const curvePoints: RoutePoint[] = [];
+  const steps = 5;
+  for (let step = 0; step <= steps; step++) {
+    const t = step / steps;
+    const u = 1 - t;
+    const tt = t * t;
+    const uu = u * u;
+    const uuu = uu * u;
+    const ttt = tt * t;
+
+    const lat =
+      uuu * p0.latitude +
+      3 * uu * t * p1.latitude +
+      3 * u * tt * p2.latitude +
+      ttt * p3.latitude;
+    const lon =
+      uuu * p0.longitude +
+      3 * uu * t * p1.longitude +
+      3 * u * tt * p2.longitude +
+      ttt * p3.longitude;
+
+    curvePoints.push({ latitude: lat, longitude: lon });
+  }
+
+  const initialBearing = bearingBetween(p0, p3);
+  const cardinal = cardinalDirectionFromBearing(initialBearing);
+  const roundedDist = Math.round(directDistance);
+
+  return {
+    path: curvePoints,
+    targetPoint: p3,
+    bearingDeg: initialBearing,
+    cardinalDirection: cardinal,
+    distanceM: roundedDist,
+    instruction: `Head ${cardinal} ${roundedDist} m to rejoin trail`,
+  };
 }
 
 /**

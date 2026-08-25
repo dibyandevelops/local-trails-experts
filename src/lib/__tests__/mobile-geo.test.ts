@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyPrivacyZone,
+  bearingBetween,
   calculateElevationMetrics,
+  cardinalDirectionFromBearing,
+  computeSafestRerouteVector,
   metersBetween,
   nearestRoutePoint,
   routeBounds,
   routeDistances,
+  smoothCompassHeading,
 } from '../../../mobile/src/geo';
 import { trailIdentifierFromUrl } from '../../../mobile/src/url';
 import type { RoutePoint } from '../../../mobile/src/types';
@@ -45,6 +49,39 @@ describe('mobile geospatial calculations', () => {
     expect(nearest.index).toBeGreaterThanOrEqual(1);
     expect(nearest.distanceM).toBeLessThan(50); // Near segment 1-2
     expect(nearest.alongM).toBeGreaterThan(0);
+  });
+
+  it('computes accurate bearing and cardinal directions', () => {
+    const northPt = { latitude: 27.7100, longitude: 85.3000 };
+    const eastPt = { latitude: 27.7000, longitude: 85.3100 };
+    const origin = { latitude: 27.7000, longitude: 85.3000 };
+
+    const northBearing = bearingBetween(origin, northPt);
+    expect(northBearing).toBe(0);
+    expect(cardinalDirectionFromBearing(northBearing)).toBe('N');
+
+    const eastBearing = bearingBetween(origin, eastPt);
+    expect(eastBearing).toBe(90);
+    expect(cardinalDirectionFromBearing(eastBearing)).toBe('E');
+  });
+
+  it('smooths compass heading avoiding 359 to 0 flip glitch', () => {
+    // Rotating slightly across North boundary: from 358° to 2°
+    const smoothed = smoothCompassHeading(358, 2, 0.5);
+    // Should interpolate cleanly across 0° (e.g. ~360° or 0°) rather than swinging back through 180°
+    expect(smoothed >= 359 || smoothed <= 1).toBe(true);
+  });
+
+  it('computes smooth forward-merging safest reroute vector when off-route', () => {
+    // Rider is 80m West of the middle of the trail
+    const offTrailRider: RoutePoint = { latitude: 27.7080, longitude: 85.3060 };
+    const reroute = computeSafestRerouteVector(offTrailRider, sampleRoute, 30);
+
+    expect(reroute).not.toBeNull();
+    expect(reroute!.path.length).toBeGreaterThanOrEqual(4);
+    expect(reroute!.distanceM).toBeGreaterThan(0);
+    expect(reroute!.instruction).toContain('Head');
+    expect(reroute!.targetPoint.latitude).toBeGreaterThan(27.7050); // Targets forward on the trail
   });
 
   it('calculates bounding box with safety padding', () => {
