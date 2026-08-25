@@ -4,10 +4,16 @@ import {
   Camera,
   type CameraRef,
   GeoJSONSource,
+  Images,
   Layer,
   Map,
   UserLocation,
 } from '@maplibre/maplibre-react-native';
+
+const MAP_IMAGES = {
+  'route-arrow': require('../../assets/route-arrow.png'),
+  'user-pointer': require('../../assets/user-pointer.png'),
+};
 
 type TrailMapProps = {
   trailId: string;
@@ -75,6 +81,8 @@ export function TrailMap({
         }
         onDidFinishLoadingMap={onMapLoaded}
       >
+        <Images images={MAP_IMAGES} />
+
         <Camera
           ref={cameraRef}
           initialViewState={{
@@ -104,18 +112,12 @@ export function TrailMap({
               id="route-direction-symbols"
               type="symbol"
               layout={{
-                'text-field': '▶',
-                'text-size': 11,
-                'text-rotate': ['get', 'bearing'],
-                'text-rotation-alignment': 'map',
-                'text-allow-overlap': true,
-                'text-ignore-placement': true,
-                'text-keep-upright': false,
-              }}
-              paint={{
-                'text-color': '#064e3b',
-                'text-halo-color': '#a7f3d0',
-                'text-halo-width': 1.5,
+                'icon-image': 'route-arrow',
+                'icon-size': 0.35,
+                'icon-rotate': ['get', 'bearing'],
+                'icon-rotation-alignment': 'map',
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
               }}
             />
           </GeoJSONSource>
@@ -237,18 +239,13 @@ export function TrailMap({
               id="user-location-direction-chevron"
               type="symbol"
               layout={{
-                'text-field': '▲',
-                'text-size': 13,
-                'text-rotate': ['get', 'heading'],
-                'text-rotation-alignment': 'map',
-                'text-allow-overlap': true,
-                'text-ignore-placement': true,
-                'text-keep-upright': false,
-              }}
-              paint={{
-                'text-color': '#f8fafc',
-                'text-halo-color': '#047857',
-                'text-halo-width': 1,
+                'icon-image': 'user-pointer',
+                'icon-size': 0.55,
+                'icon-rotate': ['get', 'heading'],
+                'icon-rotation-alignment': 'map',
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+                'icon-offset': [0, -12],
               }}
             />
           </GeoJSONSource>
