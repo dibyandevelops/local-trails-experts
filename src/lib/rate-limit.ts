@@ -113,14 +113,14 @@ export async function rateLimit(
 
   // Periodic pruning if in-memory store grows large
   if (inMemoryStore.size > MAX_IN_MEMORY_KEYS) {
-    for (const [k, timestamps] of inMemoryStore.entries()) {
+    inMemoryStore.forEach((timestamps, k) => {
       const valid = timestamps.filter((t) => t > windowStart);
       if (valid.length === 0) {
         inMemoryStore.delete(k);
       } else {
         inMemoryStore.set(k, valid);
       }
-    }
+    });
   }
 
   const existingTimestamps = inMemoryStore.get(key) || [];
