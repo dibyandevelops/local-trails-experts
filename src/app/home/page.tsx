@@ -60,7 +60,7 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
   const [spotlight, featuredTrails, rideNotes] = await Promise.all([
     getHomeSpotlight(),
     getHomeFeaturedTrails(4),
-    getPublicRideNotes(3),
+    getPublicRideNotes(4),
   ]);
   const websiteJsonLd = jsonLdStringify({
     '@context': 'https://schema.org',
@@ -118,49 +118,87 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
                 )}
               </Link>
             )}
-
-            {rideNotes.length > 0 && (
-              <div className="mt-8 max-w-3xl border-t border-emerald-950/15 pt-4 dark:border-lime-300/20">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-950 dark:text-lime-200">
-                    {copy.rideNotesTitle}
-                  </p>
-                  <Link
-                    href="/ride-notes"
-                    className="text-xs font-black text-emerald-950 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
-                  >
-                    {copy.readMore}
-                  </Link>
-                </div>
-                <div className="grid gap-x-6 gap-y-1 sm:grid-cols-3">
-                  {rideNotes.map((note) => {
-                    const meta = getRideNoteMeta(note);
-                    return (
-                      <Link
-                        key={note.id}
-                        href={`/ride-notes/${note.slug}`}
-                        className="group border-b border-emerald-950/10 py-3 transition hover:border-emerald-700/40 dark:border-lime-300/10 dark:hover:border-lime-200/50"
-                      >
-                        <span className="block line-clamp-2 text-sm font-black text-gray-950 group-hover:text-emerald-800 dark:text-slate-50 dark:group-hover:text-lime-200">
-                          {note.title}
-                        </span>
-                        {meta && (
-                          <span className="mt-1 block truncate text-xs text-gray-600 dark:text-slate-400">
-                            {meta}
-                          </span>
-                        )}
-                        <span className="mt-2 block line-clamp-3 text-xs leading-5 text-emerald-950/70 dark:text-slate-300">
-                          {getRideNoteDescription(note)}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </section>
+
+      {rideNotes.length > 0 && (
+        <section
+          className="mx-auto max-w-5xl px-4 pt-10 md:px-8 md:pt-12"
+          aria-labelledby="featured-ride-notes-heading"
+        >
+          <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-800 dark:text-lime-300">
+                Community Journal
+              </p>
+              <h2
+                id="featured-ride-notes-heading"
+                className="mt-1 text-2xl font-black tracking-[-0.03em] text-emerald-950 dark:text-white md:text-3xl"
+              >
+                Featured Ride Notes & Guides
+              </h2>
+            </div>
+            <Link
+              href="/ride-notes"
+              className="inline-flex items-center gap-1 text-sm font-black text-emerald-800 underline decoration-2 underline-offset-4 transition hover:text-emerald-600 dark:text-lime-200 dark:hover:text-lime-100"
+            >
+              Browse all ride notes &rarr;
+            </Link>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {rideNotes.map((note) => {
+              return (
+                <article
+                  key={note.id}
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-emerald-100/80 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-950 dark:hover:border-lime-300/40"
+                >
+                  <div>
+                    {note.cover_image_url && (
+                      <div className="relative mb-3 h-36 w-full overflow-hidden rounded-xl bg-emerald-950/5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={note.cover_image_url}
+                          alt=""
+                          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        />
+                        <span className="absolute left-2.5 top-2.5 rounded-full border border-white/20 bg-emerald-950/75 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur-sm">
+                          {note.category === 'trail_guide'
+                            ? 'Trail Guide'
+                            : note.category === 'safety'
+                              ? 'Safety'
+                              : note.category === 'expert_note'
+                                ? 'Expert Note'
+                                : 'Ride Note'}
+                        </span>
+                      </div>
+                    )}
+                    <h3 className="line-clamp-2 text-base font-black tracking-tight text-emerald-950 group-hover:text-emerald-700 dark:text-white dark:group-hover:text-lime-300">
+                      <Link href={`/ride-notes/${note.slug}`} className="focus:outline-none">
+                        <span className="absolute inset-0 z-0" aria-hidden="true" />
+                        {note.title}
+                      </Link>
+                    </h3>
+                    {note.trail_name && (
+                      <span className="mt-1.5 inline-block text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                        📍 {note.trail_name}
+                      </span>
+                    )}
+                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-gray-600 dark:text-slate-400">
+                      {getRideNoteDescription(note)}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-[11px] font-bold text-gray-500 dark:border-slate-800 dark:text-slate-400">
+                    <span>{note.expert_name ? `By ${note.expert_name}` : 'Local guide'}</span>
+                    <span className="text-emerald-700 group-hover:underline dark:text-lime-300">Read &rarr;</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section
         className="mx-auto max-w-5xl px-4 pt-7 [contain-intrinsic-size:0_520px] [content-visibility:auto] md:px-8 md:pt-9"
