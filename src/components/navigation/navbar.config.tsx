@@ -68,6 +68,7 @@ export const navGroups: NavGroup[] = [
 export const navItems: NavItem[] = [
   { label: 'Home', href: '/home', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   { label: 'Explore Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  { label: 'Ride Notes', href: '/ride-notes', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   {
     label: 'For Experts',
     href: '/experts/join',
