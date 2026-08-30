@@ -405,10 +405,8 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const autoRequestHandledRef = useRef(false);
   const { data: currentUser, isLoading: loadingCurrentUser } = useCurrentUser();
   const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
-  const [photoUploadMessage, setPhotoUploadMessage] = useState<string | null>(null);
+  const [photoUploadingCount, setPhotoUploadingCount] = useState(0);
   const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false);
   const [pendingGpxFile, setPendingGpxFile] = useState<File | null>(null);
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
@@ -426,11 +424,25 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const [needsPaidShuttle, setNeedsPaidShuttle] = useState(false);
   const [requestAcceptTerms, setRequestAcceptTerms] = useState(false);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastTitle, setToastTitle] = useState('Trail updated');
   const [toastDescription, setToastDescription] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
+  const [toastAction, setToastAction] = useState<{ label: string; onClick: () => void } | null>(null);
+
+  const showToast = (
+    title: string,
+    description = '',
+    type: 'success' | 'error' | 'info' = 'info',
+    action: { label: string; onClick: () => void } | null = null
+  ) => {
+    setToastTitle(title);
+    setToastDescription(description);
+    setToastType(type);
+    setToastAction(action);
+    setToastOpen(true);
+  };
   const [safetyDraft, setSafetyDraft] = useState<TrailSafetyLabel[]>([]);
   const [hazardousDraft, setHazardousDraft] = useState(false);
   const [hazardNoteDraft, setHazardNoteDraft] = useState('');
@@ -514,7 +526,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       setReplaceConfirmOpen(false);
       setPendingGpxFile(null);
       setAdminMessage(null);
-      setActionMessage(null);
       setRequestAcceptTerms(false);
     };
     window.addEventListener('pageshow', closeTransientUi);
@@ -766,14 +777,29 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
   const uploadRouteMutation = useMutation({
     mutationFn: (file: File) => uploadTrailRoute(trailId, file),
     onSuccess: (updatedTrail) => {
+      queryClient.setQueryData([...QUERY_KEYS.trails.byId(trailId), 'summary'], updatedTrail);
       queryClient.setQueryData(QUERY_KEYS.trails.byId(trailId), updatedTrail);
+      queryClient.setQueryData(['trail-map', trailId], updatedTrail);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
+      queryClient.invalidateQueries({ queryKey: ['trail-map', trailId] });
     },
   });
 
   const updateTrailMutation = useMutation({
     mutationFn: (payload: Partial<Trail>) => updateTrail(trailId, payload),
     onSuccess: (updatedTrail) => {
+      queryClient.setQueryData([...QUERY_KEYS.trails.byId(trailId), 'summary'], updatedTrail);
       queryClient.setQueryData(QUERY_KEYS.trails.byId(trailId), updatedTrail);
+      if (updatedTrail?.id && updatedTrail.id !== trailId) {
+        queryClient.setQueryData([...QUERY_KEYS.trails.byId(updatedTrail.id), 'summary'], updatedTrail);
+        queryClient.setQueryData(QUERY_KEYS.trails.byId(updatedTrail.id), updatedTrail);
+      }
+      if (updatedTrail?.slug && updatedTrail.slug !== trailId) {
+        queryClient.setQueryData([...QUERY_KEYS.trails.byId(updatedTrail.slug), 'summary'], updatedTrail);
+        queryClient.setQueryData(QUERY_KEYS.trails.byId(updatedTrail.slug), updatedTrail);
+      }
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
+      queryClient.invalidateQueries({ queryKey: ['trail-map', trailId] });
     },
   });
 
@@ -807,12 +833,18 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         data
       );
       queryClient.invalidateQueries({ queryKey: ['saved-trails', currentUser?.id] });
-      setActionMessage(data.saved ? 'Trail saved to your profile.' : 'Trail removed from saved trails.');
-      setTimeout(() => setActionMessage(null), 2500);
+      showToast(
+        data.saved ? 'Trail Saved' : 'Trail Removed',
+        data.saved ? 'Added to your saved trails.' : 'Removed from your saved trails.',
+        'info'
+      );
     },
     onError: (error) => {
-      setActionMessage(error instanceof Error ? error.message : 'Unable to update saved trail.');
-      setTimeout(() => setActionMessage(null), 2500);
+      showToast(
+        'Unable to Update Saved Trail',
+        error instanceof Error ? error.message : 'Please try again later.',
+        'error'
+      );
     },
   });
 
@@ -926,35 +958,30 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         })
       );
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.trails.byId(trailId) });
-      setToastTitle(isAssociatedToExpert ? 'Trail removed from profile' : 'Trail pinned');
-      setToastDescription(
+      showToast(
+        isAssociatedToExpert ? 'Trail Removed from Profile' : 'Trail Pinned',
         isAssociatedToExpert
           ? 'This trail was removed from your guide profile.'
-          : 'This trail now appears on your guide profile.'
+          : 'This trail now appears on your guide profile.',
+        'success'
       );
-      setToastOpen(true);
     },
     onError: (error) => {
-      setToastTitle('Update failed');
-      setToastDescription(
-        error instanceof Error ? error.message : 'Failed to update guide profile trails.'
+      showToast(
+        'Update Failed',
+        error instanceof Error ? error.message : 'Failed to update guide profile trails.',
+        'error'
       );
-      setToastOpen(true);
     },
   });
 
   const performRouteUpload = async (file: File) => {
     setUploading(true);
-    setUploadError(null);
-    setUploadSuccess(false);
-    setActionMessage(null);
-
     try {
       await uploadRouteMutation.mutateAsync(file);
-      setUploadSuccess(true);
-      setTimeout(() => setUploadSuccess(false), 3000);
+      showToast('Route Uploaded', 'GPX route was uploaded and map data has been updated.', 'success');
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Failed to upload route');
+      showToast('Route Upload Failed', err instanceof Error ? err.message : 'Failed to upload route.', 'error');
       console.error('Error uploading route:', err);
     } finally {
       setUploading(false);
@@ -1048,26 +1075,45 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       file.type.startsWith('image/')
     );
     if (files.length === 0) return;
-    setPhotoUploadMessage(null);
+    const count = files.length;
+    setPhotoUploadingCount(count);
     setPhotoUploading(true);
     try {
       const newImages = await Promise.all(files.map((file) => resizeImageToDataUrl(file)));
       const merged = [...trailImages, ...newImages].filter(Boolean);
       const unique = merged.filter((image, index, arr) => arr.indexOf(image) === index);
-      await updateTrailMutation.mutateAsync({
+      const updated = await updateTrailMutation.mutateAsync({
         image_url: unique[0] || null,
         trail_images: unique,
       });
-      setPhotoUploadMessage('Trail photos updated.');
+      if (updated) {
+        queryClient.setQueryData([...QUERY_KEYS.trails.byId(trailId), 'summary'], updated);
+        queryClient.setQueryData(QUERY_KEYS.trails.byId(trailId), updated);
+      }
+      showToast(
+        'Photos Uploaded',
+        `Successfully added ${count} photo${count === 1 ? '' : 's'} to this trail.`,
+        'success',
+        {
+          label: 'View in gallery',
+          onClick: () => {
+            setGalleryInitialIndex(0);
+            setGalleryModalOpen(true);
+          },
+        }
+      );
       if (event.target) {
         event.target.value = '';
       }
     } catch (error) {
-      setPhotoUploadMessage(
-        error instanceof Error ? error.message : 'Failed to upload trail photos'
+      showToast(
+        'Photo Upload Failed',
+        error instanceof Error ? error.message : 'Failed to upload trail photos.',
+        'error'
       );
     } finally {
       setPhotoUploading(false);
+      setPhotoUploadingCount(0);
     }
   };
 
@@ -1096,8 +1142,11 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       const dataUrl = await resizeImageToDataUrl(file, { maxDimension: 1400, quality: 0.86 });
       await applyTrailCoverImage(dataUrl);
       setCoverMessage('Cover image updated.');
+      showToast('Cover Updated', 'The trail cover image has been updated.', 'success');
     } catch (err) {
-      setCoverMessage(err instanceof Error ? err.message : 'Failed to upload cover image.');
+      const msg = err instanceof Error ? err.message : 'Failed to upload cover image.';
+      setCoverMessage(msg);
+      showToast('Cover Upload Failed', msg, 'error');
     } finally {
       setCoverUploadBusy(false);
       if (event.target) event.target.value = '';
@@ -1255,14 +1304,13 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 1800);
     } catch {
-      setActionMessage('Unable to copy link.');
-      setTimeout(() => setActionMessage(null), 2000);
+      showToast('Unable to copy link', 'Please copy URL from browser address bar.', 'error');
     }
   };
 
   const handleToggleSavedTrail = () => {
     if (loadingCurrentUser) {
-      setActionMessage('Checking your account. Please try again in a second.');
+      showToast('Checking account', 'Please try again in a moment.', 'info');
       return;
     }
     if (!currentUser) {
@@ -1915,14 +1963,6 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           </div>
         </div>
       </div>
-      {(uploadSuccess || uploadError || photoUploadMessage || actionMessage) && (
-        <div className="mb-5 flex flex-wrap gap-2 text-sm">
-          {uploadSuccess && <span className="text-green-600">Route uploaded successfully.</span>}
-          {uploadError && <span className="text-red-600">{uploadError}</span>}
-          {photoUploadMessage && <span className="text-gray-600">{photoUploadMessage}</span>}
-          {actionMessage && <span className="text-gray-600">{actionMessage}</span>}
-        </div>
-      )}
       {isAdmin && (
         <input
           ref={fileInputRef}
@@ -1941,6 +1981,35 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
           onChange={handlePhotoUpload}
           className="hidden"
         />
+      )}
+
+      {/* Floating Uploading Feedback */}
+      {(photoUploading || uploading) && (
+        <aside
+          role="status"
+          aria-live="polite"
+          aria-label={photoUploading ? 'Uploading trail photos' : 'Uploading GPX route'}
+          className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-auto"
+        >
+          <div className="flex items-center gap-3.5 rounded-2xl border border-emerald-400/40 bg-slate-950/95 px-5 py-3.5 text-white shadow-2xl backdrop-blur-md dark:border-emerald-500/50 dark:bg-slate-900/95">
+            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center">
+              <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400/25" />
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-300/30 border-t-emerald-400" />
+            </div>
+            <div className="min-w-0 pr-1">
+              <p className="text-xs font-bold text-white">
+                {photoUploading
+                  ? `Uploading ${photoUploadingCount > 1 ? `${photoUploadingCount} photos` : 'photo'}...`
+                  : 'Uploading GPX route...'}
+              </p>
+              <p className="text-[11px] text-slate-300">
+                {photoUploading
+                  ? 'Optimizing and adding to trail gallery'
+                  : 'Processing track coordinates'}
+              </p>
+            </div>
+          </div>
+        </aside>
       )}
 
       <div id="trail-map" className="sticky top-[74px] z-20 ml-[calc(50%-50vw)] w-screen scroll-mt-32 sm:relative sm:top-auto sm:z-auto sm:ml-0 sm:w-auto sm:scroll-mt-28">
@@ -2691,8 +2760,7 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
                 prefillSport={(trail.sport_type || 'mtb') as SportType}
                 onCompleted={() => {
                   setCreateEventOpen(false);
-                  setActionMessage('Event created successfully.');
-                  setTimeout(() => setActionMessage(null), 2500);
+                  showToast('Event Created', 'Your ride event has been published successfully.', 'success');
                 }}
                 onCancel={() => setCreateEventOpen(false)}
               />
@@ -2963,16 +3031,61 @@ const TrailPageClient: React.FunctionComponent<TrailPageClientProps> = ({
         <Toast.Root
           open={toastOpen}
           onOpenChange={setToastOpen}
-          className="rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-lg"
+          className={`flex items-start gap-3 rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-all ${
+            toastType === 'error'
+              ? 'border-rose-200 bg-rose-50/95 text-rose-950 dark:border-rose-900/60 dark:bg-slate-950 dark:text-rose-100'
+              : toastType === 'success'
+                ? 'border-emerald-200 bg-emerald-50/95 text-emerald-950 dark:border-emerald-900/60 dark:bg-slate-950 dark:text-emerald-100'
+                : 'border-slate-200 bg-white/95 text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100'
+          }`}
         >
-          <Toast.Title className="text-sm font-semibold text-gray-900">
-            {toastTitle}
-          </Toast.Title>
-          <Toast.Description className="mt-1 text-xs text-gray-600">
-            {toastDescription}
-          </Toast.Description>
+          <div className="mt-0.5 shrink-0">
+            {toastType === 'error' ? (
+              <svg className="h-5 w-5 text-rose-600 dark:text-rose-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" />
+              </svg>
+            ) : toastType === 'success' ? (
+              <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5 text-sky-600 dark:text-sky-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .247.25v3.25a.75.75 0 0 0 1.5 0v-3.5A1.75 1.75 0 0 0 9.25 9H9Z" clipRule="evenodd" />
+              </svg>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <Toast.Title className="text-sm font-bold">
+              {toastTitle}
+            </Toast.Title>
+            {toastDescription && (
+              <Toast.Description className="mt-0.5 text-xs opacity-90">
+                {toastDescription}
+              </Toast.Description>
+            )}
+            {toastAction && (
+              <Toast.Action asChild altText={toastAction.label}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toastAction.onClick();
+                  }}
+                  className="mt-2 inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
+                >
+                  {toastAction.label}
+                </button>
+              </Toast.Action>
+            )}
+          </div>
+          <Toast.Close className="ml-2 -mr-1 -mt-1 rounded-lg p-1 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200">
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+            </svg>
+          </Toast.Close>
         </Toast.Root>
-        <Toast.Viewport className="fixed bottom-4 right-4 z-50" />
+        <Toast.Viewport className="fixed bottom-4 right-4 z-50 flex max-w-[420px] flex-col gap-2 p-2" />
       </Toast.Provider>
 
     </div>

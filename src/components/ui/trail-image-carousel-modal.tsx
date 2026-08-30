@@ -60,7 +60,19 @@ export default function TrailImageCarouselModal({
               Close
             </Dialog.Close>
           </div>
-          {images.length > 0 && (
+          {images.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="mb-3 rounded-full bg-slate-800 p-4 text-slate-400">
+                <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-current stroke-2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-white">No photos available yet</p>
+              <p className="mt-1 text-xs text-slate-400">Upload photos to view them in this gallery.</p>
+            </div>
+          ) : (
             <>
               <div className="relative h-[60vh] w-full">
                 <Image
