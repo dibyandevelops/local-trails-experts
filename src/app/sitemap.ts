@@ -12,22 +12,40 @@ function isoDate(value: unknown) {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
-function normalizeImageUrls(
-  primary?: unknown,
-  gallery?: unknown
+export function normalizeImageUrls(
+  ...items: unknown[]
 ): string[] | undefined {
-  const fromGallery = Array.isArray(gallery) ? gallery : [];
-  const raw = [primary, ...fromGallery]
-    .map((value) => String(value || '').trim())
-    .filter(Boolean);
+  const flattened: string[] = [];
+
+  for (const item of items) {
+    if (!item) continue;
+    if (Array.isArray(item)) {
+      for (const nested of item) {
+        if (typeof nested === 'string' && nested.trim()) {
+          flattened.push(nested.trim());
+        }
+      }
+    } else if (typeof item === 'string' && item.trim()) {
+      flattened.push(item.trim());
+    }
+  }
 
   const urls = Array.from(
     new Set(
-      raw.filter(
-        (value) => value.startsWith('https://') || value.startsWith('http://')
-      )
+      flattened
+        .map((value) => {
+          if (value.startsWith('https://') || value.startsWith('http://')) {
+            return value;
+          }
+          if (value.startsWith('/')) {
+            return absoluteUrl(value);
+          }
+          return null;
+        })
+        .filter((value): value is string => Boolean(value))
     )
   );
+
   return urls.length > 0 ? urls : undefined;
 }
 
@@ -72,7 +90,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: isoDate(row.updated_at),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
-      images: row.image_url ? [row.image_url] : undefined,
+      images: normalizeImageUrls(row.image_url),
     }));
 
     const organizations = orgRows.map((row) => ({
@@ -80,7 +98,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: isoDate(row.updated_at),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
-      images: row.image_url ? [row.image_url] : undefined,
+      images: normalizeImageUrls(row.image_url),
     }));
 
     const events = eventRows.map((row) => ({
