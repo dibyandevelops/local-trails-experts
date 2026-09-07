@@ -350,3 +350,39 @@ export interface Review {
   comment: string | null;
   created_at: string;
 }
+
+export type CommunityResourceCategory =
+  | 'app'
+  | 'hardware_tool'
+  | 'youtube_channel'
+  | 'weather_safety'
+  | 'community_group';
+
+export type CommunityResourcePricingType =
+  | 'free'
+  | 'freemium'
+  | 'paid'
+  | 'subscription';
+
+export interface CommunityResource {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  category: CommunityResourceCategory;
+  sport_type: 'all' | 'mtb' | 'hiking' | 'bikepacking';
+  pricing_type: CommunityResourcePricingType;
+  price_note?: string | null;
+  external_url: string;
+  icon_or_logo_url?: string | null;
+  youtube_handle_or_channel_id?: string | null;
+  is_verified_by_locoxperts: boolean;
+  is_featured: boolean;
+  platforms: string[];
+  tags: string[];
+  metadata?: Record<string, any>;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+

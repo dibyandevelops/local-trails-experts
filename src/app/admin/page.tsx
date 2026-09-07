@@ -26,6 +26,7 @@ const HazardousTrailsPanel = dynamic(() => import('@/components/admin/hazardous-
 const PendingTrailsPanel = dynamic(() => import('@/components/admin/pending-trails-panel'), { loading: AdminPanelLoading });
 const UsersPanel = dynamic(() => import('@/components/admin/users-panel'), { loading: AdminPanelLoading });
 const MarketplaceModerationPanel = dynamic(() => import('@/components/admin/marketplace-moderation-panel'), { loading: AdminPanelLoading });
+const ResourcesAdminPanel = dynamic(() => import('@/components/admin/resources-admin-panel'), { loading: AdminPanelLoading });
 
 function AdminSection({
   id,
@@ -200,6 +201,7 @@ export default function AdminPage() {
         description="Manage stores, organizations, campaigns, trail ownership, trail services, and moderation."
       >
         <StoresAdminPanel />
+        <ResourcesAdminPanel />
         <MarketplaceModerationPanel />
         <OrganizationSubscriptionSettingsPanel />
         <OrganizationSubscriptionPaymentsPanel />

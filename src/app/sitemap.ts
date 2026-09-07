@@ -56,6 +56,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl('/trails'), lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: absoluteUrl('/events'), lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: absoluteUrl('/ride-notes'), lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: absoluteUrl('/toolkit'), lastModified: now, changeFrequency: 'daily', priority: 0.85 },
     { url: absoluteUrl('/experts'), lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: absoluteUrl('/organizations'), lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: absoluteUrl('/help'), lastModified: now, changeFrequency: 'weekly', priority: 0.7 },

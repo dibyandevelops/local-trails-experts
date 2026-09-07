@@ -15,6 +15,7 @@ import {
   Sparkles,
   Store,
   Users,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import type { NavGroup, NavItem } from './navbar.types';
@@ -47,6 +48,7 @@ export const navGroups: NavGroup[] = [
       {
         label: 'Cycling services',
         items: [
+          { label: 'Rider Toolkit', href: '/toolkit', showFor: [...allUsers] },
           { label: 'Marketplace', href: '/marketplace', showFor: [...allUsers] },
           { label: 'Cycle Hubs', href: '/store-locator', showFor: [...allUsers] },
           { label: 'Services', href: '/services', showFor: [...allUsers] },
@@ -69,6 +71,7 @@ export const navItems: NavItem[] = [
   { label: 'Home', href: '/home', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   { label: 'Explore Trails', href: '/trails', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   { label: 'Ride Notes', href: '/ride-notes', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
+  { label: 'Toolkit', href: '/toolkit', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   {
     label: 'For Experts',
     href: '/experts/join',
@@ -88,6 +91,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   '/organizations/subscription': CircleDollarSign,
   '/organizations/create': Building2,
   '/campaigns': CircleDollarSign,
+  '/toolkit': Wrench,
   '/marketplace': ShoppingBag,
   '/store-locator': Store,
   '/services': BriefcaseBusiness,

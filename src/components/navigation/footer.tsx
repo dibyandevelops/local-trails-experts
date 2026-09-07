@@ -32,6 +32,7 @@ const FEATURE_LINKS = [
   { label: 'Partner plan', href: '/organizations/subscription' },
   { label: 'Campaigns', href: '/campaigns' },
   { label: 'Cycle hubs', href: '/store-locator' },
+  { label: 'Rider Toolkit', href: '/toolkit' },
   { label: 'Marketplace', href: '/marketplace' },
 ];
 
