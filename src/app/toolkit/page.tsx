@@ -9,8 +9,10 @@ export const revalidate = 3600; // 1 hour ISR
 export const metadata: Metadata = {
   title: 'Curated Nepal MTB & Hiking Toolkit | Essential Apps, Weather & Repair Tools',
   description:
-    'Discover essential offline GPS navigation apps (Gaia GPS, OsmAnd), mountain weather & flood radars (Windy, Nepal DHM), emergency repair tools, and top mountain biking YouTube channels for riding and hiking in Nepal.',
+    'Discover essential GPS and route planning apps (Strava, Komoot, Gaia GPS, OsmAnd), mountain weather & flood radars (Windy, Nepal DHM), emergency repair tools, and top mountain biking YouTube channels for riding and hiking in Nepal.',
   keywords: [
+    'Strava Nepal',
+    'Komoot Nepal cycling',
     'Nepal MTB apps',
     'hiking navigation apps Nepal',
     'offline GPS Nepal trails',
@@ -27,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Essential MTB & Hiking Toolkit for Nepal Trails — Apps, Tools & Channels',
     description:
-      'Curated directory of offline GPS apps, mountain storm radars, trailside repair tools, and bike channels tested by experts for Himalayan routes.',
+      'Curated directory of Strava, Komoot, offline GPS apps, mountain storm radars, trailside repair tools, and bike channels tested by experts for Himalayan routes.',
     url: absoluteUrl('/toolkit'),
     type: 'website',
   },
@@ -35,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Essential MTB & Hiking Toolkit for Nepal — Apps, Radar & Tools',
     description:
-      'Hand-picked GPS apps, storm radars, repair tools, and YouTube channels for riding and trekking across Nepal.',
+      'Hand-picked GPS apps including Strava and Komoot, storm radars, repair tools, and YouTube channels for riding and trekking across Nepal.',
   },
 };
 
