@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthFromRequest, setAuthCookie, signAuthToken } from '@/lib/auth';
 import type { UserRole } from '@/types';
 import bcrypt from 'bcryptjs';
+import { getRequestAppOrigin } from '@/lib/request-app-origin';
 
 const STATE_COOKIE = 'mtb_google_oauth_state';
 const NEXT_COOKIE = 'mtb_google_oauth_next';
@@ -31,7 +32,7 @@ function safeNextPath(value: string | undefined) {
 }
 
 export async function GET(request: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+  const baseUrl = getRequestAppOrigin(request);
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
