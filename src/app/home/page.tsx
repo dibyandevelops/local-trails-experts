@@ -171,52 +171,51 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
             </Link>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col gap-3">
             {rideNotes.map((note) => {
               return (
-                <article
-                  key={note.id}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-emerald-100/80 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-950 dark:hover:border-lime-300/40"
-                >
-                  <div>
+                <article key={note.id}>
+                  <Link
+                    href={`/ride-notes/${note.slug}`}
+                    className="group flex min-h-28 items-center gap-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 dark:focus-visible:ring-lime-300 sm:gap-5"
+                  >
                     {note.cover_image_url && (
-                      <div className="relative mb-3 h-36 w-full overflow-hidden rounded-xl bg-emerald-950/5">
+                      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-emerald-950/5 sm:h-24 sm:w-36">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={note.cover_image_url}
                           alt=""
                           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                         />
-                        <span className="absolute left-2.5 top-2.5 rounded-full border border-white/20 bg-emerald-950/75 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur-sm">
+                      </div>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700 dark:text-lime-300">
+                        <span>
                           {note.category === 'trail_guide'
-                            ? 'Trail Guide'
+                            ? 'Trail guide'
                             : note.category === 'safety'
                               ? 'Safety'
                               : note.category === 'expert_note'
-                                ? 'Expert Note'
-                                : 'Ride Note'}
+                                ? 'Expert note'
+                                : 'Ride note'}
                         </span>
-                      </div>
-                    )}
-                    <h3 className="line-clamp-2 text-base font-black tracking-tight text-emerald-950 group-hover:text-emerald-700 dark:text-white dark:group-hover:text-lime-300">
-                      <Link href={`/ride-notes/${note.slug}`} className="focus:outline-none">
-                        <span className="absolute inset-0 z-0" aria-hidden="true" />
-                        {note.title}
-                      </Link>
-                    </h3>
-                    {note.trail_name && (
-                      <span className="mt-1.5 inline-block text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                        📍 {note.trail_name}
+                        {note.trail_name && <span className="text-gray-500 dark:text-slate-400">· {note.trail_name}</span>}
                       </span>
-                    )}
-                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-gray-600 dark:text-slate-400">
-                      {getRideNoteDescription(note)}
-                    </p>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-[11px] font-bold text-gray-500 dark:border-slate-800 dark:text-slate-400">
-                    <span>{note.expert_name ? `By ${note.expert_name}` : 'Local guide'}</span>
-                    <span className="text-emerald-700 group-hover:underline dark:text-lime-300">Read &rarr;</span>
-                  </div>
+                      <span className="mt-1 block line-clamp-2 text-base font-bold leading-snug text-gray-950 transition-colors group-hover:text-emerald-800 dark:text-white dark:group-hover:text-lime-200 sm:text-lg">
+                        {note.title}
+                      </span>
+                      <span className="mt-1.5 line-clamp-2 block text-xs leading-5 text-gray-600 dark:text-slate-400">
+                        {getRideNoteDescription(note)}
+                      </span>
+                      <span className="mt-2 block text-[11px] font-medium text-gray-500 dark:text-slate-500">
+                        {note.expert_name ? `By ${note.expert_name}` : 'Local guide'}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs font-bold text-emerald-800 transition group-hover:translate-x-0.5 group-hover:underline dark:text-lime-300 sm:translate-x-1 sm:opacity-0 sm:group-hover:translate-x-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-x-0 sm:group-focus-visible:opacity-100">
+                      Read more <span aria-hidden="true">&rarr;</span>
+                    </span>
+                  </Link>
                 </article>
               );
             })}
@@ -228,41 +227,7 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
         className="mx-auto max-w-5xl px-4 pt-7 [contain-intrinsic-size:0_520px] [content-visibility:auto] md:px-8 md:pt-9"
         aria-labelledby="platform-transparency"
       >
-        <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr] lg:items-stretch">
-          <aside className="flex flex-col justify-between rounded-2xl border border-emerald-100 bg-emerald-50/55 p-5 dark:border-slate-800 dark:bg-slate-950 md:p-6">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-800 dark:text-lime-200">
-                LocoXperts
-              </p>
-              <p className="mt-3 text-sm leading-6 text-emerald-950/75 dark:text-slate-300">
-                {copy.supportPrefix}{' '}
-                <Link
-                  href="/support-locoxperts"
-                  className="font-bold text-emerald-900 underline underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
-                >
-                  {copy.supportLink}
-                </Link>
-                {' '}{copy.supportSuffix}
-              </p>
-              <p className="mt-4 text-sm leading-6 text-emerald-950/75 dark:text-slate-300">
-                {copy.expertOrganizationPrompt}{' '}
-                <Link
-                  href={localizePath('/experts/join', locale)}
-                  className="font-bold text-emerald-900 underline underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
-                >
-                  {copy.expertOrganizationLink}
-                </Link>
-                .
-              </p>
-            </div>
-            <Link
-              href={localizePath('/purpose', locale)}
-              className="mt-5 inline-flex w-fit items-center text-xs font-black uppercase tracking-[0.14em] text-emerald-900 underline decoration-2 underline-offset-4 transition hover:text-emerald-700 dark:text-lime-200 dark:hover:text-lime-100"
-            >
-              {copy.exploreLabel}
-            </Link>
-          </aside>
-
+        <div>
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:p-6">
             <div className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
               <div>
