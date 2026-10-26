@@ -34,7 +34,7 @@ const TBN_USERS = [
   },
   {
     name: 'Nirav Shrestha',
-    email: 'nirav.shrestha@locoxperts.app',
+    email: 'nirav.shrestha@example.com',
     password_hash: 'mock-hash-not-for-auth',
     role: 'expert',
     city: 'Kathmandu',
@@ -44,7 +44,7 @@ const TBN_USERS = [
   },
   {
     name: 'TBN Organization Manager',
-    email: 'organization.admin@locoxperts.app',
+    email: 'organization.admin@example.com',
     password: process.env.MOCK_ORGANIZATION_PASSWORD || 'LocoXpertsOrg2026!',
     role: 'expert',
     city: 'Kathmandu',

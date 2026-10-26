@@ -3,6 +3,9 @@ import pool from '@/lib/db';
 import { getAuthFromRequest } from '@/lib/auth';
 import type { CommunityResource } from '@/types';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 
 function slugify(text: string) {
   return text
@@ -69,7 +72,10 @@ export async function GET(request: NextRequest) {
     `;
 
     const result = await pool.query<CommunityResource>(sql, params);
-    return NextResponse.json({ resources: result.rows });
+    return NextResponse.json(
+      { resources: result.rows },
+      { headers: { 'Cache-Control': 'no-store, max-age=0' } }
+    );
   } catch (error) {
     console.error('Error fetching community resources:', error);
     return NextResponse.json({ error: 'Failed to fetch resources' }, { status: 500 });

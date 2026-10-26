@@ -7,6 +7,12 @@ export type HomeCopy = {
   };
   heroTitle: string;
   heroDescription: string;
+  trailShareTitle: string;
+  trailShareDescription: string;
+  trailShareCta: string;
+  contributionTitle: string;
+  contributionDescription: string;
+  contributionCta: string;
   search: {
     label: string;
     placeholder: string;
@@ -52,6 +58,13 @@ export const homeCopy: Record<Locale, HomeCopy> = {
     heroTitle: 'Find trails worth riding.',
     heroDescription:
       'Search local routes, connect with guides who know them, and plan your next ride with better context.',
+    trailShareTitle: 'Know a trail worth sharing?',
+    trailShareDescription: 'List your trail or route so more riders can discover it.',
+    trailShareCta: 'List a trail',
+    contributionTitle: 'Help keep new trails coming',
+    contributionDescription:
+      'Your contribution helps me research, map, and add new trail routes for riders to discover.',
+    contributionCta: 'Contribute',
     search: {
       label: 'Search trails',
       placeholder: 'Search Pharping, Chitlang, enduro, Kathmandu...',
@@ -117,6 +130,13 @@ export const homeCopy: Record<Locale, HomeCopy> = {
     heroTitle: 'राइड गर्न लायक ट्रेल खोज्नुहोस्।',
     heroDescription:
       'स्थानीय रुट खोज्नुहोस्, ती रुट चिन्ने गाइडसँग जोडिनुहोस्, र राम्रो जानकारीसहित अर्को राइड योजना बनाउनुहोस्।',
+    trailShareTitle: 'साझा गर्न लायक ट्रेल चिन्नुहुन्छ?',
+    trailShareDescription: 'आफ्नो ट्रेल वा रुट राख्नुहोस्, ताकि अरू राइडरले पनि भेट्टाउन सकून्।',
+    trailShareCta: 'ट्रेल राख्नुहोस्',
+    contributionTitle: 'नयाँ ट्रेल थप्न सहयोग गर्नुहोस्',
+    contributionDescription:
+      'तपाईंको योगदानले मलाई नयाँ ट्रेल खोज्न, नक्साङ्कन गर्न र राइडरका लागि थप्न सहयोग गर्छ।',
+    contributionCta: 'योगदान गर्नुहोस्',
     search: {
       label: 'ट्रेल खोज्नुहोस्',
       placeholder: 'Pharping, Chitlang, enduro, Kathmandu खोज्नुहोस्...',

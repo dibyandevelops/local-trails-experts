@@ -97,6 +97,37 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
             </p>
             <HomeTrailSearch featuredTrails={featuredTrails} copy={copy.search} />
 
+            <div className="mt-5 grid max-w-3xl gap-3 sm:grid-cols-2">
+              <Link
+                href="/upload"
+                className="group rounded-2xl border border-emerald-700 bg-emerald-800 p-4 text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:border-lime-300 dark:bg-lime-300 dark:text-slate-950 dark:hover:bg-lime-200"
+              >
+                <span className="block text-xs font-black uppercase tracking-[0.16em] text-emerald-100 dark:text-emerald-950/70">
+                  {copy.trailShareTitle}
+                </span>
+                <span className="mt-1 block text-base font-black">
+                  {copy.trailShareCta} <span aria-hidden="true">→</span>
+                </span>
+                <span className="mt-1 block text-sm leading-5 text-emerald-50 dark:text-emerald-950/80">
+                  {copy.trailShareDescription}
+                </span>
+              </Link>
+              <Link
+                href={localizePath('/support-locoxperts', locale)}
+                className="group rounded-2xl border border-lime-400 bg-lime-100/90 p-4 text-emerald-950 shadow-sm transition hover:-translate-y-0.5 hover:border-lime-500 hover:bg-lime-200 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/80 dark:text-white dark:hover:bg-emerald-900"
+              >
+                <span className="block text-xs font-black uppercase tracking-[0.16em] text-emerald-800 dark:text-lime-200">
+                  {copy.contributionTitle}
+                </span>
+                <span className="mt-1 block text-base font-black">
+                  {copy.contributionCta} <span aria-hidden="true">→</span>
+                </span>
+                <span className="mt-1 block text-sm leading-5 text-emerald-950/75 dark:text-slate-300">
+                  {copy.contributionDescription}
+                </span>
+              </Link>
+            </div>
+
             {spotlight && (
               <Link
                 href={spotlight.href}

@@ -18,7 +18,7 @@ const schema = z.object({
 function getAdminEmail() {
   const candidate =
     (process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL || '').trim();
-  return candidate || 'admin@locoexperts.com';
+  return candidate || 'locoxperts@gmail.com';
 }
 
 export async function POST(request: NextRequest) {

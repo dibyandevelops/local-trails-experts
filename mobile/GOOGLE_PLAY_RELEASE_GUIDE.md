@@ -159,7 +159,7 @@ To allow `https://www.locoxperts.com/trails/<slug>` links to open directly in th
 2. Click **Create new release**.
 3. Upload your `app-release.aab` bundle.
 4. Set release name: `0.1.0 (1)`.
-5. Under **Testers**, create an email list (e.g. `team@locoxperts.com`).
+5. Under **Testers**, create an email list (e.g. `testers@gmail.com`).
 6. Click **Save $\to$ Review release $\to$ Start rollout to Internal Testing**.
 7. Share the join link with your team to test the install directly from the Play Store!
 

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     url.searchParams.set('limit', '5');
     url.searchParams.set('countrycodes', 'np');
 
-    const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'contact@locoxperts.com';
+    const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'locoxperts@gmail.com';
     const response = await fetch(url.toString(), {
       headers: {
         'User-Agent': `LocoXperts/1.0 (${contactEmail})`,
