@@ -50,7 +50,7 @@ const SOCIAL_LINKS = [
 export default function Footer({ initialUser = null }: { initialUser?: User | null }) {
   const year = new Date().getFullYear();
   const brand = 'LocoXperts';
-  const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'locoxperts@gmail.com';
   const individualWhatsappNumber = '9810265305';
   const individualWhatsappLink = `https://wa.me/977${individualWhatsappNumber}`;
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -86,6 +86,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
           <FooterSupportColumn
             contactHref={contactHref}
             featureHref={featureHref}
+            collaborateHref={individualWhatsappLink}
             socialLinks={SOCIAL_LINKS}
             onOpenFeedback={() => setFeedbackOpen(true)}
           />
@@ -94,12 +95,6 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
       <div className="container mx-auto mt-4 flex flex-col gap-2 border-t border-gray-200 px-4 pt-3 text-xs text-gray-500 dark:border-slate-800 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
         <p>Reach out for collaboration, trail mapping, and weekend ride planning.</p>
         <div className="flex flex-wrap gap-2">
-          <a
-            href="/support-locoxperts"
-            className="inline-flex items-center rounded-full border border-transparent px-3 py-1.5 text-xs font-semibold text-emerald-800 underline-offset-4 transition hover:text-emerald-700 hover:underline dark:text-lime-200 dark:hover:text-lime-100"
-          >
-            Support LocoXperts
-          </a>
           <a
             href={individualWhatsappLink}
             target="_blank"

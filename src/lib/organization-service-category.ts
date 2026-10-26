@@ -7,6 +7,11 @@ export const ORGANIZATION_SERVICE_CATEGORY_VALUES = [
   'bike_rental',
   'repair_support',
   'event_support',
+  'web_development',
+  'digital_marketing',
+  'sales_support',
+  'it_support',
+  'maps_presence',
   'other',
 ] as const;
 
@@ -15,6 +20,11 @@ export type OrganizationServiceCategory =
 
 export function inferOrganizationServiceCategory(input: string): OrganizationServiceCategory {
   const value = input.toLowerCase();
+  if (/google maps|google business|business profile|local listing|map listing/.test(value)) return 'maps_presence';
+  if (/website|web design|web development|e-commerce|ecommerce|landing page/.test(value)) return 'web_development';
+  if (/marketing|seo|social media|advertising|content strategy/.test(value)) return 'digital_marketing';
+  if (/sales|crm|customer relationship|lead generation/.test(value)) return 'sales_support';
+  if (/it support|it services|computer support|tech support|cloud setup|network setup/.test(value)) return 'it_support';
   if (/photo|photograph|camera|video|film|drone/.test(value)) return 'ride_photography';
   if (/shuttle|transport|pickup|drop[ -]?off|vehicle|transfer/.test(value)) return 'shuttle_transport';
   if (/design|poster|graphic|brand|logo|creative/.test(value)) return 'creative_design';

@@ -3,6 +3,7 @@ import Link from 'next/link';
 type Props = {
   contactHref: string;
   featureHref: string;
+  collaborateHref: string;
   socialLinks?: Array<{ label: string; href: string }>;
   onOpenFeedback: () => void;
 };
@@ -10,6 +11,7 @@ type Props = {
 export default function FooterSupportColumn({
   contactHref,
   featureHref,
+  collaborateHref,
   socialLinks = [],
   onOpenFeedback,
 }: Props) {
@@ -36,6 +38,11 @@ export default function FooterSupportColumn({
           <Link className="hover:underline" href="/purpose">
             Purpose
           </Link>
+        </li>
+        <li>
+          <a className="hover:underline" href={collaborateHref} target="_blank" rel="noreferrer noopener">
+            Collaborate
+          </a>
         </li>
         <li>
           <Link className="hover:underline" href="/help">

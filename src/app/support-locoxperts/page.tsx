@@ -5,7 +5,7 @@ import { COMMUNITY_NAME } from '@/lib/branding';
 export const metadata: Metadata = {
   title: 'Support LocoXperts',
   description:
-    `Support ${COMMUNITY_NAME} so the platform can stay alive, improve, and remain useful for local riders.`,
+    `Help ${COMMUNITY_NAME} stay useful for local riders and keep new trail routes coming.`,
   alternates: { canonical: '/support-locoxperts' },
 };
 
@@ -23,7 +23,11 @@ export default function DonatePage() {
           </h1>
           <p className="mt-4 text-sm leading-7 text-gray-600 dark:text-slate-300 md:text-base">
             If LocoXperts helps you find trails, experts, events, or nearby ride support, you can
-            support the developer behind it.
+            support the work behind it.
+          </p>
+          <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold leading-6 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 md:text-base">
+            Want me to keep adding new trail routes? Your contribution helps me research, map, and
+            add more routes for riders to discover.
           </p>
         </div>
       </header>
@@ -35,23 +39,22 @@ export default function DonatePage() {
             <div className="aspect-square overflow-hidden rounded-2xl bg-white">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src=""
-                // src="/donate/esewa-platform-support.jpeg"
+                src="/donate/esewa-qr-cropped.jpeg"
                 alt="eSewa QR code for supporting LocoXperts platform upkeep"
-                className="h-full w-full object-cover object-[50%_23%]"
+                className="h-full w-full object-contain"
               />
             </div>
           </div>
-          <p className="mt-3 text-center text-xs font-semibold text-gray-500 dark:text-slate-400">
-            eSewa support for LocoXperts platform upkeep
+          <p className="mt-3 text-center text-sm font-bold leading-6 text-emerald-800 dark:text-emerald-200">
+            Scan with eSewa to support LocoXperts and help keep new trails coming
           </p>
         </section>
 
         <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 lg:mt-8">
           <h2 className="text-lg font-black text-gray-950 dark:text-white">What this supports</h2>
           <p className="mt-3 text-sm leading-7 text-gray-700 dark:text-slate-300">
-            This is for platform upkeep: hosting, fixes, maintenance, and developer time to keep
-            improving LocoXperts.
+            Contributions support the work behind LocoXperts, including hosting, maintenance, and
+            the time it takes to research, map, and add new trail routes.
           </p>
           <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
             Trail-building donations are separate. Use campaign pages when you want to support a

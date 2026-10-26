@@ -73,7 +73,7 @@ export default function ToolkitDirectoryView({
     selectedPricing !== 'all' ||
     Boolean(searchQuery.trim());
 
-  const { data: resources = initialResources, isLoading } = useQuery<CommunityResource[]>({
+  const { data: resources = initialResources, isLoading, isError } = useQuery<CommunityResource[]>({
     queryKey: ['community-resources', selectedCategory, selectedSport, selectedPricing, searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -82,12 +82,15 @@ export default function ToolkitDirectoryView({
       if (selectedPricing !== 'all') params.set('pricing_type', selectedPricing);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
 
-      const res = await fetch(`/api/resources?${params.toString()}`);
+      const res = await fetch(`/api/resources?${params.toString()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch community resources');
       const data = await res.json();
       return data.resources;
     },
     initialData: !isFiltering ? initialResources : undefined,
+    // The server-provided list can be empty if the DB was temporarily unavailable.
+    // Recheck the API immediately after hydration instead of treating that snapshot as fresh.
+    initialDataUpdatedAt: 0,
   });
 
   return (
@@ -143,11 +146,10 @@ export default function ToolkitDirectoryView({
               <button
                 key={tab.id}
                 onClick={() => setSelectedCategory(tab.id)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold transition ${
-                  isActive
+                className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold transition ${isActive
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
                     : 'border border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
-                }`}
+                  }`}
               >
                 <Icon className="h-4 w-4" />
                 {tab.label}
@@ -166,11 +168,10 @@ export default function ToolkitDirectoryView({
               <button
                 key={s.id}
                 onClick={() => setSelectedSport(s.id)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
-                  selectedSport === s.id
+                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${selectedSport === s.id
                     ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
-                }`}
+                  }`}
               >
                 {s.label}
               </button>
@@ -185,11 +186,10 @@ export default function ToolkitDirectoryView({
               <button
                 key={p.id}
                 onClick={() => setSelectedPricing(p.id)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
-                  selectedPricing === p.id
+                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${selectedPricing === p.id
                     ? 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-emerald-950'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
-                }`}
+                  }`}
               >
                 {p.label}
               </button>
@@ -207,6 +207,10 @@ export default function ToolkitDirectoryView({
                   className="h-56 animate-pulse rounded-2xl border border-gray-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
                 />
               ))}
+            </div>
+          ) : isError ? (
+            <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+              Could not load toolkit resources. Please refresh and try again.
             </div>
           ) : resources.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-900">
@@ -245,15 +249,14 @@ export default function ToolkitDirectoryView({
                       {/* Card Header & Badges */}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <div className={`p-2 rounded-xl ${
-                            isYouTube
+                          <div className={`p-2 rounded-xl ${isYouTube
                               ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
                               : isWeather
-                              ? 'bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400'
-                              : isHardware
-                              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
-                              : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
-                          }`}>
+                                ? 'bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400'
+                                : isHardware
+                                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+                                  : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                            }`}>
                             {isYouTube ? (
                               <YoutubeIcon className="h-5 w-5" />
                             ) : isWeather ? (

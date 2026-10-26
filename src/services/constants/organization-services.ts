@@ -7,6 +7,11 @@ export const SERVICE_CATEGORIES = [
   ['bike_rental', 'Bike rental'],
   ['repair_support', 'Repair support'],
   ['event_support', 'Event support'],
+  ['web_development', 'Website design and development'],
+  ['digital_marketing', 'Digital marketing and SEO'],
+  ['sales_support', 'Sales and customer systems'],
+  ['it_support', 'IT support and consulting'],
+  ['maps_presence', 'Google Maps and local listings'],
   ['other', 'Other'],
 ] as const;
 

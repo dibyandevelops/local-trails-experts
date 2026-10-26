@@ -4,7 +4,8 @@ import type { CommunityResource } from '@/types';
 import ToolkitDirectoryView from '@/components/toolkit/toolkit-directory-view';
 import { absoluteUrl } from '@/lib/seo';
 
-export const revalidate = 3600; // 1 hour ISR
+// Toolkit entries are maintained in PostgreSQL; read the current catalog for each request.
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Curated Nepal MTB & Hiking Toolkit | Essential Apps, Weather & Repair Tools',

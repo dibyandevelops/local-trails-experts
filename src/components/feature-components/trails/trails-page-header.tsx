@@ -47,7 +47,7 @@ export function TrailsPageHeader({
             Nepal Trail Guide
           </p>
           <h1 className="mt-2 text-3xl font-black text-gray-950 dark:text-slate-50 sm:text-4xl">
-            Find your next trail
+            LocoXperts’ Trails
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
             Search mapped routes, compare distance and difficulty, then open a trail for maps,

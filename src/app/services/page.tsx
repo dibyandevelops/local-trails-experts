@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import ServicesDirectory from '@/components/services/services-directory';
 
 export const metadata: Metadata = {
-  title: 'Local MTB and Ride Services',
-  description: 'Find ride photography, shuttle transport, graphics, guiding, training, rentals, repair, and event support from Nepal organizations.',
+  title: 'Business IT and Local Cycling Services | LocoXperts',
+  description: 'Find website development, digital marketing, sales systems, Google Maps setup, IT support, and cycling services from local organizations.',
 };
 
 export default function ServicesPage() {

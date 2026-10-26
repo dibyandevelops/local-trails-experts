@@ -10,7 +10,7 @@ export async function generateMetadata(props: {
   const resolved = props.searchParams ? await props.searchParams : {};
   const hasFilters = hasAnySearchParams(resolved);
   return listingMetadata({
-    title: 'Find Your Next Trail Ride in Nepal',
+    title: 'LocoXperts’ Trails | Find MTB Trails in Nepal',
     description:
       'Discover mountain bike trails in Nepal with GPX maps, route details, safety notes, and local recommendations.',
     canonicalPath: '/trails',
@@ -31,7 +31,7 @@ export default function TrailsPage() {
   const collectionJsonLd = jsonLdStringify({
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Trails in Nepal',
+    name: 'LocoXperts’ Trails in Nepal',
     url: absoluteUrl('/trails'),
     description:
       'Explore curated trails across Nepal with route details, safety information, and local recommendations.',

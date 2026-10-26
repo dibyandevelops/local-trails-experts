@@ -55,7 +55,7 @@ export default function StoreRequestForm({
 }: Props) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
-  const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'contact@locoxperts.com';
+  const contactEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'locoxperts@gmail.com';
   const [acceptTerms, setAcceptTerms] = useState(false);
   const isAdminEdit = Boolean(onSubmitOverride);
   const shouldCollectReviewContact = requireReviewContact ?? !isAdminEdit;

@@ -52,6 +52,11 @@ function buildDefaultValues(organization?: OrganizationServiceDefaults): Service
 
 function inferServiceTitle(text: string) {
   const value = text.toLowerCase();
+  if (value.includes('website') || value.includes('web design') || value.includes('web development')) return 'Website design and development';
+  if (value.includes('google maps') || value.includes('google business') || value.includes('business profile')) return 'Google Maps business listing setup';
+  if (value.includes('marketing') || value.includes('seo') || value.includes('social media')) return 'Digital marketing support';
+  if (value.includes('sales') || value.includes('crm') || value.includes('lead generation')) return 'Sales and customer systems';
+  if (value.includes('it support') || value.includes('tech support') || value.includes('network')) return 'Small business IT support';
   if (value.includes('photo') || value.includes('camera') || value.includes('video')) return 'Trail ride photography';
   if (value.includes('shuttle') || value.includes('transport') || value.includes('pickup')) return 'Trail shuttle transport';
   if (value.includes('coach') || value.includes('training') || value.includes('skills')) return 'MTB skills coaching';
@@ -60,7 +65,7 @@ function inferServiceTitle(text: string) {
   if (value.includes('repair') || value.includes('mechanic') || value.includes('maintenance')) return 'Trail-side bike repair';
   if (value.includes('event') || value.includes('race')) return 'Event support service';
   if (value.includes('design') || value.includes('poster') || value.includes('graphic')) return 'Creative design support';
-  return 'Custom ride support service';
+  return 'Custom business or cycling service';
 }
 
 async function serviceRequest(organizationId: string, init?: RequestInit): Promise<{ services: OrganizationService[] }> {
