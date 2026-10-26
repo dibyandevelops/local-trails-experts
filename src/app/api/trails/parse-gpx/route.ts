@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (limited) return limited;
 
     const auth = getAuthFromRequest(request);
-    if (!auth || (auth.role !== 'admin' && auth.role !== 'expert')) {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

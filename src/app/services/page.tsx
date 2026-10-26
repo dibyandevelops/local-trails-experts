@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import ServicesDirectory from '@/components/services/services-directory';
+import { servicesCopy } from '@/i18n/services';
+import { getCommunityWhatsappLink } from '@/lib/whatsapp';
 
-export const metadata: Metadata = {
-  title: 'Business IT and Local Cycling Services | LocoXperts',
-  description: 'Find website development, digital marketing, sales systems, Google Maps setup, IT support, and cycling services from local organizations.',
-};
+export const metadata: Metadata = servicesCopy.en.metadata;
 
 export default function ServicesPage() {
-  return <ServicesDirectory />;
+  const businessContactHref = getCommunityWhatsappLink(servicesCopy.en.business.whatsappMessage);
+  return <ServicesDirectory locale="en" businessContactHref={businessContactHref} />;
 }

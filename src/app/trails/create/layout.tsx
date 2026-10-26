@@ -7,7 +7,7 @@ export default async function CreateTrailLayout({ children }: { children: ReactN
   if (!auth) {
     redirect(`/?login=1&next=${encodeURIComponent('/upload')}`);
   }
-  if (auth.role !== 'admin' && auth.role !== 'expert') {
+  if (auth.role !== 'admin' && auth.role !== 'expert' && auth.role !== 'participant') {
     redirect('/trails');
   }
   return <>{children}</>;

@@ -431,7 +431,13 @@ export default function MultiTrailSubmissionForm({
     }
 
     setSubmitting(true);
-    const results: { index: number; ok: boolean; id?: string; err?: string }[] = [];
+    const results: {
+      index: number;
+      ok: boolean;
+      id?: string;
+      requiresApproval?: boolean;
+      err?: string;
+    }[] = [];
 
     for (const { index, form, file } of valid) {
       try {
@@ -457,11 +463,19 @@ export default function MultiTrailSubmissionForm({
           payload.append('safety_labels', JSON.stringify(form.safety_labels));
         }
 
-        const { data } = await apiClient.post<{ trail: { id: string } }>(ApiPath.Trails, payload, {
+        const { data } = await apiClient.post<{
+          trail: { id: string };
+          requiresApproval?: boolean;
+        }>(ApiPath.Trails, payload, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        results.push({ index, ok: true, id: data.trail?.id });
+        results.push({
+          index,
+          ok: true,
+          id: data.trail?.id,
+          requiresApproval: data.requiresApproval,
+        });
       } catch (e) {
         let errorMessage = 'Failed to create trail';
         if (axios.isAxiosError(e)) {
@@ -480,14 +494,19 @@ export default function MultiTrailSubmissionForm({
     const failed = results.filter((r) => !r.ok);
 
     if (failed.length === 0) {
-      setNotice(
-        succeeded.length === 1
+      const requiresApproval = succeeded.some((result) => result.requiresApproval);
+      setNotice(requiresApproval
+        ? succeeded.length === 1
+          ? 'Trail submitted for review. It will appear publicly after approval.'
+          : `${succeeded.length} trails submitted for review. They will appear publicly after approval.`
+        : succeeded.length === 1
           ? 'Trail created successfully.'
-          : `${succeeded.length} trails created successfully.`
-      );
+          : `${succeeded.length} trails created successfully.`);
       if (succeeded.length > 0 && onSuccess) {
         const first = succeeded[0];
-        if (first.id) onSuccess({ trail: { id: first.id }, requiresApproval: !isAdmin });
+        if (first.id) {
+          onSuccess({ trail: { id: first.id }, requiresApproval: first.requiresApproval });
+        }
       }
       reset({ trails: [createInitialForm()], acceptTerms: false });
       setGpxFiles([null]);
@@ -788,20 +807,22 @@ export default function MultiTrailSubmissionForm({
                     <div>
                       <div className="mb-1 flex items-center justify-between">
                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Description</label>
-                        <button
-                          type="button"
-                          onClick={() => handleGenerateDescription(index)}
-                          disabled={
-                            generatingIndex === index ||
-                            !values[index]?.name?.trim() ||
-                            !values[index]?.location?.trim() ||
-                            !values[index]?.sport_type ||
-                            !values[index]?.difficulty
-                          }
-                          className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {generatingIndex === index ? 'Generating...' : 'Generate with AI'}
-                        </button>
+                        {userRole !== 'participant' && (
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateDescription(index)}
+                            disabled={
+                              generatingIndex === index ||
+                              !values[index]?.name?.trim() ||
+                              !values[index]?.location?.trim() ||
+                              !values[index]?.sport_type ||
+                              !values[index]?.difficulty
+                            }
+                            className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {generatingIndex === index ? 'Generating...' : 'Generate with AI'}
+                          </button>
+                        )}
                       </div>
                       <textarea {...register(`trails.${index}.description`)} rows={3} className={inputClass} placeholder="Trail description" />
                     </div>

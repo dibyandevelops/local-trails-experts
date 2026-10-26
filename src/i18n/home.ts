@@ -10,6 +10,7 @@ export type HomeCopy = {
   trailShareTitle: string;
   trailShareDescription: string;
   trailShareCta: string;
+  trailShareAuthMessage: string;
   contributionTitle: string;
   contributionDescription: string;
   contributionCta: string;
@@ -61,6 +62,8 @@ export const homeCopy: Record<Locale, HomeCopy> = {
     trailShareTitle: 'Know a trail worth sharing?',
     trailShareDescription: 'List your trail or route so more riders can discover it.',
     trailShareCta: 'List a trail',
+    trailShareAuthMessage:
+      'Sign in or create a free account to submit your route. New trail submissions are reviewed before they appear.',
     contributionTitle: 'Help keep new trails coming',
     contributionDescription:
       'Your contribution helps me research, map, and add new trail routes for riders to discover.',
@@ -133,6 +136,8 @@ export const homeCopy: Record<Locale, HomeCopy> = {
     trailShareTitle: 'साझा गर्न लायक ट्रेल चिन्नुहुन्छ?',
     trailShareDescription: 'आफ्नो ट्रेल वा रुट राख्नुहोस्, ताकि अरू राइडरले पनि भेट्टाउन सकून्।',
     trailShareCta: 'ट्रेल राख्नुहोस्',
+    trailShareAuthMessage:
+      'आफ्नो रुट बुझाउन साइन इन गर्नुहोस् वा निःशुल्क खाता बनाउनुहोस्। नयाँ ट्रेल सार्वजनिक हुनुअघि समीक्षा गरिन्छ।',
     contributionTitle: 'नयाँ ट्रेल थप्न सहयोग गर्नुहोस्',
     contributionDescription:
       'तपाईंको योगदानले मलाई नयाँ ट्रेल खोज्न, नक्साङ्कन गर्न र राइडरका लागि थप्न सहयोग गर्छ।',
