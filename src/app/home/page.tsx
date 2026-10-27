@@ -177,15 +177,15 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
                 <article key={note.id}>
                   <Link
                     href={`/ride-notes/${note.slug}`}
-                    className="group flex min-h-28 items-center gap-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 dark:focus-visible:ring-lime-300 sm:gap-5"
+                    className="group flex items-center gap-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 motion-reduce:transition-none dark:focus-visible:ring-lime-300 sm:gap-5 sm:py-4"
                   >
                     {note.cover_image_url && (
-                      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-emerald-950/5 sm:h-24 sm:w-36">
+                      <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-emerald-950/5 sm:h-24 sm:w-36">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={note.cover_image_url}
                           alt=""
-                          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover transition duration-300 group-hover:scale-105 motion-reduce:transition-none"
                         />
                       </div>
                     )}
@@ -208,12 +208,12 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
                       <span className="mt-1.5 line-clamp-2 block text-xs leading-5 text-gray-600 dark:text-slate-400">
                         {getRideNoteDescription(note)}
                       </span>
-                      <span className="mt-2 block text-[11px] font-medium text-gray-500 dark:text-slate-500">
-                        {note.expert_name ? `By ${note.expert_name}` : 'Local guide'}
+                      <span className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] font-medium text-gray-500 dark:text-slate-500">
+                        <span>{note.expert_name ? `By ${note.expert_name}` : 'Local guide'}</span>
+                        <span className="shrink-0 font-bold text-emerald-800 transition group-hover:translate-x-0.5 group-hover:underline dark:text-lime-300 sm:translate-x-1 sm:opacity-0 sm:group-hover:translate-x-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-x-0 sm:group-focus-visible:opacity-100">
+                          Read more <span aria-hidden="true">&rarr;</span>
+                        </span>
                       </span>
-                    </span>
-                    <span className="shrink-0 text-xs font-bold text-emerald-800 transition group-hover:translate-x-0.5 group-hover:underline dark:text-lime-300 sm:translate-x-1 sm:opacity-0 sm:group-hover:translate-x-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-x-0 sm:group-focus-visible:opacity-100">
-                      Read more <span aria-hidden="true">&rarr;</span>
                     </span>
                   </Link>
                 </article>
@@ -227,17 +227,29 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
         className="mx-auto max-w-5xl px-4 pt-7 [contain-intrinsic-size:0_520px] [content-visibility:auto] md:px-8 md:pt-9"
         aria-labelledby="platform-transparency"
       >
-        <div>
-          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:p-6">
+        <details className="group rounded-2xl border border-emerald-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-2xl p-5 outline-none transition-colors hover:bg-emerald-50/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 dark:hover:bg-slate-900/60 dark:focus-visible:ring-lime-300 [&::-webkit-details-marker]:hidden md:p-6">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-lime-200">
+                {copy.transparency.eyebrow}
+              </p>
+              <h2 id="platform-transparency" className="mt-2 text-xl font-black leading-tight text-gray-950 dark:text-white md:text-2xl">
+                {copy.transparency.title}
+              </h2>
+            </div>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              className="h-5 w-5 shrink-0 text-emerald-700 transition-transform group-open:rotate-180 dark:text-lime-200 motion-reduce:transition-none"
+            >
+              <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </summary>
+          <div className="border-t border-emerald-100 px-5 pb-5 pt-5 dark:border-slate-800 md:px-6 md:pb-6">
             <div className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-lime-200">
-                  {copy.transparency.eyebrow}
-                </p>
-                <h2 id="platform-transparency" className="mt-3 text-2xl font-black leading-tight text-gray-950 dark:text-white">
-                  {copy.transparency.title}
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
+                <p className="text-sm leading-6 text-gray-600 dark:text-slate-300">
                   {copy.transparency.description}
                 </p>
                 <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
@@ -264,7 +276,7 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
               </div>
             </div>
           </div>
-        </div>
+        </details>
       </section>
 
       <nav
