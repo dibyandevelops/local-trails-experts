@@ -139,7 +139,7 @@ export default function EventsPageClient() {
       expertise: selectedExpertise,
       city: selectedCity,
       sport: selectedSport,
-      guide: selectedExpert,
+      expert: selectedExpert,
       upcoming: showOnlyUpcoming,
     }),
     queryFn: ({ signal }) =>
@@ -148,7 +148,7 @@ export default function EventsPageClient() {
           expertise: selectedExpertise,
           city: selectedCity,
           sport: selectedSport,
-          guide: selectedExpert,
+          expert: selectedExpert,
           upcoming: showOnlyUpcoming,
         },
         signal

@@ -198,7 +198,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-3 py-2">{role === 'guide' ? 'Guide' : 'Participant'}</th>
+                  <th className="px-3 py-2">{role === 'expert' ? 'Guide' : 'Participant'}</th>
                   <th className="px-3 py-2">City</th>
                   <th className="px-3 py-2">Sports</th>
                   <th className="px-3 py-2">Phone</th>
