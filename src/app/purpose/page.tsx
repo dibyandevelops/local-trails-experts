@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   keywords: [
     'Kathmandu MTB trails',
     'Nepal trail platform',
-    'ride with experts Nepal',
+    'ride with guides Nepal',
     'local MTB guides Nepal',
     'trail organizations Nepal',
     'bike services Kathmandu',

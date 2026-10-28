@@ -28,6 +28,7 @@ import { fetchMyParticipantEvents } from '@/services/participants/participants.s
 import TrailRequestModal, {
   type TrailRequestSubmitPayload,
 } from '@/components/feature-components/trail-request/trail-request-modal';
+import BetaBadge from '@/components/ui/beta-badge';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -252,12 +253,12 @@ export default function ExpertDetailPage() {
   if (!expert) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600 dark:text-slate-300 mb-4">Expert not found.</p>
+        <p className="text-gray-600 dark:text-slate-300 mb-4">Guide not found.</p>
         <Link
           href="/experts"
           className="inline-flex px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
         >
-          Back to experts
+          Back to guides
         </Link>
       </div>
     );
@@ -304,7 +305,7 @@ export default function ExpertDetailPage() {
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-0.5 text-amber-500">
       {Array.from({ length: 5 }).map((_, index) => (
-        <span key={`expert-star-${index}`} className="text-sm">
+        <span key={`guide-star-${index}`} className="text-sm">
           {index < Math.round(rating) ? '★' : '☆'}
         </span>
       ))}
@@ -316,7 +317,7 @@ export default function ExpertDetailPage() {
       window.dispatchEvent(
         new CustomEvent('open-login', {
           detail: {
-            message: 'Login to review this expert.',
+            message: 'Login to review this guide.',
             next: `/experts/${expert.id}`,
           },
         })
@@ -325,7 +326,7 @@ export default function ExpertDetailPage() {
     }
     if (!canReviewExpert) {
       setReviewMessage(
-        'You can review this expert only after joining one of their rides. Admins can review directly.'
+        'You can review this guide only after joining one of their rides. Admins can review directly.'
       );
       setReviewModalOpen(true);
       return;
@@ -407,14 +408,14 @@ export default function ExpertDetailPage() {
           <div className="mb-6 flex items-center justify-between gap-3 text-xs text-gray-600 dark:text-slate-300">
             <div>
               <p className="font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                Expert Profile
+                Guide Profile
               </p>
               <div className="mt-1">
                 <Link
                   href="/experts"
                   className="font-medium underline decoration-emerald-300 underline-offset-2 hover:text-green-700 dark:hover:text-emerald-200"
                 >
-                  All experts
+                  All guides
                 </Link>{' '}
                 / Profile
               </div>
@@ -429,7 +430,7 @@ export default function ExpertDetailPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={expert.profile_photo_url}
-                      alt={expert.name || 'Expert'}
+                      alt={expert.name || 'Guide'}
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -440,9 +441,10 @@ export default function ExpertDetailPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
+                    <BetaBadge />
                     {expert.is_verified_expert ? (
                       <span className="inline-flex items-center rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white dark:bg-emerald-400 dark:text-emerald-950">
-                        Verified Expert
+                        Verified Guide
                       </span>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">
@@ -464,7 +466,7 @@ export default function ExpertDetailPage() {
                     )}
                   </div>
                   <h1 className="mt-3 text-balance text-3xl font-black tracking-tight text-gray-950 dark:text-white sm:text-5xl">
-                    {expert.name || 'Local Expert'}
+                    {expert.name || 'Local Guide'}
                   </h1>
                   {expert.city && (
                     <p className="mt-2 text-sm font-medium text-gray-600 dark:text-slate-300">
@@ -535,7 +537,7 @@ export default function ExpertDetailPage() {
 
             <aside className="rounded-3xl border border-emerald-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-emerald-900 dark:bg-slate-950/75">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
-                Work With This Expert
+                Work With This Guide
               </p>
               <h2 className="mt-2 text-xl font-black text-gray-950 dark:text-white">
                 Plan a local ride
@@ -564,7 +566,7 @@ export default function ExpertDetailPage() {
                     !currentUser
                       ? 'Login required to submit a review'
                       : !canReviewExpert
-                        ? 'Join this expert’s event first (admins can review directly)'
+                        ? 'Join this guide’s event first (admins can review directly)'
                         : undefined
                   }
                   className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-green-700 bg-white px-3 py-2 text-xs font-bold text-green-700 transition hover:bg-green-50 dark:border-emerald-500 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
@@ -611,8 +613,8 @@ export default function ExpertDetailPage() {
 
       {associatedTrails.length > 0 && (
         <DetailSection
-          eyebrow="Expert Trails"
-          title={`Trails associated with ${expert.name || 'this expert'}`}
+          eyebrow="Guide Trails"
+          title={`Trails associated with ${expert.name || 'this guide'}`}
           action={
             <Link
               href="/trails"
@@ -695,7 +697,7 @@ export default function ExpertDetailPage() {
       />
 
       {(loadingReviews || Boolean(reviewData?.reviews?.length)) && (
-        <DetailSection eyebrow="Reviews" title="Expert ratings and feedback">
+        <DetailSection eyebrow="Reviews" title="Guide ratings and feedback">
           <div className="mb-4 flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
             <span className="text-xl font-black text-gray-950 dark:text-white">
               {reviewSummary.averageRating.toFixed(1)}
@@ -754,7 +756,7 @@ export default function ExpertDetailPage() {
       )}
 
       <DetailSection
-        title={`Upcoming events with ${expert.name || 'this expert'}`}
+        title={`Upcoming events with ${expert.name || 'this guide'}`}
         eyebrow="Events"
         action={
           <Link
@@ -780,7 +782,7 @@ export default function ExpertDetailPage() {
                 href="/ride-with-experts"
                 className="inline-flex rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Browse expert rides
+                Browse guide rides
               </Link>
             </div>
           </div>
@@ -841,7 +843,7 @@ export default function ExpertDetailPage() {
         open={verificationModalOpen}
         onOpenChange={setVerificationModalOpen}
         title="Verification Details"
-        description="Credentials and experience shared by this expert."
+        description="Credentials and experience shared by this guide."
       >
         <div className="mt-4 rounded-xl border border-emerald-100 bg-white p-4 dark:border-emerald-900/60 dark:bg-slate-900/60">
           <VerificationDetailsContent
@@ -860,7 +862,7 @@ export default function ExpertDetailPage() {
         open={galleryModalOpen}
         onOpenChange={setGalleryModalOpen}
         title="Career Gallery"
-        description="Achievements, race moments, and photos from this expert’s journey."
+        description="Achievements, race moments, and photos from this guide’s journey."
       >
         <div className="mt-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -932,7 +934,7 @@ export default function ExpertDetailPage() {
       <AppDialog
         open={reviewModalOpen}
         onOpenChange={setReviewModalOpen}
-        title={existingReview ? 'Update Your Review' : 'Review This Expert'}
+        title={existingReview ? 'Update Your Review' : 'Review This Guide'}
         description="Share your experience to help other participants."
       >
             <form
@@ -941,7 +943,7 @@ export default function ExpertDetailPage() {
                 setReviewMessage(null);
                 if (!canReviewExpert) {
                   setReviewMessage(
-                    'You can review this expert only after joining one of their rides. Admins can review directly.'
+                    'You can review this guide only after joining one of their rides. Admins can review directly.'
                   );
                   return;
                 }
@@ -967,7 +969,7 @@ export default function ExpertDetailPage() {
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   {[5, 4, 3, 2, 1].map((value) => (
-                    <option key={`expert-rating-${value}`} value={value}>
+                    <option key={`guide-rating-${value}`} value={value}>
                       {value} star{value > 1 ? 's' : ''}
                     </option>
                   ))}
@@ -980,7 +982,7 @@ export default function ExpertDetailPage() {
                 rows={4}
                 disabled={!canReviewExpert}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                placeholder="Share how this expert performed during your ride or training."
+                placeholder="Share how this guide performed during your ride or training."
               />
               <label className="flex items-start gap-2 text-xs text-gray-700 dark:text-slate-300">
                 <input

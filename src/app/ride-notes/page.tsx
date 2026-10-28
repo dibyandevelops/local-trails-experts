@@ -8,12 +8,12 @@ import { absoluteUrl, DEFAULT_OG_IMAGE_PATH, SITE_NAME } from '@/lib/seo';
 export const metadata: Metadata = {
   title: 'Ride Notes',
   description:
-    'Local trail guides, expert notes, ride reports, safety updates, and trail work stories from LocoXperts.',
+    'Local trail guides, notes from guides, ride reports, safety updates, and trail work stories from LocoXperts.',
   alternates: { canonical: '/ride-notes' },
   openGraph: {
     title: 'Ride Notes',
     description:
-      'Local trail guides, expert notes, ride reports, safety updates, and trail work stories from LocoXperts.',
+      'Local trail guides, notes from guides, ride reports, safety updates, and trail work stories from LocoXperts.',
     url: '/ride-notes',
     type: 'website',
     images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE_PATH), width: 1200, height: 630, alt: SITE_NAME }],
@@ -22,14 +22,14 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Ride Notes',
     description:
-      'Local trail guides, expert notes, ride reports, safety updates, and trail work stories from LocoXperts.',
+      'Local trail guides, notes from guides, ride reports, safety updates, and trail work stories from LocoXperts.',
     images: [absoluteUrl(DEFAULT_OG_IMAGE_PATH)],
   },
 };
 
 const categoryLabels: Record<RideNoteCategory, string> = {
   trail_guide: 'Trail guide',
-  expert_note: 'Expert note',
+  expert_note: 'Guide note',
   ride_report: 'Ride report',
   safety: 'Safety',
   trail_work: 'Trail work',
@@ -59,7 +59,7 @@ export default async function RideNotesPage() {
     '@type': 'CollectionPage',
     name: 'Ride Notes',
     description:
-      'Local trail guides, expert notes, ride reports, safety updates, and trail work stories from LocoXperts.',
+      'Local trail guides, notes from guides, ride reports, safety updates, and trail work stories from LocoXperts.',
     url: absoluteUrl('/ride-notes'),
     isPartOf: {
       '@type': 'WebSite',
@@ -116,7 +116,7 @@ export default async function RideNotesPage() {
           Local knowledge before the ride.
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-emerald-950/75 dark:text-slate-300 md:text-base">
-          Trail guides, expert notes, ride reports, safety updates, and trail work stories connected
+          Trail guides, notes from guides, ride reports, safety updates, and trail work stories connected
           to the routes and people on LocoXperts.
         </p>
         </div>

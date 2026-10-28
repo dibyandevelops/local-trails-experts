@@ -33,7 +33,7 @@ export default function PhoneVerifyToast() {
           Verify your phone number
         </Toast.Title>
         <Toast.Description className="text-xs text-gray-600 mt-1">
-          Add OTP verification to unlock bookings and expert features.
+          Add OTP verification to unlock bookings and guide features.
         </Toast.Description>
         <div className="mt-3 flex gap-2">
           <button

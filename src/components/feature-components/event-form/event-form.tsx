@@ -626,15 +626,15 @@ export default function EventForm({
   const onSubmit: SubmitHandler<EventFormValues> = async (values) => {
     try {
       if (isExpertUnverified) {
-        alert('Your expert profile is pending verification. You cannot create events yet.');
+        alert('Your guide profile is pending verification. You cannot create events yet.');
         return;
       }
       if (currentUser?.role === 'admin' && !values.host_user_id) {
-        alert('Please select an approved expert host before creating an event.');
+        alert('Please select an approved guide host before creating an event.');
         return;
       }
       if (currentUser?.role === 'admin' && values.host_user_id && !selectedHostIsVerified) {
-        alert('Selected expert is not verified yet. Please choose a verified host.');
+        alert('Selected guide is not verified yet. Please choose a verified host.');
         return;
       }
 
@@ -726,7 +726,7 @@ export default function EventForm({
                 Events
               </span>
               <span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
-                Local experts
+                Local guides
               </span>
             </div>
             <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
@@ -764,7 +764,7 @@ export default function EventForm({
         >
           {isExpertUnverified && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
-              Your expert profile is pending verification. You can upload trails, but
+              Your guide profile is pending verification. You can upload trails, but
               events and trainings are disabled until an admin approves your profile.
             </div>
           )}
@@ -808,7 +808,7 @@ export default function EventForm({
           <div className={activeStep === 'setup' ? 'space-y-6' : 'hidden'}>
           {currentUser?.role === 'admin' && (
             <div>
-              <label className={labelClass}>Approved Expert Host</label>
+              <label className={labelClass}>Approved Guide Host</label>
               <select
                 {...register('host_user_id')}
                 onChange={(e) => {
@@ -825,21 +825,21 @@ export default function EventForm({
                 required
                 className={inputClass}
               >
-                <option value="">Select an expert host</option>
+                <option value="">Select a guide host</option>
                 {experts.map((expert) => (
                   <option
                     key={expert.id}
                     value={expert.id}
                     disabled={!expert.is_verified_expert}
                   >
-                    {expert.name || 'Expert'} ({expert.email})
+                    {expert.name || 'Guide'} ({expert.email})
                     {!expert.is_verified_expert ? ' — Pending verification' : ''}
                   </option>
                 ))}
               </select>
               {selectedHostId && !selectedHostIsVerified && (
                 <p className="mt-2 text-xs text-amber-700">
-                  This expert is pending verification and cannot host events yet.
+                  This guide is pending verification and cannot host events yet.
                 </p>
               )}
             </div>

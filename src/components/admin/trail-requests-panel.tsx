@@ -22,7 +22,7 @@ export default function TrailRequestsPanel() {
         Participant Trail Requests
       </h2>
       <p className="text-sm text-gray-600 mb-5">
-        Requests submitted by participants to notify experts/admin.
+        Requests submitted by participants to notify guides/admin.
       </p>
       {EXPERTS_BETA_ENABLED && (
         <p className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-900">

@@ -23,11 +23,11 @@ function buildMailto(params: { to?: string; subject: string; body: string }) {
 
 const FEATURE_LINKS = [
   { label: 'Trail map', href: '/trails' },
-  { label: 'Ride with experts', href: '/ride-with-experts' },
+  { label: 'Ride with guides', href: '/ride-with-experts' },
   { label: 'Local services', href: '/services' },
   { label: 'Ride notes', href: '/ride-notes' },
   { label: 'Events', href: '/events' },
-  { label: 'Expert directory', href: '/experts' },
+  { label: 'Guide directory', href: '/experts' },
   { label: 'Organizations', href: '/organizations' },
   { label: 'Partner plan', href: '/organizations/subscription' },
   { label: 'Campaigns', href: '/campaigns' },
@@ -70,7 +70,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
 
   const expertLinks = [
     {
-      label: 'For experts',
+      label: 'For guides',
       href: '/experts/join',
     },
     ...EXPERT_LINKS_BASE,
@@ -82,7 +82,7 @@ export default function Footer({ initialUser = null }: { initialUser?: User | nu
         <FooterInfoColumn year={year} brand={brand} />
         <div className="grid gap-4 sm:grid-cols-3">
           <FooterLinksColumn title="Explore" items={FEATURE_LINKS} />
-          <FooterLinksColumn title="For experts" items={expertLinks} />
+          <FooterLinksColumn title="For guides" items={expertLinks} />
           <FooterSupportColumn
             contactHref={contactHref}
             featureHref={featureHref}

@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
       <InfoPageHero
         eyebrow="Privacy"
         title="Your data should be useful, limited, and protected."
-        description="LocoXperts collects only the information needed to run accounts, trail requests, events, expert workflows, and community support. We do not sell personal data."
+        description="LocoXperts collects only the information needed to run accounts, trail requests, events, guide workflows, and community support. We do not sell personal data."
         updated="March 12, 2026"
         actions={[
           { label: 'Request account deletion', href: '#account-deletion' },
@@ -40,7 +40,7 @@ export default function PrivacyPolicyPage() {
           <InfoList
             items={[
               'To help participants discover trails, join events, and request ride support.',
-              'To let experts and organizations manage relevant operations.',
+              'To let guides and organizations manage relevant operations.',
               'To review safety, moderation, verification, payment, and compliance requests.',
             ]}
           />
@@ -53,7 +53,7 @@ export default function PrivacyPolicyPage() {
           <InfoText>
             We do not sell personal data. We only share information when needed to deliver a feature,
             comply with legal or safety obligations, process platform operations, or communicate between
-            participants, experts, organizers, and administrators.
+            participants, guides, organizers, and administrators.
           </InfoText>
           <InfoText>
             The platform currently focuses on Nepal trail communities. If the region or data practices

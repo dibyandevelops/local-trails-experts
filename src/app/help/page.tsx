@@ -22,7 +22,7 @@ const riderGuides = [
     items: [
       'Open Trails and search by place, trail name, difficulty, or activity.',
       'Use filters when you know your ride level, distance, or preferred activity.',
-      'Open a trail page to review map route, difficulty, distance, elevation, updates, services, and associated local experts.',
+      'Open a trail page to review map route, difficulty, distance, elevation, updates, services, and associated local guides.',
       'If the route feels too unknown, use the trail request option or book local guide support where available.',
     ],
   },
@@ -31,7 +31,7 @@ const riderGuides = [
     items: [
       'Open the trail or ride support page connected to the route you want to explore.',
       'Share preferred date, time, nearest meeting point, support needs, and rider level.',
-      'A guide, expert, or admin can review the request and respond from their dashboard.',
+      'A local guide or admin can review the request and respond from their dashboard.',
       'Use the request details to agree on timing, route expectations, and safety context before the ride.',
     ],
   },
@@ -80,7 +80,7 @@ const expertGuides = [
   {
     title: 'Create an organization',
     items: [
-      'Verified experts can create one organization for teams, campaigns, trail services, and local programs.',
+      'Verified guides can create one organization for teams, campaigns, trail services, and local programs.',
       'Organizations can invite members, associate trails, publish services, create campaigns, and share updates.',
       'Use organization tools when the work is bigger than one individual guide profile.',
     ],

@@ -8,6 +8,7 @@ import MarketplaceListingCard from '@/components/feature-components/marketplace/
 import MarketplaceListingFormDialog from '@/components/feature-components/marketplace/marketplace-listing-form-dialog';
 import MarketplaceOwnerPanel from '@/components/feature-components/marketplace/marketplace-owner-panel';
 import MarketplaceReportDialog from '@/components/feature-components/marketplace/marketplace-report-dialog';
+import BetaBadge from '@/components/ui/beta-badge';
 import { useMarketplace } from '@/hooks/marketplace/use-marketplace';
 import {
   marketplaceCategories,
@@ -110,9 +111,12 @@ export default function MarketplaceClient({ initialData }: { initialData: Market
       <section className="overflow-hidden rounded-lg border border-emerald-900/10 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
           <div className="px-5 py-8 sm:px-8 lg:py-12">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
-              <Bike className="h-3.5 w-3.5" aria-hidden="true" /> Rider marketplace
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+                <Bike className="h-3.5 w-3.5" aria-hidden="true" /> Rider marketplace
+              </span>
+              <BetaBadge />
+            </div>
             <h1 className="mt-5 max-w-3xl text-balance text-4xl font-extrabold tracking-normal text-gray-950 dark:text-white sm:text-5xl">
               Buy and sell cycles, parts, and ride accessories.
             </h1>

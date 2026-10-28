@@ -21,7 +21,7 @@ import {
 
 const categories: Array<{ value: AdminRideNoteCategory; label: string }> = [
   { value: 'trail_guide', label: 'Trail guide' },
-  { value: 'expert_note', label: 'Expert note' },
+  { value: 'expert_note', label: 'Guide note' },
   { value: 'ride_report', label: 'Ride report' },
   { value: 'ride_note', label: 'Ride note' },
   { value: 'safety', label: 'Safety note' },
@@ -394,7 +394,7 @@ export default function ExpertRideNotesPanel({
                 })}
                 className={inputClass}
               >
-                <option value="">My expert profile</option>
+                <option value="">My guide profile</option>
                 {organizations.map((organization) => (
                   <option key={organization.id} value={organization.id}>
                     {organization.name}

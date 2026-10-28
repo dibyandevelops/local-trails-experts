@@ -9,6 +9,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { EXPERTS_BETA_ENABLED } from '@/lib/feature-flags';
 import TrailRequestModal from '@/components/feature-components/trail-request/trail-request-modal';
 import type { Trail, User } from '@/types';
+import BetaBadge from '@/components/ui/beta-badge';
 
 export default function RideWithLocalExpertsCta() {
   const [open, setOpen] = useState(false);
@@ -92,9 +93,9 @@ export default function RideWithLocalExpertsCta() {
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50 dark:border dark:border-lime-300/45 dark:bg-lime-300/15 dark:text-lime-50 dark:ring-0 dark:hover:bg-lime-300/25 md:text-base"
+        className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50 dark:border dark:border-lime-300/45 dark:bg-lime-300/15 dark:text-lime-50 dark:ring-0 dark:hover:bg-lime-300/25 md:text-base"
       >
-        Ride with local experts →
+        Ride with local experts <BetaBadge /> →
       </button>
       {message && !open && (
         <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">{message}</p>

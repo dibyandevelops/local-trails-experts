@@ -3,7 +3,7 @@ import CreateOrganizationForm from '@/components/feature-components/organization
 
 export const metadata: Metadata = {
   title: 'Create an Organization',
-  description: 'Create an organization workspace with an admin-verified expert account.',
+  description: 'Create an organization workspace with an admin-verified guide account.',
 };
 
 export default function CreateOrganizationPage() {

@@ -20,6 +20,7 @@ export type NavGroup = {
 
 export type NavSection = {
   label: string;
+  badge?: string;
   items: NavItem[];
 };
 

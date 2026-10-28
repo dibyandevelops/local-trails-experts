@@ -45,8 +45,8 @@ const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
 
 const processSteps = [
-  'Submit this account for expert verification.',
-  'Admin reviews the expert application.',
+  'Submit this account for guide verification.',
+  'Admin reviews the guide application.',
   'Create and own an organization after approval.',
 ];
 
@@ -84,7 +84,7 @@ async function submitExpertApplication(values: ExpertApplicationForm) {
     body: JSON.stringify(values),
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data?.error || 'Failed to submit expert application.');
+  if (!response.ok) throw new Error(data?.error || 'Failed to submit guide application.');
   return data as { message: string };
 }
 
@@ -155,14 +155,14 @@ export default function CreateOrganizationForm() {
   };
 
   if (isLoading) {
-    return <div className="mx-auto max-w-4xl px-4 py-12 text-sm text-gray-600">Checking expert access...</div>;
+    return <div className="mx-auto max-w-4xl px-4 py-12 text-sm text-gray-600">Checking guide access...</div>;
   }
 
   if (!user) {
     return (
       <AccessMessage
-        title="Sign in as a verified expert"
-        body="Organization creation is available only to expert accounts approved by a platform admin."
+        title="Sign in as a verified guide"
+        body="Organization creation is available only to guide accounts approved by a platform admin."
         href="/?login=1&next=%2Forganizations%2Fcreate"
         action="Sign in"
       />
@@ -176,10 +176,10 @@ export default function CreateOrganizationForm() {
   if (!user.is_verified_expert) {
     return (
       <AccessMessage
-        title="Expert verification is pending"
-        body="Your expert account must be approved by an admin before you can create an organization. You can review or update your verification details from your expert dashboard."
+        title="Guide verification is pending"
+        body="Your guide account must be approved by an admin before you can create an organization. You can review or update your verification details from your guide dashboard."
         href="/experts/me"
-        action="View expert dashboard"
+        action="View guide dashboard"
       />
     );
   }
@@ -216,7 +216,7 @@ export default function CreateOrganizationForm() {
     return (
       <AccessMessage
         title={`${ownedOrganization.name} is already connected to this account`}
-        body="Each verified expert account can own one organization. Manage your existing organization from the dashboard instead of creating another one."
+        body="Each verified guide account can own one organization. Manage your existing organization from the dashboard instead of creating another one."
         href="/organizations/me"
         action="Open organization dashboard"
       />
@@ -229,7 +229,7 @@ export default function CreateOrganizationForm() {
         <Building2 className="h-8 w-8 text-emerald-700 dark:text-emerald-300" />
         <h1 className="mt-4 text-3xl font-black text-gray-950 dark:text-white">Create an organization</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-          Your verified expert account will become the organization owner. Each expert may own one organization.
+          Your verified guide account will become the organization owner. Each guide may own one organization.
         </p>
         <Link href="/organizations/subscription" className="mt-4 inline-flex rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-slate-950 dark:text-emerald-200">
           See the Partner Plan
@@ -266,7 +266,7 @@ export default function CreateOrganizationForm() {
             {user.email}
           </div>
           <p className="mt-1 text-xs font-normal text-gray-500 dark:text-slate-400">
-            This comes from your verified expert account and cannot be changed here.
+            This comes from your verified guide account and cannot be changed here.
           </p>
         </div>
         <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">Contact phone<input {...register('contact_phone')} className={inputClass} /></label>
@@ -325,10 +325,10 @@ function ExpertApplicationGate({ user }: { user: User }) {
   if (submitted) {
     return (
       <AccessMessage
-        title="Expert application submitted"
+        title="Guide application submitted"
         body="This account is now pending admin verification. Once approved, return here to create and own your organization."
         href="/experts/me"
-        action="View expert dashboard"
+        action="View guide dashboard"
       />
     );
   }
@@ -339,7 +339,7 @@ function ExpertApplicationGate({ user }: { user: User }) {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800 dark:text-amber-200">
           Organization access
         </p>
-        <h1 className="mt-2 text-2xl font-bold text-gray-950 dark:text-white">Verify this account as an expert first</h1>
+        <h1 className="mt-2 text-2xl font-bold text-gray-950 dark:text-white">Verify this account as a guide first</h1>
         <p className="mt-2 text-sm leading-6 text-gray-700 dark:text-slate-300">
           You are signed in as {user.email}. Use this account for expert verification now; after admin approval, the same account can create and own an organization.
         </p>
@@ -396,7 +396,7 @@ function ExpertApplicationGate({ user }: { user: User }) {
             rows={5}
             {...register('credentials', { required: 'Describe your trail experience, guiding history, coaching, certifications, or community work.' })}
             className={inputClass}
-            placeholder="Tell admins what qualifies you as a local trail expert."
+            placeholder="Tell admins what qualifies you as a local trail guide."
           />
           {errors.credentials && <span className="mt-1 block text-xs text-red-600">{errors.credentials.message}</span>}
         </label>
@@ -408,10 +408,10 @@ function ExpertApplicationGate({ user }: { user: User }) {
         {mutation.error && <p className="md:col-span-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-200">{mutation.error.message}</p>}
         <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3">
           <p className="max-w-md text-xs text-gray-500 dark:text-slate-400">
-            No new login is created. This upgrades your current account into a pending expert account.
+            No new login is created. This upgrades your current account into a pending guide account.
           </p>
           <button type="submit" disabled={mutation.isPending} className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-emerald-500 dark:text-emerald-950">
-            {mutation.isPending ? 'Submitting...' : 'Submit for expert verification'}
+            {mutation.isPending ? 'Submitting...' : 'Submit for guide verification'}
           </button>
         </div>
       </form>

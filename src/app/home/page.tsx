@@ -197,7 +197,7 @@ export async function HomePage({ locale = DEFAULT_LOCALE }: { locale?: Locale })
                             : note.category === 'safety'
                               ? 'Safety'
                               : note.category === 'expert_note'
-                                ? 'Expert note'
+                                ? 'Guide note'
                                 : 'Ride note'}
                         </span>
                         {note.trail_name && <span className="text-gray-500 dark:text-slate-400">· {note.trail_name}</span>}

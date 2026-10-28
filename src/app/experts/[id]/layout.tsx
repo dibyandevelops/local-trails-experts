@@ -11,24 +11,24 @@ export async function generateMetadata(
     const expert = await getExpertSeo(id);
     if (!expert) {
       return {
-        title: 'Expert not found',
+        title: 'Guide not found',
         robots: { index: false, follow: false },
       };
     }
 
-    const displayName = (expert.name || 'Expert').trim();
-    const title = `${displayName} — Expert`;
+    const displayName = (expert.name || 'Guide').trim();
+    const title = `${displayName} — Guide`;
     const description =
       (expert.bio || '').trim() ||
       `View ${displayName}'s profile${expert.city ? ` in ${expert.city}` : ''}.`;
 
-    // Keep expert profiles indexable even if not verified, but avoid rich claims in JSON-LD.
+    // Keep guide profiles indexable even if not verified, but avoid rich claims in JSON-LD.
     return {
       title,
       description,
       keywords: [
-        `${displayName} cycling expert`,
-        `${expert.city || 'Kathmandu, Nepal'} local trail expert`,
+        `${displayName} cycling guide`,
+        `${expert.city || 'Kathmandu, Nepal'} local trail guide`,
         'Nepal MTB guide',
         'bike guide Nepal',
       ],
@@ -50,7 +50,7 @@ export async function generateMetadata(
     };
   } catch {
     return {
-      title: 'Expert',
+      title: 'Guide',
       description: DEFAULT_DESCRIPTION,
       alternates: { canonical: `/experts/${id}` },
     };

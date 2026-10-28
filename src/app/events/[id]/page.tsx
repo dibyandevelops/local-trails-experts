@@ -774,7 +774,7 @@ export default function EventDetailPage() {
 
     ctx.fillStyle = '#f7fee7';
     ctx.font = '800 30px "Space Grotesk", Arial, sans-serif';
-    ctx.fillText('Find trails, experts, and ride support', 80, 1235);
+    ctx.fillText('Find trails, guides, and ride support', 80, 1235);
     ctx.fillStyle = '#d9f99d';
     ctx.font = '700 28px "Space Grotesk", Arial, sans-serif';
     ctx.fillText(truncatePosterText(window.location.href, 62), 80, 1285);
@@ -862,7 +862,7 @@ export default function EventDetailPage() {
                 onClick={() => router.push(`/experts/${event.host_user_id}`)}
                 className="inline-flex items-center rounded-xl border border-emerald-600 px-4 py-2 text-sm font-bold text-emerald-700 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
               >
-                View Expert Profile
+                View Guide Profile
               </button>
             )}
             {canCancel && (
@@ -1449,7 +1449,7 @@ export default function EventDetailPage() {
               This action will remove your booking for this event.
             </p>
             <p className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-200">
-              Any refund (if applicable) will be processed manually by admin/expert.
+              Any refund (if applicable) will be processed manually by an admin or guide.
             </p>
             <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
               For disputes, contact support/admin for manual review.

@@ -88,7 +88,7 @@ export default function OrganizationProgramsPanel({
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ride programs</h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-            Publish training, guided rides, clinics, and tours with verified team experts.
+            Publish training, guided rides, clinics, and tours with verified team guides.
           </p>
         </div>
         <button
@@ -113,13 +113,13 @@ export default function OrganizationProgramsPanel({
         <div className="mt-5 overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500 dark:border-slate-700 dark:text-slate-400">
-              <tr><th className="px-3 py-2">Program</th><th className="px-3 py-2">Expert</th><th className="px-3 py-2">Trail</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Action</th></tr>
+              <tr><th className="px-3 py-2">Program</th><th className="px-3 py-2">Guide</th><th className="px-3 py-2">Trail</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Action</th></tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
               {programs.map((program) => (
                 <tr key={program.id}>
                   <td className="px-3 py-3"><p className="font-semibold text-gray-900 dark:text-white">{program.title}</p><p className="text-xs text-gray-500 dark:text-slate-400">{programTypeLabel(program.program_type)}</p></td>
-                  <td className="px-3 py-3 text-gray-700 dark:text-slate-300">{program.expert_name || 'Expert'}</td>
+                  <td className="px-3 py-3 text-gray-700 dark:text-slate-300">{program.expert_name || 'Guide'}</td>
                   <td className="px-3 py-3 text-gray-700 dark:text-slate-300">{program.trail_name || 'Trail'}</td>
                   <td className="px-3 py-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${program.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200' : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300'}`}>{program.is_active ? 'Active' : 'Paused'}</span></td>
                   <td className="px-3 py-3 text-right"><button type="button" disabled={toggleProgram.isPending} onClick={() => toggleProgram.mutate({ id: program.id, is_active: !program.is_active })} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">{program.is_active ? 'Pause' : 'Activate'}</button></td>
@@ -135,21 +135,21 @@ export default function OrganizationProgramsPanel({
           <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm" />
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl dark:border dark:border-slate-700 dark:bg-slate-950">
             <div className="flex items-start justify-between gap-4">
-              <div><Dialog.Title className="text-xl font-bold text-gray-950 dark:text-white">Create ride program</Dialog.Title><Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">Assign a verified team expert to a linked trail they know.</Dialog.Description></div>
+              <div><Dialog.Title className="text-xl font-bold text-gray-950 dark:text-white">Create ride program</Dialog.Title><Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">Assign a verified team guide to a linked trail they know.</Dialog.Description></div>
               <Dialog.Close className="rounded-full border border-gray-200 p-2 text-gray-600 dark:border-slate-700 dark:text-slate-300"><X className="h-4 w-4" /></Dialog.Close>
             </div>
             <form onSubmit={submit} className="mt-5 grid gap-4 md:grid-cols-2">
               {experts.length === 0 && (
                 <p className="md:col-span-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                  Add a verified expert to this organization before creating a program.
+                  Add a verified guide to this organization before creating a program.
                 </p>
               )}
               <label className="md:col-span-2 text-sm font-semibold text-gray-700 dark:text-slate-200">Program title<input {...register('title', { required: 'Program title is required.', maxLength: 180 })} placeholder="15 days MTB training with Nirav Shrestha" className={inputClass} />{errors.title && <span className="mt-1 block text-xs text-red-600">{errors.title.message}</span>}</label>
-              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">Expert<select {...register('expert_user_id', { required: 'Select an expert.', onChange: () => setValue('trail_id', '') })} className={inputClass}><option value="">Select verified expert</option>{experts.map((expert) => <option key={expert.id} value={expert.id}>{expert.name || expert.email}</option>)}</select>{errors.expert_user_id && <span className="mt-1 block text-xs text-red-600">{errors.expert_user_id.message}</span>}</label>
-              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">Trail<select {...register('trail_id', { required: 'Select a trail.' })} disabled={!selectedExpertId} className={inputClass}><option value="">{selectedExpertId ? 'Select shared trail' : 'Select expert first'}</option>{eligibleTrails.map((trail) => <option key={trail.id} value={trail.id}>{trail.name}</option>)}</select>{errors.trail_id && <span className="mt-1 block text-xs text-red-600">{errors.trail_id.message}</span>}</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">Guide<select {...register('expert_user_id', { required: 'Select a guide.', onChange: () => setValue('trail_id', '') })} className={inputClass}><option value="">Select verified guide</option>{experts.map((expert) => <option key={expert.id} value={expert.id}>{expert.name || expert.email}</option>)}</select>{errors.expert_user_id && <span className="mt-1 block text-xs text-red-600">{errors.expert_user_id.message}</span>}</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">Trail<select {...register('trail_id', { required: 'Select a trail.' })} disabled={!selectedExpertId} className={inputClass}><option value="">{selectedExpertId ? 'Select shared trail' : 'Select guide first'}</option>{eligibleTrails.map((trail) => <option key={trail.id} value={trail.id}>{trail.name}</option>)}</select>{errors.trail_id && <span className="mt-1 block text-xs text-red-600">{errors.trail_id.message}</span>}</label>
               {selectedExpertId && eligibleTrails.length === 0 && (
                 <p className="md:col-span-2 -mt-2 text-xs text-amber-700 dark:text-amber-300">
-                  This expert has no trail association in common with the organization.
+                  This guide has no trail association in common with the organization.
                 </p>
               )}
               <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">Program type<select {...register('program_type')} className={inputClass}><option value="guided_ride">Guided ride</option><option value="training">Training</option><option value="skills_clinic">Skills clinic</option><option value="tour">Tour</option></select></label>

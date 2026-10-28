@@ -12,6 +12,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import TrailRequestModal, {
   type TrailRequestSubmitPayload,
 } from '@/components/feature-components/trail-request/trail-request-modal';
+import BetaBadge from '@/components/ui/beta-badge';
 
 type ExpertWithEvents = User & {
   events: {
@@ -122,17 +123,18 @@ export default function ExpertsBrowsePage() {
         <div className="relative max-w-3xl">
           <div className="mb-3 flex flex-wrap gap-2">
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-              Experts
+              Guides
             </span>
+            <BetaBadge />
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
               Nepal
             </span>
           </div>
           <h1 className="text-balance text-3xl font-black leading-tight text-gray-950 dark:text-gray-100 sm:text-5xl">
-            Find local trail experts and guides.
+            Find local mountain biking guides.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-300 md:text-base">
-            Browse verified riders, guides, coaches, and outdoor leaders who can help with route planning, hosted rides, and local trail context.
+            Browse verified local guides, coaches, and outdoor leaders who can help with route planning, hosted rides, and local trail context.
           </p>
         </div>
       </section>
@@ -141,10 +143,10 @@ export default function ExpertsBrowsePage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-              Filter experts
+              Filter guides
             </p>
             <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              {activeFilterCount > 0 ? `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}` : 'Showing all available experts'}
+              {activeFilterCount > 0 ? `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}` : 'Showing all available guides'}
             </p>
           </div>
           {activeFilterCount > 0 && (
@@ -189,7 +191,7 @@ export default function ExpertsBrowsePage() {
             </select>
           </div>
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100 md:max-w-xs">
-            Verified experts are highlighted and may include hosted events, reviews, and associated trails.
+            Verified guides are highlighted and may include hosted events, reviews, and associated trails.
           </div>
         </div>
       </div>
@@ -198,9 +200,9 @@ export default function ExpertsBrowsePage() {
         <ExpertsGridSkeleton />
       ) : experts.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-emerald-300 bg-emerald-50/70 px-5 py-12 text-center dark:border-emerald-900/70 dark:bg-emerald-950/20">
-          <p className="text-lg font-black text-gray-950 dark:text-white">No experts found</p>
+          <p className="text-lg font-black text-gray-950 dark:text-white">No guides found</p>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-600 dark:text-slate-300">
-            Try clearing filters or searching a broader city/activity. New experts will appear here after approval.
+            Try clearing filters or searching a broader city/activity. New guides will appear here after approval.
           </p>
           {activeFilterCount > 0 && (
             <button
@@ -373,7 +375,7 @@ function ExpertCard({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={expert.profile_photo_url}
-                  alt={expert.name || 'Expert'}
+                  alt={expert.name || 'Guide'}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -384,7 +386,7 @@ function ExpertCard({
             </div>
             <div className="min-w-0">
               <h2 className="line-clamp-1 text-lg font-black text-gray-950 transition-colors group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
-                {expert.name || 'Local Expert'}
+                {expert.name || 'Local Guide'}
               </h2>
               <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-slate-400">
                 {expert.city || 'Kathmandu, Nepal'}
@@ -497,7 +499,7 @@ function ExpertCard({
             }}
             className="rounded-xl border border-green-700 px-3 py-1.5 text-xs font-bold text-green-700 transition hover:bg-green-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
           >
-            View Expert
+            View Guide
           </button>
           <button
             type="button"
@@ -532,7 +534,7 @@ function ExpertsGridSkeleton() {
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {Array.from({ length: 4 }).map((_, index) => (
         <div
-          key={`expert-skeleton-${index}`}
+          key={`guide-skeleton-${index}`}
           className="animate-pulse rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
         >
           <div className="mb-3 flex items-center gap-3">

@@ -31,25 +31,36 @@ export const navGroups: NavGroup[] = [
         label: 'Discover rides',
         items: [
           { label: 'Events', href: '/events', showFor: [...allUsers] },
-          { label: 'Ride with Experts', href: '/ride-with-experts', showFor: [...allUsers] },
+          { label: 'Upload a Trail', href: '/upload', showFor: ['admin', 'expert', 'participant'] },
+          {
+            label: 'Ride with Guides',
+            href: '/ride-with-experts',
+            badge: 'Beta',
+            showFor: [...allUsers],
+          },
           { label: 'Community Rides', href: '/community-rides', showFor: [...allUsers] },
           { label: 'Ride Notes', href: '/ride-notes', showFor: [...allUsers] },
         ],
       },
       {
         label: 'Community',
+        badge: 'Beta',
         items: [
           { label: 'Organizations', href: '/organizations', showFor: [...allUsers] },
           { label: 'Partner Plan', href: '/organizations/subscription', showFor: [...allUsers] },
           { label: 'Campaigns', href: '/campaigns', showFor: [...allUsers] },
-          { label: 'Expert Directory', href: '/experts', showFor: [...allUsers] },
+          {
+            label: 'Guide Directory',
+            href: '/experts',
+            showFor: [...allUsers],
+          },
         ],
       },
       {
         label: 'Cycling services',
         items: [
           { label: 'Rider Toolkit', href: '/toolkit', showFor: [...allUsers] },
-          { label: 'Marketplace', href: '/marketplace', showFor: [...allUsers] },
+          { label: 'Marketplace', href: '/marketplace', badge: 'Beta', showFor: [...allUsers] },
           { label: 'Cycle Hubs', href: '/store-locator', showFor: [...allUsers] },
           { label: 'Services', href: '/services', showFor: [...allUsers] },
         ],
@@ -57,11 +68,10 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: 'For Experts',
+    label: 'For Guides',
     items: [
       { label: 'Create Event', href: '/events/create', showFor: ['expert', 'admin'] },
       { label: 'Organize Trainings', href: '/events/trainings/create', showFor: ['expert', 'admin'] },
-      { label: 'Upload Trails', href: '/upload', showFor: ['admin', 'expert'] },
       { label: 'Create Organization', href: '/organizations/create', showFor: ['expert'] },
     ],
   },
@@ -74,8 +84,9 @@ export const navItems: NavItem[] = [
   { label: 'Toolkit', href: '/toolkit', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   { label: 'Services', href: '/services', showFor: ['anonymous', 'participant', 'expert', 'admin'] },
   {
-    label: 'For Experts',
+    label: 'For Guides',
     href: '/experts/join',
+    badge: 'Beta',
     showFor: ['anonymous'],
   },
 ];

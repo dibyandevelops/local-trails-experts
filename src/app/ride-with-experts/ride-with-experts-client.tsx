@@ -17,6 +17,7 @@ import {
 } from '@/services/experts/experts.service';
 import { getSportLabel } from '@/services/constants/sports';
 import type { ExpertRideProgram, ExpertRideProgramRequest } from '@/types';
+import BetaBadge from '@/components/ui/beta-badge';
 
 const primaryButtonClass =
   'inline-flex items-center justify-center rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400';
@@ -43,7 +44,7 @@ function getInitials(name: string) {
 }
 
 function getExpertName(program: ExpertRideProgram) {
-  return program.expert_name || program.expert_email?.split('@')[0] || 'Local expert';
+  return program.expert_name || program.expert_email?.split('@')[0] || 'Local guide';
 }
 
 function getTrailName(program: ExpertRideProgram) {
@@ -165,8 +166,8 @@ export default function RideWithExpertsClient() {
     onSuccess: async (data) => {
       setRequestMessage(
         data.updated
-          ? 'Existing request updated. The expert can review the latest details.'
-          : 'Request submitted. The expert can review it and coordinate the ride.'
+          ? 'Existing request updated. The guide can review the latest details.'
+          : 'Request submitted. The guide can review it and coordinate the ride.'
       );
       setRequestProgram(null);
       reset(createInitialForm(currentUser?.phone));
@@ -263,15 +264,18 @@ export default function RideWithExpertsClient() {
         <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
           <div className="p-5 md:p-7">
             <div>
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-200">
-                Ride with experts
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-200">
+                  Ride with guides
+                </span>
+                <BetaBadge />
+              </div>
               <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-gray-950 dark:text-white md:text-5xl">
-                Choose an expert, pick a trail, request a ride.
+                Choose a guide, pick a trail, request a ride.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-300">
                 These are flexible ride requests, not fixed events. Select a ride built from an
-                expert&apos;s associated trails, share your preferred date, and coordinate once they accept.
+                guide&apos;s associated trails, share your preferred date, and coordinate once they accept.
               </p>
               {requestMessage && !requestProgram && (
                 <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 dark:border-slate-700 dark:bg-[#111827] dark:text-slate-100">
@@ -281,7 +285,7 @@ export default function RideWithExpertsClient() {
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link href="/experts" className={secondaryButtonClass}>
-                Expert directory
+                Guide directory
               </Link>
               <Link href="/participants/me" className={primaryButtonClass}>
                 My requests
@@ -293,9 +297,9 @@ export default function RideWithExpertsClient() {
               How it works
             </p>
             <div className="mt-4 space-y-3 text-sm font-semibold leading-6 text-emerald-950 dark:text-slate-200">
-              <p>1. Pick an expert ride based on trail and skill fit.</p>
+              <p>1. Pick a guide-led ride based on trail and skill fit.</p>
               <p>2. Send your preferred date, time, group size, and notes.</p>
-              <p>3. The expert accepts, declines, or responds with next steps.</p>
+              <p>3. The guide accepts, declines, or responds with next steps.</p>
             </div>
           </div>
         </div>
@@ -306,16 +310,16 @@ export default function RideWithExpertsClient() {
       ) : isError ? (
         <EmptyState
           title="Ride programs could not load."
-          description="Try the expert directory while we reload this request surface."
+          description="Try the guide directory while we reload this request surface."
           ctaHref="/experts"
-          ctaLabel="Browse experts"
+          ctaLabel="Browse guides"
         />
       ) : programs.length === 0 ? (
         <EmptyState
-          title="No expert rides are available yet."
-          description="Expert ride requests will appear here after verified experts publish rides for trails they know well. For now, browse expert profiles or explore trails."
+          title="No guide rides are available yet."
+          description="Guide ride requests will appear here after verified guides publish rides for trails they know well. For now, browse guide profiles or explore trails."
           ctaHref="/experts"
-          ctaLabel="Browse experts"
+          ctaLabel="Browse guides"
         />
       ) : (
         <>
@@ -387,7 +391,7 @@ export default function RideWithExpertsClient() {
                       ? requestProgram.availability_weekdays.join(', ')
                       : requestProgram.expert_availability_weekdays?.length
                         ? requestProgram.expert_availability_weekdays.join(', ')
-                      : 'Flexible. Select your preferred date and the expert will confirm.'}
+                      : 'Flexible. Select your preferred date and the guide will confirm.'}
                     {requestProgram.available_time_note ? ` · ${requestProgram.available_time_note}` : ''}
                   </p>
                 </div>
@@ -442,7 +446,7 @@ export default function RideWithExpertsClient() {
                 </label>
 
                 <label className="block text-sm font-semibold text-gray-700 dark:text-slate-200">
-                  Notes for the expert
+                  Notes for the guide
                   <textarea
                     rows={4}
                     {...register('notes')}
@@ -507,10 +511,10 @@ function FeaturedProgramCard({
           <div>
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/30 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-50">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Verified expert offer
+              Verified guide offer
             </span>
             <p className="mt-3 text-sm font-semibold text-emerald-50/75">
-              {program.expert_city || 'Kathmandu'} based expert
+              {program.expert_city || 'Kathmandu'} based guide
             </p>
           </div>
         </div>
@@ -549,7 +553,7 @@ function FeaturedProgramCard({
             </Link>
           )}
           <Link href={`/experts/${program.expert_user_id}`} className={secondaryButtonClass}>
-            View expert
+            View guide
           </Link>
           {program.trail_slug && (
             <Link href={`/trails/${program.trail_slug}`} className={secondaryButtonClass}>

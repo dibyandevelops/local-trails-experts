@@ -73,8 +73,8 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
         isHidden: !user.is_hidden,
       });
     } catch (error) {
-      console.error('Error updating expert visibility', error);
-      alert(error instanceof Error ? error.message : 'Failed to update expert visibility');
+      console.error('Error updating guide visibility', error);
+      alert(error instanceof Error ? error.message : 'Failed to update guide visibility');
     }
   };
 
@@ -142,7 +142,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
                       className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                       disabled={visibilityMutation.isPending}
                     >
-                      {user.is_hidden ? 'Show on experts page' : 'Hide from experts page'}
+                      {user.is_hidden ? 'Show on guides page' : 'Hide from guides page'}
                     </button>
                   </div>
                 )}
@@ -198,7 +198,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-3 py-2">{role === 'expert' ? 'Expert' : 'Participant'}</th>
+                  <th className="px-3 py-2">{role === 'guide' ? 'Guide' : 'Participant'}</th>
                   <th className="px-3 py-2">City</th>
                   <th className="px-3 py-2">Sports</th>
                   <th className="px-3 py-2">Phone</th>
@@ -305,7 +305,7 @@ export default function UsersPanel({ role, title, description }: UsersPanelProps
           setDetailsOpen(open);
           if (!open) setActiveUser(null);
         }}
-        title="Expert verification details"
+        title="Guide verification details"
         description={activeUser?.name || activeUser?.email || undefined}
         maxWidthClassName="max-w-2xl"
       >

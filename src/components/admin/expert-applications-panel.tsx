@@ -80,9 +80,9 @@ export default function ExpertApplicationsPanel() {
     <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:rounded-2xl sm:p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Expert Applications</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Guide Applications</h2>
           <p className="text-sm text-gray-600 dark:text-slate-300">
-            Review new expert applications and request additional verification.
+            Review new guide applications and request additional verification.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ export default function ExpertApplicationsPanel() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                      {app.name || 'Expert'}
+                      {app.name || 'Guide'}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-slate-400">{app.email}</p>
                     {app.city && (

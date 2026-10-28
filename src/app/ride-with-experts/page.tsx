@@ -2,22 +2,22 @@ import type { Metadata } from 'next';
 import RideWithExpertsClient from './ride-with-experts-client';
 
 export const metadata: Metadata = {
-  title: 'Ride with Experts in Kathmandu | LocoXperts',
+  title: 'Ride with Guides in Kathmandu | LocoXperts',
   description:
-    'Request MTB rides with verified local experts on Kathmandu and Nepal trails. Choose a trail, preferred date, group size, and coordinate after the expert accepts.',
+    'Request MTB rides with verified local guides on Kathmandu and Nepal trails. Choose a trail, preferred date, group size, and coordinate after the guide accepts.',
   keywords: [
-    'ride with experts Kathmandu',
+    'ride with guides Kathmandu',
     'MTB guides Kathmandu',
-    'mountain bike experts Nepal',
+    'mountain bike guides Nepal',
     'guided MTB rides Nepal',
-    'Kathmandu trail experts',
+    'Kathmandu trail guides',
     'LocoXperts ride support',
   ],
   alternates: { canonical: '/ride-with-experts' },
   openGraph: {
-    title: 'Ride with Experts in Kathmandu',
+    title: 'Ride with Guides in Kathmandu',
     description:
-      'Request MTB rides with verified local experts on Kathmandu and Nepal trails.',
+      'Request MTB rides with verified local guides on Kathmandu and Nepal trails.',
     url: '/ride-with-experts',
     type: 'website',
   },

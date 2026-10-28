@@ -139,7 +139,7 @@ export default function EventsPageClient() {
       expertise: selectedExpertise,
       city: selectedCity,
       sport: selectedSport,
-      expert: selectedExpert,
+      guide: selectedExpert,
       upcoming: showOnlyUpcoming,
     }),
     queryFn: ({ signal }) =>
@@ -148,7 +148,7 @@ export default function EventsPageClient() {
           expertise: selectedExpertise,
           city: selectedCity,
           sport: selectedSport,
-          expert: selectedExpert,
+          guide: selectedExpert,
           upcoming: showOnlyUpcoming,
         },
         signal
@@ -371,7 +371,7 @@ export default function EventsPageClient() {
             Find the next local ride or training.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-300 md:text-base">
-            Browse upcoming rides, trainings, and community sessions. Filter by sport, city, expertise, or expert host.
+            Browse upcoming rides, trainings, and community sessions. Filter by sport, city, expertise, or guide host.
           </p>
         </div>
       </section>
@@ -532,13 +532,13 @@ export default function EventsPageClient() {
             </select>
           </div>
           <div>
-            <label className={labelClass}>Expert</label>
+            <label className={labelClass}>Guide</label>
             <select
               value={selectedExpert}
               onChange={(e) => setEventsFilterDraft({ expert: e.target.value })}
               className={controlClass}
             >
-              <option value="">All experts</option>
+              <option value="">All guides</option>
               {experts.map((expert) => (
                 <option key={expert.id} value={expert.id}>
                   {expert.name || expert.email}
@@ -759,7 +759,7 @@ export default function EventsPageClient() {
                     className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-500"
                   />
                   <span>
-                    I acknowledge the activity carries risk and I will follow the expert’s
+                    I acknowledge the activity carries risk and I will follow the guide’s
                     safety instructions.
                   </span>
                 </label>
@@ -929,7 +929,7 @@ function EventCard({
         )}
 
         <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-slate-300">
-          {event.organizer_name && <p>Expert: {event.organizer_name}</p>}
+          {event.organizer_name && <p>Guide: {event.organizer_name}</p>}
           {event.organizer_phone && <p>Phone: {event.organizer_phone}</p>}
           {event.meeting_point && <p className="truncate">Meet: {event.meeting_point}</p>}
         </div>

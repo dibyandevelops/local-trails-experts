@@ -28,6 +28,7 @@ import ExpertRideNotesPanel from '@/components/experts/expert-ride-notes-panel';
 import DashboardProfileCard, {
   type DashboardProfileInfoItem,
 } from '@/components/ui/dashboard-profile-card';
+import BetaBadge from '@/components/ui/beta-badge';
 import TrailAssociationsSection from '@/components/ui/trail-associations-section';
 
 const EventForm = dynamic(() => import('@/components/feature-components/event-form/event-form'), {
@@ -89,7 +90,7 @@ const PROGRAM_TYPE_OPTIONS: Array<{ value: ExpertRideProgramType; label: string;
   { value: 'guided_ride', label: 'Guided ride', hint: 'Flexible ride request around one trail.' },
   { value: 'training', label: 'MTB training', hint: 'Multi-day coaching or structured practice.' },
   { value: 'skills_clinic', label: 'Skills clinic', hint: 'Focused session for cornering, braking, drops, or flow.' },
-  { value: 'tour', label: 'Local tour', hint: 'Scenic or city-to-trail experience with an expert.' },
+  { value: 'tour', label: 'Local tour', hint: 'Scenic or city-to-trail experience with a guide.' },
 ];
 
 function getProgramTypeLabel(programType?: string | null) {
@@ -358,7 +359,7 @@ export default function ExpertProfilePage() {
         setRidePrograms(programsData.programs || []);
         setRideProgramRequests(programRequestsData.requests || []);
       } catch (error) {
-        console.error('Error loading expert profile', error);
+        console.error('Error loading guide profile', error);
       } finally {
         setLoadingEvents(false);
         setLoadingTrailRequests(false);
@@ -377,7 +378,7 @@ export default function ExpertProfilePage() {
       const response = await fetch('/api/experts/me/trails');
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to load expert trails');
+        throw new Error(data?.error || 'Failed to load guide trails');
       }
       setCreatedTrails(data.created_trails || data.trails || []);
       setAssociatedTrails(data.associated_trails || []);
@@ -388,7 +389,7 @@ export default function ExpertProfilePage() {
       setHasLoadedTrails(true);
     } catch (error) {
       setTrailAssociationMessage(
-        error instanceof Error ? error.message : 'Failed to load expert trails.'
+        error instanceof Error ? error.message : 'Failed to load guide trails.'
       );
     } finally {
       setLoadingTrails(false);
@@ -594,7 +595,7 @@ export default function ExpertProfilePage() {
   if (!user || user.role !== 'expert') {
     return (
       <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
-        You must be logged in as an expert to view this page.
+        You must be logged in as a guide to view this page.
       </div>
     );
   }
@@ -631,16 +632,17 @@ export default function ExpertProfilePage() {
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-hero-glow/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-hero-glow/30 blur-3xl" />
         <div className="relative">
-          <div className="mb-3 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
-              Expert Profile
+              Guide Profile
             </span>
+            <BetaBadge />
             <span className="rounded-full border border-hero-border/80 bg-hero-pill/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-hero-pill-text">
               Settings
             </span>
           </div>
           <h1 className="text-balance text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
-            Manage your expert presence
+            Manage your guide presence
           </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
             Keep your profile, verification details, and trail activity up to date.
@@ -649,13 +651,13 @@ export default function ExpertProfilePage() {
       </section>
       <DashboardProfileCard
         avatarUrl={editForm.profilePhotoUrl}
-        avatarAlt={editForm.name || 'Expert profile'}
+        avatarAlt={editForm.name || 'Guide profile'}
         avatarFallback={initials}
-        title={editForm.name || 'Expert profile'}
+        title={editForm.name || 'Guide profile'}
         badges={
           user.is_verified_expert ? (
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200">
-              Verified Expert
+              Verified Guide
             </span>
           ) : (
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
@@ -755,7 +757,7 @@ export default function ExpertProfilePage() {
         )}
         {!user.google_sub && (
           <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
-            For security, the Google email must match your expert account email.
+            For security, the Google email must match your guide account email.
           </p>
         )}
       </DashboardProfileCard>
@@ -794,9 +796,12 @@ export default function ExpertProfilePage() {
         <div className="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <span className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-800 dark:border-slate-600 dark:bg-slate-800 dark:text-emerald-200">
-                Ride with Experts
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-800 dark:border-slate-600 dark:bg-slate-800 dark:text-emerald-200">
+                  Ride with Guides
+                </span>
+                <BetaBadge />
+              </div>
               <h2 className="mt-3 text-2xl font-black text-gray-950 dark:text-white">
                 Manage ride programs and participant requests
               </h2>
@@ -854,7 +859,7 @@ export default function ExpertProfilePage() {
                       Keep creation separate from request review. Open the form when you are ready to publish a new ride offer.
                     </p>
                     <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
-                      Public title is generated from the program type, expert name, duration, and selected trail.
+                      Public title is generated from the program type, guide name, duration, and selected trail.
                     </p>
                   </div>
                   <button
@@ -868,7 +873,7 @@ export default function ExpertProfilePage() {
                   </button>
                 </div>
                 <p className="mt-4 rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                  Ride programs can use any approved public trail. Your pinned trail list is only for your public expert profile.
+                  Ride programs can use any approved public trail. Your pinned trail list is only for your public guide profile.
                 </p>
               </div>
 
@@ -1340,7 +1345,7 @@ export default function ExpertProfilePage() {
                   Manage trails
                 </Dialog.Title>
                 <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-slate-300">
-                  Select public trails you guide, ride, or know well. These appear on your public expert profile.
+                  Select public trails you guide, ride, or know well. These appear on your public guide profile.
                 </Dialog.Description>
               </div>
               <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
@@ -1521,7 +1526,7 @@ export default function ExpertProfilePage() {
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-4 shadow-2xl dark:bg-slate-950">
             <div className="flex items-center justify-between border-b border-gray-200 pb-3 dark:border-slate-800">
               <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                Edit expert profile
+                Edit guide profile
               </Dialog.Title>
               <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
@@ -1578,7 +1583,7 @@ export default function ExpertProfilePage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={editForm.profilePhotoUrl}
-                      alt="Expert profile"
+                      alt="Guide profile"
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -2066,7 +2071,7 @@ export default function ExpertProfilePage() {
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-4 shadow-2xl dark:bg-slate-950">
             <div className="flex items-center justify-between border-b border-gray-200 pb-3 dark:border-slate-800">
               <Dialog.Title className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                Expert verification details
+                Guide verification details
               </Dialog.Title>
               <Dialog.Close className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close

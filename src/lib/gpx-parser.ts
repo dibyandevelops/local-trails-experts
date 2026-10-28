@@ -65,7 +65,12 @@ export async function parseGPX(gpxContent: string): Promise<RouteData> {
               ? Number.parseFloat(String(ele))
               : undefined;
 
-          if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          if (
+            Number.isFinite(lat) &&
+            Number.isFinite(lon) &&
+            lat >= -90 && lat <= 90 &&
+            lon >= -180 && lon <= 180
+          ) {
             let distance = 0;
 
             if (prevPointInGroup) {

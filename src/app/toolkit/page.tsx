@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Essential MTB & Hiking Toolkit for Nepal Trails — Apps, Tools & Channels',
     description:
-      'Curated directory of Strava, Komoot, offline GPS apps, mountain storm radars, trailside repair tools, and bike channels tested by experts for Himalayan routes.',
+      'Curated directory of Strava, Komoot, offline GPS apps, mountain storm radars, trailside repair tools, and bike channels tested by guides for Himalayan routes.',
     url: absoluteUrl('/toolkit'),
     type: 'website',
   },

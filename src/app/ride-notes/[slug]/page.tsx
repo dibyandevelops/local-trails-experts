@@ -23,7 +23,7 @@ type RideNoteChecklistSection = {
 
 const categoryLabels: Record<RideNoteCategory, string> = {
   trail_guide: 'Trail guide',
-  expert_note: 'Expert note',
+  expert_note: 'Guide note',
   ride_report: 'Ride report',
   safety: 'Safety',
   trail_work: 'Trail work',
@@ -299,7 +299,7 @@ export default async function RideNoteDetailPage({ params }: RideNotePageProps) 
                 Planning this ride?
               </p>
               <p className="mt-1 text-sm text-emerald-900/80 dark:text-emerald-100/80">
-                Open the trail page for route details, ride support, and expert request options.
+                Open the trail page for route details, ride support, and guide request options.
               </p>
               <Link
                 href={`/trails/${note.trail_slug || note.trail_id}`}

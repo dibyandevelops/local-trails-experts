@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getPublicCampaigns, type CampaignRow } from '@/lib/data/public-campaigns';
+import BetaBadge from '@/components/ui/beta-badge';
 
 export const metadata: Metadata = {
   title: 'Trail Campaigns',
@@ -31,9 +32,12 @@ export default async function CampaignsPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-lime-50 px-6 py-8 shadow-sm dark:border-emerald-900/60 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-950/40">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-          Community Funding
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+            Community Funding
+          </p>
+          <BetaBadge />
+        </div>
         <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-gray-100">
           Trail Campaigns in Nepal
         </h1>

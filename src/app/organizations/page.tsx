@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import OrganizationAvatar from '@/components/feature-components/organizations/organization-avatar';
+import BetaBadge from '@/components/ui/beta-badge';
 import { getPublicOrganizations } from '@/lib/data/public-organizations';
 
 export const dynamic = 'force-dynamic';
@@ -11,9 +12,12 @@ export default async function OrganizationsPage() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-        <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
-          Trail Organizations
-        </h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
+            Trail Organizations
+          </h1>
+          <BetaBadge />
+        </div>
         <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
           Explore cycling organizations, local service providers, and trail teams active across Nepal.
         </p>
@@ -23,7 +27,7 @@ export default async function OrganizationsPage() {
             Partner plan
           </Link>
           <Link href="/experts/join" className="inline-flex rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
-            Create after expert verification
+            Create after guide verification
           </Link>
         </div>
       </header>

@@ -151,7 +151,7 @@ export default function OrganizationMembersPanel() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Members</h2>
           <p className="text-sm text-gray-600">
-            Assign verified experts with admin or editor access.
+            Assign verified guides with admin or editor access.
           </p>
         </div>
         <button

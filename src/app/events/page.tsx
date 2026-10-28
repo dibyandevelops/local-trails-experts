@@ -42,7 +42,7 @@ export async function generateMetadata(props: {
   return listingMetadata({
     title: 'MTB & Trail Events in Nepal',
     description:
-      'Join upcoming mountain bike and trail events in Nepal hosted by local experts and communities.',
+      'Join upcoming mountain bike and trail events in Nepal hosted by local guides and communities.',
     canonicalPath: '/events',
     hasFilters,
     keywords: [

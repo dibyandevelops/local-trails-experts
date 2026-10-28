@@ -10,8 +10,18 @@ export function extractKomootEmbedUrl(input?: string | null): string {
   const candidate = extractKomootUrlCandidate(input);
   if (!candidate) return '';
 
-  if (!/komoot\.com/i.test(candidate)) return '';
-  if (!/\/embed\b/i.test(candidate)) return '';
+  try {
+    const url = new URL(candidate);
+    if (
+      url.protocol !== 'https:' ||
+      !['komoot.com', 'www.komoot.com'].includes(url.hostname.toLowerCase()) ||
+      !/\/embed\b/i.test(url.pathname)
+    ) {
+      return '';
+    }
+  } catch {
+    return '';
+  }
 
   return candidate;
 }
@@ -19,6 +29,6 @@ export function extractKomootEmbedUrl(input?: string | null): string {
 export function getKomootNavigateUrl(input?: string | null): string {
   const candidate = extractKomootUrlCandidate(input);
   if (!candidate) return '';
-  if (!/komoot\.com/i.test(candidate)) return '';
-  return candidate.replace('/embed', '');
+  const embedUrl = extractKomootEmbedUrl(candidate);
+  return embedUrl ? embedUrl.replace('/embed', '') : '';
 }

@@ -19,7 +19,7 @@ import {
 
 const categories: Array<{ value: AdminRideNoteCategory; label: string }> = [
   { value: 'trail_guide', label: 'Trail guide' },
-  { value: 'expert_note', label: 'Expert note' },
+  { value: 'expert_note', label: 'Guide note' },
   { value: 'ride_report', label: 'Ride report' },
   { value: 'safety', label: 'Safety' },
   { value: 'trail_work', label: 'Trail work' },
@@ -230,7 +230,7 @@ export default function RideNotesPanel() {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ride Notes</h2>
           <p className="text-sm text-gray-600 dark:text-slate-300">
-            Publish trail guides, expert notes, ride reports, safety updates, and trail work stories.
+            Publish trail guides, notes from guides, ride reports, safety updates, and trail work stories.
           </p>
           <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
             {pendingReviewCount} pending review / {publishedCount} published / {notes.length} total
@@ -380,7 +380,7 @@ export default function RideNotesPanel() {
           else closeEditor();
         }}
         title={editingNote ? 'Edit ride note' : 'Create ride note'}
-        description="Connect the note to a trail and expert when it helps riders understand the route."
+        description="Connect the note to a trail and guide when it helps riders understand the route."
         maxWidthClassName="max-w-3xl"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
@@ -517,10 +517,10 @@ export default function RideNotesPanel() {
               ) : (
                 <>
                   <label htmlFor="ride-note-expert" className="text-xs font-semibold text-gray-600 dark:text-slate-300">
-                    Related expert
+                    Related guide
                   </label>
                   <select id="ride-note-expert" {...register('expert_user_id')} className={inputClass} disabled={!usesExpertContext}>
-                    <option value="">No expert</option>
+                    <option value="">No guide</option>
                     {experts.map((expert) => (
                       <option key={expert.id} value={expert.id}>
                         {expert.name || expert.email} {expert.city ? `- ${expert.city}` : ''}
@@ -529,7 +529,7 @@ export default function RideNotesPanel() {
                   </select>
                   {!usesExpertContext && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                      This category does not need an expert or organization.
+                      This category does not need a guide or organization.
                     </p>
                   )}
                 </>

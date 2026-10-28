@@ -144,6 +144,20 @@ export async function GET(
 
     const trailRow = result.rows[0];
 
+    const auth = getAuthFromRequest(request);
+    const currentUserResult = auth?.sub
+      ? await pool.query('SELECT role FROM users WHERE id = $1 LIMIT 1', [auth.sub])
+      : { rows: [] };
+    const canViewUnpublished =
+      currentUserResult.rows[0]?.role === 'admin' ||
+      Boolean(auth?.sub && trailRow.submitted_by_user_id === auth.sub);
+    if (
+      (trailRow.status !== 'approved' || trailRow.is_hidden) &&
+      !canViewUnpublished
+    ) {
+      return NextResponse.json({ error: 'Trail not found' }, { status: 404 });
+    }
+
     // Parse route_data if it exists
     if (trailRow.route_data && typeof trailRow.route_data === 'string') {
       try {
@@ -177,6 +191,14 @@ export async function PATCH(
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const currentUserResult = await pool.query(
+      'SELECT role FROM users WHERE id = $1 LIMIT 1',
+      [auth.sub]
+    );
+    const currentRole = currentUserResult.rows[0]?.role;
+    if (!currentRole) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { id } = await params;
     const body = await request.json() as Partial<Trail> & { action?: 'hide' | 'unhide' | 'delete' | 'remove_route' };
@@ -187,8 +209,8 @@ export async function PATCH(
     }
 
     const trail = existing.rows[0];
-    const isAdmin = auth.role === 'admin';
-    const isExpert = auth.role === 'expert';
+    const isAdmin = currentRole === 'admin';
+    const isExpert = currentRole === 'expert';
     const isOwnerExpert = isExpert && trail.submitted_by_user_id === auth.sub;
 
     if (body.name && body.name.trim()) {

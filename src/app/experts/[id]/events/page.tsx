@@ -6,6 +6,7 @@ import { Event, User } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { fetchExpertEvents, fetchExperts } from '@/services/experts/experts.service';
 import DateText from '@/components/ui/date-text';
+import BetaBadge from '@/components/ui/beta-badge';
 
 interface ExpertDetail extends User {
   events: Event[];
@@ -40,12 +41,12 @@ export default function ExpertEventsPage() {
   if (!expert) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600 mb-4">Expert not found.</p>
+        <p className="text-gray-600 mb-4">Guide not found.</p>
         <Link
           href="/experts"
           className="inline-flex px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-semibold hover:bg-green-800"
         >
-          Back to experts
+          Back to guides
         </Link>
       </div>
     );
@@ -55,14 +56,17 @@ export default function ExpertEventsPage() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <p className="text-xs text-gray-500 mb-1">
-            <Link href="/experts" className="underline hover:text-green-700">
-              All experts
-            </Link>{' '}
-            / Events
-          </p>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs text-gray-500 mb-1">
+              <Link href="/experts" className="underline hover:text-green-700">
+                All guides
+              </Link>{' '}
+              / Events
+            </p>
+            <BetaBadge />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Events by {expert.name || 'this expert'}
+            Events by {expert.name || 'this guide'}
           </h1>
           {expert.city && (
             <p className="text-sm text-gray-600">{expert.city}</p>
@@ -70,7 +74,7 @@ export default function ExpertEventsPage() {
         </div>
         {expert.is_verified_expert && (
           <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
-            Verified Expert
+            Verified Guide
           </span>
         )}
       </div>

@@ -47,6 +47,10 @@ function normalizeKomootEmbedInput(raw: string) {
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthFromRequest(request);
+    const currentUserResult = auth?.sub
+      ? await pool.query('SELECT role FROM users WHERE id = $1 LIMIT 1', [auth.sub])
+      : { rows: [] };
+    const currentRole = currentUserResult.rows[0]?.role as string | undefined;
     const searchParams = request.nextUrl.searchParams;
     const search = (searchParams.get('search') || '').trim();
     const purpose = (searchParams.get('purpose') || '').trim();
@@ -262,15 +266,15 @@ export async function GET(request: NextRequest) {
       whereClause += ` AND t.is_hazardous = TRUE`;
     }
 
-    if (auth?.role === 'admin' && status) {
+    if (currentRole === 'admin' && status) {
       whereClause += ` AND status = $${paramIndex}`;
       params.push(status);
       paramIndex++;
-    } else if (auth?.role === 'admin') {
+    } else if (currentRole === 'admin') {
       whereClause += ` AND status = 'approved'`;
-    } else if (auth?.role === 'expert') {
+    } else if (currentRole === 'expert') {
       whereClause += ` AND (status = 'approved' AND is_hidden = FALSE OR t.submitted_by_user_id = $${paramIndex})`;
-      params.push(auth.sub);
+      params.push(auth?.sub ?? '');
       paramIndex++;
     } else {
       whereClause += ` AND status = 'approved' AND is_hidden = FALSE`;
@@ -460,8 +464,24 @@ export async function POST(request: NextRequest) {
     const limited = await rateLimit(request, 'trail-create', 5, 60);
     if (limited) return limited;
 
-    // Get optional auth - create trail is now public
     const auth = getAuthFromRequest(request);
+    if (!auth?.sub) {
+      return NextResponse.json({ error: 'Sign in to submit trails.' }, { status: 401 });
+    }
+
+    // Resolve permissions from the current account record so an old signed token
+    // cannot retain permissions after a role change or account removal.
+    const submitterResult = await pool.query(
+      'SELECT id, name, email, role, is_verified_expert FROM users WHERE id = $1 LIMIT 1',
+      [auth.sub]
+    );
+    const submitter = submitterResult.rows[0];
+    if (!submitter) {
+      return NextResponse.json({ error: 'Sign in to submit trails.' }, { status: 401 });
+    }
+    if (!['participant', 'expert', 'admin'].includes(submitter.role)) {
+      return NextResponse.json({ error: 'Your account cannot submit trails.' }, { status: 403 });
+    }
 
     // Parse the form data first to check required fields
     const contentType = request.headers.get('content-type') || '';
@@ -524,6 +544,16 @@ export async function POST(request: NextRequest) {
     const longitudeOverride = parseOptionalNumber(
       String(formData.get('longitude') || '')
     );
+
+    if (
+      (latitudeOverride !== null && (latitudeOverride < -90 || latitudeOverride > 90)) ||
+      (longitudeOverride !== null && (longitudeOverride < -180 || longitudeOverride > 180)) ||
+      (distanceOverride !== null && (distanceOverride < 0 || distanceOverride > 100_000)) ||
+      (elevationOverride !== null && (elevationOverride < 0 || elevationOverride > 100_000)) ||
+      (estimated_time_hours !== null && (estimated_time_hours < 0 || estimated_time_hours > 100_000))
+    ) {
+      return NextResponse.json({ error: 'Trail measurements are outside the allowed range.' }, { status: 400 });
+    }
 
     const rawSafety = String(formData.get('safety_labels') || '').trim();
     let safetyLabelsInput: unknown = [];
@@ -592,8 +622,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isAdmin = auth?.role === 'admin';
-    const isExpert = auth?.role === 'expert';
+    const isAdmin = submitter.role === 'admin';
+    const isExpert = submitter.role === 'expert';
     const slug = await getUniqueTrailSlug(pool, name);
 
     const gpxText = await gpxFile.text();
@@ -612,19 +642,8 @@ export async function POST(request: NextRequest) {
     const elevation_gain_m =
       elevationOverride ?? routeData.elevationGain ?? null;
 
-    // Get submitter info if authenticated
-    let submitter = null;
-    let submitterEmail = null;
-    let submitterVerified = false;
-    if (auth?.sub) {
-      const submitterResult = await pool.query(
-        'SELECT name, email, is_verified_expert FROM users WHERE id = $1 LIMIT 1',
-        [auth.sub]
-      );
-      submitter = submitterResult.rows[0];
-      submitterEmail = submitter?.email;
-      submitterVerified = Boolean(submitter?.is_verified_expert);
-    }
+    const submitterEmail = submitter.email;
+    const submitterVerified = Boolean(submitter.is_verified_expert);
 
     // Auto-approve trails created by admins or experts (unverified experts are hidden first)
     const shouldAutoApprove = isAdmin || isExpert;
@@ -660,9 +679,9 @@ export async function POST(request: NextRequest) {
         JSON.stringify(routeData),
         sport_type,
         trailStatus,
-        auth?.sub || null,
-        isAdmin && auth?.sub ? auth.sub : null,
-        isAdmin && auth?.sub ? new Date() : null,
+        auth.sub,
+        isAdmin ? auth.sub : null,
+        isAdmin ? new Date() : null,
         isHidden,
       ]
     );
@@ -674,12 +693,12 @@ export async function POST(request: NextRequest) {
       const adminEmails = adminEmail ? [adminEmail] : [];
       const { sendEmailSafe } = await import('@/lib/email');
       const approvalEmail = buildBrandedEmail({
-        subject: `Trail approval needed (${sport_type})`,
+        subject: 'Trail approval needed',
         appUrl: getAppUrl(),
         headline: 'Trail approval needed',
-        subhead: name,
-        bodyHtml: `A new trail has been submitted for approval.<br/><br/><strong>Trail:</strong> ${name}<br/><strong>Sport:</strong> ${sport_type}<br/><strong>Submitted by:</strong> ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})<br/><strong>Location:</strong> ${location}<br/>Please review in the admin console.`,
-        bodyText: `A new trail has been submitted for approval.\n\nTrail: ${name}\nSport: ${sport_type}\nSubmitted by: ${submitter?.name || 'Anonymous'} (${submitterEmail || 'No email'})\nLocation: ${location}\nPlease review in admin console.`,
+        subhead: escapeHtml(name),
+        bodyHtml: `A new trail has been submitted for approval.<br/><br/><strong>Trail:</strong> ${escapeHtml(name)}<br/><strong>Sport:</strong> ${escapeHtml(sport_type)}<br/><strong>Submitted by:</strong> ${escapeHtml(submitter.name || 'Participant')} (${escapeHtml(submitterEmail || 'No email')})<br/><strong>Location:</strong> ${escapeHtml(location)}<br/>Please review in the admin console.`,
+        bodyText: `A new trail has been submitted for approval.\n\nTrail: ${name}\nSport: ${sport_type}\nSubmitted by: ${submitter.name || 'Participant'} (${submitterEmail || 'No email'})\nLocation: ${location}\nPlease review in admin console.`,
       });
       const dedupeKey = `trail-approval:${name}:${sport_type}:${submitterEmail || 'anonymous'}`;
       if (adminEmails.length > 0) {
@@ -709,4 +728,17 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return entities[character];
+  });
 }

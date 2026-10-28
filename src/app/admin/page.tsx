@@ -100,7 +100,7 @@ const adminNavItems: Array<{
     id: 'accounts',
     href: '#accounts',
     label: 'People',
-    description: 'Experts, participants, and account control.',
+    description: 'Guides, participants, and account control.',
   },
 ];
 
@@ -185,7 +185,7 @@ export default function AdminPage() {
         onOpenChange={(open) => handleSectionToggle('content', open)}
         eyebrow="Publishing area"
         title="Content"
-        description="Review expert content, manage public ride programs, and keep event listings current."
+        description="Review guide content, manage public ride programs, and keep event listings current."
       >
         <RideProgramsPanel />
         <RideNotesPanel />
@@ -219,12 +219,12 @@ export default function AdminPage() {
         onOpenChange={(open) => handleSectionToggle('accounts', open)}
         eyebrow="Admin control"
         title="Accounts"
-        description="Manage experts, visibility, and participant records."
+        description="Manage guides, visibility, and participant records."
       >
         <UsersPanel
           role="expert"
-          title="Experts"
-          description="Manage expert accounts, hide profiles from the experts page, and remove users if needed."
+          title="Guides"
+          description="Manage guide accounts, hide profiles from the guides page, and remove users if needed."
         />
         <UsersPanel
           role="participant"

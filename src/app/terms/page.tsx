@@ -20,7 +20,7 @@ const sections = [
   {
     title: 'Platform role',
     body:
-      'LocoXperts helps people discover trails, connect with local experts, and join outdoor events. Experts and organizers are independent hosts unless explicitly stated otherwise.',
+      'LocoXperts helps people discover trails, connect with local guides, and join outdoor events. Guides and organizers are independent hosts unless explicitly stated otherwise.',
   },
   {
     title: 'Safety and risk',

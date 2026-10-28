@@ -75,9 +75,9 @@ export default function RideProgramsPanel() {
     <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/60 sm:rounded-2xl sm:p-5">
       <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ride with Experts</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ride with Guides</h2>
           <p className="text-sm text-gray-600 dark:text-slate-300">
-            Admin visibility for expert ride programs and participant requests.
+            Admin visibility for guide ride programs and participant requests.
           </p>
         </div>
         <Link
@@ -111,7 +111,7 @@ export default function RideProgramsPanel() {
                   <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-slate-900 dark:text-slate-400">
                     <tr>
                       <th className="px-3 py-2">Program</th>
-                      <th className="px-3 py-2">Expert</th>
+                      <th className="px-3 py-2">Guide</th>
                       <th className="px-3 py-2">Trail</th>
                       <th className="px-3 py-2">Requests</th>
                       <th className="px-3 py-2">Status</th>
@@ -133,7 +133,7 @@ export default function RideProgramsPanel() {
                           </p>
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
-                          <p>{program.expert_name || 'Expert'}</p>
+                          <p>{program.expert_name || 'Guide'}</p>
                           <p>{program.expert_email}</p>
                           {program.organization_name && (
                             <p className="mt-1 font-semibold text-emerald-700 dark:text-emerald-300">
@@ -194,7 +194,7 @@ export default function RideProgramsPanel() {
                     <tr>
                       <th className="px-3 py-2">Request</th>
                       <th className="px-3 py-2">Participant</th>
-                      <th className="px-3 py-2">Expert</th>
+                      <th className="px-3 py-2">Guide</th>
                       <th className="px-3 py-2">Preferred</th>
                       <th className="px-3 py-2">Status</th>
                       <th className="px-3 py-2">Notes</th>
@@ -216,7 +216,7 @@ export default function RideProgramsPanel() {
                           {request.requester_phone && <p>{request.requester_phone}</p>}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
-                          <p>{request.expert_name || 'Expert'}</p>
+                          <p>{request.expert_name || 'Guide'}</p>
                           <p>{request.expert_email}</p>
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">

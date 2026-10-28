@@ -113,15 +113,15 @@ export default function CreateTrainingPage() {
   const onSubmit: SubmitHandler<TrainingFormValues> = async (values) => {
     try {
       if (isExpertUnverified) {
-        alert('Your expert profile is pending verification. You cannot create trainings yet.');
+        alert('Your guide profile is pending verification. You cannot create trainings yet.');
         return;
       }
       if (currentUser?.role === 'admin' && !values.host_user_id) {
-        alert('Please select an approved expert host.');
+        alert('Please select an approved guide host.');
         return;
       }
       if (currentUser?.role === 'admin' && values.host_user_id && !selectedHostIsVerified) {
-        alert('Selected expert is not verified yet. Please choose a verified host.');
+        alert('Selected guide is not verified yet. Please choose a verified host.');
         return;
       }
       if (values.is_paid_event && (!values.price_npr || values.price_npr <= 0)) {
@@ -175,7 +175,7 @@ export default function CreateTrainingPage() {
             Organize Training
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-            Plan focused coaching sessions and skill blocks led by trusted local experts.
+            Plan focused coaching sessions and skill blocks led by trusted local guides.
           </p>
         </div>
       </section>
@@ -193,13 +193,13 @@ export default function CreateTrainingPage() {
         >
           {isExpertUnverified && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
-              Your expert profile is pending verification. Trainings are disabled until
+              Your guide profile is pending verification. Trainings are disabled until
               an admin approves your profile.
             </div>
           )}
           {currentUser.role === 'admin' && (
             <div>
-              <label className={labelClass}>Approved Expert Host</label>
+              <label className={labelClass}>Approved Guide Host</label>
               <select
                 {...register('host_user_id')}
                 required
@@ -212,21 +212,21 @@ export default function CreateTrainingPage() {
                 }}
                 className={inputClass}
               >
-                <option value="">Select expert host</option>
+                <option value="">Select guide host</option>
                 {experts.map((expert) => (
                   <option
                     key={expert.id}
                     value={expert.id}
                     disabled={!expert.is_verified_expert}
                   >
-                    {expert.name || 'Expert'} ({expert.email})
+                    {expert.name || 'Guide'} ({expert.email})
                     {!expert.is_verified_expert ? ' — Pending verification' : ''}
                   </option>
                 ))}
               </select>
               {selectedHostId && !selectedHostIsVerified && (
                 <p className="mt-2 text-xs text-amber-700">
-                  This expert is pending verification and cannot host trainings yet.
+                  This guide is pending verification and cannot host trainings yet.
                 </p>
               )}
             </div>

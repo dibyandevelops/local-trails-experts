@@ -56,7 +56,7 @@ export const servicesCopy: Record<Locale, ServicesCopy> = {
         'Find website development, digital marketing, sales systems, Google Maps setup, IT support, and cycling services from local organizations.',
     },
     hero: {
-      eyebrow: 'Local expertise for hire',
+      eyebrow: 'Local guide services',
       title: 'Services for businesses and better rides',
       description:
         'Digital and IT support for small and medium businesses, alongside local cycling services and community providers.',

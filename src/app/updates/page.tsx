@@ -38,7 +38,7 @@ const updates = [
     points: [
       'Local guides can upload their own trails after verification.',
       'Organizations can host campaigns, services, programs, and updates.',
-      'Expert registration copy is shorter and more focused on local guide work.',
+      'Guide registration copy is shorter and more focused on local guide work.',
     ],
   },
   {

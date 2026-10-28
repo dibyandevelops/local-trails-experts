@@ -33,7 +33,7 @@ export default function HazardousTrailsPanel() {
           Hazardous Trails
         </h2>
         <p className="text-sm text-gray-600 dark:text-slate-300">
-          Trails currently flagged as hazardous by admins or experts.
+          Trails currently flagged as hazardous by admins or guides.
         </p>
       </div>
 

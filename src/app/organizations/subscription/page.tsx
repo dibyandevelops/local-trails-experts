@@ -12,6 +12,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { ORGANIZATION_SUBSCRIPTION_PRICE_NPR } from '@/lib/organization-subscriptions';
+import BetaBadge from '@/components/ui/beta-badge';
 
 export const metadata: Metadata = {
   title: 'LocoXperts Partner Plan for Cycling Organizations',
@@ -71,10 +72,13 @@ export default function OrganizationSubscriptionLandingPage() {
       <section className="overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-sm dark:border-emerald-900/60 dark:bg-slate-900">
         <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="p-6 sm:p-8 lg:p-10">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
-              <Building2 className="h-3.5 w-3.5" />
-              For cycling organizations
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+                <Building2 className="h-3.5 w-3.5" />
+                For cycling organizations
+              </span>
+              <BetaBadge />
+            </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-normal text-gray-950 dark:text-white sm:text-5xl">
               LocoXperts Partner Plan
             </h1>

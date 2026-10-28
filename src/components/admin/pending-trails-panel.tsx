@@ -105,7 +105,7 @@ export default function PendingTrailsPanel() {
         Pending Trail Approvals
       </h2>
       <p className="text-sm text-gray-600 mb-5">
-        Review trails submitted by experts and approve or reject.
+        Review trails submitted by guides and approve or reject.
       </p>
       {trailModerationMessage && (
         <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">

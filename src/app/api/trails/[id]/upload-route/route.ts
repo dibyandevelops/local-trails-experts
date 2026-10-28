@@ -22,7 +22,11 @@ export async function POST(
     if (limited) return limited;
 
     const auth = getAuthFromRequest(request);
-    if (!auth || auth.role !== 'admin') {
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userResult = await pool.query('SELECT role FROM users WHERE id = $1 LIMIT 1', [auth.sub]);
+    if (userResult.rows[0]?.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

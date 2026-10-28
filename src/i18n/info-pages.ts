@@ -19,20 +19,20 @@ export type LocalizedInfoPage = {
 export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
   faq: {
     en: {
-      metadata: { title: 'FAQ', description: 'Quick answers about LocoXperts trails, experts, events, safety, and accounts.' },
+      metadata: { title: 'FAQ', description: 'Quick answers about LocoXperts trails, guides, events, safety, and accounts.' },
       hero: {
         eyebrow: 'Help center',
         title: 'Quick answers before you ride, book, or contribute.',
-        description: 'A compact guide to common questions about trails, ride support, events, experts, organizations, safety, and privacy.',
+        description: 'A compact guide to common questions about trails, ride support, events, guides, organizations, safety, and privacy.',
         actions: [
           { label: 'Browse trails', href: '/trails' },
           { label: 'Read safety policy', href: '/safety', variant: 'secondary' },
         ],
       },
       sections: [
-        { title: 'Trails and ride support', items: ['Trail pages can include route maps, sport type, distance, elevation, difficulty, route guide, services, trail updates, campaigns, and associated experts.', 'You can request a custom trail ride from a trail page with preferred date, timing, nearest point, and support details.', 'Admins and authorized organization users can publish active trail alerts and updates.'] },
+        { title: 'Trails and ride support', items: ['Trail pages can include route maps, sport type, distance, elevation, difficulty, route guide, services, trail updates, campaigns, and associated guides.', 'You can request a custom trail ride from a trail page with preferred date, timing, nearest point, and support details.', 'Admins and authorized organization users can publish active trail alerts and updates.'] },
         { title: 'Events and bookings', items: ['Open the event page, review details, and use the join action.', 'Paid bookings are confirmed after payment proof or payment status is verified.', 'Some events may be full, past, or unavailable for booking.'] },
-        { title: 'Experts and organizations', items: ['Experts submit profile and application details for admin review.', 'An organization is optional and can be created after expert verification.', 'Each verified expert may own one organization and invite other verified experts to help manage it.', 'Organizations can manage members, linked trails, ride programs, services, campaigns, updates, and trail work.', 'Verified experts can set fees for hosted events, while organizations can publish priced programs and services.', 'Cycle hubs and partners can be listed after review.'] },
+        { title: 'Guides and organizations', items: ['Guides submit profile and application details for admin review.', 'An organization is optional and can be created after guide verification.', 'Each verified guide may own one organization and invite other verified guides to help manage it.', 'Organizations can manage members, linked trails, ride programs, services, campaigns, updates, and trail work.', 'Verified guides can set fees for hosted events, while organizations can publish priced programs and services.', 'Cycle hubs and partners can be listed after review.'] },
         { title: 'Privacy, safety, and accounts', items: ['LocoXperts does not sell personal data.', 'Read the privacy, terms, and safety pages for platform policies.', 'Account deletion requests are reviewed manually for safety and compliance.'] },
       ],
     },
@@ -58,11 +58,11 @@ export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
   privacy: {
     en: {
       metadata: { title: 'Privacy Policy', description: 'How LocoXperts collects, uses, and protects user data.' },
-      hero: { eyebrow: 'Privacy', title: 'Your data should be useful, limited, and protected.', description: 'LocoXperts collects only the information needed to run accounts, trail requests, events, expert workflows, and community support. We do not sell personal data.', updated: 'March 12, 2026', actions: [{ label: 'Read terms', href: '/terms' }] },
+      hero: { eyebrow: 'Privacy', title: 'Your data should be useful, limited, and protected.', description: 'LocoXperts collects only the information needed to run accounts, trail requests, events, guide workflows, and community support. We do not sell personal data.', updated: 'March 12, 2026', actions: [{ label: 'Read terms', href: '/terms' }] },
       sections: [
         { title: 'What we collect', items: ['Account details such as name, email, phone, role, and profile information.', 'Trail, event, booking, campaign, and request activity needed to operate the platform.', 'Uploaded content such as profile details, trail images, payment proof, or organization information.'] },
-        { title: 'How we use it', items: ['To help participants discover trails, join events, and request ride support.', 'To let experts and organizations manage relevant operations.', 'To review safety, moderation, verification, payment, and compliance requests.'] },
-        { title: 'Data sharing', body: ['We do not sell personal data. We only share information when needed to deliver a feature, comply with legal or safety obligations, process operations, or communicate between participants, experts, organizers, and administrators.', 'The platform currently focuses on Nepal trail communities. If the region or data practices materially change, this policy should be updated before that expansion.'] },
+        { title: 'How we use it', items: ['To help participants discover trails, join events, and request ride support.', 'To let guides and organizations manage relevant operations.', 'To review safety, moderation, verification, payment, and compliance requests.'] },
+        { title: 'Data sharing', body: ['We do not sell personal data. We only share information when needed to deliver a feature, comply with legal or safety obligations, process operations, or communicate between participants, guides, organizers, and administrators.', 'The platform currently focuses on Nepal trail communities. If the region or data practices materially change, this policy should be updated before that expansion.'] },
         { title: 'Account deletion', items: ['Submit a deletion request with an optional reason.', 'We review pending obligations and compliance requirements.', 'You receive email updates when the request is approved, rejected, or completed.'] },
         { title: 'Contact', body: ['Questions about privacy can be sent to the LocoXperts team through the footer support or feedback flow.'] },
       ],
@@ -72,8 +72,8 @@ export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
       hero: { eyebrow: 'गोपनीयता', title: 'तपाईंको डेटा उपयोगी, सीमित र सुरक्षित हुनुपर्छ।', description: 'LocoXperts ले खाता, ट्रेल अनुरोध, इभेन्ट, एक्सपर्ट workflow र community support चलाउन चाहिने जानकारी मात्र संकलन गर्छ। हामी व्यक्तिगत डेटा बेच्दैनौं।', updated: 'March 12, 2026', actions: [{ label: 'सर्तहरू पढ्नुहोस्', href: '/ne/terms' }] },
       sections: [
         { title: 'हामी के संकलन गर्छौं', items: ['नाम, इमेल, फोन, भूमिका र प्रोफाइल जानकारी जस्ता खाता विवरण।', 'प्लेटफर्म चलाउन चाहिने ट्रेल, इभेन्ट, बुकिङ, अभियान र अनुरोध गतिविधि।', 'प्रोफाइल विवरण, ट्रेल फोटो, payment proof वा संस्था जानकारी जस्ता uploaded content।'] },
-        { title: 'हामी कसरी प्रयोग गर्छौं', items: ['Participant लाई ट्रेल खोज्न, इभेन्ट join गर्न र ride support माग्न सहयोग गर्न।', 'Expert र organization लाई सम्बन्धित operation व्यवस्थापन गर्न दिन।', 'Safety, moderation, verification, payment र compliance request समीक्षा गर्न।'] },
-        { title: 'डेटा साझेदारी', body: ['हामी व्यक्तिगत डेटा बेच्दैनौं। Feature चलाउन, कानुनी वा सुरक्षा दायित्व पूरा गर्न, platform operation गर्न, वा participant, expert, organizer र admin बीच आवश्यक communication गर्नुपर्दा मात्र जानकारी प्रयोग/साझा गरिन्छ।', 'Platform अहिले Nepal trail communities मा केन्द्रित छ। Region वा data practice materially change भएमा विस्तार अघि policy update गर्नुपर्छ।'] },
+        { title: 'हामी कसरी प्रयोग गर्छौं', items: ['Participant लाई ट्रेल खोज्न, इभेन्ट join गर्न र ride support माग्न सहयोग गर्न।', 'Guide र organization लाई सम्बन्धित operation व्यवस्थापन गर्न दिन।', 'Safety, moderation, verification, payment र compliance request समीक्षा गर्न।'] },
+        { title: 'डेटा साझेदारी', body: ['हामी व्यक्तिगत डेटा बेच्दैनौं। Feature चलाउन, कानुनी वा सुरक्षा दायित्व पूरा गर्न, platform operation गर्न, वा participant, guide, organizer र admin बीच आवश्यक communication गर्नुपर्दा मात्र जानकारी प्रयोग/साझा गरिन्छ।', 'Platform अहिले Nepal trail communities मा केन्द्रित छ। Region वा data practice materially change भएमा विस्तार अघि policy update गर्नुपर्छ।'] },
         { title: 'खाता हटाउने', items: ['वैकल्पिक कारणसहित deletion request पठाउनुहोस्।', 'हामी pending obligation र compliance requirement समीक्षा गर्छौं।', 'Request approved, rejected वा completed हुँदा email update आउँछ।'] },
         { title: 'सम्पर्क', body: ['Privacy सम्बन्धी प्रश्न footer support वा feedback flow मार्फत LocoXperts team लाई पठाउन सकिन्छ।'] },
       ],
@@ -81,10 +81,10 @@ export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
   },
   terms: {
     en: {
-      metadata: { title: 'Terms & Conditions', description: 'Terms for using LocoXperts, including safety, content, expert, and community guidelines.' },
+      metadata: { title: 'Terms & Conditions', description: 'Terms for using LocoXperts, including safety, content, guide, and community guidelines.' },
       hero: { eyebrow: 'Legal', title: 'Terms for using LocoXperts', description: 'These terms explain how the platform works and what users are responsible for.', updated: 'March 24, 2026', actions: [{ label: 'Read safety policy', href: '/safety' }, { label: 'Read privacy policy', href: '/privacy', variant: 'secondary' }] },
       sections: [
-        { title: 'Platform role', body: ['LocoXperts helps people discover trails, connect with local experts, and join outdoor events. Experts and organizers are independent hosts unless explicitly stated otherwise.'] },
+        { title: 'Platform role', body: ['LocoXperts helps people discover trails, connect with local guides, and join outdoor events. Guides and organizers are independent hosts unless explicitly stated otherwise.'] },
         { title: 'Safety and risk', body: ['Outdoor activities can involve injury, illness, route uncertainty, weather, traffic, wildlife, and equipment failure. You are responsible for your own safety decisions and preparedness.'] },
         { title: 'Accounts and verification', body: ['Verified status means the platform has reviewed certain details; it is not a guarantee of safety, outcome, or service quality.'] },
         { title: 'Trail and content accuracy', body: ['Trail data, maps, distance, elevation, difficulty labels, meeting points, and service details are provided as-is and can change. Verify locally before relying on a route.'] },
@@ -94,10 +94,10 @@ export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
       ],
     },
     ne: {
-      metadata: { title: 'सर्तहरू', description: 'LocoXperts प्रयोग गर्दा लागू हुने सुरक्षा, content, expert र community guideline।' },
+      metadata: { title: 'सर्तहरू', description: 'LocoXperts प्रयोग गर्दा लागू हुने सुरक्षा, content, guide र community guideline।' },
       hero: { eyebrow: 'कानुनी', title: 'LocoXperts प्रयोग गर्ने सर्तहरू', description: 'यी सर्तहरूले platform कसरी चल्छ र user को जिम्मेवारी के हो भन्ने कुरा बताउँछन्।', updated: 'March 24, 2026', actions: [{ label: 'सुरक्षा नीति पढ्नुहोस्', href: '/ne/safety' }, { label: 'गोपनीयता नीति पढ्नुहोस्', href: '/ne/privacy', variant: 'secondary' }] },
       sections: [
-        { title: 'प्लेटफर्मको भूमिका', body: ['LocoXperts ले मानिसहरूलाई ट्रेल खोज्न, स्थानीय expert सँग connect गर्न र outdoor event मा join गर्न सहयोग गर्छ। स्पष्ट रूपमा नलेखिएसम्म expert र organizer स्वतन्त्र host हुन्।'] },
+        { title: 'प्लेटफर्मको भूमिका', body: ['LocoXperts ले मानिसहरूलाई ट्रेल खोज्न, स्थानीय guide सँग connect गर्न र outdoor event मा join गर्न सहयोग गर्छ। स्पष्ट रूपमा नलेखिएसम्म guide र organizer स्वतन्त्र host हुन्।'] },
         { title: 'सुरक्षा र जोखिम', body: ['Outdoor activity मा चोट, बिरामी, route uncertainty, मौसम, traffic, wildlife र equipment failure जस्ता जोखिम हुन सक्छन्। आफ्नो safety decision र तयारीका लागि तपाईं आफैं जिम्मेवार हुनुहुन्छ।'] },
         { title: 'खाता र verification', body: ['Verified status भनेको platform ले केही विवरण समीक्षा गरेको हो; यो safety, outcome वा service quality को guarantee होइन।'] },
         { title: 'Trail र content accuracy', body: ['Trail data, maps, distance, elevation, difficulty labels, meeting points र service details as-is दिइन्छन् र बदलिन सक्छन्। Route मा भर पर्नुअघि local रूपमा verify गर्नुहोस्।'] },
@@ -114,7 +114,7 @@ export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
       sections: [
         { title: 'Core principles', items: ['Safety first: pace, route, and decisions should prioritize the group.', 'Honesty: accurate fitness and experience prevents avoidable incidents.', 'Preparation: gear, water, timing, and route planning matter.', 'Respect: follow local rules, local communities, and Leave No Trace basics.'] },
         { title: 'Participant responsibilities', items: ['Bring sport-appropriate gear, including a helmet for cycling when required.', 'Carry enough water, food, layers, lights, and personal essentials.', 'Arrive on time so the group is not pushed into unsafe decisions.', 'Communicate if you feel unwell, unsafe, separated, or unsure about the route.'] },
-        { title: 'Expert and host responsibilities', items: ['Communicate meeting point, timing, route expectations, difficulty, and required gear clearly.', 'Adapt the route when weather, access, visibility, trail conditions, or group readiness changes.', 'Have a basic incident plan, including exit points and local help.'] },
+        { title: 'Guide and host responsibilities', items: ['Communicate meeting point, timing, route expectations, difficulty, and required gear clearly.', 'Adapt the route when weather, access, visibility, trail conditions, or group readiness changes.', 'Have a basic incident plan, including exit points and local help.'] },
         { title: 'Weather, route changes, and cancellations', body: ['Conditions can change quickly. A host or platform admin may reschedule, shorten, reroute, or cancel an activity if storms, low visibility, access restrictions, or group readiness creates avoidable risk.'] },
         { title: 'Medical, emergencies, and insurance', items: ['Participants are responsible for their own health decisions.', 'Carry identification and an emergency contact when possible.', 'Use local emergency services first for urgent incidents.', 'Appropriate outdoor activity insurance is strongly recommended.'] },
       ],
@@ -125,7 +125,7 @@ export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
       sections: [
         { title: 'मुख्य सिद्धान्त', items: ['Safety first: pace, route र decision ले group लाई प्राथमिकता दिनुपर्छ।', 'Honesty: सही fitness र experience जानकारीले avoidable incident घटाउँछ।', 'Preparation: gear, water, timing र route planning महत्वपूर्ण छन्।', 'Respect: local rule, community र Leave No Trace basics पालना गर्नुहोस्।'] },
         { title: 'Participant जिम्मेवारी', items: ['आवश्यक हुँदा cycling का लागि helmet सहित sport-appropriate gear ल्याउनुहोस्।', 'पर्याप्त पानी, खाना, layer, light र personal essentials बोक्नुहोस्।', 'Group लाई unsafe decision मा नधकेल्न समयमै आइपुग्नुहोस्।', 'अस्वस्थ, असुरक्षित, छुट्टिएको वा route बारे unsure भए communicate गर्नुहोस्।'] },
-        { title: 'Expert र host जिम्मेवारी', items: ['Meeting point, timing, route expectation, difficulty र required gear स्पष्ट बताउनुहोस्।', 'मौसम, access, visibility, trail condition वा group readiness बदलिँदा route adapt गर्नुहोस्।', 'Exit point र local help सहित basic incident plan राख्नुहोस्।'] },
+        { title: 'Guide र host जिम्मेवारी', items: ['Meeting point, timing, route expectation, difficulty र required gear स्पष्ट बताउनुहोस्।', 'मौसम, access, visibility, trail condition वा group readiness बदलिँदा route adapt गर्नुहोस्।', 'Exit point र local help सहित basic incident plan राख्नुहोस्।'] },
         { title: 'मौसम, route change र cancellation', body: ['Condition छिटो बदलिन सक्छ। Storm, low visibility, access restriction वा group readiness ले avoidable risk बनाएमा host वा platform admin ले activity reschedule, shorten, reroute वा cancel गर्न सक्छन्।'] },
         { title: 'Medical, emergency र insurance', items: ['Participant आफ्नो health decision का लागि आफैं जिम्मेवार हुन्छन्।', 'सम्भव भए identification र emergency contact बोक्नुहोस्।', 'Urgent incident मा पहिले local emergency service प्रयोग गर्नुहोस्।', 'उपयुक्त outdoor activity insurance strongly recommended छ।'] },
       ],
@@ -134,7 +134,7 @@ export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
   'support-locoxperts': {
     en: {
       metadata: { title: 'Support LocoXperts', description: 'Support LocoXperts so the platform can stay alive and useful for local riders.' },
-      hero: { eyebrow: 'Keep it running', title: 'Help keep LocoXperts alive.', description: 'If LocoXperts helps you find trails, experts, events, or nearby ride support, you can support the developer behind it.' },
+      hero: { eyebrow: 'Keep it running', title: 'Help keep LocoXperts alive.', description: 'If LocoXperts helps you find trails, guides, events, or nearby ride support, you can support the developer behind it.' },
       sections: [
         { title: 'Scan to support', body: ['Use the eSewa QR to support LocoXperts platform upkeep.'] },
         { title: 'What this supports', body: ['This is for platform upkeep: hosting, fixes, maintenance, and developer time to keep improving LocoXperts.', 'Trail-building donations are separate. Use campaign pages when you want to support a specific trail or organization.'] },
@@ -142,7 +142,7 @@ export const infoPageCopy: Record<string, Record<Locale, LocalizedInfoPage>> = {
     },
     ne: {
       metadata: { title: 'LocoXperts सपोर्ट गर्नुहोस्', description: 'LocoXperts लाई जीवित, सुधारिएको र स्थानीय rider का लागि उपयोगी राख्न सहयोग गर्नुहोस्।' },
-      hero: { eyebrow: 'चलिरहन सहयोग', title: 'LocoXperts लाई चलिरहन सहयोग गर्नुहोस्।', description: 'LocoXperts ले तपाईंलाई trail, expert, event वा ride support भेट्न मद्दत गर्छ भने, यसलाई बनाउने developer लाई support गर्न सक्नुहुन्छ।' },
+      hero: { eyebrow: 'चलिरहन सहयोग', title: 'LocoXperts लाई चलिरहन सहयोग गर्नुहोस्।', description: 'LocoXperts ले तपाईंलाई trail, guide, event वा ride support भेट्न मद्दत गर्छ भने, यसलाई बनाउने developer लाई support गर्न सक्नुहुन्छ।' },
       sections: [
         { title: 'सपोर्ट गर्न scan गर्नुहोस्', body: ['LocoXperts platform upkeep का लागि eSewa QR प्रयोग गर्नुहोस्।'] },
         { title: 'यसले के support गर्छ', body: ['यो platform upkeep का लागि हो: hosting, fixes, maintenance र LocoXperts सुधार्न developer time।', 'Trail-building donation अलग हो। कुनै specific trail वा organization support गर्न campaign page प्रयोग गर्नुहोस्।'] },

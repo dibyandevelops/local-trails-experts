@@ -75,7 +75,10 @@ function MobileSection({
           aria-expanded={open}
           onClick={onToggle}
         >
-          <span>{section.label}</span>
+          <span className="inline-flex items-center gap-1.5">
+            <span>{section.label}</span>
+            <MobileBadge badge={section.badge} active={false} />
+          </span>
           <ChevronDown
             className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
             aria-hidden="true"

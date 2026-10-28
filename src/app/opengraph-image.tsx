@@ -49,7 +49,7 @@ export default function OpenGraphImage() {
             </div>
           </div>
           <div style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.05 }}>
-            Trails. Experts. Events.
+            Trails. Guides. Events.
           </div>
           <div style={{ fontSize: 22, opacity: 0.85, lineHeight: 1.35 }}>
             Discover routes, connect with local guides, and organize outdoor

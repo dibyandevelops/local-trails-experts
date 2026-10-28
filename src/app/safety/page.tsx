@@ -11,7 +11,7 @@ import {
 export const metadata: Metadata = {
   title: 'Safety Policy',
   description:
-    'How LocoXperts approaches safety, risk management, and what participants and experts should expect on outdoor activities.',
+    'How LocoXperts approaches safety, risk management, and what participants and guides should expect on outdoor activities.',
   alternates: { canonical: '/safety' },
 };
 
@@ -64,7 +64,7 @@ export default function SafetyPolicyPage() {
         </InfoCard>
 
         <InfoCard>
-          <InfoCardTitle>Expert and host responsibilities</InfoCardTitle>
+          <InfoCardTitle>Guide and host responsibilities</InfoCardTitle>
           <InfoList items={hostResponsibilities} />
         </InfoCard>
       </div>

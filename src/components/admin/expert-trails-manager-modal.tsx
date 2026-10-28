@@ -107,7 +107,7 @@ export default function ExpertTrailsManagerModal({
         return current.filter((id) => id !== trailId);
       }
       if (current.length >= 12) {
-        setNotice('An expert can be associated with up to 12 trails.');
+        setNotice('A guide can be associated with up to 12 trails.');
         return current;
       }
       return [...current, trailId];
@@ -121,7 +121,7 @@ export default function ExpertTrailsManagerModal({
         onOpenChange(nextOpen);
         if (!nextOpen) setNotice(null);
       }}
-      title="Manage expert trails"
+      title="Manage guide trails"
       description={expert ? `Associate trails for ${expert.name || expert.email}.` : undefined}
       maxWidthClassName="max-w-4xl"
     >
@@ -134,7 +134,7 @@ export default function ExpertTrailsManagerModal({
 
         {error && (
           <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
-            {error instanceof Error ? error.message : 'Failed to load expert trails.'}
+            {error instanceof Error ? error.message : 'Failed to load guide trails.'}
           </p>
         )}
 
@@ -147,7 +147,7 @@ export default function ExpertTrailsManagerModal({
             <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 dark:border-slate-700 dark:bg-slate-950">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-                  Selected for this expert
+                  Selected for this guide
                 </p>
                 <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">
                   {selectedTrailIds.length}/12 selected
@@ -157,7 +157,7 @@ export default function ExpertTrailsManagerModal({
                 <div className="mt-2 flex flex-wrap gap-2">
                   {selectedTrails.map((trail) => (
                     <Link
-                      key={`admin-selected-expert-trail-${trail.id}`}
+                      key={`admin-selected-guide-trail-${trail.id}`}
                       href={`/trails/${trail.slug || trail.id}`}
                       className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-slate-800"
                     >
@@ -192,7 +192,7 @@ export default function ExpertTrailsManagerModal({
                       const checked = selectedTrailIds.includes(trail.id);
                       return (
                         <tr
-                          key={`admin-expert-trail-${trail.id}`}
+                          key={`admin-guide-trail-${trail.id}`}
                           className="border-t border-gray-200 dark:border-slate-800"
                         >
                           <td className="px-3 py-3">

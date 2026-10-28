@@ -10,6 +10,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { QUERY_KEYS } from '@/services/constants/query-keys';
 import { DEFAULT_LOCALE, localizePath, type Locale } from '@/i18n/config';
 import { guideJoinCopy } from '@/i18n/guide-join';
+import BetaBadge from '@/components/ui/beta-badge';
 
 export default function ExpertJoinPage() {
   return <GuideJoinPage locale={DEFAULT_LOCALE} />;
@@ -187,9 +188,12 @@ export function GuideJoinPage({ locale = DEFAULT_LOCALE }: { locale?: Locale }) 
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="border-b border-gray-200 pb-5 dark:border-slate-800">
         <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-            {copy.hero.eyebrow}
-          </p>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              {copy.hero.eyebrow}
+            </p>
+            <BetaBadge />
+          </div>
           <h1 className="text-balance text-3xl font-extrabold text-gray-950 dark:text-slate-50 sm:text-4xl">
             {copy.hero.title}
           </h1>

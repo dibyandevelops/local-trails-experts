@@ -501,7 +501,7 @@ export default function ParticipantProfilePage() {
                   {editForm.city || 'City not added'} · {parseSelectedSports().length > 0 ? parseSelectedSports().map((sport) => getSportLabel(sport)).join(', ') : 'Sports not added'}
                 </p>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-700 dark:text-slate-200">
-                  {editForm.bio?.trim() || 'Add a short riding profile so experts can understand your interests, availability, and ride expectations.'}
+                  {editForm.bio?.trim() || 'Add a short riding profile so guides can understand your interests, availability, and ride expectations.'}
                 </p>
               </div>
             </div>
@@ -526,7 +526,7 @@ export default function ParticipantProfilePage() {
           )}
           {!isProfileComplete && (
             <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-              Your profile is incomplete. Add your details to improve ride requests and expert coordination.
+              Your profile is incomplete. Add your details to improve ride requests and guide coordination.
             </p>
           )}
 
@@ -587,7 +587,7 @@ export default function ParticipantProfilePage() {
           <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{savedTrails.length}</p>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Expert ride requests</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">Guide ride requests</p>
           <p className="mt-1 text-2xl font-black text-gray-950 dark:text-white">{rideProgramRequests.length}</p>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -742,10 +742,10 @@ export default function ParticipantProfilePage() {
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-              Ride with Experts Requests
+              Ride with Guides Requests
             </h2>
             <p className="text-sm text-gray-600 dark:text-slate-300">
-              Manage requested expert ride programs separately from scheduled events.
+              Manage requested guide ride programs separately from scheduled events.
             </p>
           </div>
           <Link
@@ -762,7 +762,7 @@ export default function ParticipantProfilePage() {
         )}
         {rideProgramRequests.length === 0 ? (
           <p className="text-sm text-gray-600 dark:text-slate-300">
-            You have not requested any expert ride programs yet.
+            You have not requested any guide ride programs yet.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800">
@@ -770,7 +770,7 @@ export default function ParticipantProfilePage() {
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-slate-950 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2">Ride</th>
-                  <th className="px-3 py-2">Expert</th>
+                  <th className="px-3 py-2">Guide</th>
                   <th className="px-3 py-2">Preferred</th>
                   <th className="px-3 py-2">Status</th>
                   <th className="px-3 py-2 text-right">Actions</th>
@@ -781,14 +781,14 @@ export default function ParticipantProfilePage() {
                   <tr key={request.id} className="border-t border-gray-200 align-middle dark:border-slate-800">
                     <td className="px-3 py-3">
                       <p className="max-w-[300px] text-sm font-semibold text-gray-900 dark:text-slate-100">
-                        {request.program_title || request.trail_name || 'Expert ride request'}
+                        {request.program_title || request.trail_name || 'Guide ride request'}
                       </p>
                       <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                         {request.trail_location || 'Trail location not set'}
                       </p>
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
-                      {request.expert_name || request.expert_email || 'Expert'}
+                      {request.expert_name || request.expert_email || 'Guide'}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-600 dark:text-slate-300">
                       <p>{request.preferred_date?.slice(0, 10) || 'Not selected'}</p>
@@ -861,14 +861,14 @@ export default function ParticipantProfilePage() {
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-                        {request.program_title || request.trail_name || 'Expert ride request'}
+                        {request.program_title || request.trail_name || 'Guide ride request'}
                       </h3>
                       <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold capitalize text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                         {request.status}
                       </span>
                     </div>
                     <div className="mt-3 grid gap-2 text-xs text-gray-600 dark:text-slate-300 md:grid-cols-2">
-                      <p>Expert: {request.expert_name || request.expert_email || 'Expert'}</p>
+                      <p>Guide: {request.expert_name || request.expert_email || 'Guide'}</p>
                       <p>Trail: {request.trail_name || 'Trail not set'}</p>
                       <p>Location: {request.trail_location || 'Not set'}</p>
                       <p>Requested: <DateText value={request.created_at} pattern="PPP p" /></p>
@@ -881,7 +881,7 @@ export default function ParticipantProfilePage() {
 
                   <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-100">
                     <span className="font-semibold">
-                      {programWeekdays.length > 0 ? 'Program availability: ' : 'Expert availability: '}
+                      {programWeekdays.length > 0 ? 'Program availability: ' : 'Guide availability: '}
                     </span>
                     {availableWeekdays.length > 0 ? availableWeekdays.join(', ') : 'Flexible'}
                     {request.available_time_note ? ' · ' + request.available_time_note : ''}
@@ -901,7 +901,7 @@ export default function ParticipantProfilePage() {
 
                   {request.expert_response_note && (
                     <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/35 dark:text-blue-100">
-                      <span className="font-semibold">Expert response: </span>
+                      <span className="font-semibold">Guide response: </span>
                       {request.expert_response_note}
                     </div>
                   )}
@@ -1072,7 +1072,7 @@ export default function ParticipantProfilePage() {
                   {!EXPERTS_BETA_ENABLED && (
                     <div>
                       <label className="mb-1 block text-xs font-medium text-gray-600">
-                        Assigned Expert
+                        Assigned Guide
                       </label>
                       <select
                         value={request.assigned_expert_user_id || ''}
@@ -1088,7 +1088,7 @@ export default function ParticipantProfilePage() {
                         }}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                       >
-                        <option value="">Select expert</option>
+                        <option value="">Select guide</option>
                         {experts.map((expert) => (
                           <option key={expert.id} value={expert.id}>
                             {expert.name || expert.email}
@@ -1127,7 +1127,7 @@ export default function ParticipantProfilePage() {
                       onClick={async () => {
                         setRequestMessage(null);
                         if (!request.assigned_expert_user_id || !request.preferred_date) {
-                          setRequestMessage('Please select expert and preferred date.');
+                          setRequestMessage('Please select guide and preferred date.');
                           return;
                         }
                         try {

@@ -18,7 +18,7 @@ const faqGroups: Array<{ title: string; items: FaqItem[] }> = [
       {
         question: 'What trail information can I find?',
         answer:
-          'Trail pages can include map route, sport type, distance, elevation, estimated time, difficulty, route guide, services, trail updates, campaigns, and associated experts when available.',
+          'Trail pages can include map route, sport type, distance, elevation, estimated time, difficulty, route guide, services, trail updates, campaigns, and associated guides when available.',
       },
       {
         question: 'Can I request a custom trail ride?',
@@ -53,22 +53,22 @@ const faqGroups: Array<{ title: string; items: FaqItem[] }> = [
     ],
   },
   {
-    title: 'Experts and organizations',
+    title: 'Guides and organizations',
     items: [
       {
-        question: 'How do experts get verified?',
+        question: 'How do guides get verified?',
         answer:
-          'Experts submit profile and application details. Admin reviews the information and may request more context before approval.',
+          'Guides submit profile and application details. Admin reviews the information and may request more context before approval.',
       },
       {
-        question: 'Do I need an organization to become an expert?',
+        question: 'Do I need an organization to become a guide?',
         answer:
-          'No. You can start with an individual expert profile. Creating an organization is optional after your expert account is verified.',
+          'No. You can start with an individual guide profile. Creating an organization is optional after your guide account is verified.',
       },
       {
         question: 'When can I create an organization?',
         answer:
-          'After admin verification, an expert may create and own one organization, then invite other verified experts to help manage it.',
+          'After admin verification, a guide may create and own one organization, then invite other verified guides to help manage it.',
       },
       {
         question: 'What can organizations manage?',
@@ -78,7 +78,7 @@ const faqGroups: Array<{ title: string; items: FaqItem[] }> = [
       {
         question: 'Can I charge for events or services?',
         answer:
-          'Verified experts can set a fee for hosted events, and organizations can publish priced programs and services. Results depend on rider interest and bookings.',
+          'Verified guides can set a fee for hosted events, and organizations can publish priced programs and services. Results depend on rider interest and bookings.',
       },
       {
         question: 'Can shops and partners be listed?',
@@ -146,7 +146,7 @@ export default function FaqPage() {
       <InfoPageHero
         eyebrow="Help center"
         title="Quick answers before you ride, book, or contribute."
-        description="A compact guide to the most common questions about trails, ride support, events, experts, organizations, safety, and privacy."
+        description="A compact guide to the most common questions about trails, ride support, events, guides, organizations, safety, and privacy."
         actions={[
           { label: 'Browse trails', href: '/trails' },
           { label: 'Read safety policy', href: '/safety', variant: 'secondary' },

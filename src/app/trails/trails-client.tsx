@@ -447,7 +447,7 @@ function TrailsPageContent() {
         activeFilterCount={activeFilterCount}
         searchInput={searchInput}
         activeFilters={activeFilters}
-        canUploadTrails={user?.role === 'admin' || user?.role === 'expert'}
+        canUploadTrails={user?.role === 'admin' || user?.role === 'expert' || user?.role === 'participant'}
         onViewModeChange={setViewMode}
         onOpenFilters={() => setFiltersOpen(true)}
         onUploadTrails={() => router.push('/upload')}

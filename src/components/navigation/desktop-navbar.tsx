@@ -106,7 +106,10 @@ function NavSectionContent({
       <DropdownMenu.SubTrigger
         className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.12em] text-emerald-200/70 outline-none transition-colors hover:bg-white/10 hover:text-emerald-100 data-[state=open]:bg-white/10 data-[highlighted]:bg-white/10 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300/70"
       >
-        <span>{section.label}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span>{section.label}</span>
+          <NavBadge badge={section.badge} active={false} />
+        </span>
         <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
       </DropdownMenu.SubTrigger>
       <DropdownMenu.Portal>

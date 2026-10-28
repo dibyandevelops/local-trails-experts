@@ -123,7 +123,7 @@ export default function RegisterForm({
             </p>
             <div className="mt-3 flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-300">
               <span>• Save your favorite trails</span>
-              <span>• Join expert-led rides and trainings</span>
+              <span>• Join guide-led rides and trainings</span>
             </div>
           </div>
         </div>

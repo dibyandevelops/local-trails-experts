@@ -8,17 +8,17 @@ export async function generateMetadata(props: {
   const resolved = props.searchParams ? await props.searchParams : {};
   const hasFilters = hasAnySearchParams(resolved);
   return listingMetadata({
-    title: 'Local MTB & Trail Experts in Nepal',
+    title: 'Local MTB & Trail Guides in Nepal',
     description:
-      'Browse verified local experts in Nepal for mountain biking, trail rides, and outdoor coaching.',
+      'Browse verified local guides in Nepal for mountain biking, trail rides, and outdoor coaching.',
     canonicalPath: '/experts',
     hasFilters,
     keywords: [
       'MTB guides Nepal',
-      'local bike experts Nepal',
+      'local bike guides Nepal',
       'mountain biking coach Nepal',
-      'trail experts Nepal',
-      'Nepal cycling community experts',
+      'trail guides Nepal',
+      'Nepal cycling community guides',
     ],
   });
 }

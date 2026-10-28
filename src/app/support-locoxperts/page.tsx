@@ -22,7 +22,7 @@ export default function DonatePage() {
             Help keep LocoXperts alive.
           </h1>
           <p className="mt-4 text-sm leading-7 text-gray-600 dark:text-slate-300 md:text-base">
-            If LocoXperts helps you find trails, experts, events, or nearby ride support, you can
+            If LocoXperts helps you find trails, guides, events, or nearby ride support, you can
             support the work behind it.
           </p>
           <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold leading-6 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 md:text-base">

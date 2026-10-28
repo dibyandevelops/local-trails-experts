@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'LocoXperts',
     short_name: 'LocoXperts',
-    description: 'Find mountain trails, join events, and connect with verified local experts.',
+    description: 'Find mountain trails, join events, and connect with verified local guides.',
     start_url: '/',
     display: 'standalone',
     background_color: '#f8fafc',
